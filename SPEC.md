@@ -414,7 +414,74 @@ Repris du diagnostic du code existant, ils deviennent structurants pour l'app :
 
 ---
 
-## 8. Journal des décisions
+## 8. Technologies
+
+### Couche graphique : PySide6 (Qt)
+
+✅ Le **cœur de calcul reste en Python** : il fonctionne, il est mesuré, et les
+décisions d'architecture tiennent dans quelques centaines de lignes de numpy.
+
+✅ **PySide6** pour l'interface. Chaque besoin de la spec correspond à un composant
+éprouvé :
+
+| Besoin | Composant |
+|---|---|
+| Galerie de 280 vignettes sélectionnables | `QListView` en mode icônes (virtualisé) |
+| Grille en fil de fer, cliquable | `QGraphicsView` |
+| Image live + curseur de timeline | `QGraphicsView` + `QSlider`, via signaux |
+| Calcul en fond, pause/stop/reprise | `QThread` + signaux |
+| Bilingue FR/EN | `tr()` + Qt Linguist, **intégré au framework** |
+| Empaquetage macOS + Windows | PyInstaller |
+
+Argument décisif : l'internationalisation est une exigence dure, et Qt est le seul
+candidat à la fournir nativement plutôt que via une bibliothèque tierce à câbler.
+
+### Dépendances : numpy + Pillow uniquement
+
+✅ **opencv et scipy sortent de l'application.** Mesuré sur l'environnement actuel :
+
+| Paquet | Poids | Sort ? |
+|---|---|---|
+| opencv | 99 Mo | ✂️ Pillow fait ouvrir / redimensionner / écrire |
+| scipy | 75 Mo | ✂️ `cdist` remplacé par 2 matrices précalculées |
+| scikit-learn | 32 Mo | ✂️ dépendance optionnelle des seules `experiments/` |
+| numpy | 24 Mo | conservé |
+| Pillow | 13 Mo | conservé |
+
+**245 Mo aujourd'hui, dont 206 Mo inutiles à l'application.** Socle de calcul ramené
+à 37 Mo — une différence sensible sur un exécutable distribuable.
+
+Vérifié : une matrice de distances en numpy pur est **bit à bit identique** à celle de
+scipy (écart max 0,00).
+
+### Bibliothèques d'appoint
+
+- **img2pdf** — export PDF : intègre le JPEG sans recompression et fixe la taille de
+  page en millimètres. Exactement ce qu'attend un imprimeur.
+- **platformdirs** — emplacement des préréglages et de la bibliothèque de liens.
+- **JSON** — persistance : lisible, modifiable à la main, comparable dans git.
+- **pytest** — tests.
+
+⚠️ Réserve : un export A0 fait 139 Mpx, soit 418 Mo en mémoire. Si ça coince,
+**pyvips** traite les très grandes images en flux — mais il ajoute une dépendance
+native qui complique l'empaquetage. À ne sortir qu'en cas de besoin avéré.
+
+### Optimisation du cœur : matrices de distances précalculées
+
+⭐ Deux matrices 280×280 (droite↔gauche et bas↔haut) remplacent tous les appels à
+`cdist`. Mesuré :
+
+| | Débit | Coût |
+|---|---|---|
+| Via `cdist` (actuel) | 473 000 coutures/s | — |
+| Via matrices précalculées | **10 084 000 coutures/s** | 1,2 Mo, 4 ms de précalcul |
+
+**Gain ×21.** C'est ce qui rend le recuit simulé praticable, puisqu'il demande
+beaucoup plus d'itérations que la descente stricte.
+
+✅ **À intégrer avant l'interface**, pour que l'UI se branche sur une base stable.
+
+## 9. Journal des décisions
 
 | Date | Décision |
 |---|---|
@@ -442,3 +509,6 @@ Repris du diagnostic du code existant, ils deviennent structurants pour l'app :
 | 2026-08-16 | Répartition base/avancés validée ; l'épaisseur des bandes reste en avancé mais gagne un aperçu |
 | 2026-08-16 | **Principe général : tout réglage dont l'effet est montrable reçoit un aperçu temps réel** |
 | 2026-08-16 | **Architecture : travail sur vignettes à 25 %**, pleine résolution réservée à l'export (562 Mo → 35 Mo) |
+| 2026-08-16 | **PySide6 (Qt)** retenu pour l'interface — l'i18n native emporte la décision |
+| 2026-08-16 | **opencv et scipy sortent** de l'application : socle ramené à numpy + Pillow (245 Mo → 37 Mo) |
+| 2026-08-16 | **Matrices de distances précalculées** (gain ×21), à intégrer **avant** l'interface |
