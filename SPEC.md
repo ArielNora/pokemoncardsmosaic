@@ -1,0 +1,444 @@
+# Pokémon Mosaic — Spécification
+
+> Document vivant. Mis à jour à chaque précision apportée.
+> Statut : **définition en cours** — les technologies ne sont pas encore choisies.
+>
+> Légende : ✅ confirmé · ❓ **à confirmer** (déduction de ma part) · ⬜ **question ouverte**
+
+---
+
+## 1. Objectif
+
+✅ Assembler des cartes Pokémon en une seule grande image, en plaçant côte à côte les
+cartes dont les bords ont les couleurs les plus proches, pour que l'ensemble se lise
+comme une image continue.
+
+✅ **Le but final est l'impression d'un poster.** Deux formes possibles :
+- un seul grand poster contenant toutes les cartes ;
+- deux posters accolés formant un grand poster horizontal.
+
+✅ C'est cette contrainte d'impression qui motivait les essais de formes de grille
+(20×14, 31×9…) : il s'agissait de trouver un format imprimable.
+
+✅ Les cartes exclues jusqu'ici (`pikachu.png`) l'étaient **arbitrairement**, juste
+pour ajuster le nombre total de cartes à une valeur bien factorisable. Aucun sens
+éditorial.
+
+---
+
+## 2. Forme du produit
+
+✅ Un **exécutable avec interface graphique**, organisé en 3 étapes de configuration
+suivies d'une vue d'exécution.
+
+### Distribution
+
+✅ **Développé pour un usage personnel d'abord**, mais sans fermer la porte à une
+distribution ultérieure. Deux décisions sont prises dès maintenant pour cela :
+
+1. **Framework graphique multiplateforme obligatoire.** C'est le seul vrai point de
+   non-retour : changer de framework plus tard signifie réécrire l'interface.
+2. **Le dossier de cartes est choisi par l'utilisateur**, jamais codé en dur, dès la
+   première version. Sert déjà à l'usage personnel (partage entre machines) et évite
+   un rattrapage coûteux touchant l'étape 1, la configuration et la gestion d'erreurs.
+
+Le reste (signature Apple, installateur, icône, polissage des erreurs) relève de
+l'empaquetage et reste reportable sans coût.
+
+📌 Note : les visuels de cartes Pokémon appartiennent à The Pokémon Company.
+Distribuer l'application ne pose pas de problème, distribuer les images avec, si.
+Le point 2 ci-dessus règle la question par construction.
+
+### Langue
+
+✅ **Interface bilingue français / anglais**, avec un sélecteur de langue.
+
+⚠️ À prévoir **dès le départ** : externaliser tous les textes de l'interface. Rajouter
+la traduction après coup imposerait de reprendre chaque écran un par un.
+
+---
+
+## 3. Étape 1 — Sélection des cartes
+
+✅ Galerie affichant les cartes avec un aperçu réduit.
+✅ L'utilisateur peut **garder ou retirer** chaque carte de l'image finale.
+✅ Il peut aussi **retirer un dossier entier** d'un coup.
+✅ L'écran affiche les **liens entre cartes** (paires à garder côte à côte).
+✅ L'utilisateur peut **créer, modifier et désactiver** des liens depuis l'interface.
+✅ Une **liste de liens par défaut** est fournie : ce sont ceux du code actuel
+(Solgaleo–Lunala, Entei–Raikou).
+
+✅ Un « lien » signifie : ces cartes restent **adjacentes horizontalement**.
+
+✅ **L'ordre est optionnel, lien par lien.** Chaque lien porte une case « ordre
+imposé » : cochée, la séquence saisie est respectée à la lettre (utile quand le sens
+a une signification, comme Solgaleo puis Lunala) ; décochée, l'optimiseur peut
+retourner le bloc et dispose donc de deux fois plus de placements possibles.
+
+✅ **Les liens vivent dans une bibliothèque séparée**, indépendante des préréglages.
+Un préréglage mémorise seulement **lesquels sont actifs**. Rationnel : un lien est un
+travail durable (Solgaleo–Lunala restera vrai indéfiniment) alors qu'un préréglage est
+un essai de mise en page, jetable. Les mélanger obligerait à ressaisir tous les liens
+à chaque nouvelle mise en page.
+
+✅ Un lien peut regrouper **plus de 2 cartes** (trio et au-delà). Le code gère déjà
+des blocs de taille quelconque.
+
+📌 **Reportés après la v1** (voir `TODO.md`) : liens verticaux, blocs rectangulaires,
+et fixation d'une carte à des coordonnées précises.
+
+✅ **Préréglages nommés** : l'utilisateur enregistre et recharge des configurations
+complètes sous un nom (« poster A2 17×17 », « double A3 »). Une configuration couvre
+la sélection de cartes, les liens, la grille et les réglages. Permet de comparer
+plusieurs mises en page sans tout ressaisir, et de retrouver une config après
+l'arrivée d'une nouvelle extension.
+
+---
+
+## 4. Étape 2 — Grille et format d'impression
+
+✅ Choix de la **taille de l'image finale**, avec des **presets de formats
+d'impression** (A4, A5, et d'autres formats plus grands ou plus petits).
+✅ Choix de la **taille des cartes** et des **dimensions de la grille**, les deux
+ajustables.
+✅ **Aperçu en fil de fer** : montre la disposition et les proportions du résultat,
+avec de simples contours à la place des images de cartes.
+
+### Grandeur maître
+
+✅ **Le format d'impression commande.** L'utilisateur choisit un format (A2, A3…) et
+des dimensions de grille ; la **taille des cartes en pixels se calcule** pour remplir
+la feuille au DPI voulu. On part du papier, puisque la finalité est l'impression.
+
+✅ **Résolution d'impression : 300 DPI par défaut, modifiable, avec alerte au plafond.**
+
+Les cartes sources faisant 713 px de large, il existe un DPI au-delà duquel l'app
+interpole sans ajouter de détail. L'app calcule ce plafond pour le format choisi et
+prévient l'utilisateur s'il le dépasse.
+
+| Format | Carte imprimée (grille 17×17) | DPI max utile | Image à 300 DPI |
+|---|---|---|---|
+| A3 | 17,5 mm | 1037 | 17 Mpx |
+| A2 | 24,7 mm | 733 | 35 Mpx |
+| A1 | 34,9 mm | 518 | 70 Mpx |
+| A0 | 49,5 mm | **366** | 139 Mpx |
+
+300 DPI passe donc partout, y compris en A0, mais avec peu de marge sur ce dernier.
+
+### Grilles compatibles avec les formats d'impression
+
+📐 Les cartes font **0,724** de rapport largeur/hauteur (713 × 984), les formats de la
+série A font **0,707**. Une grille **carrée en nombre de cartes** a donc exactement le
+rapport d'une carte, soit **2,47 % d'écart** avec le papier — quelle que soit sa
+taille. Les grilles allongées essayées jusqu'ici (20×14, 31×9) en sont très loin.
+
+**Cas A — un seul poster, feuille portrait.** Grille carrée N×N, écart 2,47 %.
+
+| Grille | Cartes | Écart vs 281 |
+|---|---|---|
+| 16×16 | 256 | −25 |
+| 17×17 | 289 | +8 |
+| 18×18 | 324 | +43 |
+
+Bande blanche résiduelle correspondante, si l'image occupe toute la largeur :
+
+| Format | Image | Blanc total | Par côté |
+|---|---|---|---|
+| A3 | 297×410 mm | 10,1 mm | 5,1 mm |
+| A2 | 420×580 mm | 14,4 mm | 7,2 mm |
+| A1 | 594×820 mm | 21,2 mm | 10,6 mm |
+| A0 | 841×1161 mm | 28,3 mm | 14,2 mm |
+
+**Cas B1 — deux feuilles portrait collées.** Chaque moitié devant remplir sa feuille,
+elle doit être carrée : la grille est donc forcément 2R×R, écart 2,47 %.
+
+| Grille | Cartes | Écart vs 281 | Coupe |
+|---|---|---|---|
+| 22×11 | 242 | −39 | 2 × 11×11 |
+| 24×12 | 288 | +7 | 2 × 12×12 |
+| 26×13 | 338 | +57 | 2 × 13×13 |
+
+**Cas B2 — une seule feuille paysage, sans coupe.** Meilleur ajustement possible, mais
+un nombre impair de colonnes interdit la coupe en deux.
+
+| Grille | Cartes | Écart vs 281 | Écart format |
+|---|---|---|---|
+| 23×12 | 276 | −5 | 1,80 % |
+| 25×13 | 325 | +44 | 1,47 % |
+| 27×14 | 378 | +97 | 1,19 % |
+
+⚠️ `23×12 = 276` tombe à 5 cartes près du stock actuel et ajuste mieux le format, mais
+ses 23 colonnes interdisent la coupe nette. Pour une coupe propre, c'est `24×12 = 288`
+(+7 cartes) ; pour un poster simple, `17×17 = 289` (+8 cartes).
+
+### Découpage en plusieurs posters
+
+✅ **Vraie fonction d'export** : l'utilisateur choisit un découpage en N panneaux, et
+l'app produit **un fichier par panneau**, chacun au format d'impression choisi.
+
+✅ **La coupe tombe toujours sur un bord de carte**, jamais au milieu. Quand le
+découpage est activé, l'app ne propose donc que les grilles dont le nombre de colonnes
+est divisible par N.
+✅ **Chevauchement réglable** entre panneaux, pour rattraper les imprécisions au
+collage.
+✅ **Repères de coupe** discrets en bord de panneau, pour faciliter l'alignement.
+
+### Cases vides
+
+✅ **Les cases vides sont autorisées.** C'est ce qui libère définitivement du problème
+de factorisation : n'importe quelle grille devient choisissable.
+
+✅ **Avertissements** aux étapes 2 ou 3 : si le nombre de cartes ne tombe pas juste,
+l'app indique **combien de cartes ajouter ou retirer** pour atteindre un compte qui
+remplit la grille ; sinon elle prévient explicitement qu'il y aura des cases vides.
+
+✅ **Placement manuel des cases vides** : l'utilisateur clique sur la grille d'aperçu
+pour désigner l'emplacement de chaque case vide, jusqu'à les avoir toutes placées.
+
+✅ **Les cases vides sont figées** : elles ne bougent jamais, quel que soit le nombre
+d'époques, et se retrouvent au même endroit sur l'image finale.
+
+⚠️ **Conséquence sur l'algorithme** : il faut un mécanisme de cases verrouillées que
+l'optimiseur ne peut ni déplacer ni remplir. Bonne nouvelle — ce mécanisme existe
+déjà sous le nom de `locked_mask` dans `experiments/soft_adjacency_penalty.py`, qui
+verrouille des positions fixes. À récupérer plutôt qu'à réinventer.
+
+✅ **La couleur des cases vides est réglable** (étape 3, réglages de base).
+
+✅ **Placement automatique par défaut** : les cases vides sont réparties régulièrement
+sur la grille. L'utilisateur peut ensuite les déplacer une par une s'il le souhaite —
+le placement manuel reste possible mais n'est jamais obligatoire.
+
+### Reste à définir
+
+✅ **Marge automatique** pour absorber l'écart de 2,47 % : les cartes gardent leurs
+proportions exactes et l'image est centrée sur la feuille, laissant une fine bordure
+(7 mm par côté sur A2, 10 mm sur A1). Ni déformation ni rognage.
+📌 **Reporté après la v1** : laisser l'utilisateur décider quoi faire de cette marge
+(couleur au choix, ou autre traitement). Consigné dans `TODO.md`.
+
+✅ **Cartes collées bord à bord, sans marge entre elles**, pour cette version. C'est ce qui donne
+l'effet de continuité le plus fort.
+📌 **Reporté après la v1** : marges de page et espacement entre cartes réglables.
+Consigné dans `TODO.md`, à traiter une fois tout le reste terminé.
+
+---
+
+## 5. Étape 3 — Paramètres de l'algorithme
+
+✅ Nombre d'étapes de l'algorithme.
+✅ Fréquence de rafraîchissement de l'aperçu (par défaut toutes les 10 époques,
+réglable ici).
+
+✅ **Les quatre seuils sont retenus** :
+- **Arrêt sur score atteint** — stopper dès que le score global passe sous une valeur.
+- **Arrêt sur stagnation** — stopper si rien ne s'améliore depuis N époques.
+- **Tolérance d'acceptation** — écart minimum pour retenir un échange, ou tolérance
+  pour accepter un échange légèrement moins bon afin de sortir des minima locaux.
+- **Budget de temps** — plafond en minutes.
+
+⚠️ La *tolérance d'acceptation* dans son sens « accepter un peu moins bon » change la
+nature de l'algorithme : ce n'est plus une descente stricte mais un recuit simulé.
+C'est précisément ce qu'il faut pour dépasser le plateau mesuré ci-dessous.
+
+✅ **Les réglages sont répartis en « de base » et « avancés »**, les choix les plus
+techniques étant rangés dans les avancés.
+
+✅ Réglages retenus, en plus des étapes et des seuils : épaisseur des bandes de bord,
+choix de l'algorithme, résolution d'impression, couleur des cases vides.
+
+❓ Répartition proposée, **à confirmer ou corriger** :
+
+| De base | Avancés |
+|---|---|
+| Nombre d'époques | Choix de l'algorithme (descente stricte / recuit simulé) |
+| Cadence de rafraîchissement de l'aperçu | Épaisseur des bandes de bord (`strip_size`) |
+| Arrêt sur stagnation | Tolérance d'acceptation |
+| Budget de temps | Arrêt sur score atteint |
+| Couleur des cases vides | |
+
+Principe retenu : en **base**, ce qui se décide par intention (combien de temps, à
+quelle fréquence, quelle couleur) ; en **avancés**, ce qui exige de comprendre le
+fonctionnement interne (température de recuit, épaisseur de bande, seuil exprimé dans
+une échelle de score qui n'a de sens qu'en relatif).
+
+### Principe d'aperçu des réglages
+
+✅ **Chaque réglage dont l'effet est montrable doit être accompagné d'un aperçu en
+temps réel**, sur le modèle de l'aperçu de format à l'étape 2. Les réglages purement
+techniques (température, seuils d'arrêt) en sont dispensés : leur effet n'est pas
+visualisable.
+
+Trois niveaux, selon ce que le réglage permet de montrer :
+
+| Niveau | Réglages | Ce que voit l'utilisateur |
+|---|---|---|
+| **Aperçu visuel** | Format, grille, découpage, chevauchement, repères de coupe | Fil de fer de la mise en page |
+| | **Épaisseur des bandes de bord** | Les bandes surlignées sur une carte, **plus** une petite grille d'essai réoptimisée en direct |
+| | Couleur des cases vides | Le fil de fer, colorié |
+| | DPI | Netteté réelle à la taille imprimée |
+| **Projection chiffrée** | Nombre d'époques | Durée estimée et % du gain attendu |
+| | Cadence de rafraîchissement | Nombre de clichés qui en résultera |
+| **Aucun aperçu** | Température, tolérance, seuils d'arrêt, budget de temps | — |
+
+✅ L'**épaisseur des bandes de bord reste en avancé**, mais gagne un aperçu direct.
+
+📐 **Faisabilité vérifiée.** Changer l'épaisseur impose de recalculer les signatures
+des 280 cartes : 387 ms à 3557 ms en pleine résolution, donc trop lent pour un
+curseur. Sur des copies réduites à 25 %, c'est **25 à 211 ms**, avec une erreur
+moyenne inférieure à **0,3 niveau de couleur sur 255** (0,1 %) — négligeable, car
+réduire une image est déjà un moyennage. Une petite grille d'essai (20 cartes,
+1000 itérations) se réoptimise en **37 ms**.
+
+✅ La **résolution d'impression est à l'étape 2**, pas ici : c'est elle qui convertit
+le format en taille de cartes en pixels, affichée sur ce même écran. La placer à
+l'étape 3 ferait dépendre l'affichage de l'étape 2 d'un réglage situé sur un écran
+pas encore vu.
+
+### Comportement mesuré de l'algorithme
+
+Mesuré sur les 280 cartes, grille 20×14, descente stricte, 300 000 itérations :
+
+| Itérations | Score | % du gain total | Échanges retenus | Taux d'acceptation |
+|---|---|---|---|---|
+| 1 000 | 44 485 | **30,2 %** | 190 | 19,0 % |
+| 5 000 | 35 568 | 44,2 % | 365 | 7,3 % |
+| 25 000 | 28 823 | 54,8 % | 562 | 2,3 % |
+| 100 000 | 25 277 | 60,3 % | 712 | 0,7 % |
+| 300 000 | 23 584 | 63,0 % | 822 | **0,3 %** |
+
+Débit : **~24 000 itérations/s**. Score initial 63 727.
+
+Trois enseignements structurants pour l'interface :
+
+1. **Presque tout se joue au début.** 30 % du gain total est acquis en 1 000
+   itérations, soit **moins d'un dixième de seconde**. Le reste du calcul grappille.
+2. **Le taux d'acceptation s'effondre** de 19 % à 0,3 %. Sur 300 000 tentatives,
+   seules **822** aboutissent à un échange.
+3. **Conséquence directe sur la timeline** : espacer les snapshots à intervalle
+   d'itérations régulier concentrerait la quasi-totalité de la timeline sur une
+   période où plus rien ne bouge visuellement.
+
+✅ **Le choix de l'algorithme est exposé** (réglages avancés) : descente stricte ou
+recuit simulé. Le plateau mesuré à 63 % confirme que la descente stricte se bloque
+dans un minimum local, et que le recuit simulé a un intérêt réel ici.
+
+---
+
+## 6. Vue d'exécution
+
+✅ L'image s'affiche et l'algorithme démarre.
+✅ Toutes les N époques, l'aperçu est **mis à jour** avec l'état courant.
+✅ Une **timeline en bas de l'image** permet de naviguer d'avant en arrière entre
+tous les états enregistrés, **pendant que l'algorithme continue de tourner**.
+✅ Les états sont stockés **sous forme de grille d'indices, pas de PNG**, pour
+économiser la place. L'image est reconstruite à la demande, en résolution réduite
+mais suffisante pour reconnaître les cartes.
+✅ À la fin, l'utilisateur **choisit quel état exporter** ; les autres sont jetés.
+
+### Coût de stockage — distinguer la grille de son rendu
+
+⚠️ Le raisonnement « un snapshot ne pèse rien » n'est vrai **que pour la grille**, pas
+pour l'image correspondante :
+
+| Ce qu'on stocke | Par snapshot | Pour 800 snapshots |
+|---|---|---|
+| Grille d'indices | 1,1 Ko | **1,1 Mo** — négligeable |
+| Aperçu rendu à 10 % (A1) | 2,0 Mo | **1,6 Go** — impossible |
+| Aperçu rendu à 15 % (A1) | 4,5 Mo | **3,5 Go** — impossible |
+
+✅ **Conserver toutes les grilles sans jamais purger.**
+✅ **Ne pas mettre les aperçus en cache** : reconstruire l'image à la demande lors de
+la navigation, avec un cache limité aux quelques derniers snapshots consultés.
+
+✅ **Contrainte de fluidité levée par la mesure.** Reconstruire un aperçu 17×17 à
+partir de vignettes prend **1,5 à 5,3 ms**, très en deçà du budget de 16 ms d'une
+image à 60 images/s. Le défilement de la timeline sera fluide.
+
+### Décision d'architecture : travailler sur des vignettes
+
+⭐ **Les images pleine résolution ne servent qu'à l'export.** Tout le reste —
+signatures, score, optimisation, aperçus, timeline — se contente de copies réduites
+à 25 % (178×246).
+
+| | Pleine résolution | Vignettes à 25 % |
+|---|---|---|
+| Mémoire pour 280 cartes | **562 Mo** | **35 Mo** |
+| Recalcul des signatures (strip 0,1) | 713 ms | 46 ms |
+| Reconstruction d'un aperçu 17×17 | — | 5,3 ms |
+
+Justification : les signatures ne sont que des moyennes de larges bandes, et l'erreur
+introduite par la réduction est inférieure à 0,3 niveau de couleur sur 255. À l'export
+seulement, les cartes d'origine sont relues depuis le disque.
+
+Cette seule décision divise l'empreinte mémoire par **16** et rend simultanément
+possibles l'aperçu temps réel des réglages et le défilement fluide de la timeline.
+
+✅ **Export en pleine résolution** d'impression : réassemblage à partir des cartes
+d'origine, alors que la timeline n'affiche que des aperçus légers.
+✅ **Option d'export de la version aperçu** en plus : l'image pleine résolution étant
+très lourde, une version légère est bien plus commode dès qu'on ne veut pas imprimer.
+
+✅ **Cadence des snapshots : par échanges retenus.** 1 époque = N échanges
+effectivement acceptés, et non N tentatives. Sur le run mesuré (822 échanges pour
+300 000 tentatives), cela donne ~82 snapshots bien répartis du début à la fin,
+chacun montrant un changement réellement visible.
+
+✅ **Contrôle complet de l'exécution**, les quatre commandes sont retenues :
+- **Arrêter définitivement** — la timeline reste consultable, l'export reste possible.
+- **Mettre en pause et reprendre** — pour examiner la timeline tranquillement.
+- **Repartir d'un snapshot choisi** — relancer depuis un état antérieur en jetant les
+  suivants. Particulièrement utile avec un recuit simulé.
+- **Prolonger après la fin** — demander des étapes supplémentaires sans recommencer.
+
+✅ **Snapshots temporaires** : ils vivent le temps de la session et sont jetés à la
+fermeture, cohérent avec « l'utilisateur choisit l'image à garder, les autres sont
+jetées ».
+
+✅ **Formats d'export : PNG, JPEG (qualité réglable) et PDF.** Le PDF porte les
+dimensions physiques et le DPI, ce qui lève toute ambiguïté chez l'imprimeur ; le
+JPEG reste bien plus léger que le PNG à cette taille.
+
+---
+
+## 7. Points hérités à traiter
+
+Repris du diagnostic du code existant, ils deviennent structurants pour l'app :
+
+- La forme de grille actuelle dépend de la factorisation première du nombre de cartes
+  (281 cartes ⇒ bande 281×1). L'étape 2 rend la grille explicite, ce qui **supprime
+  ce problème** — mais impose de décider quoi faire des cases vides.
+- La transparence des cartes RGBA est aujourd'hui ignorée silencieusement.
+- Le stockage partagé des ~350 Mo d'images entre plusieurs machines reste à définir
+  (voir `TODO.md`).
+
+---
+
+## 8. Journal des décisions
+
+| Date | Décision |
+|---|---|
+| 2026-08-16 | Objectif poster confirmé ; forme exécutable + UI en 3 étapes actée ; définition avant technologies |
+| 2026-08-16 | Étape 2 : le format d'impression est la grandeur maître, la taille des cartes en découle |
+| 2026-08-16 | Export multi-panneaux retenu comme vraie fonction (N fichiers) |
+| 2026-08-16 | Cases vides autorisées, placées manuellement par l'utilisateur, et **figées** pendant toute l'optimisation |
+| 2026-08-16 | Liens créables et modifiables par l'utilisateur, avec une liste par défaut reprise du code actuel |
+| 2026-08-16 | Les 4 seuils retenus ; export pleine résolution **et** version aperçu |
+| 2026-08-16 | Cadence des snapshots par **échanges retenus**, pas par tentatives |
+| 2026-08-16 | Contrôle d'exécution complet : stop, pause/reprise, reprise depuis un snapshot, prolongation |
+| 2026-08-16 | Cartes collées sans marge en v1 ; liens verticaux, blocs rectangulaires et cartes à coordonnées fixes reportés après v1 |
+| 2026-08-16 | Marge automatique pour absorber l'écart de format (ni déformation ni rognage) |
+| 2026-08-16 | Snapshots temporaires ; export PNG + JPEG + PDF |
+| 2026-08-16 | Usage personnel d'abord, mais framework multiplateforme et dossier de cartes configurable **dès le départ** |
+| 2026-08-16 | Préréglages nommés pour la configuration complète |
+| 2026-08-16 | Découpage sur bords de cartes, avec chevauchement réglable et repères de coupe |
+| 2026-08-16 | Réglages séparés en « de base » et « avancés » |
+| 2026-08-16 | Interface bilingue FR/EN — à prévoir dès le départ |
+| 2026-08-16 | Cases vides réparties automatiquement par défaut, ajustables à la main |
+| 2026-08-16 | Ordre d'un lien **optionnel, lien par lien** (case « ordre imposé ») |
+| 2026-08-16 | Liens dans une **bibliothèque séparée** ; un préréglage ne mémorise que les liens actifs |
+| 2026-08-16 | DPI à 300 par défaut, modifiable, avec alerte au plafond utile ; placé à l'étape 2 |
+| 2026-08-16 | Grilles conservées sans purge, mais **aperçus reconstruits à la demande** (pas de cache complet) |
+| 2026-08-16 | Répartition base/avancés validée ; l'épaisseur des bandes reste en avancé mais gagne un aperçu |
+| 2026-08-16 | **Principe général : tout réglage dont l'effet est montrable reçoit un aperçu temps réel** |
+| 2026-08-16 | **Architecture : travail sur vignettes à 25 %**, pleine résolution réservée à l'export (562 Mo → 35 Mo) |

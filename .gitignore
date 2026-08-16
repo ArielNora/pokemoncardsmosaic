@@ -1,0 +1,19 @@
+# --- Données ---
+# Les cartes (~350 Mo de PNG) ne sont pas versionnées.
+# Voir README.md > Données pour savoir où les placer.
+data/
+
+# Sorties générées (mosaïques, jusqu'à ~200 Mpx par image)
+output/
+
+# --- Python ---
+__pycache__/
+*.py[cod]
+.venv/
+venv/
+*.egg-info/
+.pytest_cache/
+.ruff_cache/
+
+# --- macOS ---
+.DS_Store
