@@ -101,7 +101,22 @@ uv run pokemon-mosaic --iterations 50000 --preview-percent 25
 | `--output-dir` | `output/` | Où écrire la mosaïque |
 | `--iterations` | `1000000` | Itérations d'optimisation |
 | `--strip-size` | `0.1` | Épaisseur des bandes de bord (fraction) |
+| `--grid` | auto | Grille explicite, ex. `17x17` |
+| `--free-order` | non | Autoriser l'optimiseur à retourner les cartes liées |
+| `--full-resolution` | non | Exporter en pleine résolution |
 | `--preview-percent` | `15` | Taille de l'aperçu réduit |
+
+Avec `--grid`, les cases excédentaires deviennent des **cases vides figées**,
+réparties régulièrement et jamais déplacées par l'optimisation. L'app annonce alors
+combien de cartes ajouter pour remplir exactement la grille :
+
+```bash
+uv run pokemon-mosaic --grid 17x17
+```
+```
+280 cartes pour 289 cases (17×17) : il restera 9 cases vides.
+Ajoutez 9 cartes pour remplir la grille.
+```
 
 Compter environ **30 s de chargement** des cartes, puis le temps d'optimisation
 (~3000 itérations/s). Les sorties vont dans `output/`, non versionné.
@@ -111,6 +126,8 @@ Compter environ **30 s de chargement** des cartes, puis le temps d'optimisation
 ```
 src/pokemon_mosaic/
 ├── cards.py      chargement en vignettes, signatures de bord
+├── links.py      liens entre cartes et bibliothèque de liens
+├── layout.py     formats d'impression, ajustement, cases vides
 ├── grid.py       dimensionnement de la grille, rendu
 ├── scoring.py    matrices de distances, score global et local
 ├── optimize.py   hill climbing, blocs imposés, cases figées

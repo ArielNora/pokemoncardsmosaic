@@ -7,6 +7,8 @@ from pathlib import Path
 from .cards import DEFAULT_SCALE, DEFAULT_STRIP_SIZE, load_cards
 from .grid import save_grid_image
 from .imaging import print_image_properties, resize_and_save
+from .layout import GridFit, distribute_empty_cells
+from .links import LinkLibrary, resolve_links
 from .optimize import generate_grid
 
 # Racine du dépôt : src/pokemon_mosaic/cli.py -> remonter de trois niveaux
@@ -43,6 +45,11 @@ def parse_args(argv=None) -> argparse.Namespace:
                         help="Échelle des vignettes de travail (défaut : %(default)s)")
     parser.add_argument("--full-resolution", action="store_true",
                         help="Exporter en pleine résolution (relit chaque carte du disque)")
+    parser.add_argument("--grid", type=str, default=None, metavar="COLSxROWS",
+                        help="Grille explicite, ex. 17x17. Les cases en trop sont "
+                             "laissées vides et figées.")
+    parser.add_argument("--free-order", action="store_true",
+                        help="Autoriser l'optimiseur à retourner les cartes liées")
     parser.add_argument("--preview-percent", type=int, default=15,
                         help="Taille de l'aperçu réduit, en %% (défaut : %(default)s)")
     return parser.parse_args(argv)
@@ -70,17 +77,34 @@ def main(argv=None) -> int:
           f"— vignettes {cards.thumb_size[0]}x{cards.thumb_size[1]}, {thumb_mb:.0f} Mo "
           f"(pleine résolution : {cards.full_size[0]}x{cards.full_size[1]})")
 
-    # Un groupe n'est retenu que si toutes ses cartes ont été trouvées.
-    hard_groups = []
-    for pair in DEFAULT_PAIRS:
-        indices = [cards.find(fragment) for fragment in pair]
-        if all(idx is not None for idx in indices):
-            hard_groups.append(indices)
-        else:
-            missing = [f for f, idx in zip(pair, indices) if idx is None]
-            print(f"Groupe ignoré, carte(s) introuvable(s) : {', '.join(missing)}")
+    # Un lien n'est retenu que si toutes ses cartes ont été trouvées.
+    links = LinkLibrary()
+    missing = resolve_links(links, cards.find, DEFAULT_PAIRS, ordered=not args.free_order)
+    if missing:
+        print(f"Lien ignoré, carte(s) introuvable(s) : {', '.join(missing)}")
+    print(f"{len(links)} lien(s) actif(s)"
+          f"{' — ordre libre' if args.free_order else ''}")
 
-    grid = generate_grid(cards, hard_groups, iterations=args.iterations)
+    # Grille explicite : les cases excédentaires deviennent des cases vides figées,
+    # réparties régulièrement.
+    shape, empty_cells = None, ()
+    if args.grid:
+        try:
+            cols, rows = (int(v) for v in args.grid.lower().split("x"))
+        except ValueError:
+            print(f"Grille illisible : {args.grid} (attendu COLSxROWS, ex. 17x17)")
+            return 1
+        fit = GridFit(cols=cols, rows=rows, card_count=len(cards))
+        print(fit.message())
+        if fit.surplus:
+            return 1
+        shape = (cols, rows)
+        empty_cells = distribute_empty_cells((rows, cols), fit.empty_cells)
+
+    grid = generate_grid(
+        cards, links, iterations=args.iterations,
+        shape=shape, empty_cells=empty_cells,
+    )
 
     output_path = args.output_dir / f"mosaic_{args.iterations // 1000}k.png"
     save_grid_image(grid, cards, str(output_path), full_resolution=args.full_resolution)

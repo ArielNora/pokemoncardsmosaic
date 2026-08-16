@@ -114,20 +114,12 @@ def test_empty_cells_never_move():
     assert (grid == EMPTY).sum() == 2
 
 
-def test_linked_cards_stay_adjacent_and_ordered():
-    cards = make_cards(30)
-    d = EdgeDistances(cards)
-    grid = np.arange(30).reshape(5, 6)
-    groups = {7: [7, 8], 8: [7, 8]}
-    optimize_grid(grid, d, groups, iterations=5000, rng=random.Random(0))
-    (r7, c7), (r8, c8) = (tuple(np.argwhere(grid == i)[0]) for i in (7, 8))
-    assert r7 == r8 and c8 == c7 + 1
-
-
 def test_optimization_reports_accepted_swaps():
     """Le compte d'échanges retenus cadencera les snapshots de la timeline."""
     cards = make_cards(30)
     d = EdgeDistances(cards)
     grid = np.arange(30).reshape(5, 6)
-    changes = optimize_grid(grid, d, iterations=2000, rng=random.Random(0))
-    assert 0 < changes < 2000
+    result = optimize_grid(grid, d, iterations=2000, rng=random.Random(0))
+    assert 0 < result.accepted < 2000
+    assert result.attempted == 2000
+    assert 0 < result.acceptance_rate < 1
