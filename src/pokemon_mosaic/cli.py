@@ -4,12 +4,14 @@ import argparse
 import time
 from pathlib import Path
 
+from .annealing import Annealing
 from .cards import DEFAULT_SCALE, DEFAULT_STRIP_SIZE, load_cards
 from .grid import save_grid_image
 from .imaging import print_image_properties, resize_and_save
 from .layout import GridFit, distribute_empty_cells
 from .links import LinkLibrary, resolve_links
-from .optimize import generate_grid
+from .optimize import StopConditions, generate_grid
+from .timeline import Timeline
 
 # Racine du dépôt : src/pokemon_mosaic/cli.py -> remonter de trois niveaux
 REPO_ROOT = Path(__file__).resolve().parents[2]
@@ -50,6 +52,22 @@ def parse_args(argv=None) -> argparse.Namespace:
                              "laissées vides et figées.")
     parser.add_argument("--free-order", action="store_true",
                         help="Autoriser l'optimiseur à retourner les cartes liées")
+
+    algo = parser.add_argument_group("algorithme")
+    algo.add_argument("--annealing", action="store_true",
+                      help="Recuit simulé au lieu de la descente stricte : plus lent à "
+                           "converger, mais dépasse le plateau de la descente")
+    algo.add_argument("--acceptance", type=float, default=0.5, metavar="P",
+                      help="Proportion de coups dégradants acceptés au départ "
+                           "(défaut : %(default)s)")
+    algo.add_argument("--target-score", type=float, default=None,
+                      help="Arrêter dès que le score passe sous cette valeur")
+    algo.add_argument("--stagnation", type=int, default=None, metavar="N",
+                      help="Arrêter après N itérations sans amélioration")
+    algo.add_argument("--time-budget", type=float, default=None, metavar="SECONDES",
+                      help="Arrêter après ce temps de calcul")
+    algo.add_argument("--snapshot-every", type=int, default=None, metavar="N",
+                      help="Enregistrer un cliché tous les N échanges retenus")
     parser.add_argument("--preview-percent", type=int, default=15,
                         help="Taille de l'aperçu réduit, en %% (défaut : %(default)s)")
     return parser.parse_args(argv)
@@ -104,6 +122,14 @@ def main(argv=None) -> int:
     grid = generate_grid(
         cards, links, iterations=args.iterations,
         shape=shape, empty_cells=empty_cells,
+        annealing=Annealing(initial_acceptance=args.acceptance) if args.annealing else None,
+        stop=StopConditions(
+            max_iterations=args.iterations,
+            target_score=args.target_score,
+            stagnation_iterations=args.stagnation,
+            time_budget=args.time_budget,
+        ),
+        timeline=Timeline(every=args.snapshot_every) if args.snapshot_every else None,
     )
 
     output_path = args.output_dir / f"mosaic_{args.iterations // 1000}k.png"

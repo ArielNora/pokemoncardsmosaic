@@ -1,5 +1,6 @@
 """Génération de mosaïques de cartes Pokémon par appariement des couleurs de bord."""
 
+from .annealing import Annealing
 from .cards import Card, CardSet, load_cards, load_full_image
 from .grid import calculate_grid_dims, render_grid, save_grid_image
 from .layout import (
@@ -14,16 +15,19 @@ from .layout import (
 from .links import Link, LinkLibrary, resolve_links
 from .optimize import (
     OptimizationResult,
+    StopConditions,
     build_initial_grid,
     generate_grid,
     optimize_grid,
 )
 from .scoring import EMPTY, EdgeDistances, grid_score, local_score
+from .timeline import Snapshot, Timeline
 
 __version__ = "0.1.0"
 
 __all__ = [
     "EMPTY",
+    "Annealing",
     "Card",
     "CardSet",
     "EdgeDistances",
@@ -32,6 +36,9 @@ __all__ = [
     "Link",
     "LinkLibrary",
     "OptimizationResult",
+    "Snapshot",
+    "StopConditions",
+    "Timeline",
     "build_initial_grid",
     "calculate_grid_dims",
     "card_pixel_size",

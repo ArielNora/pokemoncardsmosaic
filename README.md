@@ -106,6 +106,41 @@ uv run pokemon-mosaic --iterations 50000 --preview-percent 25
 | `--full-resolution` | non | Exporter en pleine résolution |
 | `--preview-percent` | `15` | Taille de l'aperçu réduit |
 
+### Recuit simulé
+
+La descente stricte n'accepte jamais un échange qui dégrade le score, et plafonne
+donc dans un minimum local. Le recuit en accepte parfois un, avec une probabilité qui
+décroît au fil du calcul :
+
+```bash
+uv run pokemon-mosaic --annealing --iterations 1000000
+```
+
+| Itérations | Descente stricte | Recuit simulé |
+|---|---|---|
+| 50 000 | 56,3 % | **59,4 %** |
+| 200 000 | 59,5 % | **64,8 %** |
+| 1 000 000 | 61,0 % | **67,5 %** |
+
+L'écart se creuse avec la durée : plus le recuit a de temps, plus il prend l'avantage.
+La température se calibre toute seule à partir de l'ampleur réelle des dégradations —
+le seul réglage exposé est `--acceptance`, la proportion de coups dégradants acceptés
+au démarrage.
+
+### Seuils d'arrêt et timeline
+
+```bash
+uv run pokemon-mosaic --annealing --stagnation 50000 --time-budget 30 --snapshot-every 10
+```
+
+`--target-score`, `--stagnation`, `--time-budget` arrêtent le calcul dès qu'une
+condition est remplie. `--snapshot-every` enregistre l'état de la grille tous les N
+**échanges retenus** — pas toutes les N tentatives, car le taux d'acceptation varie
+de 0,3 % (descente stricte) à 8 % (recuit). La cadence s'adapte d'elle-même pour que
+la timeline reste bornée et régulièrement répartie.
+
+### Cases vides
+
 Avec `--grid`, les cases excédentaires deviennent des **cases vides figées**,
 réparties régulièrement et jamais déplacées par l'optimisation. L'app annonce alors
 combien de cartes ajouter pour remplir exactement la grille :
@@ -130,7 +165,9 @@ src/pokemon_mosaic/
 ├── layout.py     formats d'impression, ajustement, cases vides
 ├── grid.py       dimensionnement de la grille, rendu
 ├── scoring.py    matrices de distances, score global et local
-├── optimize.py   hill climbing, blocs imposés, cases figées
+├── annealing.py  recuit simulé et calibration de température
+├── timeline.py   snapshots de l'exécution
+├── optimize.py   boucle d'optimisation, contraintes, seuils d'arrêt
 ├── imaging.py    inspection et réduction des images produites
 └── cli.py        point d'entrée
 

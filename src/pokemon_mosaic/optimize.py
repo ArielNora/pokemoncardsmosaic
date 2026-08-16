@@ -8,21 +8,52 @@ Trois contraintes cohabitent :
 """
 
 import random
+import time
 from dataclasses import dataclass
 from typing import Dict, List, Optional, Sequence, Tuple
 
 import numpy as np
 
+from .annealing import Annealing
 from .cards import CardSet
 from .grid import calculate_grid_dims
 from .links import Link, LinkLibrary
 from .scoring import EMPTY, EdgeDistances, grid_score, local_score
+from .timeline import Timeline
 
 Cell = Tuple[int, int]
 
 # Probabilité de tenter un retournement sur place plutôt qu'un déplacement, quand la
 # carte tirée appartient à un lien sans ordre imposé.
 FLIP_PROBABILITY = 0.25
+
+# Les seuils d'arrêt ne sont vérifiés que tous les N tours : appeler l'horloge à
+# 127 000 itérations par seconde coûterait plus cher que l'optimisation elle-même.
+CHECK_INTERVAL = 1000
+
+
+@dataclass
+class StopConditions:
+    """Les quatre seuils d'arrêt de l'étape 3.
+
+    Tous optionnels : le premier atteint met fin au calcul. `max_iterations` reste la
+    borne dure.
+    """
+
+    max_iterations: int = 1_000_000
+    target_score: Optional[float] = None
+    stagnation_iterations: Optional[int] = None
+    time_budget: Optional[float] = None
+
+    def check(self, score: float, since_improvement: int, elapsed: float) -> Optional[str]:
+        """Renvoie la raison d'arrêter, ou None pour continuer."""
+        if self.target_score is not None and score <= self.target_score:
+            return "score atteint"
+        if self.stagnation_iterations is not None and since_improvement >= self.stagnation_iterations:
+            return "stagnation"
+        if self.time_budget is not None and elapsed >= self.time_budget:
+            return "budget de temps"
+        return None
 
 
 @dataclass
@@ -31,10 +62,21 @@ class OptimizationResult:
 
     accepted: int
     attempted: int
+    initial_score: float
+    final_score: float
+    stopped_by: str
+    elapsed: float
 
     @property
     def acceptance_rate(self) -> float:
         return self.accepted / self.attempted if self.attempted else 0.0
+
+    @property
+    def gain(self) -> float:
+        """Part du score initial effacée, entre 0 et 1."""
+        if self.initial_score <= 0:
+            return 0.0
+        return (self.initial_score - self.final_score) / self.initial_score
 
 
 def _locate_block(
@@ -84,21 +126,22 @@ def _validate_links(grid: np.ndarray, links: Dict[int, Link]) -> None:
 
 def _try_flip_in_place(
     grid: np.ndarray, cells: List[Cell], sequence: Tuple[int, ...],
-    distances: EdgeDistances,
-) -> bool:
-    """Retourne un bloc sur place et ne garde le retournement que s'il améliore."""
+    distances: EdgeDistances, accept,
+) -> Optional[float]:
+    """Retourne un bloc sur place. Renvoie le delta de score si retenu, sinon None."""
     before = local_score(cells, grid, distances)
     flipped = tuple(reversed(sequence))
 
     for k, (r, c) in enumerate(cells):
         grid[r, c] = flipped[k]
 
-    if local_score(cells, grid, distances) < before:
-        return True
+    delta = local_score(cells, grid, distances) - before
+    if accept(delta):
+        return delta
 
     for k, (r, c) in enumerate(cells):
         grid[r, c] = sequence[k]
-    return False
+    return None
 
 
 def optimize_grid(
@@ -107,27 +150,64 @@ def optimize_grid(
     links: Optional[Dict[int, Link]] = None,
     iterations: int = 50000,
     rng: Optional[random.Random] = None,
+    annealing: Optional[Annealing] = None,
+    stop: Optional[StopConditions] = None,
+    timeline: Optional[Timeline] = None,
 ) -> OptimizationResult:
-    """Descente par échanges aléatoires (hill climbing strict).
+    """Optimise la grille par échanges aléatoires.
 
     À chaque tour : on tire une case au hasard, on identifie l'objet qui s'y trouve
-    (une carte seule, ou le bloc entier auquel elle appartient), on tente de le
-    déplacer vers une zone tirée au hasard, et on annule si le score local ne
-    s'améliore pas. Aucun coup perdant n'est jamais accepté.
+    (une carte seule, ou le bloc entier auquel elle appartient), et on tente de le
+    déplacer vers une zone tirée au hasard.
 
-    `grid` est modifiée sur place. Le **nombre d'échanges retenus** rapporté est ce
-    qui cadence les snapshots de la timeline — pas le nombre de tentatives, dont le
-    taux de réussite s'effondre de 19 % à 0,3 % au fil du calcul (SPEC.md §5).
+    Sans `annealing`, c'est une **descente stricte** : aucun coup dégradant n'est
+    jamais accepté, ce qui fait plafonner le résultat dans un minimum local. Avec
+    `annealing`, un coup dégradant passe parfois, avec une probabilité qui décroît au
+    fil du calcul — et la **meilleure grille rencontrée** est restituée à la fin,
+    puisque l'état courant peut être moins bon qu'un état traversé plus tôt.
+
+    `grid` est modifiée sur place.
     """
     links = links or {}
     rng = rng or random
+    stop = stop or StopConditions(max_iterations=iterations)
     rows, cols = grid.shape
-    accepted = 0
 
     if links:
         _validate_links(grid, links)
 
-    for _ in range(iterations):
+    score = grid_score(grid, distances)
+    initial_score = score
+    best_score, best_grid = score, grid.copy()
+    accepted = 0
+    last_improvement = 0
+    iteration = -1  # défini même si `iterations` vaut 0
+    started = time.monotonic()
+    stopped_by = "itérations épuisées"
+
+    if annealing is not None:
+        temperature_0 = annealing.initial_temperature or annealing.calibrate(
+            grid, distances, rng
+        )
+
+    def accept(delta: float) -> bool:
+        if annealing is None:
+            return delta < 0
+        temperature = annealing.temperature_at(iteration / iterations, temperature_0)
+        return annealing.accepts(delta, temperature, rng)
+
+    if timeline is not None:
+        timeline.record(grid, 0, 0, score, 0.0)
+
+    for iteration in range(iterations):
+        if iteration % CHECK_INTERVAL == 0:
+            reason = stop.check(
+                best_score, iteration - last_improvement, time.monotonic() - started
+            )
+            if reason:
+                stopped_by = reason
+                break
+
         # 1. Objet source : une carte seule, ou le bloc auquel elle appartient.
         r1, c1 = rng.randrange(rows), rng.randrange(cols)
         card = int(grid[r1, c1])
@@ -144,8 +224,18 @@ def optimize_grid(
 
             # Un bloc libre de son sens peut simplement se retourner sur place.
             if not link.ordered and rng.random() < FLIP_PROBABILITY:
-                if _try_flip_in_place(grid, source, sequence, distances):
+                delta = _try_flip_in_place(grid, source, sequence, distances, accept)
+                if delta is not None:
                     accepted += 1
+                    score += delta
+                    if score < best_score:
+                        best_score, last_improvement = score, iteration
+                        best_grid = grid.copy()
+                    if timeline is not None:
+                        timeline.maybe_record(
+                            grid, iteration, accepted, score,
+                            time.monotonic() - started,
+                        )
                 continue
         else:
             sequence = (card,)
@@ -170,10 +260,42 @@ def optimize_grid(
                 break
             occupants.append(value)
         else:
-            if _try_move(grid, source, target, sequence, occupants, link, distances):
+            delta = _try_move(
+                grid, source, target, sequence, occupants, link, distances, accept
+            )
+            if delta is not None:
                 accepted += 1
+                score += delta
+                if score < best_score:
+                    best_score, last_improvement = score, iteration
+                    best_grid = grid.copy()
+                if timeline is not None:
+                    timeline.maybe_record(
+                        grid, iteration, accepted, score, time.monotonic() - started
+                    )
 
-    return OptimizationResult(accepted=accepted, attempted=iterations)
+    # Avec un recuit, l'état final peut être moins bon qu'un état traversé : on
+    # restitue la meilleure grille rencontrée.
+    if best_score < score:
+        grid[:] = best_grid
+
+    # Cliché final imposé. Sans lui, la timeline s'arrêterait avant la fin : le recuit
+    # accepte beaucoup à chaud et presque plus à froid, donc les derniers échanges
+    # n'atteignent jamais le seuil de cadence. L'état finalement retenu — celui que
+    # l'utilisateur voudra exporter — serait absent de la timeline.
+    if timeline is not None:
+        timeline.record(
+            grid, iteration + 1, accepted, best_score, time.monotonic() - started
+        )
+
+    return OptimizationResult(
+        accepted=accepted,
+        attempted=iteration + 1,
+        initial_score=initial_score,
+        final_score=best_score,
+        stopped_by=stopped_by,
+        elapsed=time.monotonic() - started,
+    )
 
 
 def _try_move(
@@ -184,11 +306,14 @@ def _try_move(
     occupants: List[int],
     link: Optional[Link],
     distances: EdgeDistances,
-) -> bool:
+    accept,
+) -> Optional[float]:
     """Tente de déplacer un objet vers la zone cible, en testant les orientations.
 
     Un lien sans ordre imposé est essayé dans les deux sens, et le meilleur est
     retenu — c'est ce qui double le nombre de placements possibles.
+
+    Renvoie le delta de score si le déplacement est retenu, sinon None.
     """
     # Les deux zones sont évaluées en un seul appel : la couture qui les sépare,
     # lorsqu'elles sont adjacentes, n'est ainsi comptée qu'une fois.
@@ -211,18 +336,21 @@ def _try_move(
         for k, (r, c) in enumerate(target):
             grid[r, c] = occupants[k]
 
-    best_score, best_order = before, None
+    # On retient la meilleure orientation disponible, puis on décide séparément si
+    # elle est acceptée : avec un recuit, même la meilleure peut être dégradante.
+    best_score, best_order = None, None
     for order in candidates:
         place(order)
         score = local_score(cells, grid, distances)
-        if score < best_score:
+        if best_score is None or score < best_score:
             best_score, best_order = score, order
         restore()
 
-    if best_order is None:
-        return False
+    delta = best_score - before
+    if not accept(delta):
+        return None
     place(best_order)
-    return True
+    return delta
 
 
 def build_initial_grid(
@@ -295,6 +423,9 @@ def generate_grid(
     shape: Optional[Tuple[int, int]] = None,
     empty_cells: Sequence[Cell] = (),
     rng: Optional[random.Random] = None,
+    annealing: Optional[Annealing] = None,
+    stop: Optional[StopConditions] = None,
+    timeline: Optional[Timeline] = None,
 ) -> np.ndarray:
     """Construit la grille, l'optimise, et rend compte de la progression."""
     if not len(cards):
@@ -307,12 +438,17 @@ def generate_grid(
     print(f"--- Grille : {grid.shape[1]}x{grid.shape[0]} ---")
     if empty_cells:
         print(f"Cases vides figées : {len(empty_cells)}")
-    print(f"Score initial : {grid_score(grid, distances):.2f}")
 
     link_map = links.group_map() if links else {}
-    result = optimize_grid(grid, distances, link_map, iterations, rng)
+    result = optimize_grid(
+        grid, distances, link_map, iterations, rng, annealing, stop, timeline
+    )
 
-    print(f"Échanges retenus : {result.accepted} "
-          f"({result.acceptance_rate * 100:.2f} % des tentatives)")
-    print(f"Score final   : {grid_score(grid, distances):.2f}")
+    print(f"Score {result.initial_score:.0f} -> {result.final_score:.0f} "
+          f"({result.gain * 100:.1f} % de gain)")
+    print(f"{result.accepted} échanges retenus sur {result.attempted:,} tentatives "
+          f"({result.acceptance_rate * 100:.2f} %) en {result.elapsed:.1f} s")
+    print(f"Arrêt : {result.stopped_by}")
+    if timeline is not None:
+        print(timeline.summary())
     return grid
