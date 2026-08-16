@@ -9,17 +9,33 @@ aperçu réduit exploitable.
 
 ## Comment ça marche
 
-1. **Uniformisation** — toutes les cartes sont redimensionnées aux dimensions de la
-   plus petite trouvée (713 × 984), pour que les tuiles soient interchangeables.
-2. **Signature** — chaque carte est résumée à 4 vecteurs BGR : la couleur moyenne
+1. **Vignettes** — chaque carte est chargée directement en vignette réduite (25 %,
+   soit 178 × 246), toutes ramenées à la taille de la plus petite carte trouvée. Les
+   images pleine résolution ne sont relues du disque qu'à l'export.
+2. **Signature** — chaque carte est résumée à 4 vecteurs RGB : la couleur moyenne
    d'une bande de 10 % en haut, en bas, à gauche et à droite. 12 nombres par carte.
-3. **Score** — le coût d'une grille est la somme, sur chaque couture, de la distance
-   euclidienne entre le bord droit d'une carte et le bord gauche de sa voisine
-   (idem verticalement). Plus bas = plus lisse.
-4. **Optimisation** — descente stricte (*hill climbing*) : on tire deux zones au
-   hasard, on échange, on ne garde que si le score local s'améliore. Le score n'est
-   recalculé que sur les coutures touchées, ce qui rend le million d'itérations
-   praticable.
+3. **Distances précalculées** — deux matrices N×N contiennent toutes les distances
+   possibles entre bords (droite↔gauche et bas↔haut). Évaluer une couture devient une
+   lecture de tableau.
+4. **Score** — le coût d'une grille est la somme, sur chaque couture, de la distance
+   entre le bord droit d'une carte et le bord gauche de sa voisine (idem
+   verticalement). Plus bas = plus lisse.
+5. **Optimisation** — descente stricte (*hill climbing*) : on tire deux zones au
+   hasard, on échange, on ne garde que si le score local s'améliore. Seules les
+   coutures touchées sont recalculées.
+
+### Pourquoi travailler sur des vignettes
+
+Les signatures ne sont que des moyennes de larges bandes, et réduire une image *est*
+déjà un moyennage. L'erreur introduite est inférieure à **0,3 niveau de couleur sur
+255**, pour des gains considérables :
+
+| | Pleine résolution | Vignettes 25 % |
+|---|---|---|
+| Mémoire pour 280 cartes | 562 Mo | **35 Mo** |
+| Chargement | ~30 s | **3,7 s** |
+| Optimisation | 24 000 it/s | **127 000 it/s** |
+| Rendu d'un aperçu | — | **5 ms** |
 
 ### Groupes imposés
 
@@ -35,6 +51,14 @@ Nécessite Python 3.13 et [uv](https://docs.astral.sh/uv/).
 
 ```bash
 uv sync
+```
+
+Le socle est volontairement minimal — **numpy et Pillow seulement**, soit 47 Mo. Pour
+relancer les scripts de `experiments/`, qui dépendent encore d'opencv, scipy et
+scikit-learn :
+
+```bash
+uv sync --extra experiments
 ```
 
 ## Données
@@ -86,14 +110,21 @@ Compter environ **30 s de chargement** des cartes, puis le temps d'optimisation
 
 ```
 src/pokemon_mosaic/
-├── cards.py      chargement, redimensionnement, signatures de bord
-├── grid.py       dimensionnement de la grille, rendu final
-├── scoring.py    score global et score local (coutures)
-├── optimize.py   hill climbing et gestion des blocs imposés
+├── cards.py      chargement en vignettes, signatures de bord
+├── grid.py       dimensionnement de la grille, rendu
+├── scoring.py    matrices de distances, score global et local
+├── optimize.py   hill climbing, blocs imposés, cases figées
 ├── imaging.py    inspection et réduction des images produites
 └── cli.py        point d'entrée
 
+tests/            tests du cœur de calcul
 experiments/      approches alternatives, conservées mais non maintenues
+```
+
+Tests :
+
+```bash
+uv run --extra dev pytest
 ```
 
 ### experiments/
@@ -117,11 +148,13 @@ Documentées dans le code, non corrigées à ce stade — voir [TODO.md](TODO.md
 
 - **La forme de la grille dépend de la factorisation du nombre de cartes.** 280 donne
   20×14, mais 281 est premier et donnerait une bande 281×1 de 200 000 px de large.
-  C'est la seule raison pour laquelle une carte est exclue par défaut.
+  C'est la seule raison pour laquelle une carte est exclue par défaut. L'application
+  à venir rendra la grille explicite et autorisera les cases vides, ce qui supprime
+  le problème.
 - **La transparence est ignorée.** La majorité des cartes sont en RGBA et certaines
-  ont de la vraie transparence, que `cv2.imread` écarte silencieusement.
-- **Indices fragiles.** Si une carte échoue au redimensionnement, son indice se
-  désynchronise de sa position dans la liste, alors que tout le code indexe par
-  indice.
-- **Une couture comptée deux fois** dans le delta quand les deux zones échangées sont
-  adjacentes.
+  ont de la vraie transparence, écartée sans composition sur un fond.
+
+Deux limitations précédentes ont disparu avec la refonte du cœur : les indices ne
+peuvent plus se désynchroniser (ils sont attribués à l'insertion), et la couture
+partagée entre deux zones échangées n'est plus comptée deux fois (les deux zones sont
+évaluées en un seul appel).

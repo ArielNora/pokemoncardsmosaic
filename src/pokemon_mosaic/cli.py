@@ -1,12 +1,13 @@
-"""Point d'entrée : génère la mosaïque et sa version réduite."""
+"""Point d'entrée en ligne de commande : génère la mosaïque et sa version réduite."""
 
 import argparse
+import time
 from pathlib import Path
 
-from .cards import find_index, load_and_process_images
+from .cards import DEFAULT_SCALE, DEFAULT_STRIP_SIZE, load_cards
 from .grid import save_grid_image
 from .imaging import print_image_properties, resize_and_save
-from .optimize import generate_hard_constrained_grid
+from .optimize import generate_grid
 
 # Racine du dépôt : src/pokemon_mosaic/cli.py -> remonter de trois niveaux
 REPO_ROOT = Path(__file__).resolve().parents[2]
@@ -21,10 +22,10 @@ DEFAULT_REMOVE_LIST = ("pokemoncards/serie_B/0_promo/pikachu.png",)
 
 # Cartes à garder côte à côte, dans l'ordre indiqué.
 DEFAULT_PAIRS = (
-    ("pokemoncards/serie_A/6_gardiens_astraux/solgaleo.png",
-     "pokemoncards/serie_A/6_gardiens_astraux/lunala.png"),
-    ("pokemoncards/serie_A/10_source_secrete/entei.png",
-     "pokemoncards/serie_A/10_source_secrete/raikou.png"),
+    ("serie_A/6_gardiens_astraux/solgaleo.png",
+     "serie_A/6_gardiens_astraux/lunala.png"),
+    ("serie_A/10_source_secrete/entei.png",
+     "serie_A/10_source_secrete/raikou.png"),
 )
 
 
@@ -36,8 +37,12 @@ def parse_args(argv=None) -> argparse.Namespace:
                         help="Dossier de sortie (défaut : %(default)s)")
     parser.add_argument("--iterations", type=int, default=DEFAULT_ITERATIONS,
                         help="Itérations d'optimisation (défaut : %(default)s)")
-    parser.add_argument("--strip-size", type=float, default=0.1,
+    parser.add_argument("--strip-size", type=float, default=DEFAULT_STRIP_SIZE,
                         help="Épaisseur des bandes de bord, en fraction (défaut : %(default)s)")
+    parser.add_argument("--scale", type=float, default=DEFAULT_SCALE,
+                        help="Échelle des vignettes de travail (défaut : %(default)s)")
+    parser.add_argument("--full-resolution", action="store_true",
+                        help="Exporter en pleine résolution (relit chaque carte du disque)")
     parser.add_argument("--preview-percent", type=int, default=15,
                         help="Taille de l'aperçu réduit, en %% (défaut : %(default)s)")
     return parser.parse_args(argv)
@@ -51,35 +56,41 @@ def main(argv=None) -> int:
         print("Voir la section « Données » du README.")
         return 1
 
-    parts, _ = load_and_process_images(
-        str(args.data_dir), DEFAULT_REMOVE_LIST, strip_size=args.strip_size
+    start = time.time()
+    cards = load_cards(
+        str(args.data_dir), DEFAULT_REMOVE_LIST,
+        scale=args.scale, strip_size=args.strip_size,
     )
-    if not parts:
+    if not len(cards):
         print("Aucune carte chargée.")
         return 1
-    print(f"{len(parts)} cartes chargées.")
+
+    thumb_mb = sum(c.thumbnail.nbytes for c in cards) / 1024 / 1024
+    print(f"{len(cards)} cartes chargées en {time.time() - start:.1f} s "
+          f"— vignettes {cards.thumb_size[0]}x{cards.thumb_size[1]}, {thumb_mb:.0f} Mo "
+          f"(pleine résolution : {cards.full_size[0]}x{cards.full_size[1]})")
 
     # Un groupe n'est retenu que si toutes ses cartes ont été trouvées.
     hard_groups = []
     for pair in DEFAULT_PAIRS:
-        indices = [find_index(parts, fragment) for fragment in pair]
+        indices = [cards.find(fragment) for fragment in pair]
         if all(idx is not None for idx in indices):
             hard_groups.append(indices)
         else:
             missing = [f for f, idx in zip(pair, indices) if idx is None]
             print(f"Groupe ignoré, carte(s) introuvable(s) : {', '.join(missing)}")
 
-    grid = generate_hard_constrained_grid(parts, hard_groups, iterations=args.iterations)
+    grid = generate_grid(cards, hard_groups, iterations=args.iterations)
 
-    name = f"mosaic_{args.iterations // 1000}k.png"
-    output_path = args.output_dir / name
-    save_grid_image(grid, parts, str(output_path))
+    output_path = args.output_dir / f"mosaic_{args.iterations // 1000}k.png"
+    save_grid_image(grid, cards, str(output_path), full_resolution=args.full_resolution)
 
     print_image_properties(str(output_path))
-    preview_path = output_path.with_name(
-        f"{output_path.stem}_preview{args.preview_percent}pct.png"
-    )
-    resize_and_save(str(output_path), str(preview_path), percent=args.preview_percent)
+    if args.preview_percent != 100:
+        preview = output_path.with_name(
+            f"{output_path.stem}_preview{args.preview_percent}pct.png"
+        )
+        resize_and_save(str(output_path), str(preview), percent=args.preview_percent)
 
     return 0
 

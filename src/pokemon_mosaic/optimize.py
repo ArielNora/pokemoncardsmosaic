@@ -1,153 +1,164 @@
 """Construction et optimisation de la grille, avec groupes de cartes indissociables."""
 
 import random
-from typing import Dict, List, Sequence
+from typing import Dict, List, Optional, Sequence
 
 import numpy as np
 
-from .cards import ImagePart
+from .cards import CardSet
 from .grid import calculate_grid_dims
-from .scoring import calculate_grid_mismatch_score, get_local_score_for_cells
+from .scoring import EMPTY, EdgeDistances, grid_score, local_score
 
 
-def optimize_groups(
-    grid_indices: np.ndarray,
-    image_parts: Sequence[ImagePart],
-    img_to_group: Dict[int, List[int]],
+def optimize_grid(
+    grid: np.ndarray,
+    distances: EdgeDistances,
+    img_to_group: Optional[Dict[int, List[int]]] = None,
     iterations: int = 50000,
-) -> np.ndarray:
+    rng: Optional[random.Random] = None,
+) -> int:
     """Descente par échanges aléatoires (hill climbing strict).
 
-    À chaque tour : on tire une case au hasard, on identifie l'objet qui s'y
-    trouve (une carte seule, ou le bloc entier auquel elle appartient), on tente
-    de le déplacer vers une zone tirée au hasard, et on annule si le score local
-    ne s'améliore pas. Aucun coup perdant n'est jamais accepté.
+    `grid` est modifiée sur place ; la fonction renvoie le **nombre d'échanges
+    retenus**. C'est cette grandeur, et non le nombre de tentatives, qui cadencera
+    les snapshots de la timeline (voir SPEC.md §5).
 
-    Les groupes durs sont préservés par construction : un bloc ne se déplace que
-    d'un seul tenant, et uniquement vers une zone composée exclusivement de
-    cartes libres — ce qui évite d'avoir à gérer des blocs qui s'entrechoquent.
+    À chaque tour : on tire une case au hasard, on identifie l'objet qui s'y trouve
+    (une carte seule, ou le bloc entier auquel elle appartient), on tente de le
+    déplacer vers une zone tirée au hasard, et on annule si le score local ne
+    s'améliore pas. Aucun coup perdant n'est jamais accepté.
+
+    Les groupes sont préservés par construction : un bloc ne se déplace que d'un seul
+    tenant, et uniquement vers une zone composée exclusivement de cartes libres.
+
+    Les cases vides (`EMPTY`) sont figées : elles ne sont jamais choisies comme source
+    et jamais recouvertes.
     """
-    rows, cols = grid_indices.shape
-    print(f"Optimisation ({iterations} itérations)...")
+    img_to_group = img_to_group or {}
+    rng = rng or random
+    rows, cols = grid.shape
     changes = 0
 
-    for i in range(iterations):
+    for _ in range(iterations):
         # 1. Objet source
-        r1, c1 = random.randint(0, rows - 1), random.randint(0, cols - 1)
-        idx1 = grid_indices[r1, c1]
-        if idx1 == -1:
+        r1, c1 = rng.randrange(rows), rng.randrange(cols)
+        idx1 = grid[r1, c1]
+        if idx1 == EMPTY:
             continue
 
         if idx1 in img_to_group:
-            group_a = img_to_group[idx1]
-            # Le bloc est posé horizontalement et dans l'ordre : on remonte à sa
-            # tête par simple décalage plutôt qu'en balayant la ligne.
-            head_c = c1 - group_a.index(idx1)
-            if head_c < 0 or head_c + len(group_a) > cols:
+            group = img_to_group[idx1]
+            # Le bloc est posé horizontalement et dans l'ordre : on remonte à sa tête
+            # par simple décalage plutôt qu'en balayant la ligne.
+            head_c = c1 - group.index(idx1)
+            if head_c < 0 or head_c + len(group) > cols:
                 continue
-            coords_a = [(r1, head_c + k) for k in range(len(group_a))]
-            if any(grid_indices[rr, cc] != group_a[k] for k, (rr, cc) in enumerate(coords_a)):
+            source = [(r1, head_c + k) for k in range(len(group))]
+            if any(grid[r, c] != group[k] for k, (r, c) in enumerate(source)):
                 continue
         else:
-            group_a = [idx1]
-            coords_a = [(r1, c1)]
+            group = [int(idx1)]
+            source = [(r1, c1)]
 
         # 2. Zone cible, de même largeur que l'objet source
-        r2, c2 = random.randint(0, rows - 1), random.randint(0, cols - 1)
-        if (r2, c2) in coords_a:
+        r2, c2 = rng.randrange(rows), rng.randrange(cols)
+        if c2 + len(group) > cols:
             continue
-        if c2 + len(group_a) > cols:
-            continue
-
-        coords_b = [(r2, c2 + k) for k in range(len(group_a))]
-        if any(cell in coords_a for cell in coords_b):
+        target = [(r2, c2 + k) for k in range(len(group))]
+        if any(cell in source for cell in target):
             continue
 
-        # La cible ne doit contenir que des cartes libres : on ne casse pas un
-        # autre bloc pour faire de la place.
-        indices_b = []
-        for rr, cc in coords_b:
-            t_idx = grid_indices[rr, cc]
-            if t_idx == -1 or t_idx in img_to_group:
+        # La cible ne doit contenir que des cartes libres : on ne casse pas un autre
+        # bloc, et on ne recouvre pas une case vide figée.
+        occupants = []
+        for r, c in target:
+            value = grid[r, c]
+            if value == EMPTY or value in img_to_group:
                 break
-            indices_b.append(t_idx)
+            occupants.append(int(value))
         else:
-            score_before = get_local_score_for_cells(coords_a, grid_indices, image_parts) + \
-                           get_local_score_for_cells(coords_b, grid_indices, image_parts)
+            # Un seul appel couvrant les deux zones : la couture qui les sépare,
+            # lorsqu'elles sont adjacentes, n'est ainsi comptée qu'une fois.
+            cells = source + target
+            before = local_score(cells, grid, distances)
 
-            for k, (rr, cc) in enumerate(coords_b):
-                grid_indices[rr, cc] = group_a[k]
-            for k, (rr, cc) in enumerate(coords_a):
-                grid_indices[rr, cc] = indices_b[k]
+            for k, (r, c) in enumerate(target):
+                grid[r, c] = group[k]
+            for k, (r, c) in enumerate(source):
+                grid[r, c] = occupants[k]
 
-            score_after = get_local_score_for_cells(coords_a, grid_indices, image_parts) + \
-                          get_local_score_for_cells(coords_b, grid_indices, image_parts)
-
-            if score_after >= score_before:
-                for k, (rr, cc) in enumerate(coords_a):
-                    grid_indices[rr, cc] = group_a[k]
-                for k, (rr, cc) in enumerate(coords_b):
-                    grid_indices[rr, cc] = indices_b[k]
+            if local_score(cells, grid, distances) >= before:
+                for k, (r, c) in enumerate(source):
+                    grid[r, c] = group[k]
+                for k, (r, c) in enumerate(target):
+                    grid[r, c] = occupants[k]
             else:
                 changes += 1
 
-        if i % 10000 == 0 and i > 0:
-            print(f"  Itération {i} : {changes} échanges retenus...")
-
-    print(f"Optimisation terminée. {changes} échanges.")
-    return grid_indices
+    return changes
 
 
-def generate_hard_constrained_grid(
-    image_parts: Sequence[ImagePart],
+def build_initial_grid(
+    cards: CardSet,
+    shape: Optional[tuple] = None,
     hard_groups: Sequence[Sequence[int]] = (),
-    iterations: int = 500000,
+    rng: Optional[random.Random] = None,
 ) -> np.ndarray:
-    """Construit la grille : pose les blocs, remplit le reste, puis optimise.
+    """Pose les blocs imposés, puis remplit le reste avec les cartes libres."""
+    rng = rng or random
+    grid_cols, grid_rows = shape or calculate_grid_dims(len(cards))
+    grid = np.full((grid_rows, grid_cols), EMPTY, dtype=int)
 
-    `hard_groups` liste des groupes de cartes à garder côte à côte
-    horizontalement, dans l'ordre donné (ex. [[solgaleo, lunala]]).
-    """
-    if not image_parts:
-        return np.array([])
-
-    print(f"Grille pour {len(image_parts)} cartes et {len(hard_groups)} groupe(s) imposé(s).")
-    grid_cols, grid_rows = calculate_grid_dims(len(image_parts))
-    print(f"--- Grille : {grid_cols}x{grid_rows} ---")
-
-    img_to_group: Dict[int, List[int]] = {}
-    for grp in hard_groups:
-        for idx in grp:
-            img_to_group[idx] = list(grp)
-
-    used_indices = set()
-    grid_indices = np.full((grid_rows, grid_cols), -1, dtype=int)
-
-    # 1. Les blocs d'abord, posés à la suite en partant du coin haut-gauche
-    print("Placement des groupes imposés...")
-    current_r, current_c = 0, 0
-    for grp in hard_groups:
-        while current_r < grid_rows:
-            if current_c + len(grp) <= grid_cols:
-                for k, img_idx in enumerate(grp):
-                    grid_indices[current_r, current_c + k] = img_idx
-                    used_indices.add(img_idx)
-                current_c += len(grp)
+    used = set()
+    r, c = 0, 0
+    for group in hard_groups:
+        while r < grid_rows:
+            if c + len(group) <= grid_cols:
+                for k, idx in enumerate(group):
+                    grid[r, c + k] = idx
+                    used.add(idx)
+                c += len(group)
                 break
-            current_r += 1
-            current_c = 0
+            r, c = r + 1, 0
 
-    # 2. Les cartes libres remplissent le reste, dans un ordre aléatoire
-    print("Remplissage des cartes libres...")
-    available = [p.original_index for p in image_parts if p.original_index not in used_indices]
-    random.shuffle(available)
+    available = [card.index for card in cards if card.index not in used]
+    rng.shuffle(available)
     for r in range(grid_rows):
         for c in range(grid_cols):
-            if grid_indices[r, c] == -1 and available:
-                grid_indices[r, c] = available.pop()
+            if grid[r, c] == EMPTY and available:
+                grid[r, c] = available.pop()
 
-    print(f"Score initial : {calculate_grid_mismatch_score(grid_indices, image_parts):.2f}")
-    grid_indices = optimize_groups(grid_indices, image_parts, img_to_group, iterations=iterations)
-    print(f"Score final   : {calculate_grid_mismatch_score(grid_indices, image_parts):.2f}")
+    return grid
 
-    return grid_indices
+
+def generate_grid(
+    cards: CardSet,
+    hard_groups: Sequence[Sequence[int]] = (),
+    iterations: int = 500000,
+    shape: Optional[tuple] = None,
+    rng: Optional[random.Random] = None,
+) -> np.ndarray:
+    """Construit la grille, l'optimise, et rend compte de la progression."""
+    if not len(cards):
+        return np.array([])
+
+    distances = EdgeDistances(cards.cards)
+    print(f"Matrices de distances : {distances.nbytes / 1024 / 1024:.1f} Mo")
+
+    grid = build_initial_grid(cards, shape, hard_groups, rng)
+    print(f"--- Grille : {grid.shape[1]}x{grid.shape[0]} ---")
+    print(f"Score initial : {grid_score(grid, distances):.2f}")
+
+    changes = optimize_grid(grid, distances, _group_map(hard_groups), iterations, rng)
+
+    print(f"Échanges retenus : {changes}")
+    print(f"Score final   : {grid_score(grid, distances):.2f}")
+    return grid
+
+
+def _group_map(hard_groups: Sequence[Sequence[int]]) -> Dict[int, List[int]]:
+    mapping: Dict[int, List[int]] = {}
+    for group in hard_groups:
+        for idx in group:
+            mapping[idx] = list(group)
+    return mapping
