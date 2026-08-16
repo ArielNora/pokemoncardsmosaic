@@ -48,7 +48,7 @@ class Timeline:
     """
 
     every: int = 10
-    max_snapshots: Optional[int] = 200
+    max_snapshots: Optional[int] = 70
     snapshots: List[Snapshot] = field(default_factory=list)
     _next_at: int = 0
 

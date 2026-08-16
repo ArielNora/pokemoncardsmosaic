@@ -145,14 +145,28 @@ def suggest_grids(
     return unique[:limit]
 
 
+# Nombre d'or. Ses multiples fractionnaires ne retombent jamais sur un motif
+# périodique, ce qui est exactement ce qu'on veut pour disperser des points.
+GOLDEN_RATIO = 0.618033988749895
+
+
 def distribute_empty_cells(
     shape: Tuple[int, int], count: int
 ) -> List[Tuple[int, int]]:
-    """Répartit `count` cases vides régulièrement sur une grille (rows, cols).
+    """Répartit `count` cases vides sur une grille (rows, cols).
 
     C'est le placement par défaut : l'utilisateur peut ensuite déplacer chaque case
-    à la main, mais n'y est jamais obligé. L'espacement régulier évite qu'un paquet
-    de trous se forme dans un coin.
+    à la main, mais n'y est jamais obligé.
+
+    Disperser un indice à plat ne suffit pas : la colonne se déduit alors du reste
+    modulo le nombre de colonnes, et ce repliement réintroduit des alignements. Un
+    pas constant est le pire cas (288 cases et 8 trous donnent un pas de 36 = 24 + 12,
+    donc deux colonnes seulement), mais le nombre d'or aliase aussi sur une grille
+    17×17, où 289 = 17².
+
+    On choisit donc **ligne et colonne séparément** : les lignes régulièrement
+    espacées, les colonnes par une suite au nombre d'or, dont les multiples
+    fractionnaires ne forment jamais de motif périodique.
     """
     rows, cols = shape
     total = rows * cols
@@ -161,10 +175,23 @@ def distribute_empty_cells(
     if count > total:
         raise ValueError(f"{count} cases vides demandées pour seulement {total} cases.")
 
-    # Indices régulièrement espacés, centrés dans leur intervalle : pour 3 trous sur
-    # 10 cases, on obtient 1, 5, 8 plutôt que 0, 3, 6 (qui colle au bord).
-    flat = [int((k + 0.5) * total / count) for k in range(count)]
-    return [(index // cols, index % cols) for index in flat]
+    taken = set()
+    for k in range(count):
+        row = min(rows - 1, k * rows // count)
+        col = int(((k * GOLDEN_RATIO) % 1.0) * cols)
+        taken.add(_first_free_cell(taken, row, col, rows, cols))
+
+    return sorted(taken)
+
+
+def _first_free_cell(taken, row: int, col: int, rows: int, cols: int) -> Tuple[int, int]:
+    """Trouve une case libre à partir de (row, col), en balayant vers la droite."""
+    for offset in range(rows * cols):
+        r = (row + offset // cols) % rows
+        c = (col + offset) % cols
+        if (r, c) not in taken:
+            return (r, c)
+    raise ValueError("Aucune case libre disponible.")
 
 
 def card_pixel_size(

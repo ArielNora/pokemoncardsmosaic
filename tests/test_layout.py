@@ -76,6 +76,38 @@ def test_empty_cells_are_spread_not_clustered():
     assert len(rows) >= 6, f"les trous se concentrent sur trop peu de lignes : {cells}"
 
 
+@pytest.mark.parametrize(
+    "rows,cols,count",
+    [(12, 24, 8), (17, 17, 9), (14, 20, 12), (12, 24, 24), (10, 10, 5)],
+)
+def test_empty_cells_never_line_up_in_columns(rows, cols, count):
+    """Un espacement à pas constant alignait les trous sur deux colonnes.
+
+    Cas typique : 288 cases et 8 trous donnent un pas de 36 = 24 + 12, et tous les
+    trous retombent sur les colonnes 6 et 18. Invisible dans un test qui ne regarde
+    que les lignes, mais flagrant sur le poster imprimé.
+    """
+    cells = distribute_empty_cells((rows, cols), count)
+    assert len(cells) == len(set(cells)) == count
+
+    # Référence : le nombre de colonnes distinctes qu'on obtiendrait en plaçant les
+    # trous au hasard. On ne peut pas exiger mieux — avec 24 trous sur 24 colonnes,
+    # les collisions sont inévitables — mais l'aliasing en donnait 4 fois moins.
+    expected = cols * (1 - (1 - 1 / cols) ** count)
+    distinct_columns = len({c for _, c in cells})
+    assert distinct_columns >= 0.6 * expected, (
+        f"les trous se concentrent sur {distinct_columns} colonne(s) "
+        f"(attendu ~{expected:.1f}) : {cells}"
+    )
+
+
+def test_empty_cells_avoid_the_naive_column_aliasing():
+    """Le cas exact qui a produit une colonne de blancs sur un poster réel."""
+    cells = distribute_empty_cells((12, 24), 8)
+    columns = [c for _, c in cells]
+    assert len(set(columns)) >= 6, f"colonnes utilisées : {sorted(set(columns))}"
+
+
 def test_empty_cells_stay_inside_the_grid():
     cells = distribute_empty_cells((5, 6), 7)
     assert all(0 <= r < 5 and 0 <= c < 6 for r, c in cells)

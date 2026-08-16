@@ -4,8 +4,9 @@ Assemble ~280 cartes Pokémon en une seule mosaïque géante, en cherchant l'age
 où les **bords des cartes voisines se ressemblent le plus en couleur** — pour que
 l'ensemble se lise comme une image continue plutôt qu'un patchwork.
 
-Sortie typique : une grille 20×14, soit une image de **14260 × 13776 px**, plus un
-aperçu réduit exploitable.
+Le but est l'**impression d'un poster** : soit une seule grande feuille, soit
+plusieurs accolées. Sortie typique : une grille 17×17 sur un A2 à 300 DPI, soit une
+image de **4961 × 7016 px**.
 
 ## Comment ça marche
 
@@ -37,13 +38,17 @@ déjà un moyennage. L'erreur introduite est inférieure à **0,3 niveau de coul
 | Optimisation | 24 000 it/s | **127 000 it/s** |
 | Rendu d'un aperçu | — | **5 ms** |
 
-### Groupes imposés
+### Liens entre cartes
 
 Certaines cartes doivent rester côte à côte (Solgaleo–Lunala, Entei–Raikou). Elles
 sont traitées comme des **blocs indivisibles** : un bloc ne se déplace que d'un seul
 tenant, et uniquement vers une zone composée exclusivement de cartes libres. La
 contrainte est donc satisfaite par construction, sans pénalité de score et sans
 ralentir l'optimisation.
+
+Un lien peut regrouper plus de deux cartes, et son **ordre est optionnel** : imposé,
+la séquence est respectée à la lettre (utile quand le sens a une signification) ;
+libre, l'optimiseur peut retourner le bloc et dispose de deux fois plus de placements.
 
 ## Installation
 
@@ -139,6 +144,41 @@ condition est remplie. `--snapshot-every` enregistre l'état de la grille tous l
 de 0,3 % (descente stricte) à 8 % (recuit). La cadence s'adapte d'elle-même pour que
 la timeline reste bornée et régulièrement répartie.
 
+### Export poster
+
+Avec `--paper`, la sortie devient un vrai poster : la taille des cartes se déduit du
+format et du DPI, les cartes gardent leurs proportions exactes, et l'image est centrée
+— la marge résiduelle absorbe l'écart de rapport entre la grille et la feuille.
+
+```bash
+uv run pokemon-mosaic --grid 17x17 --paper A2 --dpi 300 --full-resolution --format jpg
+```
+
+Découpage en plusieurs posters, avec chevauchement pour le collage et repères de
+coupe. La coupe tombe toujours sur un bord de carte, donc le nombre de colonnes doit
+être divisible par le nombre de panneaux :
+
+```bash
+uv run pokemon-mosaic --grid 24x12 --paper A3 --panels 2 --overlap 5 --crop-marks --format pdf
+```
+
+| Option | Défaut | Rôle |
+|---|---|---|
+| `--paper` | — | Format d'impression, `A0` à `A6` |
+| `--landscape` | non | Feuille en paysage |
+| `--dpi` | `300` | Résolution d'impression |
+| `--panels` | `1` | Nombre de posters côte à côte |
+| `--overlap` | `0` | Chevauchement entre panneaux, en mm |
+| `--crop-marks` | non | Repères de coupe |
+| `--format` | `png` | `png`, `jpg` ou `pdf` |
+
+Le PDF porte les **dimensions physiques** de la page, ce qui lève toute ambiguïté
+chez l'imprimeur. L'app prévient si le DPI demandé dépasse le maximum utile — au-delà,
+les cartes sont agrandies sans gagner en détail (366 DPI en A0, 733 en A2).
+
+Chaque panneau est rendu séparément : le poster complet n'est jamais en mémoire d'un
+seul tenant, ce qui évite les 836 Mo d'un A0 en deux panneaux.
+
 ### Cases vides
 
 Avec `--grid`, les cases excédentaires deviennent des **cases vides figées**,
@@ -153,8 +193,8 @@ uv run pokemon-mosaic --grid 17x17
 Ajoutez 9 cartes pour remplir la grille.
 ```
 
-Compter environ **30 s de chargement** des cartes, puis le temps d'optimisation
-(~3000 itérations/s). Les sorties vont dans `output/`, non versionné.
+Compter environ **4 s de chargement** des cartes, puis l'optimisation à ~127 000
+itérations/s, soit 8 s pour un million. Les sorties vont dans `output/`, non versionné.
 
 ## Structure
 
@@ -167,6 +207,7 @@ src/pokemon_mosaic/
 ├── scoring.py    matrices de distances, score global et local
 ├── annealing.py  recuit simulé et calibration de température
 ├── timeline.py   snapshots de l'exécution
+├── export.py     poster, panneaux, marges, PNG / JPEG / PDF
 ├── optimize.py   boucle d'optimisation, contraintes, seuils d'arrêt
 ├── imaging.py    inspection et réduction des images produites
 └── cli.py        point d'entrée

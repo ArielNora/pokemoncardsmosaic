@@ -6,6 +6,7 @@ from pathlib import Path
 
 from .annealing import Annealing
 from .cards import DEFAULT_SCALE, DEFAULT_STRIP_SIZE, load_cards
+from .export import PosterSettings, export_poster
 from .grid import save_grid_image
 from .imaging import print_image_properties, resize_and_save
 from .layout import GridFit, distribute_empty_cells
@@ -68,6 +69,21 @@ def parse_args(argv=None) -> argparse.Namespace:
                       help="Arrêter après ce temps de calcul")
     algo.add_argument("--snapshot-every", type=int, default=None, metavar="N",
                       help="Enregistrer un cliché tous les N échanges retenus")
+
+    poster = parser.add_argument_group("export poster")
+    poster.add_argument("--paper", type=str, default=None, metavar="FORMAT",
+                        help="Exporter au format d'impression donné (A0..A6). "
+                             "Sans cette option, l'export est une simple image.")
+    poster.add_argument("--landscape", action="store_true", help="Feuille en paysage")
+    poster.add_argument("--dpi", type=int, default=300, help="Défaut : %(default)s")
+    poster.add_argument("--panels", type=int, default=1, metavar="N",
+                        help="Découper en N posters côte à côte (défaut : %(default)s)")
+    poster.add_argument("--overlap", type=float, default=0.0, metavar="MM",
+                        help="Chevauchement entre panneaux, en mm")
+    poster.add_argument("--crop-marks", action="store_true",
+                        help="Ajouter des repères de coupe")
+    poster.add_argument("--format", type=str, default="png",
+                        choices=("png", "jpg", "pdf"), help="Défaut : %(default)s")
     parser.add_argument("--preview-percent", type=int, default=15,
                         help="Taille de l'aperçu réduit, en %% (défaut : %(default)s)")
     return parser.parse_args(argv)
@@ -132,7 +148,25 @@ def main(argv=None) -> int:
         timeline=Timeline(every=args.snapshot_every) if args.snapshot_every else None,
     )
 
-    output_path = args.output_dir / f"mosaic_{args.iterations // 1000}k.png"
+    stem = f"mosaic_{args.iterations // 1000}k"
+
+    # Avec --paper, on produit un vrai poster : format d'impression, marges,
+    # panneaux. Sinon, une simple image assemblée à partir des vignettes.
+    if args.paper:
+        settings = PosterSettings(
+            paper=args.paper, landscape=args.landscape, dpi=args.dpi,
+            panels=args.panels, overlap_mm=args.overlap, crop_marks=args.crop_marks,
+        )
+        started = time.time()
+        export_poster(
+            grid, cards, settings,
+            str(args.output_dir / f"{stem}.{args.format}"),
+            full_resolution=args.full_resolution,
+        )
+        print(f"Export en {time.time() - started:.1f} s")
+        return 0
+
+    output_path = args.output_dir / f"{stem}.png"
     save_grid_image(grid, cards, str(output_path), full_resolution=args.full_resolution)
 
     print_image_properties(str(output_path))
