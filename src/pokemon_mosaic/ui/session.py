@@ -16,7 +16,9 @@ from ..links import Link, LinkLibrary
 class Session(QObject):
     """Ce que l'utilisateur a choisi jusqu'ici."""
 
-    cards_loaded = Signal()
+    loading_started = Signal()
+    cards_added = Signal(list)      # indices des cartes qui viennent d'arriver
+    cards_loaded = Signal()         # chargement terminé
     selection_changed = Signal()
     links_changed = Signal()
 
@@ -30,18 +32,40 @@ class Session(QObject):
 
     # --- Cartes -----------------------------------------------------------
 
-    def set_cards(self, card_set: CardSet, data_dir: str) -> None:
-        self.card_set = card_set
+    def start_loading(self, data_dir: str) -> None:
+        """Vide la session et prépare l'arrivée des cartes, dossier par dossier."""
         self.data_dir = data_dir
+        self.card_set = CardSet(cards=[], full_size=(0, 0), thumb_size=(0, 0))
         self._excluded.clear()
-        # Le nom de dossier seul ne suffit pas à identifier un groupe : deux séries
-        # peuvent avoir un « 0_promo ». On garde le chemin relatif à la racine.
-        self._folder_of = {
-            card.index: os.path.relpath(os.path.dirname(card.path), data_dir)
-            for card in card_set
-        }
-        self.cards_loaded.emit()
+        self._folder_of.clear()
+        self.loading_started.emit()
         self.selection_changed.emit()
+
+    def append_cards(self, cards) -> None:
+        """Ajoute un lot de cartes déjà chargées, en conservant leurs indices."""
+        if not cards:
+            return
+        self.card_set.cards.extend(cards)
+        for card in cards:
+            # Le nom de dossier seul ne suffit pas : deux séries peuvent avoir un
+            # « 0_promo ». On garde le chemin relatif à la racine.
+            self._folder_of[card.index] = os.path.relpath(
+                os.path.dirname(card.path), self.data_dir
+            )
+        self.cards_added.emit([card.index for card in cards])
+        self.selection_changed.emit()
+
+    def finish_loading(self, card_set: CardSet) -> None:
+        """Fixe les dimensions définitives une fois tout chargé."""
+        self.card_set.full_size = card_set.full_size
+        self.card_set.thumb_size = card_set.thumb_size
+        self.cards_loaded.emit()
+
+    def set_cards(self, card_set: CardSet, data_dir: str) -> None:
+        """Chargement en un bloc, sans progression — utile aux tests."""
+        self.start_loading(data_dir)
+        self.append_cards(list(card_set))
+        self.finish_loading(card_set)
 
     @property
     def total_cards(self) -> int:

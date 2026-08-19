@@ -14,6 +14,7 @@ class CardLoader(QObject):
     """Travailleur destiné à vivre dans un QThread."""
 
     progress = Signal(int, int)
+    folder_loaded = Signal(str, list)
     loaded = Signal(object)
     failed = Signal(str)
 
@@ -30,6 +31,7 @@ class CardLoader(QObject):
                 scale=self._scale,
                 strip_size=self._strip_size,
                 progress=lambda done, total: self.progress.emit(done, total),
+                on_folder=lambda folder, cards: self.folder_loaded.emit(folder, cards),
             )
         except Exception as error:  # remonté à l'interface, jamais avalé
             self.failed.emit(str(error))
@@ -41,7 +43,7 @@ class CardLoader(QObject):
         self.loaded.emit(card_set)
 
 
-def start_loading(parent, data_dir, on_progress, on_loaded, on_failed):
+def start_loading(parent, data_dir, on_progress, on_folder, on_loaded, on_failed):
     """Lance un chargement et renvoie (thread, worker) à garder en vie.
 
     Qt détruit un QThread dont plus personne ne détient de référence, ce qui
@@ -53,6 +55,7 @@ def start_loading(parent, data_dir, on_progress, on_loaded, on_failed):
 
     thread.started.connect(worker.run)
     worker.progress.connect(on_progress)
+    worker.folder_loaded.connect(on_folder)
     worker.loaded.connect(on_loaded)
     worker.failed.connect(on_failed)
     worker.loaded.connect(thread.quit)

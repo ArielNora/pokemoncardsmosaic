@@ -116,6 +116,7 @@ def load_cards(
     scale: float = DEFAULT_SCALE,
     strip_size: float = DEFAULT_STRIP_SIZE,
     progress: Optional[Callable[[int, int], None]] = None,
+    on_folder: Optional[Callable[[str, List["Card"]], None]] = None,
 ) -> CardSet:
     """Charge les cartes sous forme de vignettes et calcule leurs signatures.
 
@@ -123,6 +124,11 @@ def load_cards(
     taille commune (Pillow donne `.size` sans décoder les pixels) ; la seconde décode
     et réduit directement à la taille de vignette. Les images pleine résolution ne
     sont donc jamais toutes en mémoire — 35 Mo au lieu de 562 Mo.
+
+    `on_folder` est appelé dès qu'un dossier est entièrement traité, avec son
+    chemin et ses cartes. Cela permet à une interface d'afficher les extensions les
+    unes après les autres au lieu d'attendre la fin : la première passe ne lit que
+    les en-têtes et ne coûte que ~80 ms, contre ~3,5 s pour le décodage complet.
 
     `progress` est appelé avec (traitées, total) pendant la seconde passe. Le
     chargement prenant ~4 s pour 280 cartes, une interface graphique doit pouvoir
@@ -159,7 +165,22 @@ def load_cards(
     # BOX est une moyenne de blocs : c'est exactement l'opération qui justifie de
     # calculer les signatures sur les vignettes plutôt qu'en pleine résolution.
     cards: List[Card] = []
+    batch: List[Card] = []
+    batch_folder: Optional[str] = None
+
+    def flush() -> None:
+        if on_folder is not None and batch:
+            on_folder(batch_folder, list(batch))
+        batch.clear()
+
     for path in readable:
+        # `readable` est trié, donc les cartes d'un même dossier se suivent : on
+        # peut livrer un dossier complet dès qu'on en croise un nouveau.
+        folder = os.path.dirname(path)
+        if batch_folder is not None and folder != batch_folder:
+            flush()
+        batch_folder = folder
+
         try:
             with Image.open(path) as img:
                 thumb = np.asarray(
@@ -171,9 +192,11 @@ def load_cards(
         card = Card(path=path, index=len(cards), thumbnail=thumb)
         card.calculate_features(strip_size)
         cards.append(card)
+        batch.append(card)
         if progress is not None:
             progress(len(cards), len(readable))
 
+    flush()
     return CardSet(cards=cards, full_size=full_size, thumb_size=thumb_size)
 
 

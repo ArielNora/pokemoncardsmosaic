@@ -105,3 +105,98 @@ def test_thumbnail_survives_conversion_to_pixmap(qt_app):
     del array
     assert (pixmap.width(), pixmap.height()) == (9, 12)
     assert not pixmap.isNull()
+
+
+# --- Chargement progressif et filtrage ------------------------------------
+
+def test_cards_arrive_folder_by_folder(session, tmp_path):
+    """Les extensions doivent s'afficher les unes après les autres, sans
+    attendre les ~3,5 s de décodage complet."""
+    card_set = card_set_in(tmp_path, {"s/a": ["1", "2"], "s/b": ["3"]})
+    batches = []
+    session.cards_added.connect(lambda indices: batches.append(list(indices)))
+
+    session.start_loading(str(tmp_path))
+    assert session.total_cards == 0
+    session.append_cards(card_set.cards[:2])
+    assert session.total_cards == 2
+    session.append_cards(card_set.cards[2:])
+    session.finish_loading(card_set)
+
+    assert batches == [[0, 1], [2]]
+    assert session.total_cards == 3
+
+
+def test_folders_appear_as_they_load(session, tmp_path):
+    card_set = card_set_in(tmp_path, {"s/a": ["1"], "s/b": ["2"]})
+    session.start_loading(str(tmp_path))
+    session.append_cards(card_set.cards[:1])
+    assert session.folders() == ["s/a"]
+    session.append_cards(card_set.cards[1:])
+    assert session.folders() == ["s/a", "s/b"]
+
+
+def test_loading_again_clears_the_previous_cards(session, tmp_path):
+    session.set_cards(card_set_in(tmp_path, {"a": ["x", "y"]}), str(tmp_path))
+    session.start_loading(str(tmp_path))
+    assert session.total_cards == 0 and session.folders() == []
+
+
+@pytest.fixture
+def gallery_model(session, tmp_path):
+    from pokemon_mosaic.ui.gallery import CardGalleryModel
+
+    session.set_cards(
+        card_set_in(tmp_path, {"s/a": ["1", "2", "3"], "s/b": ["4", "5"]}),
+        str(tmp_path),
+    )
+    return CardGalleryModel(session), session
+
+
+def test_filter_restricts_the_visible_cards(gallery_model):
+    model, _ = gallery_model
+    assert model.rowCount() == 5
+    model.set_folder_filter({"s/b"})
+    assert model.rowCount() == 2
+    model.set_folder_filter(None)
+    assert model.rowCount() == 5
+
+
+def test_filter_maps_rows_back_to_the_right_cards(gallery_model):
+    """Filtrer décale les lignes : sans correspondance, cliquer une carte en
+    basculerait une autre."""
+    model, _ = gallery_model
+    model.set_folder_filter({"s/b"})
+    assert [model.card_index_at(row) for row in range(model.rowCount())] == [3, 4]
+
+
+def test_toggling_while_filtered_hits_the_intended_card(gallery_model):
+    model, session = gallery_model
+    model.set_folder_filter({"s/b"})
+    session.set_excluded([model.card_index_at(0)], True)
+    assert session.is_excluded(3)
+    assert not session.is_excluded(0)
+
+
+def test_filter_on_several_folders(gallery_model):
+    model, _ = gallery_model
+    model.set_folder_filter({"s/a", "s/b"})
+    assert model.rowCount() == 5
+
+
+def test_new_cards_respect_the_active_filter(session, tmp_path):
+    """Le filtre de l'utilisateur ne doit pas être perdu quand un dossier arrive."""
+    from pokemon_mosaic.ui.gallery import CardGalleryModel
+
+    card_set = card_set_in(tmp_path, {"s/a": ["1", "2"], "s/b": ["3", "4"]})
+    session.start_loading(str(tmp_path))
+    session.append_cards(card_set.cards[:2])
+
+    model = CardGalleryModel(session)
+    model.set_folder_filter({"s/a"})
+    assert model.rowCount() == 2
+
+    session.append_cards(card_set.cards[2:])  # dossier s/b, filtré
+    assert model.rowCount() == 2
+    model.set_folder_filter({"s/b"})
+    assert model.rowCount() == 2

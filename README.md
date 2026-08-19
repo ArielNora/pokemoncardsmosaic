@@ -203,8 +203,17 @@ uv run pokemon-mosaic-ui
 ```
 
 Assistant en trois étapes puis vue d'exécution. **Étape 1 disponible** : galerie des
-280 vignettes, inclusion/exclusion par carte ou par dossier entier, chargement en
-arrière-plan avec barre de progression. Les étapes 2 à 4 restent à construire.
+280 vignettes, inclusion/exclusion par carte ou par dossier entier. Les étapes 2 à 4
+restent à construire.
+
+Le chargement est **progressif** : les dossiers apparaissent les uns après les autres
+au lieu d'attendre la fin. La première passe ne lit que les en-têtes des fichiers pour
+déterminer la taille commune des vignettes — 80 ms — puis chaque extension est livrée
+dès qu'elle est décodée, sur les ~3,5 s que dure le décodage complet.
+
+Sélectionner un dossier **filtre la galerie** sur ses seules cartes ; les boutons
+*Inclure* et *Exclure* agissent alors sur ce dossier. Le filtre survit à l'arrivée des
+dossiers suivants.
 
 L'interface est **bilingue français / anglais**, avec un sélecteur en bas de fenêtre.
 Les textes sont écrits en français dans le code et traduits par des fichiers Qt.

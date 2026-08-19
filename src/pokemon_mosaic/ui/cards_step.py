@@ -23,7 +23,8 @@ class CardsStep(QWidget):
         self._worker = None
         self._build()
         session.selection_changed.connect(self._update_counts)
-        session.cards_loaded.connect(self._fill_folders)
+        session.cards_added.connect(self._refresh_folder_counts)
+        session.loading_started.connect(self._fill_folders)
 
     # --- Construction -----------------------------------------------------
 
@@ -31,10 +32,13 @@ class CardsStep(QWidget):
         self._folder_label = QLabel()
         self._folders = QListWidget()
         self._folders.setSelectionMode(QAbstractItemView.ExtendedSelection)
+        self._folders.itemSelectionChanged.connect(self._apply_filter)
         self._include_folder = QPushButton()
         self._exclude_folder = QPushButton()
+        self._show_all = QPushButton()
         self._include_folder.clicked.connect(lambda: self._set_folders(False))
         self._exclude_folder.clicked.connect(lambda: self._set_folders(True))
+        self._show_all.clicked.connect(self._folders.clearSelection)
 
         left = QVBoxLayout()
         left.addWidget(self._folder_label)
@@ -43,6 +47,7 @@ class CardsStep(QWidget):
         buttons.addWidget(self._include_folder)
         buttons.addWidget(self._exclude_folder)
         left.addLayout(buttons)
+        left.addWidget(self._show_all)
         left_panel = QWidget()
         left_panel.setLayout(left)
 
@@ -80,12 +85,13 @@ class CardsStep(QWidget):
 
     def retranslate_ui(self) -> None:
         self._folder_label.setText(self.tr("Dossiers"))
-        self._include_folder.setText(self.tr("Tout inclure"))
-        self._exclude_folder.setText(self.tr("Tout exclure"))
+        self._include_folder.setText(self.tr("Inclure"))
+        self._exclude_folder.setText(self.tr("Exclure"))
+        self._show_all.setText(self.tr("Afficher tous les dossiers"))
         self._choose_folder.setText(self.tr("Choisir le dossier de cartes…"))
         self._hint.setText(
             self.tr("Cliquez une carte pour l'inclure ou l'exclure. "
-                    "Sélectionnez-en plusieurs pour les basculer d'un coup.")
+                    "Sélectionnez un dossier pour n'afficher que ses cartes.")
         )
         self._update_counts()
         self._fill_folders()
@@ -104,19 +110,24 @@ class CardsStep(QWidget):
         self._progress.setRange(0, 0)  # indéterminé le temps de lire les en-têtes
         self._choose_folder.setEnabled(False)
         self.status_message.emit(self.tr("Chargement des cartes…"))
+        self._session.start_loading(directory)
         self._thread, self._worker = start_loading(
-            self, directory, self._on_progress,
-            lambda card_set: self._on_loaded(card_set, directory), self._on_failed,
+            self, directory, self._on_progress, self._on_folder_loaded,
+            self._on_loaded, self._on_failed,
         )
 
     def _on_progress(self, done: int, total: int) -> None:
         self._progress.setRange(0, total)
         self._progress.setValue(done)
 
-    def _on_loaded(self, card_set, directory: str) -> None:
+    def _on_folder_loaded(self, folder: str, cards: list) -> None:
+        """Un dossier vient d'être décodé : on l'affiche sans attendre la suite."""
+        self._session.append_cards(cards)
+
+    def _on_loaded(self, card_set) -> None:
         self._progress.hide()
         self._choose_folder.setEnabled(True)
-        self._session.set_cards(card_set, directory)
+        self._session.finish_loading(card_set)
         self.status_message.emit(
             self.tr("%n carte(s) chargée(s).", "", len(card_set))
         )
@@ -130,16 +141,40 @@ class CardsStep(QWidget):
 
     def _fill_folders(self) -> None:
         self._folders.clear()
+        self._refresh_folder_counts()
+
+    def _refresh_folder_counts(self) -> None:
+        """Ajoute les dossiers au fur et à mesure de leur arrivée.
+
+        On n'efface pas la liste : la sélection de l'utilisateur, donc le filtre
+        en cours, doit survivre à l'arrivée d'un nouveau dossier.
+        """
+        known = {self._folders.item(row).data(Qt.UserRole)
+                 for row in range(self._folders.count())}
         for folder in self._session.folders():
             count = len(self._session.indices_in_folder(folder))
+            if folder in known:
+                for row in range(self._folders.count()):
+                    item = self._folders.item(row)
+                    if item.data(Qt.UserRole) == folder:
+                        item.setText(f"{folder}  ({count})")
+                        break
+                continue
             item = QListWidgetItem(f"{folder}  ({count})")
             item.setData(Qt.UserRole, folder)
             self._folders.addItem(item)
 
+    def _selected_folders(self):
+        return {item.data(Qt.UserRole) for item in self._folders.selectedItems()}
+
+    def _apply_filter(self) -> None:
+        self._gallery.set_folder_filter(self._selected_folders())
+        self._update_counts()
+
     def _set_folders(self, excluded: bool) -> None:
         indices = []
-        for item in self._folders.selectedItems():
-            indices.extend(self._session.indices_in_folder(item.data(Qt.UserRole)))
+        for folder in self._selected_folders():
+            indices.extend(self._session.indices_in_folder(folder))
         if indices:
             self._session.set_excluded(indices, excluded)
 
@@ -148,8 +183,13 @@ class CardsStep(QWidget):
         if not total:
             self._count.setText(self.tr("Aucune carte chargée"))
             return
-        self._count.setText(
-            self.tr("%1 cartes retenues sur %2")
-            .replace("%1", str(self._session.selected_count))
-            .replace("%2", str(total))
-        )
+        text = (self.tr("%1 cartes retenues sur %2")
+                .replace("%1", str(self._session.selected_count))
+                .replace("%2", str(total)))
+        folders = self._selected_folders()
+        if len(folders) == 1:
+            # Un seul dossier : son nom est plus parlant qu'un décompte.
+            text += "  —  " + self.tr("filtré sur %1").replace("%1", next(iter(folders)))
+        elif folders:
+            text += "  —  " + self.tr("filtré sur %n dossiers", "", len(folders))
+        self._count.setText(text)
