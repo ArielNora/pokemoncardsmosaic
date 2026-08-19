@@ -7,6 +7,7 @@ from PySide6.QtWidgets import (
 )
 
 from .cards_step import CardsStep
+from .layout_step import LayoutStep
 from .i18n import LANGUAGES, LanguageManager
 from .session import Session
 
@@ -66,7 +67,9 @@ class MainWindow(QMainWindow):
         self._cards_step = CardsStep(self._session)
         self._cards_step.status_message.connect(self._show_status)
         self._stack.addWidget(self._cards_step)
-        for position in range(1, self.STEP_COUNT):
+        self._layout_step = LayoutStep(self._session)
+        self._stack.addWidget(self._layout_step)
+        for position in range(2, self.STEP_COUNT):
             self._stack.addWidget(
                 PlaceholderStep(lambda i=position: self.step_title(i))
             )

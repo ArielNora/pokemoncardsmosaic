@@ -202,9 +202,12 @@ itérations/s, soit 8 s pour un million. Les sorties vont dans `output/`, non ve
 uv run pokemon-mosaic-ui
 ```
 
-Assistant en trois étapes puis vue d'exécution. **Étape 1 disponible** : galerie des
-280 vignettes, inclusion/exclusion par carte ou par dossier entier. Les étapes 2 à 4
-restent à construire.
+Assistant en trois étapes puis vue d'exécution. **Étapes 1 et 2 disponibles** ; les
+étapes 3 et 4 restent à construire.
+
+### Étape 1 — cartes
+
+Galerie des 280 vignettes, inclusion/exclusion par carte, par dossier ou en totalité.
 
 Le chargement est **progressif** : les dossiers apparaissent les uns après les autres
 au lieu d'attendre la fin. La première passe ne lit que les en-têtes des fichiers pour
@@ -214,6 +217,21 @@ dès qu'elle est décodée, sur les ~3,5 s que dure le décodage complet.
 Sélectionner un dossier **filtre la galerie** sur ses seules cartes ; les boutons
 *Inclure* et *Exclure* agissent alors sur ce dossier. Le filtre survit à l'arrivée des
 dossiers suivants.
+
+### Étape 2 — grille et format
+
+Format d'impression (A0 à A6, portrait ou paysage), résolution, nombre de posters
+côte à côte, dimensions de grille. La taille des cartes en pixels **s'en déduit** :
+le format commande.
+
+L'**aperçu fil de fer** montre la géométrie sans les images — feuille, marges,
+contours des cartes, lignes de coupe entre panneaux. Cliquer une case y place ou
+retire un vide. Le nombre de vides étant fixé par la grille et la sélection, poser un
+vide supplémentaire fait céder sa place au plus ancien.
+
+Une liste propose les **grilles adaptées** au format choisi, avec l'écart de
+proportions et le nombre de cartes à ajouter ou retirer. Les avertissements signalent
+les cases vides, un DPI au-delà du maximum utile, ou une image trop lourde à exporter.
 
 L'interface est **bilingue français / anglais**, avec un sélecteur en bas de fenêtre.
 Les textes sont écrits en français dans le code et traduits par des fichiers Qt.

@@ -5,11 +5,12 @@ préviennent par signaux. Rien n'est recalculé en double d'un écran à l'autre
 """
 
 import os
-from typing import Dict, List, Optional, Set
+from typing import Dict, List, Optional, Set, Tuple
 
 from PySide6.QtCore import QObject, Signal
 
 from ..cards import CardSet
+from ..layout import DEFAULT_DPI, GridFit, distribute_empty_cells
 from ..links import Link, LinkLibrary
 
 
@@ -17,6 +18,7 @@ class Session(QObject):
     """Ce que l'utilisateur a choisi jusqu'ici."""
 
     loading_started = Signal()
+    layout_changed = Signal()
     cards_added = Signal(list)      # indices des cartes qui viennent d'arriver
     cards_loaded = Signal()         # chargement terminé
     selection_changed = Signal()
@@ -29,6 +31,20 @@ class Session(QObject):
         self._excluded: Set[int] = set()
         self._folder_of: Dict[int, str] = {}
         self.links = LinkLibrary()
+
+        # Mise en page (étape 2). Le format d'impression commande : la taille des
+        # cartes en pixels s'en déduit, jamais l'inverse.
+        self.paper = "A2"
+        self.landscape = False
+        self.dpi = DEFAULT_DPI
+        self.panels = 1
+        self.cols = 17
+        self.rows = 17
+        # Liste ordonnée, pas un ensemble : le rang sert à savoir quel trou céder
+        # sa place quand l'utilisateur en pose un nouveau alors que le quota est
+        # atteint. Le plus ancien s'efface, façon file d'attente.
+        self._empty_cells: List[Tuple[int, int]] = []
+        self._empty_pinned = False
 
     # --- Cartes -----------------------------------------------------------
 
@@ -108,6 +124,73 @@ class Session(QObject):
 
     def folder_of(self, index: int) -> str:
         return self._folder_of.get(index, "")
+
+    # --- Mise en page -----------------------------------------------------
+
+    def set_layout(self, **changes) -> None:
+        """Modifie un ou plusieurs réglages de grille et prévient une seule fois."""
+        touched = False
+        for name, value in changes.items():
+            if getattr(self, name) != value:
+                setattr(self, name, value)
+                touched = True
+        if not touched:
+            return
+        if "cols" in changes or "rows" in changes:
+            # Les positions choisies à la main n'ont plus de sens sur une autre
+            # grille : on repart d'une répartition automatique.
+            self._empty_pinned = False
+            self._empty_cells.clear()
+        self.layout_changed.emit()
+
+    def grid_fit(self) -> GridFit:
+        return GridFit(cols=self.cols, rows=self.rows,
+                       card_count=self.selected_count)
+
+    def empty_cells(self) -> List[Tuple[int, int]]:
+        """Cases vides à figer : celles posées à la main, sinon la répartition
+        automatique. Le nombre suit toujours la grille et la sélection."""
+        needed = self.grid_fit().empty_cells
+        if not self._empty_pinned:
+            return distribute_empty_cells((self.rows, self.cols), needed)
+
+        # On garde les plus récents : ce sont les choix explicites de l'utilisateur.
+        pinned = list(self._empty_cells[-needed:]) if needed else []
+        if len(pinned) < needed:
+            # La sélection a changé et il faut plus de trous : on complète avec la
+            # répartition automatique, sans défaire ce qui a été posé à la main.
+            for cell in distribute_empty_cells((self.rows, self.cols), needed):
+                if len(pinned) >= needed:
+                    break
+                if cell not in pinned:
+                    pinned.append(cell)
+        return sorted(pinned)
+
+    def toggle_empty_cell(self, row: int, col: int) -> None:
+        """Pose ou retire une case vide à cet emplacement."""
+        if not (0 <= row < self.rows and 0 <= col < self.cols):
+            return
+        if not self._empty_pinned:
+            # Premier clic : on fige la répartition automatique avant de la modifier.
+            self._empty_cells = list(self.empty_cells())
+            self._empty_pinned = True
+
+        cell = (row, col)
+        if cell in self._empty_cells:
+            self._empty_cells.remove(cell)
+        else:
+            self._empty_cells.append(cell)
+            # Quota atteint : le trou posé il y a le plus longtemps cède sa place,
+            # sinon le clic n'aurait aucun effet visible.
+            excess = len(self._empty_cells) - self.grid_fit().empty_cells
+            if excess > 0:
+                del self._empty_cells[:excess]
+        self.layout_changed.emit()
+
+    def reset_empty_cells(self) -> None:
+        self._empty_pinned = False
+        self._empty_cells = []
+        self.layout_changed.emit()
 
     # --- Liens ------------------------------------------------------------
 
