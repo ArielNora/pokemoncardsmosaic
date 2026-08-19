@@ -217,3 +217,112 @@ def test_a_link_that_fits_exactly_is_accepted():
                               rng=random.Random(0))
     row = [int(v) for v in grid[0]]
     assert row == [0, 1, 2]
+
+
+# --- Renumérotation des liens ---------------------------------------------
+
+def _named_card_set(n):
+    from pokemon_mosaic.cards import CardSet
+
+    cards = make_cards(n)
+    for card in cards:
+        card.path = f"/fake/carte_{card.index}.png"
+    return CardSet(cards=cards, full_size=(713, 984), thumb_size=(178, 246))
+
+
+def test_remapping_translates_link_indices():
+    library = LinkLibrary()
+    library.add(Link(cards=(2, 3)))
+    remapped = library.remapped({2: 0, 3: 1, 5: 2})
+    assert remapped.to_groups() == [(0, 1)]
+
+
+def test_remapping_keeps_the_order_flag():
+    library = LinkLibrary()
+    library.add(Link(cards=(4, 5), ordered=False, name="soleil-lune"))
+    link = remapped_first(library, {4: 1, 5: 0})
+    assert link.cards == (1, 0)
+    assert link.ordered is False and link.name == "soleil-lune"
+
+
+def remapped_first(library, mapping):
+    return library.remapped(mapping).links[0]
+
+
+def test_remapping_drops_links_whose_cards_left_the_selection():
+    library = LinkLibrary()
+    library.add(Link(cards=(0, 1)))
+    library.add(Link(cards=(7, 8)))
+    assert library.remapped({0: 0, 1: 1}).to_groups() == [(0, 1)]
+
+
+def test_subset_provides_the_mapping_needed_to_remap():
+    cards_set = _named_card_set(10)
+    subset = cards_set.subset([2, 3, 5, 6, 7, 9])
+    assert subset.index_mapping() == {2: 0, 3: 1, 5: 2, 6: 3, 7: 4, 9: 5}
+
+
+def test_remapped_links_stick_the_cards_the_user_actually_chose():
+    """Le cas silencieux : sans traduction, le lien (2, 3) désignait après
+    renumérotation les cartes 5 et 6 — score plausible, image plausible, et les
+    deux cartes voulues ailleurs."""
+    cards_set = _named_card_set(10)
+    library = LinkLibrary()
+    library.add(Link(cards=(2, 3)))
+
+    subset = cards_set.subset([2, 3, 5, 6, 7, 9])
+    translated = library.remapped(subset.index_mapping())
+    grid = build_initial_grid(subset, shape=(3, 2), links=translated,
+                              rng=random.Random(0))
+    (r_a, c_a), (r_b, c_b) = positions(grid, *translated.to_groups()[0])
+    assert r_a == r_b and c_b == c_a + 1
+
+    linked = {subset[int(grid[r_a, c_a])].path, subset[int(grid[r_b, c_b])].path}
+    assert linked == {"/fake/carte_2.png", "/fake/carte_3.png"}
+
+
+def test_a_link_pointing_outside_the_selection_is_refused():
+    """Variante bruyante : l'indice sort des bornes après renumérotation."""
+    cards_set = _named_card_set(6)
+    library = LinkLibrary()
+    library.add(Link(cards=(4, 5)))
+    subset = cards_set.subset([1, 3, 4, 5])   # renumérotées 0..3
+    with pytest.raises(ValueError, match="absentes de la sélection"):
+        build_initial_grid(subset, shape=(2, 2), links=library, rng=random.Random(0))
+
+
+def test_select_cards_translates_links_so_the_right_pair_is_stuck():
+    """Variante silencieuse : les indices fautifs restent dans les bornes, donc
+    aucune vérification ne peut les détecter. select_cards fait les deux gestes
+    ensemble, ce qui est la seule garantie."""
+    from pokemon_mosaic.optimize import select_cards
+
+    cards_set = _named_card_set(10)
+    library = LinkLibrary()
+    library.add(Link(cards=(2, 3)))
+
+    subset, translated = select_cards(cards_set, [2, 3, 5, 6, 7, 9], library)
+    grid = build_initial_grid(subset, shape=(3, 2), links=translated,
+                              rng=random.Random(0))
+    pair = translated.to_groups()[0]
+    (r_a, c_a), (r_b, c_b) = positions(grid, *pair)
+    assert r_a == r_b and c_b == c_a + 1
+    linked = {subset[int(grid[r_a, c_a])].path, subset[int(grid[r_b, c_b])].path}
+    assert linked == {"/fake/carte_2.png", "/fake/carte_3.png"}
+
+
+def test_select_cards_drops_links_whose_cards_are_deselected():
+    from pokemon_mosaic.optimize import select_cards
+
+    library = LinkLibrary()
+    library.add(Link(cards=(0, 1)))
+    library.add(Link(cards=(8, 9)))
+    _, translated = select_cards(_named_card_set(10), [0, 1, 2, 3], library)
+    assert translated.to_groups() == [(0, 1)]
+
+
+def test_select_cards_without_links_returns_an_empty_library():
+    from pokemon_mosaic.optimize import select_cards
+
+    subset, translated = select_cards(_named_card_set(6), [1, 2, 3])
+    assert len(subset) == 3 and len(translated) == 0

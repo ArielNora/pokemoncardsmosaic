@@ -53,7 +53,12 @@ class Session(QObject):
         self.card_set = CardSet(cards=[], full_size=(0, 0), thumb_size=(0, 0))
         self._excluded.clear()
         self._folder_of.clear()
+        # Les liens désignent des indices de cartes : conservés d'un dossier à
+        # l'autre, ils pointeraient sur d'autres cartes sans que rien ne le
+        # signale, puisque ces indices existent toujours.
+        self.links = LinkLibrary()
         self.loading_started.emit()
+        self.links_changed.emit()
         self.selection_changed.emit()
 
     def append_cards(self, cards) -> None:

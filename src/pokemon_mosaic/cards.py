@@ -120,6 +120,18 @@ class CardSet:
         for card in self.cards:
             card.calculate_features(strip_size)
 
+    def index_mapping(self) -> dict:
+        """Table « indice d'origine -> indice courant », pour traduire les liens.
+
+        À passer à `LinkLibrary.remapped()` chaque fois qu'on construit un
+        sous-ensemble : les cartes sont renumérotées, les liens doivent suivre.
+        """
+        return {
+            (card.source_index if card.source_index is not None else card.index):
+                card.index
+            for card in self.cards
+        }
+
     def find(self, path_fragment: str) -> int | None:
         """Retrouve l'indice d'une carte à partir d'un fragment de son chemin."""
         return next((c.index for c in self.cards if path_fragment in c.path), None)

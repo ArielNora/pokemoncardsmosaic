@@ -210,3 +210,15 @@ def test_include_and_exclude_every_card(session, tmp_path):
     assert session.selected_count == 0
     session.set_excluded(everything, False)
     assert session.selected_count == 3
+
+
+def test_loading_another_folder_forgets_the_links(session, tmp_path):
+    """Les liens portent des indices : conservés d'un dossier à l'autre, ils
+    désigneraient d'autres cartes sans que rien ne le signale."""
+    session.set_cards(card_set_in(tmp_path, {"a": ["x", "y", "z"]}), str(tmp_path))
+    session.add_link(Link(cards=(0, 1)))
+    assert len(session.links) == 1
+
+    other = tmp_path / "autre"
+    session.start_loading(str(other))
+    assert len(session.links) == 0

@@ -85,6 +85,28 @@ class LinkLibrary:
             [link for link in self.links if available.issuperset(link.cards)]
         )
 
+    def remapped(self, mapping: dict) -> "LinkLibrary":
+        """Traduit les indices des liens selon `mapping` (ancien -> nouveau).
+
+        Indispensable en même temps que `CardSet.subset()`, qui renumérote les
+        cartes de 0 à n-1 : sans cette traduction, un lien continue de désigner
+        d'anciens indices qui pointent désormais sur d'autres cartes. La grille
+        collerait alors deux cartes que l'utilisateur n'a jamais liées, sans qu'aucune
+        erreur ne le signale.
+
+        Les liens dont une carte a disparu du mapping sont écartés : ils ne sont
+        plus applicables.
+        """
+        translated = []
+        for link in self.links:
+            if not all(index in mapping for index in link.cards):
+                continue
+            translated.append(
+                Link(cards=tuple(mapping[index] for index in link.cards),
+                     ordered=link.ordered, enabled=link.enabled, name=link.name)
+            )
+        return LinkLibrary(translated)
+
     def to_groups(self) -> list[tuple[int, ...]]:
         """Les blocs actifs, sous la forme attendue par l'optimiseur."""
         return [link.cards for link in self.active]

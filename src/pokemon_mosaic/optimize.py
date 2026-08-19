@@ -17,6 +17,7 @@ import numpy as np
 from .annealing import Annealing
 from .cards import CardSet
 from .grid import calculate_grid_dims
+from .layout import distribute_empty_cells
 from .links import Link, LinkLibrary
 from .scoring import EMPTY, EdgeDistances, grid_score, local_score
 from .timeline import Timeline
@@ -391,8 +392,33 @@ def build_initial_grid(
             f"({rows}×{cols} moins {len(reserved)} vides)."
         )
 
+    # S'il manque des cases vides pour combler la grille, on complète par la
+    # répartition régulière. Sans cela, les trous surnuméraires apparaîtraient là
+    # où le remplissage ligne par ligne s'arrête — agglutinés dans le coin bas
+    # droit, à rebours de la dispersion que distribute_empty_cells construit.
+    missing = capacity - len(cards)
+    if missing > 0:
+        for cell in distribute_empty_cells((rows, cols), len(reserved) + missing):
+            if len(reserved) >= rows * cols - len(cards):
+                break
+            reserved.add(cell)
+
     # 2. Blocs imposés, posés à la suite en sautant les cases réservées.
     check_links_fit(groups, cols)
+
+    # Un lien désignant une carte absente signale presque toujours un
+    # sous-ensemble construit sans traduire les liens. Sans ce contrôle, l'indice
+    # pointerait sur une autre carte et la grille collerait deux cartes que
+    # l'utilisateur n'a jamais liées — sans erreur, avec un score plausible.
+    known = {card.index for card in cards}
+    for group in groups:
+        unknown = [index for index in group if index not in known]
+        if unknown:
+            raise ValueError(
+                f"Le lien {tuple(group)} désigne des cartes absentes de la "
+                f"sélection : {unknown}. Après CardSet.subset(), traduisez les "
+                f"liens avec LinkLibrary.remapped(cards.index_mapping())."
+            )
 
     used = set()
     r = c = 0
@@ -435,6 +461,29 @@ def build_initial_grid(
     return grid
 
 
+def select_cards(
+    cards: CardSet,
+    indices: Sequence[int],
+    links: LinkLibrary | None = None,
+) -> tuple[CardSet, LinkLibrary]:
+    """Restreint les cartes à `indices` **et** traduit les liens du même geste.
+
+    C'est le seul point d'entrée sûr pour travailler sur une partie des cartes.
+    Appeler `CardSet.subset()` seul renumérote les cartes sans toucher aux liens :
+    un lien sur les cartes 2 et 3 continue de dire « 2 et 3 », qui désignent
+    désormais d'autres cartes. La grille colle alors deux cartes que l'utilisateur
+    n'a jamais liées — sans exception, avec un score et une image plausibles.
+
+    Aucune vérification d'indices ne peut détecter cette confusion, puisque les
+    indices fautifs restent dans les bornes. D'où cette fonction : faire les deux
+    ensemble est la seule garantie.
+    """
+    subset = cards.subset(indices)
+    translated = (links.remapped(subset.index_mapping()) if links
+                  else LinkLibrary())
+    return subset, translated
+
+
 def check_links_fit(groups: Sequence[Sequence[int]], cols: int) -> None:
     """Vérifie qu'aucun lien n'est plus large que la grille.
 
@@ -452,7 +501,6 @@ def check_links_fit(groups: Sequence[Sequence[int]], cols: int) -> None:
 def generate_grid(
     cards: CardSet,
     links: LinkLibrary | None = None,
-    iterations: int = 500000,
     shape: tuple[int, int] | None = None,
     empty_cells: Sequence[Cell] = (),
     rng: random.Random | None = None,
@@ -460,7 +508,13 @@ def generate_grid(
     stop: StopConditions | None = None,
     timeline: Timeline | None = None,
 ) -> np.ndarray:
-    """Construit la grille, l'optimise, et rend compte de la progression."""
+    """Construit la grille, l'optimise, et rend compte de la progression.
+
+    Le nombre de tentatives se règle par `stop.max_iterations`, seul et unique
+    compteur : exposer en plus un paramètre `iterations` laissait les deux
+    diverger en silence, celui du `stop` l'emportant sans le dire.
+    """
+    stop = stop or StopConditions()
     if not len(cards):
         return np.array([])
 
@@ -474,7 +528,7 @@ def generate_grid(
 
     link_map = links.group_map() if links else {}
     result = optimize_grid(
-        grid, distances, link_map, iterations, rng, annealing, stop, timeline
+        grid, distances, link_map, stop.max_iterations, rng, annealing, stop, timeline
     )
 
     print(f"Score {result.initial_score:.0f} -> {result.final_score:.0f} "

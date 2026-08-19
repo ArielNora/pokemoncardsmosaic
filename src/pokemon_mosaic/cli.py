@@ -136,8 +136,7 @@ def main(argv=None) -> int:
         empty_cells = distribute_empty_cells((rows, cols), fit.empty_cells)
 
     grid = generate_grid(
-        cards, links, iterations=args.iterations,
-        shape=shape, empty_cells=empty_cells,
+        cards, links, shape=shape, empty_cells=empty_cells,
         annealing=Annealing(initial_acceptance=args.acceptance) if args.annealing else None,
         stop=StopConditions(
             max_iterations=args.iterations,

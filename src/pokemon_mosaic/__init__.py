@@ -19,6 +19,7 @@ from .optimize import (
     build_initial_grid,
     generate_grid,
     optimize_grid,
+    select_cards,
 )
 from .scoring import EMPTY, EdgeDistances, grid_score, local_score
 from .timeline import Snapshot, Timeline
@@ -54,5 +55,6 @@ __all__ = [
     "render_grid",
     "resolve_links",
     "save_grid_image",
+    "select_cards",
     "suggest_grids",
 ]

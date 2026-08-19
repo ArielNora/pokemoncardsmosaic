@@ -1,0 +1,23 @@
+#!/bin/sh
+# Refuse un commit qui casse l'analyse statique ou les tests.
+#
+# Versionné dans .githooks/ pour survivre à un clone, et activé par :
+#   git config core.hooksPath .githooks
+#
+# Contourner ponctuellement : git commit --no-verify
+
+set -e
+cd "$(git rev-parse --show-toplevel)"
+
+if [ ! -x .venv/bin/ruff ]; then
+    echo "pre-commit : environnement absent, lancez 'uv sync --extra dev'." >&2
+    exit 1
+fi
+
+echo "pre-commit : ruff…"
+.venv/bin/ruff check src tests
+
+echo "pre-commit : pytest…"
+.venv/bin/pytest tests/ -q
+
+echo "pre-commit : ok"
