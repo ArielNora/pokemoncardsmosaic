@@ -5,7 +5,6 @@ préviennent par signaux. Rien n'est recalculé en double d'un écran à l'autre
 """
 
 import os
-from typing import Dict, List, Optional, Set, Tuple
 
 from PySide6.QtCore import QObject, Signal
 
@@ -26,10 +25,10 @@ class Session(QObject):
 
     def __init__(self):
         super().__init__()
-        self.card_set: Optional[CardSet] = None
-        self.data_dir: Optional[str] = None
-        self._excluded: Set[int] = set()
-        self._folder_of: Dict[int, str] = {}
+        self.card_set: CardSet | None = None
+        self.data_dir: str | None = None
+        self._excluded: set[int] = set()
+        self._folder_of: dict[int, str] = {}
         self.links = LinkLibrary()
 
         # Mise en page (étape 2). Le format d'impression commande : la taille des
@@ -43,7 +42,7 @@ class Session(QObject):
         # Liste ordonnée, pas un ensemble : le rang sert à savoir quel trou céder
         # sa place quand l'utilisateur en pose un nouveau alors que le quota est
         # atteint. Le plus ancien s'efface, façon file d'attente.
-        self._empty_cells: List[Tuple[int, int]] = []
+        self._empty_cells: list[tuple[int, int]] = []
         self._empty_pinned = False
 
     # --- Cartes -----------------------------------------------------------
@@ -108,18 +107,18 @@ class Session(QObject):
     def toggle(self, index: int) -> None:
         self.set_excluded([index], index not in self._excluded)
 
-    def selected_indices(self) -> List[int]:
+    def selected_indices(self) -> list[int]:
         if not self.card_set:
             return []
         return [c.index for c in self.card_set if c.index not in self._excluded]
 
     # --- Dossiers ---------------------------------------------------------
 
-    def folders(self) -> List[str]:
+    def folders(self) -> list[str]:
         """Dossiers rencontrés, en chemin relatif à la racine, triés."""
         return sorted(set(self._folder_of.values()))
 
-    def indices_in_folder(self, folder: str) -> List[int]:
+    def indices_in_folder(self, folder: str) -> list[int]:
         return [i for i, f in self._folder_of.items() if f == folder]
 
     def folder_of(self, index: int) -> str:
@@ -129,6 +128,13 @@ class Session(QObject):
 
     def set_layout(self, **changes) -> None:
         """Modifie un ou plusieurs réglages de grille et prévient une seule fois."""
+        # On compare les valeurs avant de les appliquer : le formulaire renvoie
+        # toujours les six réglages d'un bloc, donc tester la seule présence de
+        # « cols » effacerait le placement manuel à chaque changement de DPI,
+        # de format ou d'orientation.
+        grid_changed = (changes.get("cols", self.cols) != self.cols
+                        or changes.get("rows", self.rows) != self.rows)
+
         touched = False
         for name, value in changes.items():
             if getattr(self, name) != value:
@@ -136,18 +142,19 @@ class Session(QObject):
                 touched = True
         if not touched:
             return
-        if "cols" in changes or "rows" in changes:
+
+        if grid_changed:
             # Les positions choisies à la main n'ont plus de sens sur une autre
             # grille : on repart d'une répartition automatique.
             self._empty_pinned = False
-            self._empty_cells.clear()
+            self._empty_cells = []
         self.layout_changed.emit()
 
     def grid_fit(self) -> GridFit:
         return GridFit(cols=self.cols, rows=self.rows,
                        card_count=self.selected_count)
 
-    def empty_cells(self) -> List[Tuple[int, int]]:
+    def empty_cells(self) -> list[tuple[int, int]]:
         """Cases vides à figer : celles posées à la main, sinon la répartition
         automatique. Le nombre suit toujours la grille et la sélection."""
         needed = self.grid_fit().empty_cells

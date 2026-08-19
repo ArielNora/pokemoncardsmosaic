@@ -9,7 +9,6 @@ changement de langue : Qt ne réévalue pas `tr()` tout seul.
 """
 
 from pathlib import Path
-from typing import List
 
 from PySide6.QtCore import QLibraryInfo, QLocale, QObject, QTranslator, Signal
 
@@ -28,7 +27,7 @@ class LanguageManager(QObject):
     def __init__(self, app):
         super().__init__()
         self._app = app
-        self._translators: List[QTranslator] = []
+        self._translators: list[QTranslator] = []
         self._current = SOURCE_LANGUAGE
 
     @property

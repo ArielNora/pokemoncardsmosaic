@@ -2,8 +2,17 @@
 
 from PySide6.QtCore import Qt, Signal
 from PySide6.QtWidgets import (
-    QAbstractItemView, QFileDialog, QHBoxLayout, QLabel, QListWidget,
-    QListWidgetItem, QProgressBar, QPushButton, QSplitter, QVBoxLayout, QWidget,
+    QAbstractItemView,
+    QFileDialog,
+    QHBoxLayout,
+    QLabel,
+    QListWidget,
+    QListWidgetItem,
+    QProgressBar,
+    QPushButton,
+    QSplitter,
+    QVBoxLayout,
+    QWidget,
 )
 
 from .gallery import CardGallery
@@ -104,7 +113,9 @@ class CardsStep(QWidget):
                     "Sélectionnez un dossier pour n'afficher que ses cartes.")
         )
         self._update_counts()
-        self._fill_folders()
+        # Pas de _fill_folders() ici : les noms de dossiers sont des chemins, pas
+        # des textes traduits. Le rappeler viderait la liste et détruirait la
+        # sélection, donc le filtre en cours, pour rien.
 
     # --- Chargement -------------------------------------------------------
 

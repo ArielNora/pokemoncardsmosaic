@@ -23,6 +23,7 @@ experiments = [
 ]
 dev = [
     "pytest>=8",
+    "ruff>=0.9",
 ]
 
 # matplotlib était installé dans l'ancien venv mais n'est importé nulle part.
@@ -38,3 +39,22 @@ build-backend = "hatchling.build"
 
 [tool.hatch.build.targets.wheel]
 packages = ["src/pokemon_mosaic"]
+
+[tool.ruff]
+line-length = 95
+target-version = "py313"
+
+[tool.ruff.lint]
+# F : imports et variables inutilisés — c'est le gain principal.
+# I : tri des imports.
+# B : pièges courants (bugbear).
+# La modernisation du typage (UP) est volontairement écartée : elle réécrirait
+# toutes les annotations du projet sans rapport avec la qualité du code.
+extend-select = ["I", "B"]
+ignore = [
+    # Les tableaux de mesures dans les docstrings dépassent volontairement.
+    "E501",
+    # Signature imposée par Qt : `parent=QModelIndex()` est la convention des
+    # modèles, on ne peut pas y déroger.
+    "B008",
+]

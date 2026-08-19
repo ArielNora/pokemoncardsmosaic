@@ -12,7 +12,6 @@ Un A0 en deux panneaux ferait sinon 836 Mo.
 
 import os
 from dataclasses import dataclass, field
-from typing import List, Optional, Sequence, Tuple
 
 import numpy as np
 from PIL import Image, ImageDraw
@@ -36,8 +35,8 @@ class PosterSettings:
     panels: int = 1
     overlap_mm: float = 0.0
     crop_marks: bool = False
-    background: Tuple[int, int, int] = WHITE
-    empty_colour: Tuple[int, int, int] = WHITE
+    background: tuple[int, int, int] = WHITE
+    empty_colour: tuple[int, int, int] = WHITE
     jpeg_quality: int = 95
 
     def __post_init__(self):
@@ -47,11 +46,11 @@ class PosterSettings:
             raise ValueError("Le chevauchement ne peut pas être négatif.")
 
     @property
-    def paper_mm(self) -> Tuple[float, float]:
+    def paper_mm(self) -> tuple[float, float]:
         return paper_size_mm(self.paper, self.landscape)
 
     @property
-    def paper_px(self) -> Tuple[int, int]:
+    def paper_px(self) -> tuple[int, int]:
         w, h = self.paper_mm
         return mm_to_pixels(w, self.dpi), mm_to_pixels(h, self.dpi)
 
@@ -67,20 +66,20 @@ class PosterPlan:
     settings: PosterSettings
     cols: int
     rows: int
-    card_px: Tuple[int, int]
-    margin_px: Tuple[int, int]
-    warnings: List[str] = field(default_factory=list)
+    card_px: tuple[int, int]
+    margin_px: tuple[int, int]
+    warnings: list[str] = field(default_factory=list)
 
     @property
     def cols_per_panel(self) -> int:
         return self.cols // self.settings.panels
 
     @property
-    def total_px(self) -> Tuple[int, int]:
+    def total_px(self) -> tuple[int, int]:
         paper_w, paper_h = self.settings.paper_px
         return paper_w * self.settings.panels, paper_h
 
-    def panel_bounds(self, panel: int) -> Tuple[int, int]:
+    def panel_bounds(self, panel: int) -> tuple[int, int]:
         """Fenêtre horizontale d'un panneau, chevauchement compris."""
         paper_w = self.settings.paper_px[0]
         overlap = self.settings.overlap_px
@@ -110,7 +109,7 @@ def plan_poster(
     margin_x = (paper_w * settings.panels - cols * card_px[0]) // 2
     margin_y = (paper_h - rows * card_px[1]) // 2
 
-    warnings: List[str] = []
+    warnings: list[str] = []
     ceiling = max_useful_dpi(settings.paper_mm, cols_per_panel, cards.full_size[0])
     if settings.dpi > ceiling:
         warnings.append(
@@ -131,7 +130,7 @@ def _render_window(
     grid: np.ndarray,
     cards: CardSet,
     plan: PosterPlan,
-    window: Tuple[int, int, int, int],
+    window: tuple[int, int, int, int],
     full_resolution: bool,
 ) -> Image.Image:
     """Assemble la portion du poster contenue dans `window` (x0, y0, x1, y1).
@@ -198,7 +197,7 @@ def render_panels(
     cards: CardSet,
     settings: PosterSettings,
     full_resolution: bool = True,
-) -> List[Image.Image]:
+) -> list[Image.Image]:
     """Produit une image par panneau, jamais le poster entier en mémoire."""
     plan = plan_poster(grid, cards, settings)
     _, paper_h = settings.paper_px
@@ -219,7 +218,7 @@ def export_poster(
     settings: PosterSettings,
     path: str,
     full_resolution: bool = True,
-) -> List[str]:
+) -> list[str]:
     """Écrit le poster. Renvoie la liste des fichiers produits.
 
     Le format se déduit de l'extension : `.png`, `.jpg`/`.jpeg`, `.pdf`. Le PDF porte

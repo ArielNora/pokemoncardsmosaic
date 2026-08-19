@@ -33,7 +33,8 @@ class CardLoader(QObject):
                 progress=lambda done, total: self.progress.emit(done, total),
                 on_folder=lambda folder, cards: self.folder_loaded.emit(folder, cards),
             )
-        except Exception as error:  # remonté à l'interface, jamais avalé
+        except Exception as error:  # noqa: BLE001 - tout échec du fil de fond
+            # doit remonter à l'interface, sinon il disparaîtrait sans trace.
             self.failed.emit(str(error))
             return
 

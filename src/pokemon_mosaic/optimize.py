@@ -9,8 +9,8 @@ Trois contraintes cohabitent :
 
 import random
 import time
+from collections.abc import Sequence
 from dataclasses import dataclass
-from typing import Dict, List, Optional, Sequence, Tuple
 
 import numpy as np
 
@@ -21,7 +21,7 @@ from .links import Link, LinkLibrary
 from .scoring import EMPTY, EdgeDistances, grid_score, local_score
 from .timeline import Timeline
 
-Cell = Tuple[int, int]
+Cell = tuple[int, int]
 
 # Probabilité de tenter un retournement sur place plutôt qu'un déplacement, quand la
 # carte tirée appartient à un lien sans ordre imposé.
@@ -36,16 +36,17 @@ CHECK_INTERVAL = 1000
 class StopConditions:
     """Les quatre seuils d'arrêt de l'étape 3.
 
-    Tous optionnels : le premier atteint met fin au calcul. `max_iterations` reste la
-    borne dure.
+    `max_iterations` est la **borne réelle de la boucle** : c'est ce champ, et lui
+    seul, qui décide du nombre de tentatives. Les autres seuils sont optionnels, et
+    le premier atteint met fin au calcul.
     """
 
     max_iterations: int = 1_000_000
-    target_score: Optional[float] = None
-    stagnation_iterations: Optional[int] = None
-    time_budget: Optional[float] = None
+    target_score: float | None = None
+    stagnation_iterations: int | None = None
+    time_budget: float | None = None
 
-    def check(self, score: float, since_improvement: int, elapsed: float) -> Optional[str]:
+    def check(self, score: float, since_improvement: int, elapsed: float) -> str | None:
         """Renvoie la raison d'arrêter, ou None pour continuer."""
         if self.target_score is not None and score <= self.target_score:
             return "score atteint"
@@ -81,7 +82,7 @@ class OptimizationResult:
 
 def _locate_block(
     grid: np.ndarray, row: int, col: int, card: int, link: Link
-) -> Optional[Tuple[int, Tuple[int, ...]]]:
+) -> tuple[int, tuple[int, ...]] | None:
     """Retrouve la position et l'orientation courante d'un bloc dans la grille.
 
     Un lien sans ordre imposé peut avoir été retourné : on essaie les deux
@@ -101,7 +102,7 @@ def _locate_block(
     return None
 
 
-def _validate_links(grid: np.ndarray, links: Dict[int, Link]) -> None:
+def _validate_links(grid: np.ndarray, links: dict[int, Link]) -> None:
     """Vérifie que chaque lien est déjà intact dans la grille de départ.
 
     L'optimiseur ne sait que **préserver** un bloc, pas le reconstituer : une carte
@@ -125,9 +126,9 @@ def _validate_links(grid: np.ndarray, links: Dict[int, Link]) -> None:
 
 
 def _try_flip_in_place(
-    grid: np.ndarray, cells: List[Cell], sequence: Tuple[int, ...],
+    grid: np.ndarray, cells: list[Cell], sequence: tuple[int, ...],
     distances: EdgeDistances, accept,
-) -> Optional[float]:
+) -> float | None:
     """Retourne un bloc sur place. Renvoie le delta de score si retenu, sinon None."""
     before = local_score(cells, grid, distances)
     flipped = tuple(reversed(sequence))
@@ -147,12 +148,12 @@ def _try_flip_in_place(
 def optimize_grid(
     grid: np.ndarray,
     distances: EdgeDistances,
-    links: Optional[Dict[int, Link]] = None,
+    links: dict[int, Link] | None = None,
     iterations: int = 50000,
-    rng: Optional[random.Random] = None,
-    annealing: Optional[Annealing] = None,
-    stop: Optional[StopConditions] = None,
-    timeline: Optional[Timeline] = None,
+    rng: random.Random | None = None,
+    annealing: Annealing | None = None,
+    stop: StopConditions | None = None,
+    timeline: Timeline | None = None,
 ) -> OptimizationResult:
     """Optimise la grille par échanges aléatoires.
 
@@ -170,7 +171,11 @@ def optimize_grid(
     """
     links = links or {}
     rng = rng or random
+    # `iterations` n'est qu'un raccourci pour construire les conditions d'arrêt.
+    # La boucle borne sur `stop.max_iterations`, seul et unique compteur : sans
+    # cela les deux pourraient diverger et le champ resterait sans effet.
     stop = stop or StopConditions(max_iterations=iterations)
+    total_iterations = stop.max_iterations
     rows, cols = grid.shape
 
     if links:
@@ -193,13 +198,15 @@ def optimize_grid(
     def accept(delta: float) -> bool:
         if annealing is None:
             return delta < 0
-        temperature = annealing.temperature_at(iteration / iterations, temperature_0)
+        temperature = annealing.temperature_at(
+            iteration / total_iterations if total_iterations else 1.0, temperature_0
+        )
         return annealing.accepts(delta, temperature, rng)
 
     if timeline is not None:
         timeline.record(grid, 0, 0, score, 0.0)
 
-    for iteration in range(iterations):
+    for iteration in range(total_iterations):
         if iteration % CHECK_INTERVAL == 0:
             reason = stop.check(
                 best_score, iteration - last_improvement, time.monotonic() - started
@@ -253,7 +260,7 @@ def optimize_grid(
 
         # La cible ne doit contenir que des cartes libres : on ne casse pas un autre
         # bloc, et on ne recouvre jamais une case vide figée.
-        occupants: List[int] = []
+        occupants: list[int] = []
         for r, c in target:
             value = int(grid[r, c])
             if value == EMPTY or value in links:
@@ -300,14 +307,14 @@ def optimize_grid(
 
 def _try_move(
     grid: np.ndarray,
-    source: List[Cell],
-    target: List[Cell],
-    sequence: Tuple[int, ...],
-    occupants: List[int],
-    link: Optional[Link],
+    source: list[Cell],
+    target: list[Cell],
+    sequence: tuple[int, ...],
+    occupants: list[int],
+    link: Link | None,
     distances: EdgeDistances,
     accept,
-) -> Optional[float]:
+) -> float | None:
     """Tente de déplacer un objet vers la zone cible, en testant les orientations.
 
     Un lien sans ordre imposé est essayé dans les deux sens, et le meilleur est
@@ -324,7 +331,7 @@ def _try_move(
     if link is not None and not link.ordered:
         candidates.append(tuple(reversed(sequence)))
 
-    def place(order: Tuple[int, ...]) -> None:
+    def place(order: tuple[int, ...]) -> None:
         for k, (r, c) in enumerate(target):
             grid[r, c] = order[k]
         for k, (r, c) in enumerate(source):
@@ -355,10 +362,10 @@ def _try_move(
 
 def build_initial_grid(
     cards: CardSet,
-    shape: Optional[Tuple[int, int]] = None,
-    links: Optional[LinkLibrary] = None,
+    shape: tuple[int, int] | None = None,
+    links: LinkLibrary | None = None,
     empty_cells: Sequence[Cell] = (),
-    rng: Optional[random.Random] = None,
+    rng: random.Random | None = None,
 ) -> np.ndarray:
     """Pose les cases vides, puis les blocs imposés, puis les cartes libres.
 
@@ -385,6 +392,8 @@ def build_initial_grid(
         )
 
     # 2. Blocs imposés, posés à la suite en sautant les cases réservées.
+    check_links_fit(groups, cols)
+
     used = set()
     r = c = 0
     for group in groups:
@@ -402,6 +411,16 @@ def build_initial_grid(
                 used.add(idx)
             c += len(group)
             placed = True
+        if not placed:
+            # Sans cette erreur, le bloc serait abandonné en silence : ses cartes
+            # repartiraient comme cartes libres, le lien serait rompu, et l'échec
+            # ne referait surface qu'au contrôle d'intégrité — avec un message
+            # conseillant d'utiliser build_initial_grid, qu'on vient d'appeler.
+            raise ValueError(
+                f"Le lien {tuple(group)} ({len(group)} cartes) ne trouve pas de "
+                f"place dans une grille de {cols}×{rows} avec {len(reserved)} "
+                f"case(s) vide(s)."
+            )
 
     # 3. Cartes libres dans les cases restantes, en ordre aléatoire.
     available = [card.index for card in cards if card.index not in used]
@@ -416,16 +435,30 @@ def build_initial_grid(
     return grid
 
 
+def check_links_fit(groups: Sequence[Sequence[int]], cols: int) -> None:
+    """Vérifie qu'aucun lien n'est plus large que la grille.
+
+    Exposée séparément pour que l'interface puisse refuser une grille trop étroite
+    dès le choix de la mise en page, au lieu de laisser échouer le calcul.
+    """
+    for group in groups:
+        if len(group) > cols:
+            raise ValueError(
+                f"Le lien {tuple(group)} occupe {len(group)} cases de large, "
+                f"mais la grille n'a que {cols} colonne(s)."
+            )
+
+
 def generate_grid(
     cards: CardSet,
-    links: Optional[LinkLibrary] = None,
+    links: LinkLibrary | None = None,
     iterations: int = 500000,
-    shape: Optional[Tuple[int, int]] = None,
+    shape: tuple[int, int] | None = None,
     empty_cells: Sequence[Cell] = (),
-    rng: Optional[random.Random] = None,
-    annealing: Optional[Annealing] = None,
-    stop: Optional[StopConditions] = None,
-    timeline: Optional[Timeline] = None,
+    rng: random.Random | None = None,
+    annealing: Annealing | None = None,
+    stop: StopConditions | None = None,
+    timeline: Timeline | None = None,
 ) -> np.ndarray:
     """Construit la grille, l'optimise, et rend compte de la progression."""
     if not len(cards):

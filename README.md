@@ -266,10 +266,11 @@ tests/            tests du cœur de calcul
 experiments/      approches alternatives, conservées mais non maintenues
 ```
 
-Tests :
+Tests et analyse statique :
 
 ```bash
 uv run --extra dev pytest
+uv run --extra dev ruff check src tests
 ```
 
 ### experiments/

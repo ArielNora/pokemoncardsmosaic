@@ -6,7 +6,7 @@ coutures/s contre 473 000 via `scipy.cdist`, soit un gain ×21 pour 1,2 Mo de m�
 et 4 ms de précalcul. Voir SPEC.md §8.
 """
 
-from typing import Iterable, Sequence, Tuple
+from collections.abc import Iterable, Sequence
 
 import numpy as np
 
@@ -32,9 +32,21 @@ class EdgeDistances:
     - `tb[i, j]` : bord bas de la carte `i` contre bord haut de la carte `j`
     """
 
-    __slots__ = ("lr", "tb", "count")
+    __slots__ = ("count", "lr", "tb")
 
     def __init__(self, cards: Sequence[Card]):
+        # Les matrices sont indexées par position, alors que la grille contient des
+        # `card.index`. Les deux doivent coïncider, sinon les distances seraient
+        # lues à la mauvaise ligne — en silence. C'est le seul point de passage où
+        # cette confusion peut se produire : on la refuse ici.
+        for position, card in enumerate(cards):
+            if card.index != position:
+                raise ValueError(
+                    f"Numérotation discontinue : la carte en position {position} "
+                    f"porte l'indice {card.index}. Construisez la sélection avec "
+                    f"CardSet.subset(), qui renumérote."
+                )
+
         right = np.array([c.right for c in cards], dtype=np.float64)
         left = np.array([c.left for c in cards], dtype=np.float64)
         bottom = np.array([c.bottom for c in cards], dtype=np.float64)
@@ -71,7 +83,7 @@ def grid_score(grid: np.ndarray, distances: EdgeDistances) -> float:
 
 
 def local_score(
-    cells: Iterable[Tuple[int, int]],
+    cells: Iterable[tuple[int, int]],
     grid: np.ndarray,
     distances: EdgeDistances,
 ) -> float:

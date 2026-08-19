@@ -135,3 +135,80 @@ def test_max_useful_dpi_matches_measured_values():
     """Repères calculés dans SPEC.md §4, pour une grille 17x17 de cartes 713 px."""
     assert max_useful_dpi(paper_size_mm("A2"), 17, 713) == pytest.approx(733, abs=2)
     assert max_useful_dpi(paper_size_mm("A0"), 17, 713) == pytest.approx(366, abs=2)
+
+
+@pytest.mark.parametrize("paper,cols,rows", [
+    ("A2", 17, 17), ("A1", 30, 20), ("A3", 17, 17), ("A0", 100, 70), ("A4", 7, 9),
+])
+def test_the_grid_never_overflows_the_sheet(paper, cols, rows):
+    """`round()` pouvait arrondir vers le haut : la largeur totale dépassait celle
+    de la feuille, la marge devenait négative et le poster était rogné, alors que
+    le module promet « ni déformation ni rognage »."""
+    from pokemon_mosaic.layout import mm_to_pixels
+
+    sheet = paper_size_mm(paper)
+    card_w, card_h = card_pixel_size(sheet, cols, rows, CARD_ASPECT, dpi=300)
+    assert cols * card_w <= mm_to_pixels(sheet[0], 300), "débordement en largeur"
+    assert rows * card_h <= mm_to_pixels(sheet[1], 300), "débordement en hauteur"
+
+
+# --- Sous-ensembles renumérotés -------------------------------------------
+
+def _demo_card_set(n):
+    import numpy as np
+
+    from pokemon_mosaic.cards import Card, CardSet
+
+    rng = np.random.default_rng(0)
+    cards = []
+    for i in range(n):
+        card = Card(path=f"/fake/{i}.png", index=i,
+                    thumbnail=np.zeros((4, 4, 3), np.uint8))
+        card.top, card.bottom, card.left, card.right = (rng.random(3) * 255
+                                                        for _ in range(4))
+        cards.append(card)
+    return CardSet(cards=cards, full_size=(713, 984), thumb_size=(178, 246))
+
+
+def test_subset_renumbers_from_zero():
+    subset = _demo_card_set(6).subset([1, 3, 5])
+    assert [card.index for card in subset] == [0, 1, 2]
+
+
+def test_subset_remembers_the_original_indices():
+    """L'export doit pouvoir remonter à la sélection de l'utilisateur."""
+    subset = _demo_card_set(6).subset([1, 3, 5])
+    assert [card.source_index for card in subset] == [1, 3, 5]
+
+
+def test_subset_keeps_the_right_cards():
+    original = _demo_card_set(6)
+    subset = original.subset([4, 1])
+    assert [card.path for card in subset] == ["/fake/1.png", "/fake/4.png"]
+
+
+def test_subset_shares_thumbnails_rather_than_copying_them():
+    original = _demo_card_set(4)
+    subset = original.subset([2])
+    assert subset[0].thumbnail is original.cards[2].thumbnail
+
+
+def test_a_subset_can_be_scored_and_optimized():
+    """Le cas exact que l'étape 4 déclenchera : n'optimiser qu'une sélection."""
+    import random
+
+    from pokemon_mosaic.optimize import build_initial_grid, optimize_grid
+    from pokemon_mosaic.scoring import EdgeDistances
+
+    subset = _demo_card_set(12).subset([0, 2, 4, 6, 8, 10])
+    distances = EdgeDistances(subset.cards)
+    grid = build_initial_grid(subset, shape=(3, 2), rng=random.Random(0))
+    optimize_grid(grid, distances, iterations=500, rng=random.Random(0))
+    assert sorted(int(v) for v in grid.flatten()) == list(range(6))
+
+
+def test_subset_of_a_subset_keeps_the_first_origin():
+    original = _demo_card_set(8)
+    once = original.subset([1, 3, 5, 7])
+    twice = once.subset([0, 2])
+    assert [card.source_index for card in twice] == [1, 5]

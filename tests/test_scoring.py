@@ -123,3 +123,13 @@ def test_optimization_reports_accepted_swaps():
     assert 0 < result.accepted < 2000
     assert result.attempted == 2000
     assert 0 < result.acceptance_rate < 1
+
+
+def test_distances_refuse_a_discontinuous_numbering():
+    """Les matrices sont indexées par position, la grille porte des card.index.
+    Si les deux divergent, les distances sont lues à la mauvaise ligne et la
+    mosaïque est assemblée avec les mauvaises cartes, sans que rien ne lève."""
+    cards = make_cards(5)
+    selection = [cards[0], cards[2], cards[4]]  # indices 0, 2, 4
+    with pytest.raises(ValueError, match="Numérotation discontinue"):
+        EdgeDistances(selection)

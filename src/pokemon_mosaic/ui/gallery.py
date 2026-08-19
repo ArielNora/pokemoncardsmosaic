@@ -1,6 +1,5 @@
 """Modèle et vue de la galerie de cartes."""
 
-from typing import List, Optional, Set
 
 import numpy as np
 from PySide6.QtCore import QAbstractListModel, QModelIndex, QSize, Qt
@@ -37,7 +36,7 @@ class CardGalleryModel(QAbstractListModel):
         self._session = session
         self._pixmaps = {}
         self._folders = None          # None = tous les dossiers
-        self._visible: List[int] = []
+        self._visible: list[int] = []
         session.loading_started.connect(self._reset)
         session.cards_added.connect(self._on_cards_added)
         session.selection_changed.connect(self._refresh_all)
@@ -47,7 +46,7 @@ class CardGalleryModel(QAbstractListModel):
 
     # --- Filtrage ---------------------------------------------------------
 
-    def set_folder_filter(self, folders: Optional[Set[str]]) -> None:
+    def set_folder_filter(self, folders: set[str] | None) -> None:
         """Restreint l'affichage à ces dossiers ; None les montre tous."""
         self._folders = folders or None
         self._rebuild()
@@ -91,7 +90,7 @@ class CardGalleryModel(QAbstractListModel):
 
     # --- Données ----------------------------------------------------------
 
-    def card_index_at(self, row: int) -> Optional[int]:
+    def card_index_at(self, row: int) -> int | None:
         return self._visible[row] if 0 <= row < len(self._visible) else None
 
     def rowCount(self, parent=QModelIndex()) -> int:

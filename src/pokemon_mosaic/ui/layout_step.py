@@ -2,12 +2,26 @@
 
 from PySide6.QtCore import Qt
 from PySide6.QtWidgets import (
-    QCheckBox, QComboBox, QFormLayout, QGroupBox, QHBoxLayout, QLabel,
-    QListWidget, QListWidgetItem, QPushButton, QSpinBox, QVBoxLayout, QWidget,
+    QCheckBox,
+    QComboBox,
+    QFormLayout,
+    QGroupBox,
+    QHBoxLayout,
+    QLabel,
+    QListWidget,
+    QListWidgetItem,
+    QPushButton,
+    QSpinBox,
+    QVBoxLayout,
+    QWidget,
 )
 
 from ..layout import (
-    PAPER_FORMATS_MM, card_pixel_size, max_useful_dpi, paper_size_mm, suggest_grids,
+    PAPER_FORMATS_MM,
+    card_pixel_size,
+    max_useful_dpi,
+    paper_size_mm,
+    suggest_grids,
 )
 from .session import Session
 from .wireframe import WireframeView

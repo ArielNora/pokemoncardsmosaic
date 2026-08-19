@@ -1,8 +1,6 @@
 """Tests de l'étape 2 : réglages de mise en page et cases vides."""
 
-import numpy as np
 import pytest
-
 from test_ui_session import card_set_in
 
 
@@ -131,3 +129,31 @@ def test_wireframe_refuses_a_grid_that_cannot_be_split(qt_app, session):
     view = WireframeView(session)
     view.resize(400, 500)
     assert view._layout() is None
+
+
+@pytest.mark.parametrize("change", [
+    {"dpi": 600}, {"paper": "A1"}, {"landscape": True}, {"panels": 2},
+])
+def test_manual_empty_cells_survive_unrelated_settings(session, change):
+    """Le formulaire renvoie les six réglages d'un bloc : tester la présence de
+    « cols » au lieu de sa valeur effaçait le placement manuel dès qu'on touchait
+    au DPI, au format, à l'orientation ou au nombre de panneaux."""
+    session.set_layout(cols=6, rows=4)
+    automatic = set(session.empty_cells())
+    chosen = [cell for cell in ((r, c) for r in range(4) for c in range(6))
+              if cell not in automatic][:3]
+    for cell in chosen:
+        session.toggle_empty_cell(*cell)
+    placed = session.empty_cells()
+    assert all(cell in placed for cell in chosen)
+
+    session.set_layout(cols=6, rows=4, **change)   # comme le fait le formulaire
+    assert session.empty_cells() == placed
+    assert session._empty_pinned
+
+
+def test_changing_the_grid_still_resets_the_placement(session):
+    session.set_layout(cols=6, rows=4)
+    session.toggle_empty_cell(0, 0)
+    session.set_layout(cols=5, rows=5)
+    assert not session._empty_pinned

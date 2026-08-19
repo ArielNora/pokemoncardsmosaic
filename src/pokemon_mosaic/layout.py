@@ -6,7 +6,6 @@ pour être testable seule. Voir SPEC.md §4.
 
 import math
 from dataclasses import dataclass
-from typing import List, Optional, Sequence, Tuple
 
 # Formats ISO 216, en millimètres, portrait.
 PAPER_FORMATS_MM = {
@@ -23,7 +22,7 @@ DEFAULT_DPI = 300
 MM_PER_INCH = 25.4
 
 
-def paper_size_mm(name: str, landscape: bool = False) -> Tuple[float, float]:
+def paper_size_mm(name: str, landscape: bool = False) -> tuple[float, float]:
     """Dimensions d'un format, en millimètres."""
     try:
         width, height = PAPER_FORMATS_MM[name.upper()]
@@ -107,7 +106,7 @@ def suggest_grids(
     panels: int = 1,
     tolerance: float = 0.05,
     limit: int = 8,
-) -> List[GridSuggestion]:
+) -> list[GridSuggestion]:
     """Propose des grilles proches du format visé, classées par pertinence.
 
     `paper_aspect` est le rapport largeur/hauteur de la **feuille entière** ; avec
@@ -121,7 +120,7 @@ def suggest_grids(
     if card_count <= 0 or card_aspect <= 0 or paper_aspect <= 0:
         return []
 
-    found: List[GridSuggestion] = []
+    found: list[GridSuggestion] = []
     for rows in range(1, card_count * 2):
         # cols tel que (cols * card_aspect) / rows ~= paper_aspect
         ideal = paper_aspect * rows / card_aspect
@@ -151,8 +150,8 @@ GOLDEN_RATIO = 0.618033988749895
 
 
 def distribute_empty_cells(
-    shape: Tuple[int, int], count: int
-) -> List[Tuple[int, int]]:
+    shape: tuple[int, int], count: int
+) -> list[tuple[int, int]]:
     """Répartit `count` cases vides sur une grille (rows, cols).
 
     C'est le placement par défaut : l'utilisateur peut ensuite déplacer chaque case
@@ -184,7 +183,7 @@ def distribute_empty_cells(
     return sorted(taken)
 
 
-def _first_free_cell(taken, row: int, col: int, rows: int, cols: int) -> Tuple[int, int]:
+def _first_free_cell(taken, row: int, col: int, rows: int, cols: int) -> tuple[int, int]:
     """Trouve une case libre à partir de (row, col), en balayant vers la droite."""
     for offset in range(rows * cols):
         r = (row + offset // cols) % rows
@@ -195,12 +194,12 @@ def _first_free_cell(taken, row: int, col: int, rows: int, cols: int) -> Tuple[i
 
 
 def card_pixel_size(
-    paper: Tuple[float, float],
+    paper: tuple[float, float],
     cols: int,
     rows: int,
     card_aspect: float,
     dpi: int = DEFAULT_DPI,
-) -> Tuple[int, int]:
+) -> tuple[int, int]:
     """Taille d'une carte en pixels pour remplir la feuille, proportions conservées.
 
     Le format d'impression commande : on remplit la dimension la plus contraignante et
@@ -213,11 +212,17 @@ def card_pixel_size(
     by_width = paper_w_px / cols
     by_height = paper_h_px / rows * card_aspect
     card_w = min(by_width, by_height)
-    return (max(1, round(card_w)), max(1, round(card_w / card_aspect)))
+
+    # `floor` et non `round` : arrondir vers le haut ferait dépasser la largeur
+    # totale (cols × card_w) de celle de la feuille, la marge deviendrait négative
+    # et le poster serait rogné — jusqu'à cols/2 pixels de chaque côté. On préfère
+    # au plus un pixel de blanc supplémentaire.
+    card_w = math.floor(card_w)
+    return (max(1, card_w), max(1, math.floor(card_w / card_aspect)))
 
 
 def max_useful_dpi(
-    paper: Tuple[float, float], cols: int, source_card_width_px: int
+    paper: tuple[float, float], cols: int, source_card_width_px: int
 ) -> float:
     """DPI au-delà duquel on interpole sans ajouter de détail.
 

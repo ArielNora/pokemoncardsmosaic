@@ -169,14 +169,18 @@ def main(argv=None) -> int:
     output_path = args.output_dir / f"{stem}.png"
     save_grid_image(grid, cards, str(output_path), full_resolution=args.full_resolution)
 
-    print_image_properties(str(output_path))
+    ok = print_image_properties(str(output_path))
     if args.preview_percent != 100:
         preview = output_path.with_name(
             f"{output_path.stem}_preview{args.preview_percent}pct.png"
         )
-        resize_and_save(str(output_path), str(preview), percent=args.preview_percent)
+        ok = resize_and_save(
+            str(output_path), str(preview), percent=args.preview_percent
+        ) and ok
 
-    return 0
+    # Un échec d'écriture ne doit pas ressortir en succès : un script qui enchaîne
+    # en && poursuivrait comme si l'image existait.
+    return 0 if ok else 1
 
 
 if __name__ == "__main__":

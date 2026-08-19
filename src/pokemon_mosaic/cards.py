@@ -5,8 +5,8 @@ pleine résolution ne sont relues du disque qu'au moment de l'export. Voir SPEC.
 """
 
 import os
-from dataclasses import dataclass, field
-from typing import Callable, Iterator, List, Optional, Sequence, Tuple
+from collections.abc import Callable, Iterator, Sequence
+from dataclasses import dataclass, field, replace
 
 import numpy as np
 from PIL import Image
@@ -34,6 +34,10 @@ class Card:
     path: str
     index: int
     thumbnail: np.ndarray
+
+    # Indice qu'avait la carte dans l'ensemble d'origine, quand elle provient d'un
+    # sous-ensemble renuméroté. Sert à retrouver la sélection de l'utilisateur.
+    source_index: int | None = None
 
     top: np.ndarray = field(default=None, repr=False)
     bottom: np.ndarray = field(default=None, repr=False)
@@ -65,9 +69,9 @@ class Card:
 class CardSet:
     """L'ensemble des cartes chargées, plus les dimensions nécessaires à l'export."""
 
-    cards: List[Card]
-    full_size: Tuple[int, int]
-    thumb_size: Tuple[int, int]
+    cards: list[Card]
+    full_size: tuple[int, int]
+    thumb_size: tuple[int, int]
 
     def __len__(self) -> int:
         return len(self.cards)
@@ -76,7 +80,36 @@ class CardSet:
         return iter(self.cards)
 
     def __getitem__(self, i: int) -> Card:
+        """Accès par indice de carte.
+
+        L'ensemble garantit `card.index == position dans la liste` : c'est ce qui
+        permet aux matrices de distances, à la grille et au rendu de partager la
+        même numérotation. Utilisez `subset()` pour construire une sélection, il
+        rétablit cette propriété.
+        """
         return self.cards[i]
+
+    def subset(self, indices: Sequence[int]) -> "CardSet":
+        """Nouvel ensemble limité à ces cartes, **renuméroté** de 0 à n-1.
+
+        Indispensable dès qu'on ne travaille que sur une partie des cartes : les
+        indices d'origine sont discontinus, alors que les matrices de distances
+        sont indexées par position. Sans renumérotation, les distances seraient
+        lues à la mauvaise ligne et la mosaïque assemblée avec les mauvaises
+        cartes, sans que rien ne le signale.
+
+        Les vignettes ne sont pas recopiées : les tableaux sont partagés.
+        """
+        chosen = sorted(set(indices))
+        cards = [
+            replace(self.cards[index], index=position,
+                    source_index=self.cards[index].source_index
+                    if self.cards[index].source_index is not None
+                    else self.cards[index].index)
+            for position, index in enumerate(chosen)
+        ]
+        return CardSet(cards=cards, full_size=self.full_size,
+                       thumb_size=self.thumb_size)
 
     def recalculate_features(self, strip_size: float) -> None:
         """Recalcule toutes les signatures — utilisé par l'aperçu temps réel.
@@ -87,7 +120,7 @@ class CardSet:
         for card in self.cards:
             card.calculate_features(strip_size)
 
-    def find(self, path_fragment: str) -> Optional[int]:
+    def find(self, path_fragment: str) -> int | None:
         """Retrouve l'indice d'une carte à partir d'un fragment de son chemin."""
         return next((c.index for c in self.cards if path_fragment in c.path), None)
 
@@ -115,8 +148,8 @@ def load_cards(
     exclude: Sequence[str] = (),
     scale: float = DEFAULT_SCALE,
     strip_size: float = DEFAULT_STRIP_SIZE,
-    progress: Optional[Callable[[int, int], None]] = None,
-    on_folder: Optional[Callable[[str, List["Card"]], None]] = None,
+    progress: Callable[[int, int], None] | None = None,
+    on_folder: Callable[[str, list["Card"]], None] | None = None,
 ) -> CardSet:
     """Charge les cartes sous forme de vignettes et calcule leurs signatures.
 
@@ -143,12 +176,13 @@ def load_cards(
 
     # Passe 1 — en-têtes seulement, pour la plus petite taille commune.
     min_w, min_h = None, None
-    readable: List[str] = []
+    readable: list[str] = []
     for path in paths:
         try:
             with Image.open(path) as img:
                 w, h = img.size
-        except Exception as e:
+        except Exception as e:  # noqa: BLE001 - un fichier abîmé ne doit pas
+            # interrompre le chargement des 280 autres cartes.
             print(f"  Illisible, ignorée : {path} ({e})")
             continue
         readable.append(path)
@@ -164,9 +198,9 @@ def load_cards(
     # Passe 2 — décodage et réduction directe à la taille de vignette.
     # BOX est une moyenne de blocs : c'est exactement l'opération qui justifie de
     # calculer les signatures sur les vignettes plutôt qu'en pleine résolution.
-    cards: List[Card] = []
-    batch: List[Card] = []
-    batch_folder: Optional[str] = None
+    cards: list[Card] = []
+    batch: list[Card] = []
+    batch_folder: str | None = None
 
     def flush() -> None:
         if on_folder is not None and batch:
@@ -186,7 +220,7 @@ def load_cards(
                 thumb = np.asarray(
                     img.convert("RGB").resize(thumb_size, Image.Resampling.BOX)
                 )
-        except Exception as e:
+        except Exception as e:  # noqa: BLE001 - idem : on saute la carte.
             print(f"  Erreur de traitement, ignorée : {path} ({e})")
             continue
         card = Card(path=path, index=len(cards), thumbnail=thumb)
@@ -200,7 +234,7 @@ def load_cards(
     return CardSet(cards=cards, full_size=full_size, thumb_size=thumb_size)
 
 
-def load_full_image(card: Card, size: Tuple[int, int]) -> np.ndarray:
+def load_full_image(card: Card, size: tuple[int, int]) -> np.ndarray:
     """Relit une carte en pleine résolution, pour l'export uniquement."""
     with Image.open(card.path) as img:
         return np.asarray(img.convert("RGB").resize(size, Image.Resampling.LANCZOS))

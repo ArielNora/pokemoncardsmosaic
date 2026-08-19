@@ -12,7 +12,6 @@ Voir SPEC.md §5 et §6.
 """
 
 from dataclasses import dataclass, field
-from typing import List, Optional
 
 import numpy as np
 
@@ -48,8 +47,8 @@ class Timeline:
     """
 
     every: int = 10
-    max_snapshots: Optional[int] = 70
-    snapshots: List[Snapshot] = field(default_factory=list)
+    max_snapshots: int | None = 70
+    snapshots: list[Snapshot] = field(default_factory=list)
     _next_at: int = 0
 
     def __len__(self) -> int:
@@ -104,13 +103,13 @@ class Timeline:
     def maybe_record(
         self, grid: np.ndarray, iteration: int, accepted: int,
         score: float, elapsed: float,
-    ) -> Optional[Snapshot]:
+    ) -> Snapshot | None:
         """Enregistre si assez d'échanges ont été retenus depuis le dernier cliché."""
         if accepted < self._next_at:
             return None
         return self.record(grid, iteration, accepted, score, elapsed)
 
-    def best(self) -> Optional[Snapshot]:
+    def best(self) -> Snapshot | None:
         """Le cliché au meilleur score — pas forcément le dernier avec un recuit."""
         return min(self.snapshots, key=lambda s: s.score, default=None)
 

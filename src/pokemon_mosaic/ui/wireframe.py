@@ -5,7 +5,6 @@ des cartes, coupes entre panneaux — **sans les images**, comme demandé : on j
 ici de la géométrie, pas du contenu.
 """
 
-from typing import Optional, Tuple
 
 from PySide6.QtCore import QRectF, Qt, Signal
 from PySide6.QtGui import QBrush, QColor, QPainter, QPen
@@ -31,7 +30,7 @@ class WireframeView(QWidget):
     def __init__(self, session, parent=None):
         super().__init__(parent)
         self._session = session
-        self._geometry: Optional[Tuple[float, float, float, float]] = None
+        self._geometry: tuple[float, float, float, float] | None = None
         self.setMinimumSize(320, 380)
         self.setCursor(Qt.PointingHandCursor)
 

@@ -2,18 +2,17 @@
 
 import math
 import os
-from typing import Optional, Sequence, Tuple
 
 import numpy as np
 from PIL import Image
 
-from .cards import Card, CardSet, load_full_image
+from .cards import CardSet, load_full_image
 from .scoring import EMPTY
 
 WHITE = (255, 255, 255)
 
 
-def calculate_grid_dims(n: int) -> Tuple[int, int]:
+def calculate_grid_dims(n: int) -> tuple[int, int]:
     """Renvoie (colonnes, lignes) : la paire de facteurs de `n` la plus proche du carré.
 
     Garantit zéro case vide et zéro carte perdue — mais la forme dépend entièrement
@@ -28,7 +27,7 @@ def calculate_grid_dims(n: int) -> Tuple[int, int]:
     """
     if n <= 0:
         return (0, 0)
-    for i in range(int(math.isqrt(n)), 0, -1):
+    for i in range(math.isqrt(n), 0, -1):
         if n % i == 0:
             return (n // i, i)
     return (n, 1)
@@ -38,7 +37,7 @@ def render_grid(
     grid: np.ndarray,
     cards: CardSet,
     full_resolution: bool = False,
-    empty_colour: Tuple[int, int, int] = WHITE,
+    empty_colour: tuple[int, int, int] = WHITE,
 ) -> Image.Image:
     """Assemble les cartes selon `grid` et renvoie l'image.
 
@@ -73,7 +72,7 @@ def save_grid_image(
     cards: CardSet,
     path: str,
     full_resolution: bool = False,
-    empty_colour: Tuple[int, int, int] = WHITE,
+    empty_colour: tuple[int, int, int] = WHITE,
 ) -> None:
     """Rend la grille et l'écrit sur le disque."""
     if not len(cards):

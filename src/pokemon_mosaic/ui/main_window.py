@@ -2,13 +2,20 @@
 
 from PySide6.QtCore import Qt
 from PySide6.QtWidgets import (
-    QComboBox, QHBoxLayout, QLabel, QMainWindow, QPushButton, QStackedWidget,
-    QStatusBar, QVBoxLayout, QWidget,
+    QComboBox,
+    QHBoxLayout,
+    QLabel,
+    QMainWindow,
+    QPushButton,
+    QStackedWidget,
+    QStatusBar,
+    QVBoxLayout,
+    QWidget,
 )
 
 from .cards_step import CardsStep
-from .layout_step import LayoutStep
 from .i18n import LANGUAGES, LanguageManager
+from .layout_step import LayoutStep
 from .session import Session
 
 

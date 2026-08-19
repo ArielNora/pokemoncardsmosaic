@@ -9,8 +9,8 @@ Les liens vivent dans une bibliothèque indépendante des préréglages : un lie
 travail durable, un préréglage est un essai de mise en page. Voir SPEC.md §3.
 """
 
+from collections.abc import Iterable, Sequence
 from dataclasses import dataclass, field
-from typing import Dict, Iterable, List, Optional, Sequence, Tuple
 
 
 @dataclass(frozen=True)
@@ -22,7 +22,7 @@ class Link:
     `enabled` : un lien désactivé est ignoré sans être supprimé.
     """
 
-    cards: Tuple[int, ...]
+    cards: tuple[int, ...]
     ordered: bool = True
     enabled: bool = True
     name: str = ""
@@ -36,7 +36,7 @@ class Link:
     def __len__(self) -> int:
         return len(self.cards)
 
-    def reversed_cards(self) -> Tuple[int, ...]:
+    def reversed_cards(self) -> tuple[int, ...]:
         return tuple(reversed(self.cards))
 
 
@@ -44,7 +44,7 @@ class Link:
 class LinkLibrary:
     """La collection de liens, indépendante de toute mise en page."""
 
-    links: List[Link] = field(default_factory=list)
+    links: list[Link] = field(default_factory=list)
 
     def __len__(self) -> int:
         return len(self.links)
@@ -53,7 +53,7 @@ class LinkLibrary:
         return iter(self.links)
 
     @property
-    def active(self) -> List[Link]:
+    def active(self) -> list[Link]:
         return [link for link in self.links if link.enabled]
 
     def add(self, link: Link) -> None:
@@ -85,11 +85,11 @@ class LinkLibrary:
             [link for link in self.links if available.issuperset(link.cards)]
         )
 
-    def to_groups(self) -> List[Tuple[int, ...]]:
+    def to_groups(self) -> list[tuple[int, ...]]:
         """Les blocs actifs, sous la forme attendue par l'optimiseur."""
         return [link.cards for link in self.active]
 
-    def group_map(self) -> Dict[int, Link]:
+    def group_map(self) -> dict[int, Link]:
         """Table carte -> lien, pour retrouver le bloc d'une carte en O(1)."""
         return {idx: link for link in self.active for idx in link.cards}
 
@@ -99,17 +99,17 @@ def resolve_links(
     finder,
     pairs: Sequence[Sequence[str]],
     ordered: bool = True,
-) -> List[str]:
+) -> list[str]:
     """Ajoute des liens décrits par fragments de chemin, en signalant les manquants.
 
     `finder` prend un fragment et renvoie un indice de carte ou None.
     Renvoie la liste des fragments introuvables, pour information.
     """
-    missing: List[str] = []
+    missing: list[str] = []
     for pair in pairs:
         indices = [finder(fragment) for fragment in pair]
         if all(idx is not None for idx in indices):
             library.add(Link(cards=tuple(indices), ordered=ordered))
         else:
-            missing.extend(f for f, idx in zip(pair, indices) if idx is None)
+            missing.extend(f for f, idx in zip(pair, indices, strict=True) if idx is None)
     return missing

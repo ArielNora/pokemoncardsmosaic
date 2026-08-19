@@ -4,12 +4,11 @@ import random
 
 import numpy as np
 import pytest
+from test_scoring import make_cards
 
 from pokemon_mosaic.links import Link, LinkLibrary
 from pokemon_mosaic.optimize import build_initial_grid, optimize_grid
 from pokemon_mosaic.scoring import EMPTY, EdgeDistances
-
-from test_scoring import make_cards
 
 
 def positions(grid, *indices):
@@ -188,3 +187,33 @@ def _card_set(n):
     from pokemon_mosaic.cards import CardSet
 
     return CardSet(cards=make_cards(n), full_size=(713, 984), thumb_size=(178, 246))
+
+
+def test_a_link_wider_than_the_grid_is_reported_at_construction():
+    """Le bloc était abandonné en silence : ses cartes repartaient libres, le lien
+    était rompu, et l'échec ne refaisait surface qu'au contrôle d'intégrité — avec
+    un message conseillant d'appeler build_initial_grid, qu'on venait d'appeler."""
+    cards_set = _card_set(6)
+    library = LinkLibrary()
+    library.add(Link(cards=(0, 1, 2)))
+    with pytest.raises(ValueError, match="3 colonne|3 cases de large|ne trouve pas"):
+        build_initial_grid(cards_set, shape=(2, 3), links=library, rng=random.Random(0))
+
+
+def test_links_fit_check_can_be_called_upfront():
+    """Exposée pour que l'interface refuse une grille trop étroite en amont."""
+    from pokemon_mosaic.optimize import check_links_fit
+
+    check_links_fit([(0, 1)], cols=2)
+    with pytest.raises(ValueError, match="colonne"):
+        check_links_fit([(0, 1, 2)], cols=2)
+
+
+def test_a_link_that_fits_exactly_is_accepted():
+    cards_set = _card_set(6)
+    library = LinkLibrary()
+    library.add(Link(cards=(0, 1, 2)))
+    grid = build_initial_grid(cards_set, shape=(3, 2), links=library,
+                              rng=random.Random(0))
+    row = [int(v) for v in grid[0]]
+    assert row == [0, 1, 2]

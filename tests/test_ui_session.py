@@ -6,8 +6,6 @@ import pytest
 from pokemon_mosaic.cards import Card, CardSet
 from pokemon_mosaic.links import Link
 
-from test_scoring import make_cards
-
 
 def card_set_in(tmp_path, layout):
     """Construit un CardSet dont les chemins reflètent une arborescence réelle."""

@@ -4,14 +4,12 @@ import re
 
 import numpy as np
 import pytest
-from PIL import Image
+from test_scoring import make_cards
 
 from pokemon_mosaic.cards import CardSet
 from pokemon_mosaic.export import PosterSettings, export_poster, plan_poster, render_panels
 from pokemon_mosaic.layout import paper_size_mm
 from pokemon_mosaic.scoring import EMPTY
-
-from test_scoring import make_cards
 
 
 def card_set(n, size=(713, 984)):

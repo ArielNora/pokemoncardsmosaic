@@ -1,17 +1,16 @@
 """Tests du recuit simulé, des seuils d'arrêt et de la timeline."""
 
 import random
+from itertools import pairwise
 
 import numpy as np
 import pytest
+from test_scoring import make_cards
 
 from pokemon_mosaic.annealing import Annealing
 from pokemon_mosaic.optimize import StopConditions, optimize_grid
 from pokemon_mosaic.scoring import EdgeDistances, grid_score
 from pokemon_mosaic.timeline import Timeline
-
-from test_scoring import make_cards
-
 
 # --- Recuit ---------------------------------------------------------------
 
@@ -157,7 +156,7 @@ def test_timeline_records_by_accepted_swaps_not_attempts():
     # Un cliché initial, un tous les 5 échanges retenus, puis un cliché final imposé.
     assert len(timeline) == pytest.approx(2 + result.accepted // 5, abs=1)
     # Le dernier intervalle est libre : le cliché final est pris quoi qu'il arrive.
-    gaps = [b.accepted - a.accepted for a, b in zip(timeline, list(timeline)[1:-1])]
+    gaps = [b.accepted - a.accepted for a, b in zip(timeline, list(timeline)[1:-1], strict=False)]
     assert all(gap >= 5 for gap in gaps)
 
 
@@ -249,7 +248,7 @@ def test_thinning_keeps_snapshots_spread_over_the_whole_run():
     # Le cliché final est imposé et peut suivre de près le précédent : on juge la
     # régularité sur le corps de la timeline, pas sur ce dernier point.
     body = list(timeline)[:-1]
-    gaps = [b.accepted - a.accepted for a, b in zip(body, body[1:])]
+    gaps = [b.accepted - a.accepted for a, b in pairwise(body)]
     assert max(gaps) <= 3 * min(gaps), f"répartition trop irrégulière : {gaps}"
 
 
@@ -272,3 +271,39 @@ def test_timeline_always_ends_on_the_returned_grid():
     assert timeline[-1].score == pytest.approx(result.final_score)
     np.testing.assert_array_equal(timeline[-1].grid.astype(int), grid)
     assert timeline.best().score == pytest.approx(result.final_score)
+
+
+def test_max_iterations_is_the_real_bound():
+    """Le champ était documenté comme la borne dure mais n'était jamais testé :
+    la boucle bornait sur le paramètre `iterations`, et tout appelant ne
+    remplissant que StopConditions tournait bien au-delà de sa demande."""
+    cards = make_cards(30)
+    distances = EdgeDistances(cards)
+    grid = np.arange(30).reshape(5, 6)
+    result = optimize_grid(
+        grid, distances, iterations=5000, rng=random.Random(0),
+        stop=StopConditions(max_iterations=10),
+    )
+    assert result.attempted == 10
+
+
+def test_iterations_still_works_without_stop_conditions():
+    cards = make_cards(30)
+    distances = EdgeDistances(cards)
+    grid = np.arange(30).reshape(5, 6)
+    result = optimize_grid(grid, distances, iterations=250, rng=random.Random(0))
+    assert result.attempted == 250
+
+
+def test_cooling_follows_the_real_bound():
+    """La température doit atteindre son plancher à la fin réelle du calcul,
+    pas à celle d'un compteur inutilisé."""
+    cards = make_cards(40)
+    distances = EdgeDistances(cards)
+    grid = np.arange(40).reshape(5, 8)
+    result = optimize_grid(
+        grid, distances, iterations=100000, rng=random.Random(0),
+        annealing=Annealing(initial_acceptance=0.5),
+        stop=StopConditions(max_iterations=3000),
+    )
+    assert result.attempted == 3000

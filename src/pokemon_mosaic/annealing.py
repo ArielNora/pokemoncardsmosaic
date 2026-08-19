@@ -15,7 +15,6 @@ coups dégradants acceptés au début.
 import math
 import random
 from dataclasses import dataclass
-from typing import Optional
 
 import numpy as np
 
@@ -36,7 +35,7 @@ class Annealing:
 
     initial_acceptance: float = 0.5
     final_ratio: float = 0.001
-    initial_temperature: Optional[float] = None
+    initial_temperature: float | None = None
 
     def __post_init__(self):
         if not 0.0 < self.initial_acceptance < 1.0:
