@@ -8,13 +8,27 @@ import os
 
 from PySide6.QtCore import QObject, Signal
 
-from ..cards import CardSet
+from ..annealing import Annealing
+from ..cards import DEFAULT_STRIP_SIZE, CardSet
 from ..layout import DEFAULT_DPI, GridFit, distribute_empty_cells
 from ..links import Link, LinkLibrary
+from ..optimize import StopConditions
 
 
 class Session(QObject):
     """Ce que l'utilisateur a choisi jusqu'ici."""
+
+    # Liste explicite des réglages d'algorithme. Valider par `hasattr` accepterait
+    # tout attribut de QObject ou de mise en page : `set_algorithm(dpi=600)`
+    # passerait et émettrait `algorithm_changed`, alors que l'aperçu fil de fer
+    # n'écoute que `layout_changed` — il n'aurait jamais connaissance du changement.
+    ALGORITHM_SETTINGS = frozenset({
+        "iterations", "snapshot_every", "empty_colour",
+        "stop_on_stagnation", "stagnation_iterations",
+        "stop_on_time", "time_budget",
+        "use_annealing", "acceptance", "strip_size",
+        "stop_on_score", "target_score",
+    })
 
     loading_started = Signal()
     layout_changed = Signal()
@@ -22,6 +36,7 @@ class Session(QObject):
     cards_loaded = Signal()         # chargement terminé
     selection_changed = Signal()
     links_changed = Signal()
+    algorithm_changed = Signal()
 
     def __init__(self):
         super().__init__()
@@ -45,6 +60,22 @@ class Session(QObject):
         self._empty_cells: list[tuple[int, int]] = []
         self._empty_pinned = False
 
+        # Réglages d'algorithme (étape 3), séparés en « de base » et « avancés ».
+        # De base : ce qui se décide par intention.
+        self.iterations = 1_000_000
+        self.snapshot_every = 10
+        self.empty_colour = (255, 255, 255)
+        self.stop_on_stagnation = False
+        self.stagnation_iterations = 50_000
+        self.stop_on_time = False
+        self.time_budget = 60.0
+        # Avancés : ce qui exige de comprendre le fonctionnement interne.
+        self.use_annealing = True
+        self.acceptance = 0.5
+        self.strip_size = DEFAULT_STRIP_SIZE
+        self.stop_on_score = False
+        self.target_score = 0.0
+
     # --- Cartes -----------------------------------------------------------
 
     def start_loading(self, data_dir: str) -> None:
@@ -65,6 +96,14 @@ class Session(QObject):
         """Ajoute un lot de cartes déjà chargées, en conservant leurs indices."""
         if not cards:
             return
+        # Les cartes arrivent d'un fil de fond qui a figé l'épaisseur de bande au
+        # démarrage. Si l'utilisateur l'a changée entre-temps, les dossiers déjà
+        # arrivés ont été recalculés et pas ceux-ci : le même jeu porterait des
+        # signatures calculées sur deux épaisseurs, et les distances entre les deux
+        # groupes n'auraient plus aucun sens. On réaligne systématiquement.
+        for card in cards:
+            card.calculate_features(self.strip_size)
+
         self.card_set.cards.extend(cards)
         for card in cards:
             # Le nom de dossier seul ne suffit pas : deux séries peuvent avoir un
@@ -203,6 +242,57 @@ class Session(QObject):
         self._empty_pinned = False
         self._empty_cells = []
         self.layout_changed.emit()
+
+    # --- Réglages d'algorithme --------------------------------------------
+
+    def set_algorithm(self, **changes) -> None:
+        """Modifie un ou plusieurs réglages et ne prévient qu'une fois."""
+        unknown = set(changes) - self.ALGORITHM_SETTINGS
+        if unknown:
+            raise AttributeError(
+                f"Réglage inconnu : {', '.join(sorted(unknown))}. "
+                f"Les réglages de mise en page passent par set_layout()."
+            )
+
+        # On compare les valeurs avant de les appliquer : l'écran de réglages
+        # renvoie tous les champs d'un bloc, donc tester la présence de la clé
+        # « strip_size » recalculerait les 280 signatures (~47 ms) à chaque cran
+        # de molette sur un réglage sans rapport.
+        strip_changed = changes.get("strip_size", self.strip_size) != self.strip_size
+
+        touched = False
+        for name, value in changes.items():
+            if getattr(self, name) != value:
+                setattr(self, name, value)
+                touched = True
+        if not touched:
+            return
+
+        # L'épaisseur des bandes change les signatures : sans recalcul, le score
+        # reposerait sur des mesures périmées.
+        if strip_changed and self.card_set:
+            self.card_set.recalculate_features(self.strip_size)
+        self.algorithm_changed.emit()
+
+    def annealing(self) -> Annealing | None:
+        """Le recuit configuré, ou None pour une descente stricte."""
+        if not self.use_annealing:
+            return None
+        return Annealing(initial_acceptance=self.acceptance)
+
+    def stop_conditions(self) -> StopConditions:
+        """Traduit les cases cochées en conditions d'arrêt.
+
+        Un seuil décoché vaut None : le champ garde sa valeur pour que la
+        décocher puis la recocher n'oblige pas à la ressaisir.
+        """
+        return StopConditions(
+            max_iterations=self.iterations,
+            target_score=self.target_score if self.stop_on_score else None,
+            stagnation_iterations=(self.stagnation_iterations
+                                   if self.stop_on_stagnation else None),
+            time_budget=self.time_budget if self.stop_on_time else None,
+        )
 
     # --- Liens ------------------------------------------------------------
 

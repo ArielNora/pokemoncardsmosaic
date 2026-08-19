@@ -135,6 +135,7 @@ class CardsStep(QWidget):
         self._thread, self._worker = start_loading(
             self, directory, self._on_progress, self._on_folder_loaded,
             self._on_loaded, self._on_failed,
+            strip_size=self._session.strip_size,
         )
 
     def _on_progress(self, done: int, total: int) -> None:
