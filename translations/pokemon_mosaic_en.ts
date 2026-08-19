@@ -4,20 +4,22 @@
 <context>
     <name>CardsStep</name>
     <message>
-        <location filename="../src/pokemon_mosaic/ui/cards_step.py" line="87"/>
+        <location filename="../src/pokemon_mosaic/ui/cards_step.py" line="95"/>
         <source>Dossiers</source>
         <translation>Folders</translation>
     </message>
     <message>
+        <location filename="../src/pokemon_mosaic/ui/cards_step.py" line="100"/>
         <source>Tout inclure</source>
-        <translation type="vanished">Include all</translation>
+        <translation>Include all</translation>
     </message>
     <message>
+        <location filename="../src/pokemon_mosaic/ui/cards_step.py" line="101"/>
         <source>Tout exclure</source>
-        <translation type="vanished">Exclude all</translation>
+        <translation>Exclude all</translation>
     </message>
     <message>
-        <location filename="../src/pokemon_mosaic/ui/cards_step.py" line="91"/>
+        <location filename="../src/pokemon_mosaic/ui/cards_step.py" line="99"/>
         <source>Choisir le dossier de cartes…</source>
         <translation>Choose card folder…</translation>
     </message>
@@ -26,37 +28,37 @@
         <translation type="vanished">Click a card to include or exclude it. Select several to toggle them at once.</translation>
     </message>
     <message>
-        <location filename="../src/pokemon_mosaic/ui/cards_step.py" line="88"/>
+        <location filename="../src/pokemon_mosaic/ui/cards_step.py" line="96"/>
         <source>Inclure</source>
         <translation>Include</translation>
     </message>
     <message>
-        <location filename="../src/pokemon_mosaic/ui/cards_step.py" line="89"/>
+        <location filename="../src/pokemon_mosaic/ui/cards_step.py" line="97"/>
         <source>Exclure</source>
         <translation>Exclude</translation>
     </message>
     <message>
-        <location filename="../src/pokemon_mosaic/ui/cards_step.py" line="90"/>
+        <location filename="../src/pokemon_mosaic/ui/cards_step.py" line="98"/>
         <source>Afficher tous les dossiers</source>
         <translation>Show all folders</translation>
     </message>
     <message>
-        <location filename="../src/pokemon_mosaic/ui/cards_step.py" line="93"/>
+        <location filename="../src/pokemon_mosaic/ui/cards_step.py" line="103"/>
         <source>Cliquez une carte pour l&apos;inclure ou l&apos;exclure. Sélectionnez un dossier pour n&apos;afficher que ses cartes.</source>
         <translation>Click a card to include or exclude it. Select a folder to show only its cards.</translation>
     </message>
     <message>
-        <location filename="../src/pokemon_mosaic/ui/cards_step.py" line="103"/>
+        <location filename="../src/pokemon_mosaic/ui/cards_step.py" line="113"/>
         <source>Dossier contenant les cartes</source>
         <translation>Folder containing the cards</translation>
     </message>
     <message>
-        <location filename="../src/pokemon_mosaic/ui/cards_step.py" line="112"/>
+        <location filename="../src/pokemon_mosaic/ui/cards_step.py" line="122"/>
         <source>Chargement des cartes…</source>
         <translation>Loading cards…</translation>
     </message>
     <message numerus="yes">
-        <location filename="../src/pokemon_mosaic/ui/cards_step.py" line="132"/>
+        <location filename="../src/pokemon_mosaic/ui/cards_step.py" line="142"/>
         <source>%n carte(s) chargée(s).</source>
         <translation>
             <numerusform>%n card loaded.</numerusform>
@@ -64,29 +66,32 @@
         </translation>
     </message>
     <message>
-        <location filename="../src/pokemon_mosaic/ui/cards_step.py" line="138"/>
+        <location filename="../src/pokemon_mosaic/ui/cards_step.py" line="148"/>
         <source>Échec du chargement : %1</source>
         <translation>Loading failed: %1</translation>
     </message>
     <message>
-        <location filename="../src/pokemon_mosaic/ui/cards_step.py" line="184"/>
+        <location filename="../src/pokemon_mosaic/ui/cards_step.py" line="201"/>
         <source>Aucune carte chargée</source>
         <translation>No cards loaded</translation>
     </message>
     <message>
-        <location filename="../src/pokemon_mosaic/ui/cards_step.py" line="186"/>
+        <location filename="../src/pokemon_mosaic/ui/cards_step.py" line="203"/>
         <source>%1 cartes retenues sur %2</source>
         <translation>%1 of %2 cards kept</translation>
     </message>
     <message>
-        <location filename="../src/pokemon_mosaic/ui/cards_step.py" line="192"/>
+        <location filename="../src/pokemon_mosaic/ui/cards_step.py" line="209"/>
         <source>filtré sur %1</source>
         <translation>filtered on %1</translation>
     </message>
     <message numerus="yes">
-        <location filename="../src/pokemon_mosaic/ui/cards_step.py" line="194"/>
+        <location filename="../src/pokemon_mosaic/ui/cards_step.py" line="211"/>
         <source>filtré sur %n dossiers</source>
-        <translation><numerusform>filtered on %n folder</numerusform><numerusform>filtered on %n folders</numerusform></translation>
+        <translation>
+            <numerusform>filtered on %n folder</numerusform>
+            <numerusform>filtered on %n folders</numerusform>
+        </translation>
     </message>
 </context>
 <context>

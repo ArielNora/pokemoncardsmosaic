@@ -69,12 +69,20 @@ class CardsStep(QWidget):
 
         self._choose_folder = QPushButton()
         self._choose_folder.clicked.connect(self._pick_folder)
+        # Actions globales, volontairement séparées des boutons du panneau de
+        # gauche qui, eux, ne portent que sur les dossiers sélectionnés.
+        self._include_all = QPushButton()
+        self._exclude_all = QPushButton()
+        self._include_all.clicked.connect(lambda: self._set_all(False))
+        self._exclude_all.clicked.connect(lambda: self._set_all(True))
         self._count = QLabel()
         self._progress = QProgressBar()
         self._progress.hide()
 
         top = QHBoxLayout()
         top.addWidget(self._choose_folder)
+        top.addWidget(self._include_all)
+        top.addWidget(self._exclude_all)
         top.addWidget(self._count, 1)
         top.addWidget(self._progress, 1)
 
@@ -89,6 +97,8 @@ class CardsStep(QWidget):
         self._exclude_folder.setText(self.tr("Exclure"))
         self._show_all.setText(self.tr("Afficher tous les dossiers"))
         self._choose_folder.setText(self.tr("Choisir le dossier de cartes…"))
+        self._include_all.setText(self.tr("Tout inclure"))
+        self._exclude_all.setText(self.tr("Tout exclure"))
         self._hint.setText(
             self.tr("Cliquez une carte pour l'inclure ou l'exclure. "
                     "Sélectionnez un dossier pour n'afficher que ses cartes.")
@@ -163,6 +173,13 @@ class CardsStep(QWidget):
             item = QListWidgetItem(f"{folder}  ({count})")
             item.setData(Qt.UserRole, folder)
             self._folders.addItem(item)
+
+    def _set_all(self, excluded: bool) -> None:
+        """Agit sur toutes les cartes chargées, indépendamment du filtre affiché."""
+        if self._session.card_set:
+            self._session.set_excluded(
+                [card.index for card in self._session.card_set], excluded
+            )
 
     def _selected_folders(self):
         return {item.data(Qt.UserRole) for item in self._folders.selectedItems()}

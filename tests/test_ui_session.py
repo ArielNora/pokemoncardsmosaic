@@ -200,3 +200,15 @@ def test_new_cards_respect_the_active_filter(session, tmp_path):
     assert model.rowCount() == 2
     model.set_folder_filter({"s/b"})
     assert model.rowCount() == 2
+
+
+def test_include_and_exclude_every_card(session, tmp_path):
+    """Les actions globales portent sur tout le jeu, pas sur le filtre affiché."""
+    session.set_cards(card_set_in(tmp_path, {"s/a": ["1", "2"], "s/b": ["3"]}),
+                      str(tmp_path))
+    everything = [card.index for card in session.card_set]
+
+    session.set_excluded(everything, True)
+    assert session.selected_count == 0
+    session.set_excluded(everything, False)
+    assert session.selected_count == 3
