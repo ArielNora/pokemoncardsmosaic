@@ -17,6 +17,7 @@ from .cards_step import CardsStep
 from .i18n import LANGUAGES, LanguageManager
 from .layout_step import LayoutStep
 from .session import Session
+from .settings_step import SettingsStep
 
 
 class PlaceholderStep(QWidget):
@@ -76,7 +77,9 @@ class MainWindow(QMainWindow):
         self._stack.addWidget(self._cards_step)
         self._layout_step = LayoutStep(self._session)
         self._stack.addWidget(self._layout_step)
-        for position in range(2, self.STEP_COUNT):
+        self._settings_step = SettingsStep(self._session)
+        self._stack.addWidget(self._settings_step)
+        for position in range(3, self.STEP_COUNT):
             self._stack.addWidget(
                 PlaceholderStep(lambda i=position: self.step_title(i))
             )

@@ -246,3 +246,103 @@ def test_cards_arriving_late_use_the_current_strip_size(qt_app, tmp_path):
 
     tops = [round(float(card.top.mean()), 1) for card in session.card_set]
     assert len(set(tops)) == 1, f"signatures hétérogènes : {tops}"
+
+
+# --- Écran de réglages -----------------------------------------------------
+
+@pytest.fixture
+def step(qt_app, session):
+    from pokemon_mosaic.ui.settings_step import SettingsStep
+
+    return SettingsStep(session), session
+
+
+def test_form_starts_from_the_session(step):
+    widget, session = step
+    assert widget._iterations.value() == session.iterations
+    assert widget._strip_size.value() == pytest.approx(session.strip_size)
+    assert widget._algorithm.currentData() is session.use_annealing
+
+
+def test_form_follows_a_change_made_elsewhere(step):
+    """Un préréglage chargé doit se voir dans les champs, pas seulement en sortie."""
+    widget, session = step
+    session.set_algorithm(iterations=250_000, use_annealing=False, acceptance=0.2)
+    assert widget._iterations.value() == 250_000
+    assert widget._algorithm.currentData() is False
+    assert widget._acceptance.value() == pytest.approx(0.2)
+
+
+def test_editing_a_field_reaches_the_session(step):
+    widget, session = step
+    widget._iterations.setValue(123_000)
+    assert session.iterations == 123_000
+
+
+def test_acceptance_is_disabled_in_strict_descent(step):
+    """La tolérance ne veut rien dire sans recuit : la descente stricte n'accepte
+    jamais un coup dégradant."""
+    widget, session = step
+    session.set_algorithm(use_annealing=True)
+    assert widget._acceptance.isEnabled()
+    session.set_algorithm(use_annealing=False)
+    assert not widget._acceptance.isEnabled()
+
+
+@pytest.mark.parametrize("flag,field", [
+    ("stop_on_stagnation", "_stagnation"),
+    ("stop_on_time", "_time_budget"),
+    ("stop_on_score", "_target_score"),
+])
+def test_threshold_fields_follow_their_checkbox(step, flag, field):
+    widget, session = step
+    session.set_algorithm(**{flag: False})
+    assert not getattr(widget, field).isEnabled()
+    session.set_algorithm(**{flag: True})
+    assert getattr(widget, field).isEnabled()
+
+
+def test_projections_are_displayed(step):
+    widget, session = step
+    session.set_algorithm(iterations=1_000_000, use_annealing=True, snapshot_every=10)
+    assert "8 s" in widget._duration.text()
+    assert "68" in widget._gain.text()
+    assert "36" in widget._snapshots.text() and "70" in widget._snapshots.text()
+
+
+def test_projections_follow_the_algorithm(step):
+    widget, session = step
+    session.set_algorithm(iterations=1_000_000, use_annealing=True)
+    annealed = widget._gain.text()
+    session.set_algorithm(use_annealing=False)
+    assert widget._gain.text() != annealed
+
+
+def test_a_too_loose_cadence_is_flagged(step):
+    """Sous une dizaine de clichés la timeline n'est plus navigable."""
+    widget, session = step
+    session.set_algorithm(iterations=10_000, snapshot_every=1000, use_annealing=False)
+    assert "cadence" in widget._snapshots.text()
+
+
+def test_a_usable_cadence_is_not_flagged(step):
+    widget, session = step
+    session.set_algorithm(iterations=1_000_000, snapshot_every=10, use_annealing=True)
+    assert "cadence" not in widget._snapshots.text()
+
+
+def test_the_preview_is_debounced(step):
+    """L'aperçu coûte jusqu'à 294 ms : chaque cran de molette ne doit pas le payer."""
+    from pokemon_mosaic.ui.settings_step import PREVIEW_DELAY_MS
+
+    widget, session = step
+    session.set_algorithm(strip_size=0.2)
+    assert widget._preview_timer.isActive()
+    assert widget._preview_timer.interval() == PREVIEW_DELAY_MS
+    assert widget._preview_timer.isSingleShot()
+
+
+def test_screen_paints(step):
+    widget, _ = step
+    widget.resize(900, 600)
+    assert not widget.grab().isNull()

@@ -202,8 +202,8 @@ itérations/s, soit 8 s pour un million. Les sorties vont dans `output/`, non ve
 uv run pokemon-mosaic-ui
 ```
 
-Assistant en trois étapes puis vue d'exécution. **Étapes 1 et 2 disponibles** ; les
-étapes 3 et 4 restent à construire.
+Assistant en trois étapes puis vue d'exécution. **Étapes 1 à 3 disponibles** ; la
+vue d'exécution reste à construire.
 
 ### Étape 1 — cartes
 
