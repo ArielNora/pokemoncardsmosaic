@@ -6,7 +6,7 @@ pleine résolution ne sont relues du disque qu'au moment de l'export. Voir SPEC.
 
 import os
 from dataclasses import dataclass, field
-from typing import Iterator, List, Optional, Sequence, Tuple
+from typing import Callable, Iterator, List, Optional, Sequence, Tuple
 
 import numpy as np
 from PIL import Image
@@ -115,6 +115,7 @@ def load_cards(
     exclude: Sequence[str] = (),
     scale: float = DEFAULT_SCALE,
     strip_size: float = DEFAULT_STRIP_SIZE,
+    progress: Optional[Callable[[int, int], None]] = None,
 ) -> CardSet:
     """Charge les cartes sous forme de vignettes et calcule leurs signatures.
 
@@ -122,6 +123,10 @@ def load_cards(
     taille commune (Pillow donne `.size` sans décoder les pixels) ; la seconde décode
     et réduit directement à la taille de vignette. Les images pleine résolution ne
     sont donc jamais toutes en mémoire — 35 Mo au lieu de 562 Mo.
+
+    `progress` est appelé avec (traitées, total) pendant la seconde passe. Le
+    chargement prenant ~4 s pour 280 cartes, une interface graphique doit pouvoir
+    rendre compte de l'avancement plutôt que de rester figée.
 
     Note : les cartes en RGBA voient leur canal alpha écarté, sans composition sur un
     fond. Comportement identique à l'ancien chargement OpenCV. Voir TODO.md.
@@ -166,6 +171,8 @@ def load_cards(
         card = Card(path=path, index=len(cards), thumbnail=thumb)
         card.calculate_features(strip_size)
         cards.append(card)
+        if progress is not None:
+            progress(len(cards), len(readable))
 
     return CardSet(cards=cards, full_size=full_size, thumb_size=thumb_size)
 

@@ -196,6 +196,29 @@ Ajoutez 9 cartes pour remplir la grille.
 Compter environ **4 s de chargement** des cartes, puis l'optimisation à ~127 000
 itérations/s, soit 8 s pour un million. Les sorties vont dans `output/`, non versionné.
 
+## Interface graphique
+
+```bash
+uv run pokemon-mosaic-ui
+```
+
+Assistant en trois étapes puis vue d'exécution. **Étape 1 disponible** : galerie des
+280 vignettes, inclusion/exclusion par carte ou par dossier entier, chargement en
+arrière-plan avec barre de progression. Les étapes 2 à 4 restent à construire.
+
+L'interface est **bilingue français / anglais**, avec un sélecteur en bas de fenêtre.
+Les textes sont écrits en français dans le code et traduits par des fichiers Qt.
+Après avoir ajouté ou modifié une chaîne :
+
+```bash
+uv run pyside6-lupdate src/pokemon_mosaic/ui/*.py -ts translations/pokemon_mosaic_en.ts
+uv run pyside6-lrelease translations/pokemon_mosaic_en.ts
+```
+
+⚠️ `lupdate` n'extrait que les `tr()` portant une chaîne **littérale**. Un
+`self.tr(variable)` passe inaperçu et reste non traduit — voir `MainWindow.step_title`
+pour le contournement.
+
 ## Structure
 
 ```

@@ -10,6 +10,7 @@ requires-python = ">=3.13"
 dependencies = [
     "numpy==2.2.6",
     "pillow==12.0.0",
+    "PySide6==6.10.0",
 ]
 
 [project.optional-dependencies]
@@ -29,6 +30,7 @@ dev = [
 
 [project.scripts]
 pokemon-mosaic = "pokemon_mosaic.cli:main"
+pokemon-mosaic-ui = "pokemon_mosaic.ui.app:main"
 
 [build-system]
 requires = ["hatchling"]
