@@ -2,6 +2,7 @@
 
 from .annealing import Annealing
 from .cards import Card, CardSet, load_cards, load_full_image
+from .control import RunControl
 from .grid import calculate_grid_dims, render_grid, save_grid_image
 from .layout import (
     GridFit,
@@ -38,6 +39,7 @@ __all__ = [
     "Link",
     "LinkLibrary",
     "OptimizationResult",
+    "RunControl",
     "Snapshot",
     "StopConditions",
     "Timeline",

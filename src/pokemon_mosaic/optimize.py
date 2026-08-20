@@ -16,6 +16,7 @@ import numpy as np
 
 from .annealing import Annealing
 from .cards import CardSet
+from .control import RunControl
 from .grid import calculate_grid_dims
 from .layout import distribute_empty_cells
 from .links import Link, LinkLibrary
@@ -155,6 +156,7 @@ def optimize_grid(
     annealing: Annealing | None = None,
     stop: StopConditions | None = None,
     timeline: Timeline | None = None,
+    control: RunControl | None = None,
 ) -> OptimizationResult:
     """Optimise la grille par échanges aléatoires.
 
@@ -169,6 +171,10 @@ def optimize_grid(
     puisque l'état courant peut être moins bon qu'un état traversé plus tôt.
 
     `grid` est modifiée sur place.
+
+    `control` permet d'interrompre ou de suspendre le calcul depuis un autre fil.
+    Il est consulté au même rythme que les seuils d'arrêt, soit toutes les 1000
+    tentatives — environ 8 ms au débit mesuré.
     """
     links = links or {}
     rng = rng or random
@@ -189,6 +195,16 @@ def optimize_grid(
     last_improvement = 0
     iteration = -1  # défini même si `iterations` vaut 0
     started = time.monotonic()
+    # On mémorise le compteur de pause à l'entrée et on ne retranche que le delta.
+    # Un même contrôle peut resservir — c'est même ce que fera la prolongation —
+    # et retrancher son cumul rendrait la durée de cette exécution-ci négative.
+    paused_at_start = control.paused_seconds if control is not None else 0.0
+
+    def elapsed_now() -> float:
+        """Temps de calcul effectif, pauses exclues."""
+        paused = (control.paused_seconds - paused_at_start) if control else 0.0
+        return time.monotonic() - started - paused
+
     stopped_by = "itérations épuisées"
 
     if annealing is not None:
@@ -209,8 +225,13 @@ def optimize_grid(
 
     for iteration in range(total_iterations):
         if iteration % CHECK_INTERVAL == 0:
+            if control is not None and not control.checkpoint():
+                stopped_by = "arrêt demandé"
+                break
+            # Le temps passé en pause est retranché : suspendre le calcul pour
+            # examiner la timeline ne doit pas consommer le budget de temps.
             reason = stop.check(
-                best_score, iteration - last_improvement, time.monotonic() - started
+                best_score, iteration - last_improvement, elapsed_now()
             )
             if reason:
                 stopped_by = reason
@@ -241,8 +262,7 @@ def optimize_grid(
                         best_grid = grid.copy()
                     if timeline is not None:
                         timeline.maybe_record(
-                            grid, iteration, accepted, score,
-                            time.monotonic() - started,
+                            grid, iteration, accepted, score, elapsed_now(),
                         )
                 continue
         else:
@@ -279,7 +299,7 @@ def optimize_grid(
                     best_grid = grid.copy()
                 if timeline is not None:
                     timeline.maybe_record(
-                        grid, iteration, accepted, score, time.monotonic() - started
+                        grid, iteration, accepted, score, elapsed_now()
                     )
 
     # Avec un recuit, l'état final peut être moins bon qu'un état traversé : on
@@ -293,7 +313,7 @@ def optimize_grid(
     # l'utilisateur voudra exporter — serait absent de la timeline.
     if timeline is not None:
         timeline.record(
-            grid, iteration + 1, accepted, best_score, time.monotonic() - started
+            grid, iteration + 1, accepted, best_score, elapsed_now()
         )
 
     return OptimizationResult(
@@ -302,7 +322,7 @@ def optimize_grid(
         initial_score=initial_score,
         final_score=best_score,
         stopped_by=stopped_by,
-        elapsed=time.monotonic() - started,
+        elapsed=elapsed_now(),
     )
 
 
@@ -507,6 +527,7 @@ def generate_grid(
     annealing: Annealing | None = None,
     stop: StopConditions | None = None,
     timeline: Timeline | None = None,
+    control: RunControl | None = None,
 ) -> np.ndarray:
     """Construit la grille, l'optimise, et rend compte de la progression.
 
@@ -528,7 +549,8 @@ def generate_grid(
 
     link_map = links.group_map() if links else {}
     result = optimize_grid(
-        grid, distances, link_map, stop.max_iterations, rng, annealing, stop, timeline
+        grid, distances, link_map, stop.max_iterations, rng, annealing, stop,
+        timeline, control,
     )
 
     print(f"Score {result.initial_score:.0f} -> {result.final_score:.0f} "
