@@ -279,12 +279,20 @@ def test_shutdown_stops_a_real_background_run(qt_app, session):
     widget = RunStep(session)
     widget._start.click()
 
-    loop, deadline = QEventLoop(), QDeadlineTimer(500)
+    # Délai large : la boucle sort dès que le calcul a démarré, donc l'attente
+    # réelle reste de quelques millisecondes. Un délai serré ne rendait pas le
+    # test plus rapide, seulement intermittent sur une machine chargée.
+    loop, deadline = QEventLoop(), QDeadlineTimer(10_000)
     while not deadline.hasExpired() and not widget._timeline:
         loop.processEvents(QEventLoop.AllEvents, 10)
-    assert widget._timeline is not None, "le calcul n'a pas démarré"
 
-    widget.shutdown()
+    try:
+        assert widget._timeline is not None, "le calcul n'a pas démarré"
+    finally:
+        # Même si l'attente a échoué : sans cet arrêt, un fil lancé pour
+        # 50 millions d'itérations continue de tourner jusqu'à la fin de la
+        # session de tests, qu'il ralentit et fait échouer en cascade.
+        widget.shutdown()
     assert widget._thread is None, "le fil n'a pas été arrêté"
 
 

@@ -5,13 +5,14 @@ préviennent par signaux. Rien n'est recalculé en double d'un écran à l'autre
 """
 
 import os
+from dataclasses import replace
 
 from PySide6.QtCore import QObject, Signal
 
 from ..annealing import Annealing
 from ..cards import DEFAULT_STRIP_SIZE, CardSet
 from ..layout import DEFAULT_DPI, GridFit, distribute_empty_cells
-from ..links import Link, LinkLibrary
+from ..links import DEFAULT_PAIRS, Link, LinkLibrary, resolve_links
 from ..optimize import StopConditions
 
 
@@ -311,3 +312,50 @@ class Session(QObject):
     def remove_link(self, link: Link) -> None:
         self.links.remove(link)
         self.links_changed.emit()
+
+    def replace_link(self, old: Link, new: Link) -> Link:
+        """Remplace un lien par une version modifiée, à sa place dans la liste."""
+        self.links.replace(old, new)
+        self.links_changed.emit()
+        return new
+
+    def set_link_enabled(self, link: Link, enabled: bool) -> Link:
+        """Active ou désactive un lien sans le supprimer de la bibliothèque.
+
+        `Link` est immuable : on remplace l'objet plutôt que de le modifier, ce
+        qui garantit qu'aucune copie détenue ailleurs ne change dans le dos de
+        son propriétaire.
+        """
+        if link.enabled == enabled:
+            return link
+        return self.replace_link(link, replace(link, enabled=enabled))
+
+    def apply_default_links(self) -> list[str]:
+        """Ajoute les liens fournis d'office, une fois les cartes chargées.
+
+        Renvoie les fragments de chemin introuvables : le dossier chargé n'est pas
+        forcément celui d'origine, et un lien par défaut n'a alors pas de sens.
+        Les cartes déjà engagées dans un lien sont laissées tranquilles.
+        """
+        if not self.card_set:
+            return []
+
+        def find(fragment: str) -> int | None:
+            index = self.card_set.find(fragment)
+            if index is None or index in self.links.claimed_cards():
+                return None
+            return index
+
+        missing = resolve_links(self.links, find, DEFAULT_PAIRS)
+        self.links_changed.emit()
+        return missing
+
+    def unusable_links(self) -> list[Link]:
+        """Liens actifs dont une carte a été retirée de la sélection.
+
+        Ils sont ignorés au calcul sans être supprimés : l'interface doit pouvoir
+        le dire, sinon un lien resterait coché sans jamais s'appliquer.
+        """
+        selected = set(self.selected_indices())
+        return [link for link in self.links.active
+                if not selected.issuperset(link.cards)]

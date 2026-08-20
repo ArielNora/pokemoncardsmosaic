@@ -16,6 +16,7 @@ from PySide6.QtWidgets import (
 )
 
 from .gallery import CardGallery
+from .links_panel import LinksPanel
 from .loader import start_loading
 from .session import Session
 
@@ -56,16 +57,27 @@ class CardsStep(QWidget):
         self._exclude_folder.clicked.connect(lambda: self._set_folders(True))
         self._show_all.clicked.connect(self._folders.clearSelection)
 
-        left = QVBoxLayout()
-        left.addWidget(self._folder_label)
-        left.addWidget(self._folders, 1)
+        folders_layout = QVBoxLayout()
+        folders_layout.setContentsMargins(0, 0, 0, 0)
+        folders_layout.addWidget(self._folder_label)
+        folders_layout.addWidget(self._folders, 1)
         buttons = QHBoxLayout()
         buttons.addWidget(self._include_folder)
         buttons.addWidget(self._exclude_folder)
-        left.addLayout(buttons)
-        left.addWidget(self._show_all)
-        left_panel = QWidget()
-        left_panel.setLayout(left)
+        folders_layout.addLayout(buttons)
+        folders_layout.addWidget(self._show_all)
+        folders_panel = QWidget()
+        folders_panel.setLayout(folders_layout)
+
+        # Liens et dossiers partagent la colonne de gauche : un séparateur mobile
+        # plutôt qu'un partage fixe, les deux listes n'ayant pas la même longueur
+        # d'un jeu de cartes à l'autre.
+        self._links = LinksPanel(self._session)
+        left_panel = QSplitter(Qt.Vertical)
+        left_panel.addWidget(folders_panel)
+        left_panel.addWidget(self._links)
+        left_panel.setStretchFactor(0, 1)
+        left_panel.setSizes([420, 300])
 
         self._gallery = CardGallery(self._session)
         self._hint = QLabel()
@@ -81,7 +93,7 @@ class CardsStep(QWidget):
         splitter.addWidget(left_panel)
         splitter.addWidget(right_panel)
         splitter.setStretchFactor(1, 1)
-        splitter.setSizes([220, 780])
+        splitter.setSizes([300, 700])
 
         self._choose_folder = QPushButton()
         self._choose_folder.clicked.connect(self._pick_folder)
@@ -119,6 +131,7 @@ class CardsStep(QWidget):
             self.tr("Cliquez une carte pour l'inclure ou l'exclure. "
                     "Sélectionnez un dossier pour n'afficher que ses cartes.")
         )
+        self._links.retranslate_ui()
         self._update_counts()
         # Pas de _fill_folders() ici : les noms de dossiers sont des chemins, pas
         # des textes traduits. Le rappeler viderait la liste et détruirait la
@@ -170,6 +183,9 @@ class CardsStep(QWidget):
         self._choose_folder.setEnabled(True)
         self._awaiting_first_batch = False
         self._session.finish_loading(card_set)
+        # Les liens fournis d'office ne peuvent être posés qu'une fois les cartes
+        # connues : ils sont décrits par chemin, pas par indice.
+        self._session.apply_default_links()
         self.status_message.emit(
             self.tr("%n carte(s) chargée(s).", "", len(card_set))
         )

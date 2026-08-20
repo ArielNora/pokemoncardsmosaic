@@ -12,6 +12,15 @@ travail durable, un préréglage est un essai de mise en page. Voir SPEC.md §3.
 from collections.abc import Iterable, Sequence
 from dataclasses import dataclass, field
 
+# Liens fournis d'office : ces cartes vont par paires dans un sens qui a un sens.
+# Décrits par fragments de chemin, parce que les indices dépendent du dossier chargé.
+DEFAULT_PAIRS = (
+    ("serie_A/6_gardiens_astraux/solgaleo.png",
+     "serie_A/6_gardiens_astraux/lunala.png"),
+    ("serie_A/10_source_secrete/entei.png",
+     "serie_A/10_source_secrete/raikou.png"),
+)
+
 
 @dataclass(frozen=True)
 class Link:
@@ -58,17 +67,52 @@ class LinkLibrary:
 
     def add(self, link: Link) -> None:
         """Ajoute un lien, en refusant qu'une carte appartienne à deux liens actifs."""
-        if link.enabled:
-            claimed = self.claimed_cards()
-            overlap = claimed.intersection(link.cards)
-            if overlap:
-                raise ValueError(
-                    f"Ces cartes appartiennent déjà à un lien actif : {sorted(overlap)}"
-                )
+        self.check_free(link)
         self.links.append(link)
 
     def remove(self, link: Link) -> None:
-        self.links.remove(link)
+        del self.links[self.position_of(link)]
+
+    def replace(self, old: Link, new: Link) -> None:
+        """Remplace un lien par une version modifiée, à la même place dans la liste.
+
+        Le lien remplacé est retiré **avant** la validation : sinon il se
+        déclarerait en conflit avec lui-même dès qu'on ne change que son nom ou
+        son ordre, et aucune modification ne serait possible.
+        """
+        position = self.position_of(old)
+        del self.links[position]
+        try:
+            self.check_free(new)
+        except ValueError:
+            self.links.insert(position, old)
+            raise
+        self.links.insert(position, new)
+
+    def position_of(self, link: Link) -> int:
+        """Position de **cet objet-là**, pas d'un lien qui lui ressemble.
+
+        `list.index` et `list.remove` comparent par égalité, et `Link` est un
+        dataclass gelé : deux liens désactivés portant les mêmes cartes sont
+        indiscernables. Modifier ou supprimer le second agirait sur le premier,
+        et l'interface montrerait une ligne cochée pendant qu'une autre change.
+        """
+        for position, existing in enumerate(self.links):
+            if existing is link:
+                return position
+        raise ValueError(f"Lien absent de la bibliothèque : {link.cards}")
+
+    def check_free(self, link: Link) -> None:
+        """Vérifie qu'aucune carte du lien n'est déjà prise par un lien actif."""
+        if not link.enabled:
+            # Un lien désactivé ne réserve rien : deux liens contradictoires
+            # peuvent coexister tant qu'un seul est actif.
+            return
+        overlap = self.claimed_cards().intersection(link.cards)
+        if overlap:
+            raise ValueError(
+                f"Ces cartes appartiennent déjà à un lien actif : {sorted(overlap)}"
+            )
 
     def claimed_cards(self) -> set:
         """Toutes les cartes engagées dans un lien actif."""

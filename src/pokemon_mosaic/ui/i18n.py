@@ -29,6 +29,7 @@ class LanguageManager(QObject):
         self._app = app
         self._translators: list[QTranslator] = []
         self._current = SOURCE_LANGUAGE
+        self._install(SOURCE_LANGUAGE)
 
     @property
     def current(self) -> str:
@@ -45,21 +46,34 @@ class LanguageManager(QObject):
             raise ValueError(f"Langue inconnue : {code}. Connues : {list(LANGUAGES)}")
         if code == self._current:
             return
+        self._install(code)
+        self._current = code
+        self.language_changed.emit(code)
 
+    def uninstall(self) -> None:
+        """Retire les traducteurs de l'application, sans en installer d'autres.
+
+        Utile aux tests : la QApplication est partagée, et un traducteur laissé
+        en place resterait actif pour les tests suivants.
+        """
         for translator in self._translators:
             self._app.removeTranslator(translator)
         self._translators.clear()
 
-        # Le français est la langue source : aucun fichier à charger.
+    def _install(self, code: str) -> None:
+        """Remplace les traducteurs actifs par ceux de cette langue."""
+        self.uninstall()
+
+        # Le français est la langue source : aucun fichier applicatif à charger.
         if code != SOURCE_LANGUAGE:
             self._load(TRANSLATIONS_DIR / f"pokemon_mosaic_{code}.qm")
-            # Traductions des boutons standards de Qt (OK, Annuler…).
-            self._load(
-                Path(QLibraryInfo.path(QLibraryInfo.TranslationsPath)) / f"qtbase_{code}.qm"
-            )
 
-        self._current = code
-        self.language_changed.emit(code)
+        # Les boutons standards de Qt (OK, Annuler…) ont leur propre traduction,
+        # y compris en français : sans elle, un dialogue affiche « Cancel » au
+        # milieu d'une interface entièrement française.
+        self._load(
+            Path(QLibraryInfo.path(QLibraryInfo.TranslationsPath)) / f"qtbase_{code}.qm"
+        )
 
     def _load(self, path: Path) -> bool:
         translator = QTranslator(self._app)

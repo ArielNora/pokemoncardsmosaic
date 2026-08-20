@@ -493,19 +493,19 @@ liens à ordre optionnel, cases vides figées, recuit simulé, seuils d'arrêt,
 timeline de clichés, export poster en PNG/JPEG/PDF avec découpage en panneaux.
 
 **Interface** — les quatre écrans :
-1. Sélection des cartes : galerie, filtrage par dossier, chargement progressif
+1. Sélection des cartes : galerie, filtrage par dossier, chargement progressif,
+   bibliothèque de liens (créer, modifier, activer, liens par défaut)
 2. Grille et format : presets d'impression, aperçu fil de fer, cases vides cliquables
 3. Réglages de base et avancés, avec aperçus et projections chiffrées
 4. Vue d'exécution : image live, timeline navigable, lancer/pause/arrêter
 
 **Outillage** — hook `pre-commit` (ruff + pytest), interface bilingue FR/EN,
-269 tests.
+297 tests.
 
 ### Reste à faire pour la v1
 
 | Sujet | État |
 |---|---|
-| **Interface des liens** (étape 1) | Le modèle existe (`LinkLibrary`, ordre optionnel, bibliothèque séparée) ; il manque l'écran pour créer et désactiver les liens. |
 | **Export depuis un cliché choisi** | `export_poster` fait tout le travail ; il manque le bouton dans la vue d'exécution et le choix du format. |
 | **Prolonger / reprendre depuis un cliché** | `RunWorker` accepte déjà `previous_grid`, testé. Il manque les commandes. |
 | **Préréglages nommés** | Rien de fait. Doit couvrir sélection, liens actifs, grille et réglages. La bibliothèque de liens est séparée et ne doit pas y entrer. |
@@ -543,3 +543,5 @@ timeline de clichés, export poster en PNG/JPEG/PDF avec découpage en panneaux.
 | 2026-08-16 | **PySide6 (Qt)** retenu pour l'interface — l'i18n native emporte la décision |
 | 2026-08-16 | **opencv et scipy sortent** de l'application : socle ramené à numpy + Pillow (245 Mo → 37 Mo) |
 | 2026-08-16 | **Matrices de distances précalculées** (gain ×21), à intégrer **avant** l'interface |
+| 2026-08-20 | Liens composés dans un **dialogue à deux listes** (cartes disponibles / séquence) : une case à cocher n'a pas de rang, une ligne de liste en a un |
+| 2026-08-20 | Les traductions Qt (`qtbase`) sont chargées **aussi en français** : sans elles un dialogue affiche « Cancel » en pleine interface française |

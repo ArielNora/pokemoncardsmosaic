@@ -15,7 +15,10 @@ def language(qt_app):
 
     manager = LanguageManager(qt_app)
     yield manager
-    manager.set_language("fr")
+    # `set_language("fr")` ne suffit pas : il sort sans rien faire quand la
+    # langue est déjà le français, et les traducteurs installés à la
+    # construction resteraient en place.
+    manager.uninstall()
 
 
 def test_french_is_the_source_language(language):
@@ -60,3 +63,20 @@ def test_step_titles_are_extractable_not_dynamic():
     source = inspect.getsource(MainWindow.step_title)
     for literal in ('self.tr("Cartes")', 'self.tr("Réglages")'):
         assert literal in source
+
+
+def test_qt_standard_buttons_are_translated_in_french(qt_app, language):
+    """Les boutons des dialogues viennent de Qt, pas de nos `tr()`. Sans charger
+    `qtbase_fr`, un dialogue affiche « Cancel » en pleine interface française."""
+    assert qt_app.translate("QPlatformTheme", "Cancel") == "Annuler"
+
+
+def test_a_manager_removes_its_translators_on_uninstall(qt_app):
+    """Sans cela, chaque gestionnaire créé laisse un traducteur installé sur la
+    QApplication partagée : le nettoyage annoncé par les tests ne se ferait pas."""
+    from pokemon_mosaic.ui.i18n import LanguageManager
+
+    manager = LanguageManager(qt_app)
+    assert manager._translators, "qtbase doit être chargé dès la construction"
+    manager.uninstall()
+    assert manager._translators == []

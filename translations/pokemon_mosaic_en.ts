@@ -4,22 +4,22 @@
 <context>
     <name>CardsStep</name>
     <message>
-        <location filename="../src/pokemon_mosaic/ui/cards_step.py" line="111"/>
+        <location filename="../src/pokemon_mosaic/ui/cards_step.py" line="123"/>
         <source>Dossiers</source>
         <translation>Folders</translation>
     </message>
     <message>
-        <location filename="../src/pokemon_mosaic/ui/cards_step.py" line="116"/>
+        <location filename="../src/pokemon_mosaic/ui/cards_step.py" line="128"/>
         <source>Tout inclure</source>
         <translation>Include all</translation>
     </message>
     <message>
-        <location filename="../src/pokemon_mosaic/ui/cards_step.py" line="117"/>
+        <location filename="../src/pokemon_mosaic/ui/cards_step.py" line="129"/>
         <source>Tout exclure</source>
         <translation>Exclude all</translation>
     </message>
     <message>
-        <location filename="../src/pokemon_mosaic/ui/cards_step.py" line="115"/>
+        <location filename="../src/pokemon_mosaic/ui/cards_step.py" line="127"/>
         <source>Choisir le dossier de cartes…</source>
         <translation>Choose card folder…</translation>
     </message>
@@ -28,37 +28,37 @@
         <translation type="vanished">Click a card to include or exclude it. Select several to toggle them at once.</translation>
     </message>
     <message>
-        <location filename="../src/pokemon_mosaic/ui/cards_step.py" line="112"/>
+        <location filename="../src/pokemon_mosaic/ui/cards_step.py" line="124"/>
         <source>Inclure</source>
         <translation>Include</translation>
     </message>
     <message>
-        <location filename="../src/pokemon_mosaic/ui/cards_step.py" line="113"/>
+        <location filename="../src/pokemon_mosaic/ui/cards_step.py" line="125"/>
         <source>Exclure</source>
         <translation>Exclude</translation>
     </message>
     <message>
-        <location filename="../src/pokemon_mosaic/ui/cards_step.py" line="114"/>
+        <location filename="../src/pokemon_mosaic/ui/cards_step.py" line="126"/>
         <source>Afficher tous les dossiers</source>
         <translation>Show all folders</translation>
     </message>
     <message>
-        <location filename="../src/pokemon_mosaic/ui/cards_step.py" line="119"/>
+        <location filename="../src/pokemon_mosaic/ui/cards_step.py" line="131"/>
         <source>Cliquez une carte pour l&apos;inclure ou l&apos;exclure. Sélectionnez un dossier pour n&apos;afficher que ses cartes.</source>
         <translation>Click a card to include or exclude it. Select a folder to show only its cards.</translation>
     </message>
     <message>
-        <location filename="../src/pokemon_mosaic/ui/cards_step.py" line="131"/>
+        <location filename="../src/pokemon_mosaic/ui/cards_step.py" line="144"/>
         <source>Dossier contenant les cartes</source>
         <translation>Folder containing the cards</translation>
     </message>
     <message>
-        <location filename="../src/pokemon_mosaic/ui/cards_step.py" line="140"/>
+        <location filename="../src/pokemon_mosaic/ui/cards_step.py" line="153"/>
         <source>Chargement des cartes…</source>
         <translation>Loading cards…</translation>
     </message>
     <message numerus="yes">
-        <location filename="../src/pokemon_mosaic/ui/cards_step.py" line="174"/>
+        <location filename="../src/pokemon_mosaic/ui/cards_step.py" line="190"/>
         <source>%n carte(s) chargée(s).</source>
         <translation>
             <numerusform>%n card loaded.</numerusform>
@@ -66,27 +66,27 @@
         </translation>
     </message>
     <message>
-        <location filename="../src/pokemon_mosaic/ui/cards_step.py" line="183"/>
+        <location filename="../src/pokemon_mosaic/ui/cards_step.py" line="199"/>
         <source>Échec du chargement : %1</source>
         <translation>Loading failed: %1</translation>
     </message>
     <message>
-        <location filename="../src/pokemon_mosaic/ui/cards_step.py" line="258"/>
+        <location filename="../src/pokemon_mosaic/ui/cards_step.py" line="274"/>
         <source>Aucune carte chargée</source>
         <translation>No cards loaded</translation>
     </message>
     <message>
-        <location filename="../src/pokemon_mosaic/ui/cards_step.py" line="260"/>
+        <location filename="../src/pokemon_mosaic/ui/cards_step.py" line="276"/>
         <source>%1 cartes retenues sur %2</source>
         <translation>%1 of %2 cards kept</translation>
     </message>
     <message>
-        <location filename="../src/pokemon_mosaic/ui/cards_step.py" line="266"/>
+        <location filename="../src/pokemon_mosaic/ui/cards_step.py" line="282"/>
         <source>filtré sur %1</source>
         <translation>filtered on %1</translation>
     </message>
     <message numerus="yes">
-        <location filename="../src/pokemon_mosaic/ui/cards_step.py" line="268"/>
+        <location filename="../src/pokemon_mosaic/ui/cards_step.py" line="284"/>
         <source>filtré sur %n dossiers</source>
         <translation>
             <numerusform>filtered on %n folder</numerusform>
@@ -191,6 +191,105 @@
         <location filename="../src/pokemon_mosaic/ui/layout_step.py" line="258"/>
         <source>Image de %1 Mpx : l&apos;export demandera beaucoup de mémoire.</source>
         <translation>Image of %1 Mpx: exporting will require a lot of memory.</translation>
+    </message>
+</context>
+<context>
+    <name>LinkDialog</name>
+    <message>
+        <location filename="../src/pokemon_mosaic/ui/link_dialog.py" line="135"/>
+        <source>Modifier le lien</source>
+        <translation>Edit link</translation>
+    </message>
+    <message>
+        <location filename="../src/pokemon_mosaic/ui/link_dialog.py" line="136"/>
+        <source>Nouveau lien</source>
+        <translation>New link</translation>
+    </message>
+    <message>
+        <location filename="../src/pokemon_mosaic/ui/link_dialog.py" line="137"/>
+        <source>Cartes disponibles</source>
+        <translation>Available cards</translation>
+    </message>
+    <message>
+        <location filename="../src/pokemon_mosaic/ui/link_dialog.py" line="138"/>
+        <source>Séquence du lien</source>
+        <translation>Link sequence</translation>
+    </message>
+    <message>
+        <location filename="../src/pokemon_mosaic/ui/link_dialog.py" line="139"/>
+        <source>Filtrer par nom ou dossier…</source>
+        <translation>Filter by name or folder…</translation>
+    </message>
+    <message>
+        <location filename="../src/pokemon_mosaic/ui/link_dialog.py" line="140"/>
+        <source>Ajouter →</source>
+        <translation>Add →</translation>
+    </message>
+    <message>
+        <location filename="../src/pokemon_mosaic/ui/link_dialog.py" line="141"/>
+        <source>← Retirer</source>
+        <translation>← Remove</translation>
+    </message>
+    <message>
+        <location filename="../src/pokemon_mosaic/ui/link_dialog.py" line="142"/>
+        <source>Monter</source>
+        <translation>Move up</translation>
+    </message>
+    <message>
+        <location filename="../src/pokemon_mosaic/ui/link_dialog.py" line="143"/>
+        <source>Descendre</source>
+        <translation>Move down</translation>
+    </message>
+    <message>
+        <location filename="../src/pokemon_mosaic/ui/link_dialog.py" line="144"/>
+        <source>Nom (facultatif)</source>
+        <translation>Name (optional)</translation>
+    </message>
+    <message>
+        <location filename="../src/pokemon_mosaic/ui/link_dialog.py" line="146"/>
+        <source>Ordre imposé (sinon l&apos;optimiseur peut retourner le bloc)</source>
+        <translation>Fixed order (otherwise the optimiser may flip the block)</translation>
+    </message>
+    <message>
+        <location filename="../src/pokemon_mosaic/ui/link_dialog.py" line="167"/>
+        <source>(carte exclue)</source>
+        <translation>(card excluded)</translation>
+    </message>
+</context>
+<context>
+    <name>LinksPanel</name>
+    <message>
+        <location filename="../src/pokemon_mosaic/ui/links_panel.py" line="74"/>
+        <source>Liens</source>
+        <translation>Links</translation>
+    </message>
+    <message>
+        <location filename="../src/pokemon_mosaic/ui/links_panel.py" line="75"/>
+        <source>Nouveau…</source>
+        <translation>New…</translation>
+    </message>
+    <message>
+        <location filename="../src/pokemon_mosaic/ui/links_panel.py" line="76"/>
+        <source>Modifier…</source>
+        <translation>Edit…</translation>
+    </message>
+    <message>
+        <location filename="../src/pokemon_mosaic/ui/links_panel.py" line="77"/>
+        <source>Supprimer</source>
+        <translation>Delete</translation>
+    </message>
+    <message>
+        <location filename="../src/pokemon_mosaic/ui/links_panel.py" line="106"/>
+        <source>Une carte de ce lien est exclue : il ne s&apos;appliquera pas.</source>
+        <translation>One card of this link is excluded: it will not apply.</translation>
+    </message>
+    <message numerus="yes">
+        <location filename="../src/pokemon_mosaic/ui/links_panel.py" line="119"/>
+        <source>%n lien(s) actif(s) sur une carte exclue : ignoré(s) au calcul.</source>
+        <translation>
+            <numerusform>%n active link on an excluded card: ignored.</numerusform>
+            <numerusform>%n active links on excluded cards: ignored.</numerusform>
+        </translation>
     </message>
 </context>
 <context>

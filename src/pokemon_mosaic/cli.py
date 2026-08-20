@@ -10,7 +10,7 @@ from .export import PosterSettings, export_poster
 from .grid import save_grid_image
 from .imaging import print_image_properties, resize_and_save
 from .layout import GridFit, distribute_empty_cells
-from .links import LinkLibrary, resolve_links
+from .links import DEFAULT_PAIRS, LinkLibrary, resolve_links
 from .optimize import StopConditions, generate_grid
 from .timeline import Timeline
 
@@ -24,14 +24,6 @@ DEFAULT_ITERATIONS = 1_000_000
 # Retirée pour ramener le total de 281 à 280 cartes : 281 est premier, ce qui
 # produirait une grille 281x1. Voir grid.calculate_grid_dims.
 DEFAULT_REMOVE_LIST = ("pokemoncards/serie_B/0_promo/pikachu.png",)
-
-# Cartes à garder côte à côte, dans l'ordre indiqué.
-DEFAULT_PAIRS = (
-    ("serie_A/6_gardiens_astraux/solgaleo.png",
-     "serie_A/6_gardiens_astraux/lunala.png"),
-    ("serie_A/10_source_secrete/entei.png",
-     "serie_A/10_source_secrete/raikou.png"),
-)
 
 
 def parse_args(argv=None) -> argparse.Namespace:
