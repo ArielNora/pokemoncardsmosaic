@@ -110,12 +110,37 @@ def test_a_change_only_marks_the_preview_stale(preview):
     assert elapsed < 0.05, f"20 basculements ont coûté {elapsed * 1000:.0f} ms"
 
 
-def test_painting_rebuilds_a_stale_preview(preview):
+def test_painting_does_not_rebuild(preview):
+    """Reconstruire depuis paintEvent figeait l'interface à chaque cran du
+    curseur : le repeint arrivait avant l'anti-rebond, qui ne servait à rien.
+    Mesuré : cinq crans donnaient 5 reconstructions et 622 ms.
+    """
     widget, session = preview
+    widget.refresh()
     session.set_algorithm(strip_size=0.3)
     assert widget._dirty is True
+
     widget.grab()
-    assert widget._dirty is False and widget._sandbox is not None
+    assert widget._dirty is True, "le rendu ne doit pas déclencher le calcul"
+    assert widget._timer.isActive(), "il doit être différé, pas abandonné"
+
+
+def test_the_deferred_rebuild_eventually_runs(preview):
+    widget, session = preview
+    widget.refresh()
+    session.set_algorithm(strip_size=0.3)
+    widget._timer.timeout.emit()          # on force le tir du minuteur
+    assert widget._dirty is False
+
+
+def test_an_unrelated_setting_schedules_nothing(preview):
+    """L'aperçu ne dépend que de l'épaisseur et des cartes retenues. Changer le
+    nombre d'itérations relançait jusqu'à 294 ms de calcul pour rien."""
+    widget, session = preview
+    widget.refresh()
+    session.set_algorithm(iterations=250_000, snapshot_every=25)
+    assert widget._dirty is False
+    assert not widget._timer.isActive()
 
 
 def test_an_unrelated_setting_leaves_the_sandbox_coherent(preview):

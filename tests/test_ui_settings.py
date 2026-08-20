@@ -332,14 +332,28 @@ def test_a_usable_cadence_is_not_flagged(step):
 
 
 def test_the_preview_is_debounced(step):
-    """L'aperçu coûte jusqu'à 294 ms : chaque cran de molette ne doit pas le payer."""
-    from pokemon_mosaic.ui.settings_step import PREVIEW_DELAY_MS
+    """L'aperçu coûte jusqu'à 294 ms : chaque cran de molette ne doit pas le payer.
+
+    L'anti-rebond appartient à l'aperçu lui-même, pas à cet écran : c'est lui qui
+    sait de quoi il dépend, et deux minuteurs concurrents se doublonnaient.
+    """
+    from pokemon_mosaic.ui.strip_preview import REBUILD_DELAY_MS
 
     widget, session = step
+    widget._preview.refresh()
     session.set_algorithm(strip_size=0.2)
-    assert widget._preview_timer.isActive()
-    assert widget._preview_timer.interval() == PREVIEW_DELAY_MS
-    assert widget._preview_timer.isSingleShot()
+    assert widget._preview._timer.isActive()
+    assert widget._preview._timer.interval() == REBUILD_DELAY_MS
+    assert widget._preview._timer.isSingleShot()
+
+
+def test_the_screen_does_not_schedule_the_preview_itself(step):
+    """Relancer l'aperçu depuis l'écran le ferait travailler pour des réglages
+    qui ne le concernent pas."""
+    widget, session = step
+    widget._preview.refresh()
+    session.set_algorithm(iterations=333_000)
+    assert not widget._preview._timer.isActive()
 
 
 def test_screen_paints(step):

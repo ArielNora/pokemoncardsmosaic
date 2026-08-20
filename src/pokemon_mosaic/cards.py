@@ -162,6 +162,7 @@ def load_cards(
     strip_size: float = DEFAULT_STRIP_SIZE,
     progress: Callable[[int, int], None] | None = None,
     on_folder: Callable[[str, list["Card"]], None] | None = None,
+    check_cancelled: Callable[[], None] | None = None,
 ) -> CardSet:
     """Charge les cartes sous forme de vignettes et calcule leurs signatures.
 
@@ -174,6 +175,12 @@ def load_cards(
     chemin et ses cartes. Cela permet à une interface d'afficher les extensions les
     unes après les autres au lieu d'attendre la fin : la première passe ne lit que
     les en-têtes et ne coûte que ~80 ms, contre ~3,5 s pour le décodage complet.
+
+    `check_cancelled` est appelé à chaque fichier, dans les **deux** passes. Il
+    n'a rien à renvoyer : à charge pour l'appelant de lever s'il veut interrompre.
+    Le couvrir dès la première passe importe — elle est purement séquentielle et
+    peut durer sur une arborescence fournie ou un disque réseau, laissant sinon
+    un fil impossible à arrêter.
 
     `progress` est appelé avec (traitées, total) pendant la seconde passe. Le
     chargement prenant ~4 s pour 280 cartes, une interface graphique doit pouvoir
@@ -190,6 +197,8 @@ def load_cards(
     min_w, min_h = None, None
     readable: list[str] = []
     for path in paths:
+        if check_cancelled is not None:
+            check_cancelled()
         try:
             with Image.open(path) as img:
                 w, h = img.size
@@ -220,6 +229,8 @@ def load_cards(
         batch.clear()
 
     for path in readable:
+        if check_cancelled is not None:
+            check_cancelled()
         # `readable` est trié, donc les cartes d'un même dossier se suivent : on
         # peut livrer un dossier complet dès qu'on en croise un nouveau.
         folder = os.path.dirname(path)

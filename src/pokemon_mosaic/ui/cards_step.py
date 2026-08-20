@@ -19,6 +19,10 @@ from .gallery import CardGallery
 from .loader import start_loading
 from .session import Session
 
+# L'annulation étant vérifiée à chaque fichier, l'arrêt prend quelques
+# millisecondes ; ce délai n'est qu'un filet.
+SHUTDOWN_TIMEOUT_MS = 5000
+
 
 class CardsStep(QWidget):
     """Galerie des cartes, sélection par carte ou par dossier."""
@@ -187,9 +191,17 @@ class CardsStep(QWidget):
         """
         if self._worker is not None:
             self._worker.cancel()
+
+        stopped = True
         if self._thread is not None and self._thread.isRunning():
             self._thread.quit()
-            self._thread.wait(5000)
+            stopped = self._thread.wait(SHUTDOWN_TIMEOUT_MS)
+
+        if not stopped:
+            # Lâcher la référence d'un fil encore actif rouvrirait le crash que
+            # cette méthode existe pour éviter. On la garde et on le signale.
+            print("Le chargement ne s'est pas arrêté dans le délai imparti.")
+            return
         self._thread = self._worker = None
 
     # --- Dossiers et compteurs -------------------------------------------

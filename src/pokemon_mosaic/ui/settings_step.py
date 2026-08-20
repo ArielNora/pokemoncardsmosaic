@@ -1,6 +1,6 @@
 """Étape 3 — réglages de l'algorithme, de base et avancés."""
 
-from PySide6.QtCore import Qt, QTimer
+from PySide6.QtCore import Qt
 from PySide6.QtGui import QColor
 from PySide6.QtWidgets import (
     QCheckBox,
@@ -21,10 +21,6 @@ from .estimates import estimated_gain, estimated_seconds, estimated_snapshots, f
 from .session import Session
 from .strip_preview import StripPreview
 
-# L'aperçu d'épaisseur coûte jusqu'à 294 ms sur 280 cartes. On laisse le curseur
-# se stabiliser avant de recalculer, sinon chaque cran paierait ce prix.
-PREVIEW_DELAY_MS = 250
-
 # En deçà, la timeline offrira trop peu d'états pour être navigable.
 USEFUL_SNAPSHOTS = 10
 
@@ -36,9 +32,6 @@ class SettingsStep(QWidget):
         super().__init__(parent)
         self._session = session
         self._updating = False
-        self._preview_timer = QTimer(self)
-        self._preview_timer.setSingleShot(True)
-        self._preview_timer.setInterval(PREVIEW_DELAY_MS)
         self._build()
         session.algorithm_changed.connect(self._refresh)
         session.cards_loaded.connect(self._refresh)
@@ -70,7 +63,6 @@ class SettingsStep(QWidget):
         # L'espace libre va sous l'aperçu, sinon celui-ci flotterait au milieu
         # d'un grand vide, l'intitulé se retrouvant centré verticalement.
         preview_layout.addStretch(1)
-        self._preview_timer.timeout.connect(self._preview.refresh)
 
         self._projection_box = QGroupBox()
         self._duration = QLabel()
@@ -239,8 +231,9 @@ class SettingsStep(QWidget):
         self._update_enabled()
         self._update_projections()
         self._update_colour_button()
-        # L'aperçu est coûteux : on attend que le curseur se stabilise.
-        self._preview_timer.start()
+        # L'aperçu se charge lui-même de savoir s'il doit se reconstruire, et de
+        # différer le calcul : le relancer d'ici le ferait travailler pour des
+        # réglages qui ne le concernent pas.
 
     def _update_enabled(self) -> None:
         """Un champ dont le seuil est décoché reste visible mais inactif."""

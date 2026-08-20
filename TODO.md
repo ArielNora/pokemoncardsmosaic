@@ -59,6 +59,13 @@ Alternatives écartées ou à reconsidérer :
 
 ## Pistes d'amélioration
 
+- **Vectoriser le recalcul des signatures.** `CardSet.recalculate_features` boucle
+  sur les 280 cartes et coûte 71 à 148 ms selon l'épaisseur, ce qui se sent quand on
+  fait glisser le curseur de l'étape 3. Empiler les vignettes en un seul tableau
+  permettrait de calculer toutes les moyennes d'un coup. Différer le calcul serait
+  au contraire dangereux : les signatures doivent rester cohérentes avec le réglage
+  affiché, sous peine de retrouver le défaut des signatures hétérogènes.
+
 - L'optimisation est une descente stricte : elle n'accepte jamais un coup perdant et
   se bloque donc dans un minimum local. Un recuit simulé donnerait probablement un
   meilleur résultat à budget d'itérations égal.

@@ -6,6 +6,9 @@
    appliquées **avant** de figer le commit.
    Réviser après coup oblige à un `--amend` ou à un commit de rattrapage qui
    encombre l'historique.
+   Un commit petit peut reporter sa revue au suivant, **jamais au-delà de deux
+   commits**. Et lancer la revue veut dire l'invoquer réellement : relire son
+   propre diff et passer `ruff` n'est pas une revue.
 2. `ruff` et `pytest` passent — le hook `pre-commit` le refuse sinon.
 
 Le hook s'active une fois par clone :
@@ -42,6 +45,10 @@ test de non-régression.
   uv run pyside6-lupdate src/pokemon_mosaic/ui/*.py -ts translations/pokemon_mosaic_en.ts
   uv run pyside6-lrelease translations/pokemon_mosaic_en.ts
   ```
+- **Le cœur n'est pas couvert de bout en bout partout.** Une régression de
+  signature dans `load_cards` est passée à travers 231 tests, parce que les tests
+  d'interface construisent leurs `CardSet` à la main. Après toute modification de
+  `cards.py`, lancer un chargement réel.
 - **Vérifier le rendu, pas seulement les tests.** Plusieurs défauts réels
   (dossiers homonymes fusionnés, cases vides alignées en colonne, formulaire
   désynchronisé) n'ont été vus qu'en regardant une capture d'écran ou les chiffres

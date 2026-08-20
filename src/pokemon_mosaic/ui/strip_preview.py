@@ -16,7 +16,7 @@ Voir SPEC.md §5.
 import random
 
 import numpy as np
-from PySide6.QtCore import QRectF, Qt
+from PySide6.QtCore import QRectF, Qt, QTimer
 from PySide6.QtGui import QColor, QImage, QPainter, QPen
 from PySide6.QtWidgets import QWidget
 
@@ -31,6 +31,10 @@ BAND_EDGE = QColor(210, 130, 0)
 SANDBOX_COLS = 5
 SANDBOX_ROWS = 4
 SANDBOX_ITERATIONS = 1000
+
+# Délai avant reconstruction. Le curseur d'épaisseur doit pouvoir défiler sans
+# payer les 34 à 294 ms d'une réoptimisation à chaque cran.
+REBUILD_DELAY_MS = 250
 
 
 def _to_qimage(array: np.ndarray) -> QImage:
@@ -47,27 +51,49 @@ class StripPreview(QWidget):
         self._session = session
         self._sandbox: QImage | None = None
         self._sandbox_error = ""
-        self._dirty = True
+        self._built_key = None
+        self._timer = QTimer(self)
+        self._timer.setSingleShot(True)
+        self._timer.setInterval(REBUILD_DELAY_MS)
+        self._timer.timeout.connect(self.refresh)
         self.setMinimumHeight(190)
         for signal in (session.algorithm_changed, session.cards_loaded,
                        session.cards_added, session.selection_changed):
             signal.connect(self.invalidate)
 
-    def invalidate(self, *_) -> None:
-        """Marque l'aperçu périmé sans le recalculer.
+    def _key(self):
+        """Ce dont dépend réellement l'aperçu : l'épaisseur et les cartes retenues.
 
-        `selection_changed` part à chaque clic dans la galerie de l'étape 1, où cet
-        aperçu n'est même pas visible : reconstruire là coûterait de 34 à 294 ms par
-        clic. On ne paie qu'à l'affichage.
+        Comparer cette clé évite de reconstruire pour un réglage sans rapport —
+        `algorithm_changed` part aussi pour le nombre d'itérations ou les seuils
+        d'arrêt, qui ne changent rien à ce qui est montré.
         """
-        self._dirty = True
+        return (self._session.strip_size, tuple(self._session.selected_indices()))
+
+    def invalidate(self, *_) -> None:
+        """Programme une reconstruction, si tant est qu'elle change quelque chose.
+
+        Le calcul est différé : reconstruire depuis `paintEvent` figerait
+        l'interface à chaque cran du curseur, l'anti-rebond ne servant alors à
+        rien puisque le repeint arrive avant lui. L'ancienne image reste affichée
+        entre-temps, et les bandes surlignées, elles, suivent immédiatement.
+        """
+        if self._key() == self._built_key:
+            return
+        self._timer.start()
         self.update()
 
     def refresh(self) -> None:
-        """Reconstruit tout de suite, sans attendre le prochain rendu."""
+        """Reconstruit tout de suite, sans attendre le délai."""
+        self._timer.stop()
+        key = self._key()
         self._rebuild_sandbox()
-        self._dirty = False
+        self._built_key = key
         self.update()
+
+    @property
+    def _dirty(self) -> bool:
+        return self._key() != self._built_key
 
     # --- Grille d'essai ---------------------------------------------------
 
@@ -125,10 +151,6 @@ class StripPreview(QWidget):
         painter = QPainter(self)
         painter.setRenderHint(QPainter.SmoothPixmapTransform)
         painter.fillRect(self.rect(), self.palette().window())
-
-        if self._dirty:
-            self._rebuild_sandbox()
-            self._dirty = False
 
         cards = self._session.card_set
         if not cards:

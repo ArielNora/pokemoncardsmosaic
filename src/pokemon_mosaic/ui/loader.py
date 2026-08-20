@@ -39,9 +39,12 @@ class CardLoader(QObject):
         """
         self._cancelled = True
 
-    def _report(self, done: int, total: int) -> None:
+    def _check_cancelled(self) -> None:
         if self._cancelled:
             raise _Cancelled
+
+    def _report(self, done: int, total: int) -> None:
+        self._check_cancelled()
         self.progress.emit(done, total)
 
     def run(self) -> None:
@@ -51,6 +54,7 @@ class CardLoader(QObject):
                 scale=self._scale,
                 strip_size=self._strip_size,
                 progress=self._report,
+                check_cancelled=self._check_cancelled,
                 on_folder=lambda folder, cards: self.folder_loaded.emit(folder, cards),
             )
         except _Cancelled:

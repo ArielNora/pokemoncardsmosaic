@@ -212,3 +212,87 @@ def test_subset_of_a_subset_keeps_the_first_origin():
     once = original.subset([1, 3, 5, 7])
     twice = once.subset([0, 2])
     assert [card.source_index for card in twice] == [1, 5]
+
+
+# --- Chargement réel depuis le disque --------------------------------------
+
+def _write_png(path, size=(20, 30), colour=(120, 60, 200)):
+    from PIL import Image
+
+    path.parent.mkdir(parents=True, exist_ok=True)
+    Image.new("RGB", size, colour).save(path)
+
+
+def test_load_cards_reads_a_real_folder(tmp_path):
+    """Aucun test n'exerçait load_cards de bout en bout : une régression de
+    signature est passée à travers 225 tests avant d'être vue à l'exécution."""
+    from pokemon_mosaic.cards import load_cards
+
+    for index in range(3):
+        _write_png(tmp_path / "serie" / f"{index}.png")
+    cards = load_cards(str(tmp_path))
+
+    assert len(cards) == 3
+    assert [card.index for card in cards] == [0, 1, 2]
+    assert cards.full_size == (20, 30)
+    assert all(card.top is not None for card in cards)
+
+
+def test_load_cards_reports_folders_and_progress(tmp_path):
+    from pokemon_mosaic.cards import load_cards
+
+    _write_png(tmp_path / "a" / "1.png")
+    _write_png(tmp_path / "b" / "2.png")
+    folders, steps = [], []
+    load_cards(str(tmp_path),
+               on_folder=lambda name, cards: folders.append((name, len(cards))),
+               progress=lambda done, total: steps.append((done, total)))
+
+    assert [count for _, count in folders] == [1, 1]
+    assert steps == [(1, 2), (2, 2)]
+
+
+def test_load_cards_can_be_cancelled_during_the_header_pass(tmp_path):
+    """La première passe est purement séquentielle : sans point d'annulation,
+    un chargement lancé sur une grande arborescence serait impossible à arrêter.
+    """
+    from pokemon_mosaic.cards import load_cards
+
+    for index in range(10):
+        _write_png(tmp_path / f"{index}.png")
+
+    seen = []
+
+    def stop():
+        seen.append(1)
+        if len(seen) > 3:
+            raise KeyboardInterrupt
+
+    with pytest.raises(KeyboardInterrupt):
+        load_cards(str(tmp_path), check_cancelled=stop)
+    assert len(seen) == 4, "l'arrêt doit survenir dès la lecture des en-têtes"
+
+
+def test_load_cards_excludes_by_path_fragment(tmp_path):
+    from pokemon_mosaic.cards import load_cards
+
+    _write_png(tmp_path / "a" / "garder.png")
+    _write_png(tmp_path / "a" / "jeter.png")
+    cards = load_cards(str(tmp_path), exclude=("jeter",))
+    assert [card.name for card in cards] == ["garder"]
+
+
+def test_load_cards_shrinks_everything_to_the_smallest(tmp_path):
+    from pokemon_mosaic.cards import load_cards
+
+    _write_png(tmp_path / "grand.png", size=(40, 60))
+    _write_png(tmp_path / "petit.png", size=(20, 30))
+    cards = load_cards(str(tmp_path), scale=1.0)
+    assert cards.full_size == (20, 30)
+    assert {card.thumbnail.shape[:2] for card in cards} == {(30, 20)}
+
+
+def test_load_cards_on_an_empty_folder(tmp_path):
+    from pokemon_mosaic.cards import load_cards
+
+    assert len(load_cards(str(tmp_path))) == 0
