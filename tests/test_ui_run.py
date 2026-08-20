@@ -380,20 +380,28 @@ def shown(qt_app):
     Les 12×16 px des autres tests donneraient une mosaïque plus petite que le
     cadre : elle serait déjà agrandie à l'ajustement, le plafond de zoom vaudrait
     1, et les tests de zoom passeraient sans rien vérifier.
+
+    Il suffit que la mosaïque dépasse le cadre : plutôt que de grossir les cartes,
+    on rétrécit la fenêtre. Des vignettes de 178×246 dans une fenêtre de 900×600
+    faisaient monter le pic mémoire de ce fichier de 109 à 192 Mo, pour la même
+    démonstration.
     """
-    from pokemon_mosaic.ui.run_step import RunStep
+    from pokemon_mosaic.ui.run_step import ZOOM_STEP, RunStep
     from pokemon_mosaic.ui.session import Session
 
     session = Session()
-    session.set_cards(card_set(20, size=(178, 246)), "/fake")
+    session.set_cards(card_set(20, size=(60, 166)), "/fake")
     session.set_layout(cols=5, rows=4)
     session.set_algorithm(iterations=2000, snapshot_every=2, use_annealing=False)
 
     widget = RunStep(session)
     widget.show()
-    widget.resize(900, 600)
+    widget.resize(420, 320)
     feed(widget, session)
     widget._flush_render()
+    # Sans marge au-dessus de 1, les tests de zoom passeraient sans rien
+    # vérifier : mieux vaut que la construction échoue franchement.
+    assert widget._max_zoom() > ZOOM_STEP, "le fixture ne permet pas de zoomer"
     return widget, session
 
 
@@ -572,13 +580,17 @@ def test_a_new_run_lowers_a_zoom_above_the_new_ceiling(shown):
     widget, session = shown
     for _ in range(40):
         widget._zoom_by(1)
-    assert widget._zoom > 1.0
+    at_ceiling = widget._zoom
+    assert at_ceiling > 1.0
 
+    # Une grille bien plus petite : sa résolution native descend, donc le
+    # plafond aussi. On compare au plafond plutôt qu'à une valeur écrite en dur,
+    # qui ne tiendrait qu'à la taille des vignettes du fixture.
     session.set_excluded(range(4, 20), True)
     session.set_layout(cols=2, rows=2)
     feed(widget, session)
-    assert widget._max_zoom() == 1.0
-    assert widget._zoom == 1.0
+    assert widget._max_zoom() < at_ceiling
+    assert widget._zoom == pytest.approx(widget._max_zoom())
 
 
 # --- Prolonger et repartir d'un cliché -------------------------------------

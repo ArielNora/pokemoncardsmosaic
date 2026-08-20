@@ -11,6 +11,27 @@
    propre diff et passer `ruff` n'est pas une revue.
 2. `ruff` et `pytest` passent — le hook `pre-commit` le refuse sinon.
 
+## Lancer les tests
+
+**Fichier par fichier**, pas en un bloc — la machine de l'utilisateur est juste
+en mémoire :
+
+```bash
+scripts/run_tests.sh
+```
+
+Un processus par fichier de tests, code de sortie 1 si l'un échoue. C'est ce que
+lance le hook `pre-commit`. En un seul processus, la QApplication partagée, les
+widgets, les vignettes et les images d'export s'accumulent : **177 Mo de pic d'un
+bloc contre 142 Mo fichier par fichier**, pour deux secondes de plus.
+
+Pour un fichier seul, `uv run pytest tests/test_x.py` reste le bon geste.
+
+⚠️ **Ne pas gonfler les fixtures.** Des vignettes de 178×246 dans une fenêtre de
+900×600, pour tester le zoom, coûtaient 83 Mo à elles seules ; des vignettes de
+60×166 dans une fenêtre de 420×320 démontrent la même chose. Quand un test exige
+que l'image dépasse le cadre, **rétrécir le cadre plutôt que grossir l'image**.
+
 Le hook s'active une fois par clone :
 
 ```bash

@@ -528,7 +528,7 @@ timeline de clichés, export poster en PNG/JPEG/PDF avec découpage en panneaux.
    lancer/pause/arrêter, prolonger, repartir d'un cliché, export du cliché
    affiché
 
-**Outillage** — hook `pre-commit` (ruff + pytest), interface bilingue FR/EN,
+**Outillage** — hook `pre-commit` (ruff + pytest fichier par fichier), interface bilingue FR/EN,
 346 tests.
 
 ### Reste à faire pour la v1
