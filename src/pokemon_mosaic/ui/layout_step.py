@@ -167,6 +167,29 @@ class LayoutStep(QWidget):
         self._cols.setValue(session.cols)
         self._rows.setValue(session.rows)
         self._updating = False
+        self._push_back_clamped()
+
+    def _push_back_clamped(self) -> None:
+        """Renvoie à la session ce que les champs ont réellement accepté.
+
+        Un préréglage écrit à la main peut porter un DPI hors bornes ou un format
+        de papier inconnu. Le champ l'écrête, ou l'ignore pour une liste
+        déroulante ; sans ce retour, la session garderait la valeur d'origine et
+        le formulaire décrirait un poster différent de celui qui sera produit —
+        un format inconnu faisant même échouer l'export.
+        """
+        session = self._session
+        accepted = {
+            "paper": self._paper.currentText(),
+            "dpi": self._dpi.value(),
+            "panels": self._panels.value(),
+            "cols": self._cols.value(),
+            "rows": self._rows.value(),
+        }
+        drifted = {name: value for name, value in accepted.items()
+                   if getattr(session, name) != value}
+        if drifted:
+            session.set_layout(**drifted)
 
     def _refresh(self) -> None:
         self._sync_form()

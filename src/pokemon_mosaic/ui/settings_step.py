@@ -225,6 +225,31 @@ class SettingsStep(QWidget):
         self._stop_on_score.setChecked(session.stop_on_score)
         self._target_score.setValue(session.target_score)
         self._updating = False
+        self._push_back_clamped()
+
+    def _push_back_clamped(self) -> None:
+        """Renvoie à la session ce que les champs ont réellement accepté.
+
+        Un préréglage écrit à la main peut porter une valeur hors bornes — le
+        format est du JSON, et la spec assume qu'on le retouche. Le champ
+        l'écrête pour l'afficher ; sans ce retour, la session garderait la valeur
+        d'origine et le formulaire annoncerait un calcul différent de celui qui
+        aura lieu.
+        """
+        session = self._session
+        accepted = {
+            "iterations": self._iterations.value(),
+            "snapshot_every": self._snapshot_every.value(),
+            "stagnation_iterations": self._stagnation.value(),
+            "time_budget": self._time_budget.value(),
+            "acceptance": self._acceptance.value(),
+            "strip_size": self._strip_size.value(),
+            "target_score": self._target_score.value(),
+        }
+        drifted = {name: value for name, value in accepted.items()
+                   if getattr(session, name) != value}
+        if drifted:
+            session.set_algorithm(**drifted)
 
     def _refresh(self) -> None:
         self._sync_form()

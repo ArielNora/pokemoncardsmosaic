@@ -179,3 +179,23 @@ def test_no_warning_when_the_link_fits(qt_app, session):
     step = LayoutStep(session)
     session.set_layout(cols=5, rows=4)
     assert "colonne" not in step._warnings.text()
+
+
+def test_an_unknown_paper_falls_back_instead_of_lying(session):
+    """Une liste déroulante ignore une valeur qu'elle ne propose pas. Sans retour
+    vers la session, le formulaire décrirait un poster que l'export refuserait de
+    produire, `paper_size_mm` ne connaissant pas ce format."""
+    from pokemon_mosaic.ui.layout_step import LayoutStep
+
+    step = LayoutStep(session)
+    before = session.paper
+    session.set_layout(paper="A9")
+    assert session.paper == step._paper.currentText() == before
+
+
+def test_a_dpi_outside_the_field_bounds_comes_back_corrected(session):
+    from pokemon_mosaic.ui.layout_step import LayoutStep
+
+    step = LayoutStep(session)
+    session.set_layout(dpi=5000)
+    assert step._dpi.value() == session.dpi == 1200

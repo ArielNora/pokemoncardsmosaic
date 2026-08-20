@@ -394,3 +394,25 @@ def test_range_is_untouched_when_thinning_cannot_happen():
     """Sans dépassement du plafond, aucune raison d'abaisser le plancher."""
     low, high = estimated_snapshots(200_000, every=10, annealing=False, maximum=70)
     assert (low, high) == (11, 61)
+
+
+def test_a_value_outside_the_field_bounds_comes_back_corrected(session):
+    """Un préréglage écrit à la main peut porter une valeur hors bornes. Sans
+    retour du champ vers la session, le formulaire annoncerait un calcul
+    différent de celui qui aurait lieu."""
+    from pokemon_mosaic.ui.settings_step import SettingsStep
+
+    step = SettingsStep(session)
+    session.set_algorithm(iterations=99, strip_size=0.9, acceptance=5.0)
+
+    assert step._iterations.value() == session.iterations == 1000
+    assert step._strip_size.value() == session.strip_size == pytest.approx(0.5)
+    assert step._acceptance.value() == session.acceptance == pytest.approx(0.99)
+
+
+def test_a_value_within_bounds_is_left_alone(session):
+    from pokemon_mosaic.ui.settings_step import SettingsStep
+
+    step = SettingsStep(session)
+    session.set_algorithm(iterations=4242)
+    assert step._iterations.value() == session.iterations == 4242

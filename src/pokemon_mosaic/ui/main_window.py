@@ -1,6 +1,8 @@
 """Fenêtre principale : assistant en trois étapes puis vue d'exécution."""
 
-from PySide6.QtCore import Qt
+from pathlib import Path
+
+from PySide6.QtCore import QStandardPaths, Qt
 from PySide6.QtWidgets import (
     QComboBox,
     QHBoxLayout,
@@ -16,6 +18,7 @@ from PySide6.QtWidgets import (
 from .cards_step import CardsStep
 from .i18n import LANGUAGES, LanguageManager
 from .layout_step import LayoutStep
+from .presets_bar import PresetsBar
 from .run_step import RunStep
 from .session import Session
 from .settings_step import SettingsStep
@@ -56,14 +59,29 @@ class MainWindow(QMainWindow):
             self.tr("Exécution"),
         )[index]
 
-    def __init__(self, language: LanguageManager, session: Session):
+    @staticmethod
+    def presets_directory() -> str:
+        """Où vivent les préréglages, selon les usages du système.
+
+        Qt sait déjà le dire ; ajouter `platformdirs` pour cela seul alourdirait
+        un socle tenu à trois dépendances.
+        """
+        base = QStandardPaths.writableLocation(QStandardPaths.AppConfigLocation)
+        return str(Path(base or ".") / "presets")
+
+    def __init__(self, language: LanguageManager, session: Session,
+                 presets_directory: str | None = None):
         super().__init__()
         self._language = language
         self._session = session
+        self._presets_directory = presets_directory or self.presets_directory()
         self._build()
         language.language_changed.connect(self.retranslate_ui)
 
     def _build(self) -> None:
+        self._presets = PresetsBar(self._session, self._presets_directory)
+        self._presets.status_message.connect(self._show_status)
+
         self._steps_bar = QHBoxLayout()
         self._step_labels = []
         for _ in range(self.STEP_COUNT):
@@ -107,6 +125,7 @@ class MainWindow(QMainWindow):
         bottom.addWidget(self._next)
 
         layout = QVBoxLayout()
+        layout.addWidget(self._presets)
         layout.addLayout(self._steps_bar)
         layout.addWidget(self._stack, 1)
         layout.addLayout(bottom)
@@ -151,6 +170,7 @@ class MainWindow(QMainWindow):
         self._back.setText(self.tr("Précédent"))
         self._next.setText(self.tr("Suivant"))
         self._language_label.setText(self.tr("Langue"))
+        self._presets.retranslate_ui()
         for widget in (self._stack.widget(i) for i in range(self._stack.count())):
             if hasattr(widget, "retranslate_ui"):
                 widget.retranslate_ui()

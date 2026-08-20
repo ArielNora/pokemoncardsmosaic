@@ -5,7 +5,7 @@ préviennent par signaux. Rien n'est recalculé en double d'un écran à l'autre
 """
 
 import os
-from dataclasses import replace
+from dataclasses import replace as dataclass_replace
 
 from PySide6.QtCore import QObject, Signal
 
@@ -14,6 +14,7 @@ from ..cards import DEFAULT_STRIP_SIZE, CardSet
 from ..layout import DEFAULT_DPI, GridFit, distribute_empty_cells
 from ..links import DEFAULT_PAIRS, Link, LinkLibrary, resolve_links
 from ..optimize import StopConditions
+from ..presets import LinkRef, Preset
 
 
 class Session(QObject):
@@ -156,6 +157,23 @@ class Session(QObject):
         if not self.card_set:
             return []
         return [c.index for c in self.card_set if c.index not in self._excluded]
+
+    def relative_path(self, index: int) -> str:
+        """Chemin de la carte, relatif au dossier chargé.
+
+        C'est l'identité stable d'une carte : son indice, lui, dépend du contenu
+        du dossier et se décale à l'arrivée d'une extension.
+        """
+        return os.path.relpath(self.card_set[index].path, self.data_dir)
+
+    def index_of_path(self, relative: str) -> int | None:
+        if not self.card_set:
+            return None
+        return next(
+            (card.index for card in self.card_set
+             if os.path.relpath(card.path, self.data_dir) == relative),
+            None,
+        )
 
     # --- Dossiers ---------------------------------------------------------
 
@@ -328,7 +346,7 @@ class Session(QObject):
         """
         if link.enabled == enabled:
             return link
-        return self.replace_link(link, replace(link, enabled=enabled))
+        return self.replace_link(link, dataclass_replace(link, enabled=enabled))
 
     def apply_default_links(self) -> list[str]:
         """Ajoute les liens fournis d'office, une fois les cartes chargées.
@@ -347,6 +365,123 @@ class Session(QObject):
             return index
 
         missing = resolve_links(self.links, find, DEFAULT_PAIRS)
+        self.links_changed.emit()
+        return missing
+
+    # --- Préréglages ------------------------------------------------------
+
+    def to_preset(self, name: str) -> Preset:
+        """Fige la configuration courante sous ce nom."""
+        return Preset(
+            name=name,
+            excluded=tuple(sorted(self.relative_path(index)
+                                  for index in self._excluded)),
+            active_links=tuple(
+                LinkRef(cards=tuple(self.relative_path(index)
+                                    for index in link.cards),
+                        ordered=link.ordered, name=link.name)
+                for link in self.links.active
+            ),
+            layout={
+                "paper": self.paper, "landscape": self.landscape,
+                "dpi": self.dpi, "panels": self.panels,
+                "cols": self.cols, "rows": self.rows,
+                # Seules les cases posées à la main sont mémorisées : la
+                # répartition automatique se recalcule, et la figer empêcherait
+                # de suivre un changement de grille ou de sélection.
+                "empty_cells": ([list(cell) for cell in self._empty_cells]
+                                if self._empty_pinned else None),
+            },
+            algorithm={name: getattr(self, name)
+                       for name in sorted(self.ALGORITHM_SETTINGS)},
+        )
+
+    def apply_preset(self, preset: Preset) -> list[str]:
+        """Rejoue un préréglage. Renvoie les chemins introuvables, pour information.
+
+        Une carte absente est signalée sans faire échouer le reste : un préréglage
+        doit survivre à la disparition d'une carte comme à l'arrivée d'une
+        extension, sans quoi il ne servirait qu'au dossier qui l'a vu naître.
+        """
+        missing: list[str] = []
+        self._apply_algorithm(preset.algorithm)
+        self._apply_layout(preset.layout)
+
+        if self.card_set:
+            wanted = set()
+            for relative in preset.excluded:
+                index = self.index_of_path(relative)
+                if index is None:
+                    missing.append(relative)
+                else:
+                    wanted.add(index)
+            # Un seul passage : les cartes hors du préréglage redeviennent
+            # retenues, y compris celles d'une extension arrivée depuis.
+            self.set_excluded(wanted, True)
+            self.set_excluded(set(range(self.total_cards)) - wanted, False)
+            missing.extend(self._apply_links(preset.active_links))
+        return missing
+
+    def _apply_algorithm(self, algorithm: dict) -> None:
+        known = {name: value for name, value in algorithm.items()
+                 if name in self.ALGORITHM_SETTINGS}
+        # JSON ne connaît pas les tuples : sans cette conversion, la couleur
+        # relue serait une liste, éternellement différente de la valeur courante,
+        # et chaque rechargement rejouerait un changement pour rien.
+        if "empty_colour" in known:
+            known["empty_colour"] = tuple(known["empty_colour"])
+        if known:
+            self.set_algorithm(**known)
+
+    def _apply_layout(self, layout: dict) -> None:
+        cells = layout.get("empty_cells")
+        known = {name: value for name, value in layout.items()
+                 if name != "empty_cells"}
+        if known:
+            self.set_layout(**known)
+        # Après `set_layout` : changer la grille efface les cases posées à la
+        # main, ce qui annulerait celles du préréglage si on les posait avant.
+        if cells is None:
+            self.reset_empty_cells()
+        else:
+            self._empty_cells = [tuple(cell) for cell in cells]
+            self._empty_pinned = True
+            self.layout_changed.emit()
+
+    def _apply_links(self, active_links) -> list[str]:
+        """Active les liens du préréglage, désactive les autres.
+
+        Un lien du préréglage absent de la bibliothèque y est ajouté : sans cela,
+        recharger une configuration sur une bibliothèque vidée perdrait en silence
+        les paires qu'elle décrit.
+        """
+        missing: list[str] = []
+        wanted: list[tuple[tuple[int, ...], LinkRef]] = []
+        for reference in active_links:
+            indices = [self.index_of_path(path) for path in reference.cards]
+            if any(index is None for index in indices):
+                missing.extend(path for path, index
+                               in zip(reference.cards, indices, strict=True)
+                               if index is None)
+                continue
+            wanted.append((tuple(indices), reference))
+
+        # Tout désactiver d'abord : la bibliothèque refuse qu'une carte
+        # appartienne à deux liens actifs, et l'ancien état bloquerait le nouveau.
+        for link in list(self.links.active):
+            self.links.replace(link, dataclass_replace(link, enabled=False))
+
+        existing = {link.cards: link for link in self.links.links}
+        for cards, reference in wanted:
+            link = existing.get(cards)
+            if link is None:
+                # Recréé à l'identique : hériter des valeurs par défaut ferait
+                # revenir un lien à ordre libre en lien imposé, changeant la
+                # contrainte donnée à l'optimiseur sans que rien ne le dise.
+                self.links.add(Link(cards=cards, ordered=reference.ordered,
+                                    name=reference.name))
+            else:
+                self.links.replace(link, dataclass_replace(link, enabled=True))
         self.links_changed.emit()
         return missing
 

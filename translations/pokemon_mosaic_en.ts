@@ -266,12 +266,12 @@
         <translation>Layout preview, without the images. Click a cell to place or remove a gap.</translation>
     </message>
     <message>
-        <location filename="../src/pokemon_mosaic/ui/layout_step.py" line="194"/>
+        <location filename="../src/pokemon_mosaic/ui/layout_step.py" line="217"/>
         <source>pile poil</source>
         <translation>exact fit</translation>
     </message>
     <message numerus="yes">
-        <location filename="../src/pokemon_mosaic/ui/layout_step.py" line="196"/>
+        <location filename="../src/pokemon_mosaic/ui/layout_step.py" line="219"/>
         <source>+%n carte(s) à ajouter</source>
         <translation>
             <numerusform>+%n card to add</numerusform>
@@ -279,7 +279,7 @@
         </translation>
     </message>
     <message numerus="yes">
-        <location filename="../src/pokemon_mosaic/ui/layout_step.py" line="198"/>
+        <location filename="../src/pokemon_mosaic/ui/layout_step.py" line="221"/>
         <source>%n carte(s) en trop</source>
         <translation>
             <numerusform>%n card too many</numerusform>
@@ -287,22 +287,22 @@
         </translation>
     </message>
     <message>
-        <location filename="../src/pokemon_mosaic/ui/layout_step.py" line="213"/>
+        <location filename="../src/pokemon_mosaic/ui/layout_step.py" line="236"/>
         <source>%1 colonnes ne se divisent pas en %2 panneaux : la coupe tomberait au milieu d&apos;une carte.</source>
         <translation>%1 columns do not divide into %2 panels: the cut would fall in the middle of a card.</translation>
     </message>
     <message>
-        <location filename="../src/pokemon_mosaic/ui/layout_step.py" line="227"/>
+        <location filename="../src/pokemon_mosaic/ui/layout_step.py" line="250"/>
         <source>Cartes de %1×%2 px — image totale %3×%4 px sur %5 feuille(s) %6 de %7×%8 mm.</source>
         <translation>Cards of %1×%2 px — total image %3×%4 px on %5 sheet(s) %6 of %7×%8 mm.</translation>
     </message>
     <message>
-        <location filename="../src/pokemon_mosaic/ui/layout_step.py" line="251"/>
+        <location filename="../src/pokemon_mosaic/ui/layout_step.py" line="274"/>
         <source>%1 DPI dépasse le maximum utile (%2 DPI pour ce format) : les cartes seront agrandies sans gagner en détail.</source>
         <translation>%1 DPI exceeds the useful maximum (%2 DPI for this format): cards will be enlarged without gaining detail.</translation>
     </message>
     <message>
-        <location filename="../src/pokemon_mosaic/ui/layout_step.py" line="258"/>
+        <location filename="../src/pokemon_mosaic/ui/layout_step.py" line="281"/>
         <source>Image de %1 Mpx : l&apos;export demandera beaucoup de mémoire.</source>
         <translation>Image of %1 Mpx: exporting will require a lot of memory.</translation>
     </message>
@@ -409,42 +409,42 @@
 <context>
     <name>MainWindow</name>
     <message>
-        <location filename="../src/pokemon_mosaic/ui/main_window.py" line="53"/>
+        <location filename="../src/pokemon_mosaic/ui/main_window.py" line="56"/>
         <source>Cartes</source>
         <translation>Cards</translation>
     </message>
     <message>
-        <location filename="../src/pokemon_mosaic/ui/main_window.py" line="54"/>
+        <location filename="../src/pokemon_mosaic/ui/main_window.py" line="57"/>
         <source>Grille et format</source>
         <translation>Grid and format</translation>
     </message>
     <message>
-        <location filename="../src/pokemon_mosaic/ui/main_window.py" line="55"/>
+        <location filename="../src/pokemon_mosaic/ui/main_window.py" line="58"/>
         <source>Réglages</source>
         <translation>Settings</translation>
     </message>
     <message>
-        <location filename="../src/pokemon_mosaic/ui/main_window.py" line="56"/>
+        <location filename="../src/pokemon_mosaic/ui/main_window.py" line="59"/>
         <source>Exécution</source>
         <translation>Run</translation>
     </message>
     <message>
-        <location filename="../src/pokemon_mosaic/ui/main_window.py" line="148"/>
+        <location filename="../src/pokemon_mosaic/ui/main_window.py" line="167"/>
         <source>Pokémon Mosaic</source>
         <translation>Pokémon Mosaic</translation>
     </message>
     <message>
-        <location filename="../src/pokemon_mosaic/ui/main_window.py" line="151"/>
+        <location filename="../src/pokemon_mosaic/ui/main_window.py" line="170"/>
         <source>Précédent</source>
         <translation>Back</translation>
     </message>
     <message>
-        <location filename="../src/pokemon_mosaic/ui/main_window.py" line="152"/>
+        <location filename="../src/pokemon_mosaic/ui/main_window.py" line="171"/>
         <source>Suivant</source>
         <translation>Next</translation>
     </message>
     <message>
-        <location filename="../src/pokemon_mosaic/ui/main_window.py" line="153"/>
+        <location filename="../src/pokemon_mosaic/ui/main_window.py" line="172"/>
         <source>Langue</source>
         <translation>Language</translation>
     </message>
@@ -452,9 +452,105 @@
 <context>
     <name>PlaceholderStep</name>
     <message>
-        <location filename="../src/pokemon_mosaic/ui/main_window.py" line="40"/>
+        <location filename="../src/pokemon_mosaic/ui/main_window.py" line="43"/>
         <source>« %1 » : à construire.</source>
         <translation>“%1”: still to build.</translation>
+    </message>
+</context>
+<context>
+    <name>PresetsBar</name>
+    <message>
+        <location filename="../src/pokemon_mosaic/ui/presets_bar.py" line="58"/>
+        <source>Préréglage</source>
+        <translation>Preset</translation>
+    </message>
+    <message>
+        <location filename="../src/pokemon_mosaic/ui/presets_bar.py" line="59"/>
+        <source>Charger</source>
+        <translation>Load</translation>
+    </message>
+    <message>
+        <location filename="../src/pokemon_mosaic/ui/presets_bar.py" line="60"/>
+        <source>Enregistrer…</source>
+        <translation>Save…</translation>
+    </message>
+    <message>
+        <location filename="../src/pokemon_mosaic/ui/presets_bar.py" line="61"/>
+        <source>Supprimer</source>
+        <translation>Delete</translation>
+    </message>
+    <message>
+        <location filename="../src/pokemon_mosaic/ui/presets_bar.py" line="63"/>
+        <source>Enregistre la sélection, les liens actifs, la grille et les réglages sous un nom.</source>
+        <translation>Saves the selection, the active links, the grid and the settings under a name.</translation>
+    </message>
+    <message>
+        <location filename="../src/pokemon_mosaic/ui/presets_bar.py" line="94"/>
+        <source>Enregistrer le préréglage</source>
+        <translation>Save the preset</translation>
+    </message>
+    <message>
+        <location filename="../src/pokemon_mosaic/ui/presets_bar.py" line="94"/>
+        <source>Nom</source>
+        <translation>Name</translation>
+    </message>
+    <message>
+        <location filename="../src/pokemon_mosaic/ui/presets_bar.py" line="109"/>
+        <source>Échec de l&apos;enregistrement : %1</source>
+        <translation>Saving failed: %1</translation>
+    </message>
+    <message>
+        <location filename="../src/pokemon_mosaic/ui/presets_bar.py" line="114"/>
+        <source>Préréglage « %1 » enregistré.</source>
+        <translation>Preset “%1” saved.</translation>
+    </message>
+    <message>
+        <location filename="../src/pokemon_mosaic/ui/presets_bar.py" line="119"/>
+        <source>Remplacer le préréglage</source>
+        <translation>Replace the preset</translation>
+    </message>
+    <message>
+        <location filename="../src/pokemon_mosaic/ui/presets_bar.py" line="120"/>
+        <source>« %1 » existe déjà. Le remplacer ?</source>
+        <translation>“%1” already exists. Replace it?</translation>
+    </message>
+    <message>
+        <location filename="../src/pokemon_mosaic/ui/presets_bar.py" line="132"/>
+        <source>Préréglage illisible : %1</source>
+        <translation>Unreadable preset: %1</translation>
+    </message>
+    <message numerus="yes">
+        <location filename="../src/pokemon_mosaic/ui/presets_bar.py" line="141"/>
+        <source>Préréglage « %1 » chargé — %n carte(s) introuvable(s).</source>
+        <translation>
+            <numerusform>Preset “%1” loaded — %n card not found.</numerusform>
+            <numerusform>Preset “%1” loaded — %n cards not found.</numerusform>
+        </translation>
+    </message>
+    <message>
+        <location filename="../src/pokemon_mosaic/ui/presets_bar.py" line="146"/>
+        <source>Préréglage « %1 » chargé.</source>
+        <translation>Preset “%1” loaded.</translation>
+    </message>
+    <message>
+        <location filename="../src/pokemon_mosaic/ui/presets_bar.py" line="154"/>
+        <source>Supprimer le préréglage</source>
+        <translation>Delete the preset</translation>
+    </message>
+    <message>
+        <location filename="../src/pokemon_mosaic/ui/presets_bar.py" line="155"/>
+        <source>Supprimer « %1 » ? La bibliothèque de liens n&apos;est pas touchée.</source>
+        <translation>Delete “%1”? The link library is left untouched.</translation>
+    </message>
+    <message>
+        <location filename="../src/pokemon_mosaic/ui/presets_bar.py" line="164"/>
+        <source>Échec de la suppression : %1</source>
+        <translation>Deletion failed: %1</translation>
+    </message>
+    <message>
+        <location filename="../src/pokemon_mosaic/ui/presets_bar.py" line="169"/>
+        <source>Préréglage « %1 » supprimé.</source>
+        <translation>Preset “%1” deleted.</translation>
     </message>
 </context>
 <context>
@@ -733,22 +829,22 @@
         <translation>What these settings imply</translation>
     </message>
     <message>
-        <location filename="../src/pokemon_mosaic/ui/settings_step.py" line="262"/>
+        <location filename="../src/pokemon_mosaic/ui/settings_step.py" line="287"/>
         <source>Durée estimée : %1</source>
         <translation>Estimated time: %1</translation>
     </message>
     <message>
-        <location filename="../src/pokemon_mosaic/ui/settings_step.py" line="265"/>
+        <location filename="../src/pokemon_mosaic/ui/settings_step.py" line="290"/>
         <source>Gain attendu sur le score : environ %1 %</source>
         <translation>Expected score gain: about %1%</translation>
     </message>
     <message>
-        <location filename="../src/pokemon_mosaic/ui/settings_step.py" line="268"/>
+        <location filename="../src/pokemon_mosaic/ui/settings_step.py" line="293"/>
         <source>Timeline : entre %1 et %2 clichés</source>
         <translation>Timeline: between %1 and %2 snapshots</translation>
     </message>
     <message>
-        <location filename="../src/pokemon_mosaic/ui/settings_step.py" line="271"/>
+        <location filename="../src/pokemon_mosaic/ui/settings_step.py" line="296"/>
         <source>trop peu pour naviguer, resserrez la cadence</source>
         <translation>too few to navigate, tighten the cadence</translation>
     </message>

@@ -93,6 +93,26 @@ la sélection de cartes, les liens, la grille et les réglages. Permet de compar
 plusieurs mises en page sans tout ressaisir, et de retrouver une config après
 l'arrivée d'une nouvelle extension.
 
+⭐ **Tout y est désigné par chemin, jamais par indice.** Les cartes sont numérotées
+par leur position dans le dossier trié : l'arrivée d'une extension décale tout ce qui
+la suit alphabétiquement. Un préréglage indexé deviendrait alors silencieusement
+faux — il retiendrait d'autres cartes, et les liens colleraient des paires que
+personne n'a formées. Or c'est **précisément après une nouvelle extension** qu'on
+veut retrouver sa configuration. Ce sont les cartes **retirées** qui sont
+mémorisées, et non les retenues : une carte arrivée depuis est ainsi incluse
+d'office.
+
+✅ Un préréglage nomme les liens **actifs** ; la bibliothèque détient les liens. Il
+porte tout de même de quoi **recréer** un lien disparu de la bibliothèque, ordre
+libre ou imposé compris : le recréer aux valeurs par défaut changerait la contrainte
+donnée à l'optimiseur sans le dire.
+
+✅ Le fichier est du **JSON**, assumé modifiable à la main. Les formulaires écrêtent
+donc ce qu'ils reçoivent et **renvoient à la session la valeur retenue**, sans quoi
+un champ afficherait une valeur pendant qu'une autre serait calculée. Emplacement :
+`QStandardPaths.AppConfigLocation` — Qt sait déjà le dire, et ajouter `platformdirs`
+pour cela seul alourdirait un socle tenu à trois dépendances.
+
 ---
 
 ## 4. Étape 2 — Grille et format d'impression
@@ -485,7 +505,8 @@ scipy (écart max 0,00).
 
 - **img2pdf** — export PDF : intègre le JPEG sans recompression et fixe la taille de
   page en millimètres. Exactement ce qu'attend un imprimeur.
-- **platformdirs** — emplacement des préréglages et de la bibliothèque de liens.
+- ~~platformdirs~~ — écarté le 2026-08-20 : `QStandardPaths` de Qt donne le même
+  emplacement sans quatrième dépendance.
 - **JSON** — persistance : lisible, modifiable à la main, comparable dans git.
 - **pytest** — tests.
 
@@ -519,7 +540,7 @@ conversation est perdue.
 liens à ordre optionnel, cases vides figées, recuit simulé, seuils d'arrêt,
 timeline de clichés, export poster en PNG/JPEG/PDF avec découpage en panneaux.
 
-**Interface** — les quatre écrans :
+**Interface** — une barre de préréglages, puis les quatre écrans :
 1. Sélection des cartes : galerie, filtrage par dossier, chargement progressif,
    bibliothèque de liens (créer, modifier, activer, liens par défaut)
 2. Grille et format : presets d'impression, aperçu fil de fer, cases vides cliquables
@@ -529,13 +550,12 @@ timeline de clichés, export poster en PNG/JPEG/PDF avec découpage en panneaux.
    affiché
 
 **Outillage** — hook `pre-commit` (ruff + pytest fichier par fichier), interface bilingue FR/EN,
-346 tests.
+388 tests.
 
 ### Reste à faire pour la v1
 
 | Sujet | État |
 |---|---|
-| **Préréglages nommés** | Rien de fait. Doit couvrir sélection, liens actifs, grille et réglages. La bibliothèque de liens est séparée et ne doit pas y entrer. |
 | **Empaquetage** | Rien de fait. PyInstaller, macOS d'abord. |
 | **Stockage partagé des images** | Non tranché. Recommandation : une archive zip par extension attachée à une release GitHub, plus un script de récupération. Voir `TODO.md`. |
 
@@ -575,4 +595,7 @@ timeline de clichés, export poster en PNG/JPEG/PDF avec découpage en panneaux.
 | 2026-08-20 | Aperçu d'exécution : ajustement sur les **deux** dimensions, zoom plafonné à la résolution des vignettes, et zoom conservé d'un cliché à l'autre |
 | 2026-08-20 | L'export porte sur le **cliché affiché** ; format, orientation, DPI et panneaux restent à l'étape 2, seules les décisions d'écriture sont dans le dialogue |
 | 2026-08-20 | Chaque panneau est **écrit avant que le suivant ne soit rendu**, et un export annulé efface ses fichiers partiels |
+| 2026-08-20 | Préréglages **désignés par chemin** et non par indice, pour survivre à l'arrivée d'une extension ; ce sont les cartes **retirées** qui sont mémorisées |
+| 2026-08-20 | `platformdirs` écarté : `QStandardPaths` suffit, le socle reste à trois dépendances |
+| 2026-08-20 | Les formulaires **renvoient à la session** la valeur qu'ils ont écrêtée, un préréglage étant modifiable à la main |
 | 2026-08-20 | Prolonger **poursuit la timeline** ; repartir d'un cliché **tronque** ce qui suit. Une timeline non vide passée à `optimize_grid` signifie « reprise » et reporte les compteurs |
