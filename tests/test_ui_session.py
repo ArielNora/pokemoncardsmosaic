@@ -222,3 +222,89 @@ def test_loading_another_folder_forgets_the_links(session, tmp_path):
     other = tmp_path / "autre"
     session.start_loading(str(other))
     assert len(session.links) == 0
+
+
+@pytest.fixture
+def no_background_thread(monkeypatch):
+    """Neutralise le fil de chargement.
+
+    `CardsStep.load` démarre un vrai QThread. Laissé en vie, il survit à la fin du
+    test et Qt abandonne le processus (« QThread: Destroyed while thread is still
+    running ») — une suite qui plante par intermittence. Ces tests n'ont besoin que
+    de la logique de bascule, pas du chargement.
+    """
+    from pokemon_mosaic.ui import cards_step
+
+    monkeypatch.setattr(cards_step, "start_loading",
+                        lambda *args, **kwargs: (None, None))
+
+
+def test_a_failed_load_leaves_the_previous_work_intact(qt_app, tmp_path,
+                                                       no_background_thread):
+    """Choisir par erreur un dossier sans images effaçait cartes, sélection ET
+    liens avant même que le dossier soit lu, alors que le message se contentait
+    d'annoncer un échec de chargement. Sans confirmation ni annulation.
+    """
+    from pokemon_mosaic.ui.cards_step import CardsStep
+    from pokemon_mosaic.ui.session import Session
+
+    session = Session()
+    session.set_cards(card_set_in(tmp_path, {"a": list("abcdef")}), str(tmp_path))
+    session.set_excluded([0, 1], True)
+    session.add_link(Link(cards=(2, 3)))
+
+    step = CardsStep(session)
+    empty = tmp_path / "sans_images"
+    empty.mkdir()
+    step.load(str(empty))
+    step._on_failed("Aucune image trouvée")
+
+    assert session.total_cards == 6
+    assert session.selected_count == 4
+    assert len(session.links) == 1
+
+
+def test_a_successful_load_does_replace_the_previous_work(qt_app, tmp_path,
+                                                          no_background_thread):
+    """Le pendant : une fois le premier lot acquis, l'ancienne session cède."""
+    from pokemon_mosaic.ui.cards_step import CardsStep
+    from pokemon_mosaic.ui.session import Session
+
+    session = Session()
+    first = card_set_in(tmp_path / "un", {"a": list("abc")})
+    session.set_cards(first, str(tmp_path / "un"))
+    session.add_link(Link(cards=(0, 1)))
+
+    step = CardsStep(session)
+    second = card_set_in(tmp_path / "deux", {"b": list("xy")})
+    step.load(str(tmp_path / "deux"))
+    step._on_folder_loaded("b", second.cards)
+
+    assert session.total_cards == 2
+    assert len(session.links) == 0
+
+
+def test_closing_during_a_load_stops_the_thread(qt_app, tmp_path):
+    """Détruire un QThread encore actif fait abandonner le processus par Qt.
+    Fermer la fenêtre pendant les ~4 s de chargement doit donc l'interrompre.
+    """
+    from pokemon_mosaic.cards import VALID_EXTENSIONS  # noqa: F401
+    from pokemon_mosaic.ui.cards_step import CardsStep
+    from pokemon_mosaic.ui.session import Session
+
+    folder = tmp_path / "beaucoup"
+    folder.mkdir()
+    card_set_in(folder, {"a": [str(i) for i in range(3)]})
+
+    step = CardsStep(Session())
+    step.load(str(folder))
+    step.shutdown()
+
+    assert step._thread is None and step._worker is None
+
+
+def test_shutdown_is_safe_without_any_load(qt_app):
+    from pokemon_mosaic.ui.cards_step import CardsStep
+    from pokemon_mosaic.ui.session import Session
+
+    CardsStep(Session()).shutdown()   # ne doit pas lever

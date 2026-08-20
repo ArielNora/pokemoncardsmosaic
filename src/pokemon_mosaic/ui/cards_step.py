@@ -30,6 +30,9 @@ class CardsStep(QWidget):
         self._session = session
         self._thread = None
         self._worker = None
+        # Vrai tant qu'aucun lot n'est arrivé du chargement en cours : la session
+        # ne sera vidée qu'à ce moment-là.
+        self._awaiting_first_batch = False
         self._build()
         session.selection_changed.connect(self._update_counts)
         session.cards_added.connect(self._refresh_folder_counts)
@@ -131,7 +134,12 @@ class CardsStep(QWidget):
         self._progress.setRange(0, 0)  # indéterminé le temps de lire les en-têtes
         self._choose_folder.setEnabled(False)
         self.status_message.emit(self.tr("Chargement des cartes…"))
-        self._session.start_loading(directory)
+        # On ne vide surtout pas la session ici : `start_loading` efface les cartes,
+        # la sélection ET les liens. Si le dossier se révélait inexploitable, tout
+        # ce travail serait perdu alors que le message dirait seulement « échec du
+        # chargement ». On attend le premier lot pour basculer.
+        self._awaiting_first_batch = True
+        self._pending_directory = directory
         self._thread, self._worker = start_loading(
             self, directory, self._on_progress, self._on_folder_loaded,
             self._on_loaded, self._on_failed,
@@ -143,12 +151,20 @@ class CardsStep(QWidget):
         self._progress.setValue(done)
 
     def _on_folder_loaded(self, folder: str, cards: list) -> None:
-        """Un dossier vient d'être décodé : on l'affiche sans attendre la suite."""
+        """Un dossier vient d'être décodé : on l'affiche sans attendre la suite.
+
+        C'est ici, et pas avant, que l'ancienne session est remplacée : à ce stade
+        le nouveau chargement est acquis.
+        """
+        if self._awaiting_first_batch:
+            self._session.start_loading(self._pending_directory)
+            self._awaiting_first_batch = False
         self._session.append_cards(cards)
 
     def _on_loaded(self, card_set) -> None:
         self._progress.hide()
         self._choose_folder.setEnabled(True)
+        self._awaiting_first_batch = False
         self._session.finish_loading(card_set)
         self.status_message.emit(
             self.tr("%n carte(s) chargée(s).", "", len(card_set))
@@ -157,7 +173,24 @@ class CardsStep(QWidget):
     def _on_failed(self, message: str) -> None:
         self._progress.hide()
         self._choose_folder.setEnabled(True)
-        self.status_message.emit(self.tr("Échec du chargement : %1").replace("%1", message))
+        # Rien n'a été vidé : la sélection et les liens précédents sont intacts.
+        self._awaiting_first_batch = False
+        self.status_message.emit(
+            self.tr("Échec du chargement : %1").replace("%1", message)
+        )
+
+    def shutdown(self) -> None:
+        """Interrompt proprement un chargement en cours.
+
+        Appelée à la fermeture de la fenêtre : détruire un QThread encore actif
+        fait abandonner le processus par Qt.
+        """
+        if self._worker is not None:
+            self._worker.cancel()
+        if self._thread is not None and self._thread.isRunning():
+            self._thread.quit()
+            self._thread.wait(5000)
+        self._thread = self._worker = None
 
     # --- Dossiers et compteurs -------------------------------------------
 

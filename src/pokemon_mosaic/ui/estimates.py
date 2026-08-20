@@ -73,11 +73,13 @@ def estimated_snapshots(iterations: int, every: int, annealing: bool,
     if maximum is None:
         return (low, high)
 
-    # Si même la borne basse dépasse le plafond, l'élagage est certain : le compte
-    # tombe entre la moitié du plafond et le plafond.
-    if low > maximum:
-        return (maximum // 2 + 1, maximum)
-    return (low, min(high, maximum))
+    # L'élagage se déclenche dès que le compte AVANT élagage dépasse le plafond,
+    # donc dès que la borne haute le dépasse — pas seulement quand la borne basse
+    # le dépasse. Dans cette zone, la timeline jette un cliché sur deux et tombe
+    # sous la borne basse brute : le plancher doit descendre avec elle.
+    if high > maximum:
+        return (min(low, maximum // 2 + 1), maximum)
+    return (low, high)
 
 
 def format_duration(seconds: float) -> str:

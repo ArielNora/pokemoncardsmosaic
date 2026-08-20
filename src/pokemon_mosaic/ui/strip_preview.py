@@ -20,7 +20,7 @@ from PySide6.QtCore import QRectF, Qt
 from PySide6.QtGui import QColor, QImage, QPainter, QPen
 from PySide6.QtWidgets import QWidget
 
-from ..optimize import build_initial_grid, optimize_grid
+from ..optimize import build_initial_grid, optimize_grid, select_cards
 from ..scoring import EdgeDistances
 
 BAND = QColor(255, 190, 60, 110)
@@ -94,7 +94,10 @@ class StripPreview(QWidget):
         indices = available[::step][:needed]
 
         try:
-            subset = cards.subset(indices)
+            # `select_cards` plutôt que `subset` seul : c'est le point d'entrée
+            # que le code désigne comme le seul sûr, et cet aperçu est le premier
+            # usage en production — donc celui qui fera référence.
+            subset, _ = select_cards(cards, indices)
             distances = EdgeDistances(subset.cards)
             grid = build_initial_grid(
                 subset, shape=(SANDBOX_COLS, SANDBOX_ROWS), rng=random.Random(0)

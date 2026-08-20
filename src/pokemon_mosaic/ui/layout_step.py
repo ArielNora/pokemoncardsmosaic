@@ -23,6 +23,7 @@ from ..layout import (
     paper_size_mm,
     suggest_grids,
 )
+from ..optimize import check_links_fit
 from .session import Session
 from .wireframe import WireframeView
 
@@ -234,6 +235,13 @@ class LayoutStep(QWidget):
         fit = session.grid_fit()
         if not fit.fits_exactly:
             warnings.append(fit.message())
+
+        # Un lien plus large que la grille ne se verrait sinon qu'au lancement du
+        # calcul, bien après le choix de la mise en page.
+        try:
+            check_links_fit(session.usable_links().to_groups(), session.cols)
+        except ValueError as error:
+            warnings.append(str(error))
 
         source_width = (session.card_set.full_size[0]
                         if session.card_set and session.card_set.full_size[0] else 713)

@@ -10,6 +10,10 @@ from PySide6.QtCore import QObject, QThread, Signal
 from ..cards import load_cards
 
 
+class _Cancelled(Exception):
+    """Signal interne : le chargement a été interrompu à la demande."""
+
+
 class CardLoader(QObject):
     """Travailleur destiné à vivre dans un QThread."""
 
@@ -23,6 +27,22 @@ class CardLoader(QObject):
         self._data_dir = data_dir
         self._scale = scale
         self._strip_size = strip_size
+        self._cancelled = False
+
+    def cancel(self) -> None:
+        """Demande l'arrêt du chargement.
+
+        Appelée depuis le fil principal ; le travailleur voit le drapeau au
+        prochain rappel de progression. Sans cela, fermer la fenêtre pendant les
+        ~4 s de chargement détruirait un QThread encore actif, ce que Qt
+        sanctionne par un abandon du processus.
+        """
+        self._cancelled = True
+
+    def _report(self, done: int, total: int) -> None:
+        if self._cancelled:
+            raise _Cancelled
+        self.progress.emit(done, total)
 
     def run(self) -> None:
         try:
@@ -30,9 +50,11 @@ class CardLoader(QObject):
                 self._data_dir,
                 scale=self._scale,
                 strip_size=self._strip_size,
-                progress=lambda done, total: self.progress.emit(done, total),
+                progress=self._report,
                 on_folder=lambda folder, cards: self.folder_loaded.emit(folder, cards),
             )
+        except _Cancelled:
+            return
         except Exception as error:  # noqa: BLE001 - tout échec du fil de fond
             # doit remonter à l'interface, sinon il disparaîtrait sans trace.
             self.failed.emit(str(error))

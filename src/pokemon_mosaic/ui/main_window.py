@@ -138,6 +138,11 @@ class MainWindow(QMainWindow):
             font.setBold(position == current)
             label.setFont(font)
 
+    def closeEvent(self, event) -> None:
+        """Laisse le chargement s'arrêter avant que les widgets ne disparaissent."""
+        self._cards_step.shutdown()
+        super().closeEvent(event)
+
     def retranslate_ui(self) -> None:
         self.setWindowTitle(self.tr("Pokémon Mosaic"))
         for position, label in enumerate(self._step_labels):

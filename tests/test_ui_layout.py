@@ -157,3 +157,25 @@ def test_changing_the_grid_still_resets_the_placement(session):
     session.toggle_empty_cell(0, 0)
     session.set_layout(cols=5, rows=5)
     assert not session._empty_pinned
+
+
+def test_a_link_wider_than_the_grid_is_flagged_at_step_two(qt_app, session):
+    """La vérification existait mais n'était appelée nulle part : un lien trop
+    large ne serait apparu qu'au lancement du calcul, bien après le réglage."""
+    from pokemon_mosaic.links import Link
+    from pokemon_mosaic.ui.layout_step import LayoutStep
+
+    session.add_link(Link(cards=(0, 1, 2)))
+    step = LayoutStep(session)
+    session.set_layout(cols=2, rows=10)
+    assert "colonne" in step._warnings.text()
+
+
+def test_no_warning_when_the_link_fits(qt_app, session):
+    from pokemon_mosaic.links import Link
+    from pokemon_mosaic.ui.layout_step import LayoutStep
+
+    session.add_link(Link(cards=(0, 1, 2)))
+    step = LayoutStep(session)
+    session.set_layout(cols=5, rows=4)
+    assert "colonne" not in step._warnings.text()

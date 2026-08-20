@@ -346,3 +346,37 @@ def test_screen_paints(step):
     widget, _ = step
     widget.resize(900, 600)
     assert not widget.grab().isNull()
+
+
+@pytest.mark.parametrize("rate", [0.0005, 0.0010, 0.0015, 0.0020, 0.0030])
+def test_range_holds_across_the_declared_acceptance_band(rate):
+    """La fourchette ne tenait compte de l'élagage que lorsqu'il était certain.
+    Entre les deux bornes, la timeline jetait un cliché sur deux et tombait sous
+    le plancher annoncé — deux taux sur cinq sortaient de l'intervalle affiché.
+    """
+    import numpy as np
+
+    from pokemon_mosaic.timeline import Timeline
+
+    iterations, every, maximum = 1_000_000, 10, 70
+    low, high = estimated_snapshots(iterations, every, annealing=False,
+                                    maximum=maximum)
+
+    # On rejoue exactement la séquence d'appels d'optimize_grid.
+    timeline = Timeline(every=every, max_snapshots=maximum)
+    grid = np.zeros((2, 2), dtype=int)
+    accepted_total = int(iterations * rate)
+    timeline.record(grid, 0, 0, 0.0, 0.0)
+    for accepted in range(1, accepted_total + 1):
+        timeline.maybe_record(grid, accepted, accepted, 0.0, 0.0)
+    timeline.record(grid, accepted_total, accepted_total, 0.0, 0.0)
+
+    assert low <= len(timeline) <= high, (
+        f"taux {rate} : {len(timeline)} clichés hors de ({low}, {high})"
+    )
+
+
+def test_range_is_untouched_when_thinning_cannot_happen():
+    """Sans dépassement du plafond, aucune raison d'abaisser le plancher."""
+    low, high = estimated_snapshots(200_000, every=10, annealing=False, maximum=70)
+    assert (low, high) == (11, 61)
