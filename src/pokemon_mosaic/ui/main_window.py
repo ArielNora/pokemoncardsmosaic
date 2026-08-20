@@ -16,6 +16,7 @@ from PySide6.QtWidgets import (
 from .cards_step import CardsStep
 from .i18n import LANGUAGES, LanguageManager
 from .layout_step import LayoutStep
+from .run_step import RunStep
 from .session import Session
 from .settings_step import SettingsStep
 
@@ -79,10 +80,9 @@ class MainWindow(QMainWindow):
         self._stack.addWidget(self._layout_step)
         self._settings_step = SettingsStep(self._session)
         self._stack.addWidget(self._settings_step)
-        for position in range(3, self.STEP_COUNT):
-            self._stack.addWidget(
-                PlaceholderStep(lambda i=position: self.step_title(i))
-            )
+        self._run_step = RunStep(self._session)
+        self._run_step.status_message.connect(self._show_status)
+        self._stack.addWidget(self._run_step)
         self._stack.currentChanged.connect(self._update_navigation)
 
         self._back = QPushButton()
@@ -141,6 +141,7 @@ class MainWindow(QMainWindow):
     def closeEvent(self, event) -> None:
         """Laisse le chargement s'arrêter avant que les widgets ne disparaissent."""
         self._cards_step.shutdown()
+        self._run_step.shutdown()
         super().closeEvent(event)
 
     def retranslate_ui(self) -> None:

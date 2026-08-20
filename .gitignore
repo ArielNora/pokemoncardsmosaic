@@ -17,3 +17,6 @@ venv/
 
 # --- macOS ---
 .DS_Store
+
+# Captures des outils de navigation
+.playwright-mcp/

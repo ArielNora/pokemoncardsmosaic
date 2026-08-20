@@ -34,6 +34,21 @@ FLIP_PROBABILITY = 0.25
 CHECK_INTERVAL = 1000
 
 
+class StopReason:
+    """Raisons d'arrêt possibles.
+
+    Des constantes plutôt que des littéraux : l'interface doit pouvoir les
+    traduire, et comparer des chaînes recopiées à la main se briserait à la
+    première reformulation.
+    """
+
+    EXHAUSTED = "itérations épuisées"
+    SCORE = "score atteint"
+    STAGNATION = "stagnation"
+    TIME = "budget de temps"
+    REQUESTED = "arrêt demandé"
+
+
 @dataclass
 class StopConditions:
     """Les quatre seuils d'arrêt de l'étape 3.
@@ -51,11 +66,11 @@ class StopConditions:
     def check(self, score: float, since_improvement: int, elapsed: float) -> str | None:
         """Renvoie la raison d'arrêter, ou None pour continuer."""
         if self.target_score is not None and score <= self.target_score:
-            return "score atteint"
+            return StopReason.SCORE
         if self.stagnation_iterations is not None and since_improvement >= self.stagnation_iterations:
-            return "stagnation"
+            return StopReason.STAGNATION
         if self.time_budget is not None and elapsed >= self.time_budget:
-            return "budget de temps"
+            return StopReason.TIME
         return None
 
 
@@ -205,7 +220,7 @@ def optimize_grid(
         paused = (control.paused_seconds - paused_at_start) if control else 0.0
         return time.monotonic() - started - paused
 
-    stopped_by = "itérations épuisées"
+    stopped_by = StopReason.EXHAUSTED
 
     if annealing is not None:
         temperature_0 = annealing.initial_temperature or annealing.calibrate(
@@ -226,7 +241,7 @@ def optimize_grid(
     for iteration in range(total_iterations):
         if iteration % CHECK_INTERVAL == 0:
             if control is not None and not control.checkpoint():
-                stopped_by = "arrêt demandé"
+                stopped_by = StopReason.REQUESTED
                 break
             # Le temps passé en pause est retranché : suspendre le calcul pour
             # examiner la timeline ne doit pas consommer le budget de temps.

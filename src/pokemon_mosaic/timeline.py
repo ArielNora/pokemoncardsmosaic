@@ -11,6 +11,7 @@ d'itérations régulier écraserait toute la partie intéressante dans le premie
 Voir SPEC.md §5 et §6.
 """
 
+from collections.abc import Callable
 from dataclasses import dataclass, field
 
 import numpy as np
@@ -49,6 +50,10 @@ class Timeline:
     every: int = 10
     max_snapshots: int | None = 70
     snapshots: list[Snapshot] = field(default_factory=list)
+    # Appelé à chaque cliché enregistré. Un simple rappel, pas un signal Qt : le
+    # cœur doit rester utilisable sans interface. C'est à l'appelant de faire le
+    # pont s'il vit dans un autre fil.
+    on_record: Callable[[Snapshot], None] | None = None
     _next_at: int = 0
 
     def __len__(self) -> int:
@@ -82,6 +87,8 @@ class Timeline:
         )
         self.snapshots.append(snapshot)
         self._next_at = accepted + self.every
+        if self.on_record is not None:
+            self.on_record(snapshot)
         if self.max_snapshots is not None and len(self.snapshots) > self.max_snapshots:
             self._thin_out()
         return snapshot

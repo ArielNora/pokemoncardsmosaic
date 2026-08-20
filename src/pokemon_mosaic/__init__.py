@@ -17,6 +17,7 @@ from .links import Link, LinkLibrary, resolve_links
 from .optimize import (
     OptimizationResult,
     StopConditions,
+    StopReason,
     build_initial_grid,
     check_links_fit,
     generate_grid,
@@ -42,6 +43,7 @@ __all__ = [
     "RunControl",
     "Snapshot",
     "StopConditions",
+    "StopReason",
     "Timeline",
     "build_initial_grid",
     "calculate_grid_dims",
