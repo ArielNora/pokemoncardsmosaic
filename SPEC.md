@@ -481,7 +481,38 @@ beaucoup plus d'itérations que la descente stricte.
 
 ✅ **À intégrer avant l'interface**, pour que l'UI se branche sur une base stable.
 
-## 9. Journal des décisions
+## 9. Avancement
+
+État au 2026-08-20. À tenir à jour : c'est ce document qui fait foi si la
+conversation est perdue.
+
+### Fait
+
+**Cœur de calcul** — chargement en vignettes, matrices de distances précalculées,
+liens à ordre optionnel, cases vides figées, recuit simulé, seuils d'arrêt,
+timeline de clichés, export poster en PNG/JPEG/PDF avec découpage en panneaux.
+
+**Interface** — les quatre écrans :
+1. Sélection des cartes : galerie, filtrage par dossier, chargement progressif
+2. Grille et format : presets d'impression, aperçu fil de fer, cases vides cliquables
+3. Réglages de base et avancés, avec aperçus et projections chiffrées
+4. Vue d'exécution : image live, timeline navigable, lancer/pause/arrêter
+
+**Outillage** — hook `pre-commit` (ruff + pytest), interface bilingue FR/EN,
+269 tests.
+
+### Reste à faire pour la v1
+
+| Sujet | État |
+|---|---|
+| **Interface des liens** (étape 1) | Le modèle existe (`LinkLibrary`, ordre optionnel, bibliothèque séparée) ; il manque l'écran pour créer et désactiver les liens. |
+| **Export depuis un cliché choisi** | `export_poster` fait tout le travail ; il manque le bouton dans la vue d'exécution et le choix du format. |
+| **Prolonger / reprendre depuis un cliché** | `RunWorker` accepte déjà `previous_grid`, testé. Il manque les commandes. |
+| **Préréglages nommés** | Rien de fait. Doit couvrir sélection, liens actifs, grille et réglages. La bibliothèque de liens est séparée et ne doit pas y entrer. |
+| **Empaquetage** | Rien de fait. PyInstaller, macOS d'abord. |
+| **Stockage partagé des images** | Non tranché. Recommandation : une archive zip par extension attachée à une release GitHub, plus un script de récupération. Voir `TODO.md`. |
+
+## 10. Journal des décisions
 
 | Date | Décision |
 |---|---|
