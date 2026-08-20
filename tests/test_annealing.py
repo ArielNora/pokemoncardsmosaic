@@ -8,7 +8,11 @@ import pytest
 from test_scoring import make_cards
 
 from pokemon_mosaic.annealing import Annealing
-from pokemon_mosaic.optimize import StopConditions, optimize_grid
+from pokemon_mosaic.optimize import (
+    StopConditions,
+    build_initial_grid,
+    optimize_grid,
+)
 from pokemon_mosaic.scoring import EdgeDistances, grid_score
 from pokemon_mosaic.timeline import Timeline
 
@@ -307,3 +311,71 @@ def test_cooling_follows_the_real_bound():
         stop=StopConditions(max_iterations=3000),
     )
     assert result.attempted == 3000
+
+
+# --- Prolongation d'une timeline -------------------------------------------
+
+def test_truncate_after_keeps_the_chosen_snapshot():
+    timeline = Timeline(every=1)
+    grid = np.arange(4).reshape(2, 2)
+    for i in range(5):
+        timeline.record(grid, i, i, float(i), 0.0)
+    timeline.truncate_after(2)
+    assert [s.iteration for s in timeline] == [0, 1, 2]
+
+
+def test_truncate_after_refuses_an_index_outside_the_timeline():
+    timeline = Timeline(every=1)
+    timeline.record(np.arange(4).reshape(2, 2), 0, 0, 0.0, 0.0)
+    with pytest.raises(IndexError, match="hors de la timeline"):
+        timeline.truncate_after(3)
+
+
+def test_a_fresh_timeline_starts_at_iteration_zero():
+    cards = make_cards(12, seed=3)
+    distances = EdgeDistances(cards)
+    timeline = Timeline(every=5)
+    optimize_grid(build_initial_grid(cards, shape=(4, 3)), distances,
+                  iterations=500, timeline=timeline, rng=random.Random(0))
+    assert timeline[0].iteration == 0 and timeline[0].accepted == 0
+
+
+def test_continuing_a_timeline_carries_the_counters_forward():
+    """Sans report des compteurs, les itérations reviendraient à zéro au milieu
+    de la timeline, et la cadence — comptée en échanges retenus — n'enregistrerait
+    plus rien avant d'avoir rattrapé le seuil hérité."""
+    cards = make_cards(12, seed=3)
+    distances = EdgeDistances(cards)
+    timeline = Timeline(every=5, max_snapshots=None)
+    grid = build_initial_grid(cards, shape=(4, 3))
+    optimize_grid(grid, distances, iterations=500, timeline=timeline,
+                  rng=random.Random(0))
+    first_pass = list(timeline)
+    end_of_first = first_pass[-1]
+
+    optimize_grid(grid.copy(), distances, iterations=500, timeline=timeline,
+                  rng=random.Random(1))
+
+    # Les clichés d'origine sont intacts, les nouveaux s'ajoutent à la suite.
+    assert list(timeline)[: len(first_pass)] == first_pass
+    assert len(timeline) > len(first_pass)
+    iterations = [s.iteration for s in timeline]
+    assert iterations == sorted(iterations), "les itérations doivent rester croissantes"
+    assert timeline[-1].iteration > end_of_first.iteration
+    assert timeline[-1].accepted >= end_of_first.accepted
+
+
+def test_continuing_records_no_duplicate_starting_snapshot():
+    """Le dernier cliché de la timeline **est** l'état de départ de la reprise."""
+    cards = make_cards(12, seed=3)
+    distances = EdgeDistances(cards)
+    timeline = Timeline(every=1_000_000, max_snapshots=None)
+    grid = build_initial_grid(cards, shape=(4, 3))
+    optimize_grid(grid, distances, iterations=100, timeline=timeline,
+                  rng=random.Random(0))
+    before = len(timeline)
+
+    optimize_grid(grid.copy(), distances, iterations=100, timeline=timeline,
+                  rng=random.Random(1))
+    # Une cadence hors d'atteinte : seul le cliché final imposé s'ajoute.
+    assert len(timeline) == before + 1

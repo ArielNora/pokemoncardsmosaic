@@ -234,3 +234,27 @@ def test_the_screen_returns_to_its_resting_state_after_an_export(step, tmp_path)
     assert widget._cancel_export.isHidden()
     assert widget._export_progress.isHidden()
     assert widget._export_thread is None
+
+
+def test_resuming_comes_back_after_the_export(step, tmp_path, monkeypatch):
+    """Griser les boutons à part de `can_resume` les laissait éteints après un
+    export : plus moyen de prolonger sans toucher au curseur."""
+    from pokemon_mosaic.export import PosterSettings
+    from pokemon_mosaic.ui import run_step as module
+
+    widget, _ = step
+    widget._run_signature = widget._signature()
+    widget._update_buttons(running=False)
+    widget._slider.setValue(0)
+    assert widget._extend.isEnabled() and widget._resume.isEnabled()
+
+    monkeypatch.setattr(module, "start_export",
+                        lambda *args, **kwargs: (object(), object()))
+    widget._start_export(grid_of(widget), PosterSettings(paper="A5", dpi=72),
+                         str(tmp_path / "poster.png"), False)
+    assert not widget._extend.isEnabled(), "un export en cours occupe l'écran"
+    assert not widget.can_resume()
+
+    widget._on_exported([str(tmp_path / "poster.png")])
+    assert widget._extend.isEnabled() and widget._resume.isEnabled()
+    assert widget.can_resume()

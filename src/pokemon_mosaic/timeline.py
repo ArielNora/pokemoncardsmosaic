@@ -116,6 +116,19 @@ class Timeline:
             return None
         return self.record(grid, iteration, accepted, score, elapsed)
 
+    def truncate_after(self, index: int) -> None:
+        """Jette les clichés postérieurs à `index`, pour repartir de celui-là.
+
+        L'avenir abandonné n'a plus de sens une fois qu'on relance le calcul
+        depuis un état antérieur : le garder ferait une timeline dont la seconde
+        moitié ne descend pas de la première.
+        """
+        if not 0 <= index < len(self.snapshots):
+            raise IndexError(f"Cliché {index} hors de la timeline "
+                             f"({len(self.snapshots)} clichés).")
+        self.snapshots = self.snapshots[: index + 1]
+        self._next_at = self.snapshots[-1].accepted + self.every
+
     def best(self) -> Snapshot | None:
         """Le cliché au meilleur score — pas forcément le dernier avec un recuit."""
         return min(self.snapshots, key=lambda s: s.score, default=None)

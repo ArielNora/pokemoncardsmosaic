@@ -579,3 +579,112 @@ def test_a_new_run_lowers_a_zoom_above_the_new_ceiling(shown):
     feed(widget, session)
     assert widget._max_zoom() == 1.0
     assert widget._zoom == 1.0
+
+
+# --- Prolonger et repartir d'un cliché -------------------------------------
+
+@pytest.fixture
+def capture_runs(monkeypatch):
+    """Remplace le lancement en fond par un enregistrement des arguments."""
+    from pokemon_mosaic.ui import run_step as module
+
+    calls = []
+
+    def fake_start_run(parent, session, control, previous_grid=None,
+                       timeline=None, **handlers):
+        calls.append({"previous_grid": previous_grid, "timeline": timeline})
+        return object(), object()      # (thread, worker) factices mais non nuls
+
+    monkeypatch.setattr(module, "start_run", fake_start_run)
+    return calls
+
+
+def test_resuming_is_impossible_before_a_run(qt_app, session):
+    from pokemon_mosaic.ui.run_step import RunStep
+
+    widget = RunStep(session)
+    assert not widget.can_resume()
+    assert not widget._extend.isEnabled() and not widget._resume.isEnabled()
+    widget._extend_run()            # ne doit pas lever
+    widget._resume_from_snapshot()
+
+
+def test_a_finished_run_can_be_extended(step, capture_runs):
+    widget, session = step
+    widget._run_signature = widget._signature()
+    feed(widget, session)
+    widget._update_buttons(running=False)
+    assert widget.can_resume()
+
+    widget._extend.click()
+    assert len(capture_runs) == 1
+    # Reprend le dernier cliché et poursuit la même timeline.
+    np.testing.assert_array_equal(capture_runs[0]["previous_grid"],
+                                  widget._timeline[-1].grid)
+    assert capture_runs[0]["timeline"] is widget._timeline
+
+
+def test_resuming_from_a_snapshot_drops_what_came_after(step, capture_runs):
+    """L'avenir abandonné ne descend plus de l'état courant : le garder ferait
+    une timeline dont la seconde moitié ne suit pas la première."""
+    widget, session = step
+    widget._run_signature = widget._signature()
+    feed(widget, session)
+    widget._update_buttons(running=False)
+    assert len(widget._timeline) > 2, "il faut des clichés à abandonner"
+    kept = widget._timeline[1].grid.copy()
+
+    widget._slider.setValue(1)
+    widget._resume.click()
+    assert len(widget._timeline) == 2
+    np.testing.assert_array_equal(capture_runs[0]["previous_grid"], kept)
+    assert widget._slider.value() == 1
+
+
+def test_restarting_from_the_last_snapshot_is_left_to_extend(step, capture_runs):
+    """Deux boutons pour le même geste laisseraient croire qu'ils diffèrent."""
+    widget, session = step
+    widget._run_signature = widget._signature()
+    feed(widget, session)
+    widget._update_buttons(running=False)
+
+    widget._slider.setValue(len(widget._timeline) - 1)
+    assert not widget._resume.isEnabled()
+    widget._slider.setValue(0)
+    assert widget._resume.isEnabled()
+
+
+@pytest.mark.parametrize("change", ["selection", "links", "grid"])
+def test_changing_the_inputs_disables_resuming(step, change):
+    """Les cartes retenues sont renumérotées de 0 à n-1 : repartir d'un cliché
+    après un changement ferait désigner d'autres cartes par les mêmes indices."""
+    widget, session = step
+    widget._run_signature = widget._signature()
+    feed(widget, session)
+    widget._update_buttons(running=False)
+    assert widget.can_resume()
+
+    if change == "selection":
+        session.set_excluded([0], True)
+    elif change == "links":
+        session.add_link(Link(cards=(0, 1)))
+    else:
+        session.set_layout(cols=4, rows=5)
+
+    assert not widget.can_resume()
+    assert not widget._extend.isEnabled() and not widget._resume.isEnabled()
+
+
+def test_a_grid_of_the_wrong_shape_is_refused_by_the_worker(session):
+    """Dernier filet : rien ne planterait, le poster serait simplement composé
+    de cartes que l'utilisateur n'a pas choisies."""
+    from pokemon_mosaic.ui.runner import RunWorker
+
+    seen = run_synchronously(session)
+    grid = seen["started"][0][1][-1].grid
+    session.set_layout(cols=4, rows=5)
+    worker = RunWorker(session, RunControl(), previous_grid=grid)
+    failures = []
+    worker.failed.connect(failures.append)
+    worker.run()
+    assert failures and "mise en page" in failures[0]

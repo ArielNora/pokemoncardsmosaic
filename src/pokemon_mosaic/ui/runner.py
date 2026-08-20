@@ -6,6 +6,7 @@ un QThread, et communique par signaux. La grille est modifiée sur place par
 seulement eux que l'interface lit, jamais la grille en cours de modification.
 """
 
+import numpy as np
 from PySide6.QtCore import QObject, QThread, Signal
 
 from ..control import RunControl
@@ -15,7 +16,7 @@ from ..optimize import (
     optimize_grid,
     select_cards,
 )
-from ..scoring import EdgeDistances
+from ..scoring import EMPTY, EdgeDistances
 from ..timeline import Timeline
 
 
@@ -27,13 +28,17 @@ class RunWorker(QObject):
     finished_run = Signal(object)          # OptimizationResult
     failed = Signal(str)
 
-    def __init__(self, session, control: RunControl, previous_grid=None):
+    def __init__(self, session, control: RunControl, previous_grid=None,
+                 timeline=None):
         super().__init__()
         self._session = session
         self._control = control
         # Grille de départ imposée : sert à prolonger un calcul ou à repartir
         # d'un cliché choisi dans la timeline.
         self._previous_grid = previous_grid
+        # Timeline à poursuivre. Fournie, ses clichés sont conservés et les
+        # nouveaux s'y ajoutent à la suite ; absente, on en ouvre une neuve.
+        self._timeline = timeline
 
     def run(self) -> None:
         try:
@@ -74,11 +79,20 @@ class RunWorker(QObject):
         distances = EdgeDistances(cards.cards)
         # Le rappel s'exécute dans ce fil ; la connexion étant automatiquement
         # mise en file d'attente, l'interface le reçoit dans le sien.
-        timeline = Timeline(every=session.snapshot_every,
-                            on_record=self.snapshot.emit)
+        if self._timeline is not None:
+            timeline = self._timeline
+            timeline.on_record = self.snapshot.emit
+            # La cadence reste celle de la timeline poursuivie, et non celle des
+            # réglages : elle a pu doubler à chaque éclaircissage, et repartir du
+            # réglage d'origine rendrait la seconde moitié bien plus dense que la
+            # première pour un même nombre d'échanges retenus.
+        else:
+            timeline = Timeline(every=session.snapshot_every,
+                                on_record=self.snapshot.emit)
 
         if self._previous_grid is not None:
             grid = self._previous_grid.copy()
+            _check_resumable(grid, cards, session)
         else:
             grid = build_initial_grid(
                 cards, shape=(session.cols, session.rows), links=links,
@@ -87,10 +101,31 @@ class RunWorker(QObject):
         return cards, links, timeline, grid, distances
 
 
-def start_run(parent, session, control, previous_grid=None, **handlers):
+def _check_resumable(grid, cards, session) -> None:
+    """Refuse de repartir d'une grille qui ne décrit plus la sélection courante.
+
+    Les cartes retenues sont renumérotées de 0 à n-1 à chaque préparation : si la
+    sélection ou la grille a changé depuis le calcul d'origine, les indices de
+    l'ancienne grille désignent d'autres cartes. Rien ne planterait — le poster
+    serait simplement composé de cartes que l'utilisateur n'a pas choisies.
+    """
+    if grid.shape != (session.rows, session.cols):
+        raise ValueError(
+            f"La grille du cliché fait {grid.shape[1]}×{grid.shape[0]} alors que "
+            f"la mise en page en demande {session.cols}×{session.rows}."
+        )
+    placed = {int(value) for value in np.unique(grid)} - {EMPTY}
+    if placed - set(range(len(cards))):
+        raise ValueError(
+            "Le cliché désigne des cartes qui ne font plus partie de la sélection."
+        )
+
+
+def start_run(parent, session, control, previous_grid=None, timeline=None,
+              **handlers):
     """Lance une optimisation en fond. Renvoie (thread, worker) à garder en vie."""
     thread = QThread(parent)
-    worker = RunWorker(session, control, previous_grid)
+    worker = RunWorker(session, control, previous_grid, timeline)
     worker.moveToThread(thread)
 
     thread.started.connect(worker.run)

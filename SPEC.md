@@ -342,6 +342,14 @@ rendre modifiable ce qui vient de l'étape 2. L'export tourne en fond, avec
 progression par panneau et annulation : 7,3 s mesurées pour un A3 en deux panneaux
 à 300 DPI, soit bien assez pour figer la fenêtre.
 
+✅ **Prolonger** poursuit le calcul depuis le dernier cliché en conservant toute
+la timeline : les compteurs d'itérations, d'échanges retenus et de temps repartent
+de là où ils s'étaient arrêtés. **Repartir d'un cliché** relance depuis l'état
+affiché et **abandonne les clichés suivants**, qui ne descendent plus de l'état
+courant. Les deux commandes s'éteignent dès que la sélection, les liens ou la
+grille changent : les cartes retenues étant renumérotées de 0 à n-1, les mêmes
+indices désigneraient d'autres cartes sans que rien ne le signale.
+
 ✅ **Navigation au clavier** : flèches gauche et droite pour reculer et avancer
 d'un cliché, Origine et Fin pour les extrémités.
 
@@ -517,16 +525,16 @@ timeline de clichés, export poster en PNG/JPEG/PDF avec découpage en panneaux.
 2. Grille et format : presets d'impression, aperçu fil de fer, cases vides cliquables
 3. Réglages de base et avancés, avec aperçus et projections chiffrées
 4. Vue d'exécution : image live, timeline navigable au clavier, zoom,
-   lancer/pause/arrêter, export du cliché affiché
+   lancer/pause/arrêter, prolonger, repartir d'un cliché, export du cliché
+   affiché
 
 **Outillage** — hook `pre-commit` (ruff + pytest), interface bilingue FR/EN,
-332 tests.
+346 tests.
 
 ### Reste à faire pour la v1
 
 | Sujet | État |
 |---|---|
-| **Prolonger / reprendre depuis un cliché** | `RunWorker` accepte déjà `previous_grid`, testé. Il manque les commandes. |
 | **Préréglages nommés** | Rien de fait. Doit couvrir sélection, liens actifs, grille et réglages. La bibliothèque de liens est séparée et ne doit pas y entrer. |
 | **Empaquetage** | Rien de fait. PyInstaller, macOS d'abord. |
 | **Stockage partagé des images** | Non tranché. Recommandation : une archive zip par extension attachée à une release GitHub, plus un script de récupération. Voir `TODO.md`. |
@@ -567,3 +575,4 @@ timeline de clichés, export poster en PNG/JPEG/PDF avec découpage en panneaux.
 | 2026-08-20 | Aperçu d'exécution : ajustement sur les **deux** dimensions, zoom plafonné à la résolution des vignettes, et zoom conservé d'un cliché à l'autre |
 | 2026-08-20 | L'export porte sur le **cliché affiché** ; format, orientation, DPI et panneaux restent à l'étape 2, seules les décisions d'écriture sont dans le dialogue |
 | 2026-08-20 | Chaque panneau est **écrit avant que le suivant ne soit rendu**, et un export annulé efface ses fichiers partiels |
+| 2026-08-20 | Prolonger **poursuit la timeline** ; repartir d'un cliché **tronque** ce qui suit. Une timeline non vide passée à `optimize_grid` signifie « reprise » et reporte les compteurs |

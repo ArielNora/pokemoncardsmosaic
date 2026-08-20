@@ -72,6 +72,9 @@ class RunStep(QWidget):
         self._worker = None
         self._export_thread = None
         self._export_worker = None
+        # Sélection et liens au moment où le calcul a démarré. Repartir d'un
+        # cliché n'a de sens que si la numérotation des cartes n'a pas bougé.
+        self._run_signature: tuple | None = None
         self._cards = None
         self._timeline = None
         self._following = True      # suit le dernier cliché tant qu'on ne touche pas
@@ -88,6 +91,12 @@ class RunStep(QWidget):
         # non du cliché, donc parcourir la timeline conserve le zoom.
         self._zoom = 1.0
         self._build()
+        # Changer la sélection, les liens ou la grille rend les clichés
+        # inexploitables : les commandes de reprise doivent s'éteindre aussitôt,
+        # et non échouer au moment du clic.
+        session.selection_changed.connect(self._update_resume_buttons)
+        session.links_changed.connect(self._update_resume_buttons)
+        session.layout_changed.connect(self._update_resume_buttons)
 
     # --- Construction -----------------------------------------------------
 
@@ -153,12 +162,19 @@ class RunStep(QWidget):
         self._pause.clicked.connect(self._toggle_pause)
         self._stop.clicked.connect(self._request_stop)
 
+        self._extend = QPushButton()
+        self._resume = QPushButton()
+        self._extend.clicked.connect(lambda: self._extend_run())
+        self._resume.clicked.connect(lambda: self._resume_from_snapshot())
+
         # L'export porte sur le cliché affiché, d'où sa place à côté des
         # commandes de calcul et non dans un menu : c'est la timeline qui choisit
         # ce qui est exporté.
         self._export = QPushButton()
         self._export.clicked.connect(lambda: self._open_export())
         self._export.setEnabled(False)
+        self._extend.setEnabled(False)
+        self._resume.setEnabled(False)
         self._cancel_export = QPushButton()
         self._cancel_export.clicked.connect(self._request_export_stop)
         self._cancel_export.hide()
@@ -169,6 +185,8 @@ class RunStep(QWidget):
         controls.addWidget(self._start)
         controls.addWidget(self._pause)
         controls.addWidget(self._stop)
+        controls.addWidget(self._extend)
+        controls.addWidget(self._resume)
         controls.addWidget(self._export)
         controls.addWidget(self._cancel_export)
         controls.addWidget(self._export_progress)
@@ -186,6 +204,16 @@ class RunStep(QWidget):
         self._start.setText(self.tr("Lancer"))
         self._stop.setText(self.tr("Arrêter"))
         self._latest.setText(self.tr("Dernier"))
+        self._extend.setText(self.tr("Prolonger"))
+        self._resume.setText(self.tr("Repartir de ce cliché"))
+        self._extend.setToolTip(
+            self.tr("Poursuit le calcul depuis le dernier cliché, "
+                    "en conservant toute la timeline.")
+        )
+        self._resume.setToolTip(
+            self.tr("Relance le calcul depuis le cliché affiché. "
+                    "Les clichés suivants sont abandonnés.")
+        )
         self._export.setText(self.tr("Exporter ce cliché…"))
         self._cancel_export.setText(self.tr("Annuler l'export"))
         self._zoom_fit.setText(self.tr("Ajuster"))
@@ -204,18 +232,68 @@ class RunStep(QWidget):
 
     # --- Commandes --------------------------------------------------------
 
-    def start_run(self, previous_grid=None) -> None:
+    def start_run(self, previous_grid=None, timeline=None) -> None:
         if self._thread is not None:
             return
         self._control = RunControl()
         self._following = True
+        self._run_signature = self._signature()
         self._thread, self._worker = start_run(
-            self, self._session, self._control, previous_grid,
+            self, self._session, self._control, previous_grid, timeline,
             started_run=self._on_started, snapshot=self._on_snapshot,
             finished_run=self._on_finished, failed=self._on_failed,
         )
         self._update_buttons(running=True)
         self.status_message.emit(self.tr("Calcul en cours…"))
+
+    # --- Prolongation et reprise ------------------------------------------
+
+    def _signature(self) -> tuple:
+        """Ce qui doit être resté identique pour qu'un cliché reste interprétable.
+
+        Les cartes retenues sont renumérotées de 0 à n-1 : changer la sélection
+        ferait désigner d'autres cartes par les mêmes indices, en silence. Les
+        liens comptent aussi, l'optimiseur exigeant que chaque bloc soit déjà
+        intact dans la grille de départ.
+        """
+        session = self._session
+        return (
+            tuple(session.selected_indices()),
+            tuple(sorted(link.cards for link in session.usable_links().active)),
+            (session.rows, session.cols),
+        )
+
+    def can_resume(self) -> bool:
+        """Vrai si un calcul terminé peut être repris tel quel.
+
+        Un export en cours compte comme occupé : c'est cette méthode, et elle
+        seule, qui décide de l'état des boutons — les griser à part la ferait
+        diverger de ce qu'ils montrent.
+        """
+        return (bool(self._timeline)
+                and self._thread is None and self._export_thread is None
+                and self._run_signature == self._signature())
+
+    def _extend_run(self) -> None:
+        """Poursuit le calcul depuis le dernier cliché, timeline conservée."""
+        if not self.can_resume():
+            return
+        self._go_to_latest()
+        self.start_run(previous_grid=self._timeline[-1].grid,
+                       timeline=self._timeline)
+
+    def _resume_from_snapshot(self) -> None:
+        """Relance depuis le cliché affiché, en abandonnant les suivants."""
+        if not self.can_resume():
+            return
+        index = self._slider.value()
+        grid = self._timeline[index].grid
+        self._timeline.truncate_after(index)
+        # Le curseur doit suivre la timeline raccourcie avant que les nouveaux
+        # clichés n'arrivent, sinon il pointerait hors de la liste.
+        self._slider.setMaximum(len(self._timeline) - 1)
+        self._slider.setValue(len(self._timeline) - 1)
+        self.start_run(previous_grid=grid, timeline=self._timeline)
 
     def _toggle_pause(self) -> None:
         if self._control is None:
@@ -269,6 +347,7 @@ class RunStep(QWidget):
             progress=self._on_export_progress, exported=self._on_exported,
             cancelled=self._on_export_cancelled, failed=self._on_export_failed,
         )
+        self._update_resume_buttons()
 
     def _request_export_stop(self) -> None:
         if self._export_worker is not None:
@@ -290,6 +369,7 @@ class RunStep(QWidget):
         self._cancel_export.hide()
         self._cancel_export.setEnabled(True)
         self._export_progress.hide()
+        self._update_resume_buttons()
 
     def _on_exported(self, written: list) -> None:
         self._end_export()
@@ -397,6 +477,7 @@ class RunStep(QWidget):
         self._following = value >= len(self._timeline) - 1
         self._show(value)
         self._update_position()
+        self._update_resume_buttons()
 
     def _go_to_latest(self) -> None:
         if self._timeline:
@@ -609,7 +690,17 @@ class RunStep(QWidget):
         self._start.setEnabled(not running)
         self._pause.setEnabled(running)
         self._stop.setEnabled(running)
+        self._update_resume_buttons()
         self._update_pause_label()
+
+    def _update_resume_buttons(self) -> None:
+        resumable = self.can_resume()
+        self._extend.setEnabled(resumable)
+        # Repartir du dernier cliché, c'est prolonger : deux boutons pour le même
+        # geste laisseraient croire qu'ils font des choses différentes.
+        self._resume.setEnabled(
+            resumable and self._slider.value() < len(self._timeline or []) - 1
+        )
 
     def _update_pause_label(self) -> None:
         paused = self._control is not None and self._control.paused

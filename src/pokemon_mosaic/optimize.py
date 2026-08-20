@@ -203,6 +203,17 @@ def optimize_grid(
     if links:
         _validate_links(grid, links)
 
+    # Une timeline déjà remplie signifie qu'on prolonge une exécution : les
+    # compteurs repartent de son dernier cliché, sans quoi les itérations
+    # reviendraient à zéro au milieu de la timeline et la cadence, comptée en
+    # échanges retenus, n'enregistrerait plus rien avant d'avoir rattrapé le
+    # seuil hérité.
+    resumed = timeline is not None and len(timeline) > 0
+    last = timeline[-1] if resumed else None
+    base_iteration = last.iteration if resumed else 0
+    base_accepted = last.accepted if resumed else 0
+    base_elapsed = last.elapsed if resumed else 0.0
+
     score = grid_score(grid, distances)
     initial_score = score
     best_score, best_grid = score, grid.copy()
@@ -216,9 +227,17 @@ def optimize_grid(
     paused_at_start = control.paused_seconds if control is not None else 0.0
 
     def elapsed_now() -> float:
-        """Temps de calcul effectif, pauses exclues."""
+        """Temps de calcul effectif de cette passe, pauses exclues."""
         paused = (control.paused_seconds - paused_at_start) if control else 0.0
         return time.monotonic() - started - paused
+
+    def record(force: bool) -> None:
+        """Enregistre un cliché, aux compteurs cumulés depuis le début."""
+        if timeline is None:
+            return
+        keep = timeline.record if force else timeline.maybe_record
+        keep(grid, base_iteration + iteration, base_accepted + accepted,
+             score, base_elapsed + elapsed_now())
 
     stopped_by = StopReason.EXHAUSTED
 
@@ -235,7 +254,9 @@ def optimize_grid(
         )
         return annealing.accepts(delta, temperature, rng)
 
-    if timeline is not None:
+    if timeline is not None and not resumed:
+        # En prolongation, le dernier cliché de la timeline **est** l'état de
+        # départ : le réenregistrer ferait un doublon aux compteurs remis à zéro.
         timeline.record(grid, 0, 0, score, 0.0)
 
     for iteration in range(total_iterations):
@@ -275,10 +296,7 @@ def optimize_grid(
                     if score < best_score:
                         best_score, last_improvement = score, iteration
                         best_grid = grid.copy()
-                    if timeline is not None:
-                        timeline.maybe_record(
-                            grid, iteration, accepted, score, elapsed_now(),
-                        )
+                    record(force=False)
                 continue
         else:
             sequence = (card,)
@@ -312,10 +330,7 @@ def optimize_grid(
                 if score < best_score:
                     best_score, last_improvement = score, iteration
                     best_grid = grid.copy()
-                if timeline is not None:
-                    timeline.maybe_record(
-                        grid, iteration, accepted, score, elapsed_now()
-                    )
+                record(force=False)
 
     # Avec un recuit, l'état final peut être moins bon qu'un état traversé : on
     # restitue la meilleure grille rencontrée.
@@ -328,7 +343,8 @@ def optimize_grid(
     # l'utilisateur voudra exporter — serait absent de la timeline.
     if timeline is not None:
         timeline.record(
-            grid, iteration + 1, accepted, best_score, elapsed_now()
+            grid, base_iteration + iteration + 1, base_accepted + accepted,
+            best_score, base_elapsed + elapsed_now(),
         )
 
     return OptimizationResult(
