@@ -1,5 +1,8 @@
 # TODO
 
+Ce qui reste **pour la v1** est dans `SPEC.md` §9. Ce fichier ne contient que ce
+qui vient **après**, et les points encore ouverts.
+
 ## Reporté explicitement après la v1 de l'application
 
 Tous décidés le 2026-08-16. À traiter **une fois toute la v1 terminée**, pas avant.
@@ -46,16 +49,15 @@ Alternatives écartées ou à reconsidérer :
 ## Limitations connues à corriger
 
 - **Grille dépendante de la factorisation.** `calculate_grid_dims` cherche les deux
-  facteurs les plus proches, donc 281 cartes (nombre premier) donnent une bande
-  281×1. Contourné aujourd'hui en excluant une carte. Corriger en autorisant des
-  cases vides, ou en choisissant le rectangle le plus proche du carré quitte à
-  laisser quelques trous.
-- **Transparence ignorée.** Lire en `IMREAD_UNCHANGED` et composer l'alpha sur un
-  fond défini, plutôt que de laisser `cv2` écarter le canal.
-- **Désynchronisation d'indices.** `original_index` suit l'indice d'entrée et non la
-  position dans `parts` ; une carte écartée au redimensionnement décale les deux.
-- **Double comptage d'une couture** dans le delta de score quand les deux zones
-  échangées sont adjacentes.
+  facteurs les plus proches, donc 281 cartes (nombre premier) donneraient une bande
+  281×1. Ne concerne plus que la **CLI sans `--grid`** : l'interface impose toujours
+  une forme et répartit les cases vides excédentaires.
+- **Noms de fichiers non normalisés.** Trois cartes portent des accents
+  (`mustébouée`, `silvallié`, `guérilande`) et une garde un nom de capture d'écran
+  (`mew 13.27.50.png`). Sans conséquence aujourd'hui, mais un lien décrit par
+  fragment de chemin accentué serait sensible à la normalisation Unicode : macOS
+  stocke en NFD, une chaîne saisie ailleurs arrive en NFC, et la comparaison de
+  sous-chaîne échoue sans rien signaler.
 
 ## Pistes d'amélioration
 
@@ -66,9 +68,20 @@ Alternatives écartées ou à reconsidérer :
   au contraire dangereux : les signatures doivent rester cohérentes avec le réglage
   affiché, sous peine de retrouver le défaut des signatures hétérogènes.
 
-- L'optimisation est une descente stricte : elle n'accepte jamais un coup perdant et
-  se bloque donc dans un minimum local. Un recuit simulé donnerait probablement un
-  meilleur résultat à budget d'itérations égal.
-- Normaliser les noms de fichiers : 4 cartes ont des accents (`mustébouée`,
-  `guérilande`, `météno`, `silvallié`) et une garde un nom de capture d'écran
-  (`mew 13.27.50.png`).
+## Retiré de cette liste — vérifié le 2026-08-20
+
+Gardé en trace pour ne pas rouvrir ces sujets sans raison.
+
+- **Recuit simulé.** Fait : `annealing.py`, exposé en réglage avancé, 67,5 % de gain
+  à 1 M d'itérations contre 61 % pour la descente stricte.
+- **Désynchronisation d'indices.** `original_index` n'existe plus. L'invariant
+  « `card.index` = position dans la liste » est tenu par `select_cards()`, et
+  `EdgeDistances` refuse une numérotation discontinue.
+- **Double comptage d'une couture.** Corrigé : `local_score` dédoublonne les arêtes
+  et reçoit toutes les cases d'un échange en un seul appel.
+- **Transparence ignorée.** Mesuré, et sans effet réel. 264 cartes sur 281 sont en
+  RGBA et 91 ont des pixels non opaques, mais il s'agit de l'anticrénelage du
+  contour : 0,3 à 1,3 % des pixels. `convert("RGB")` laisse tomber le canal alpha
+  sans composer, et l'écart qui en résulte sur une signature de bord vaut **au pire
+  1 niveau de couleur sur 255, 0,1 en médiane** — du même ordre que l'erreur des
+  vignettes, déjà acceptée. `cv2` a par ailleurs quitté l'application.

@@ -10,7 +10,9 @@ qui l'intersectent, et le poster complet n'est jamais en mémoire d'un seul tena
 Un A0 en deux panneaux ferait sinon 836 Mo.
 """
 
+import contextlib
 import os
+from collections.abc import Callable
 from dataclasses import dataclass, field
 
 import numpy as np
@@ -21,8 +23,14 @@ from .layout import DEFAULT_DPI, card_pixel_size, max_useful_dpi, mm_to_pixels, 
 from .scoring import EMPTY
 
 WHITE = (255, 255, 255)
+SUPPORTED_EXTENSIONS = (".png", ".jpg", ".jpeg", ".pdf")
 CROP_MARK_MM = 5.0
 CROP_MARK_WIDTH_PX = 3
+
+
+class ExportCancelled(Exception):
+    """L'export a été interrompu à la demande. Les fichiers déjà écrits sont
+    effacés : un poster à moitié rendu ressemble à un poster fini."""
 
 
 @dataclass
@@ -132,6 +140,7 @@ def _render_window(
     plan: PosterPlan,
     window: tuple[int, int, int, int],
     full_resolution: bool,
+    check_cancelled: Callable[[], bool] | None = None,
 ) -> Image.Image:
     """Assemble la portion du poster contenue dans `window` (x0, y0, x1, y1).
 
@@ -150,6 +159,10 @@ def _render_window(
     last_row = min(plan.rows - 1, (y1 - margin_y) // card_h)
 
     for r in range(first_row, last_row + 1):
+        # Une ligne de 17 cartes pleine résolution prend le temps de lire 17
+        # fichiers : c'est la granularité la plus fine où l'arrêt reste franc.
+        if check_cancelled is not None and check_cancelled():
+            raise ExportCancelled()
         for c in range(first_col, last_col + 1):
             left = margin_x + c * card_w - x0
             top = margin_y + r * card_h - y0
@@ -192,24 +205,52 @@ def _draw_crop_marks(image: Image.Image, plan: PosterPlan, panel: int) -> None:
             draw.line([(x, y), (end, y)], fill=(0, 0, 0), width=CROP_MARK_WIDTH_PX)
 
 
+def render_panel(
+    grid: np.ndarray,
+    cards: CardSet,
+    plan: PosterPlan,
+    panel: int,
+    full_resolution: bool = True,
+    check_cancelled: Callable[[], bool] | None = None,
+) -> Image.Image:
+    """Rend un seul panneau, repères de coupe compris."""
+    _, paper_h = plan.settings.paper_px
+    x0, x1 = plan.panel_bounds(panel)
+    image = _render_window(grid, cards, plan, (x0, 0, x1, paper_h),
+                           full_resolution, check_cancelled)
+    if plan.settings.crop_marks:
+        _draw_crop_marks(image, plan, panel)
+    return image
+
+
 def render_panels(
     grid: np.ndarray,
     cards: CardSet,
     settings: PosterSettings,
     full_resolution: bool = True,
 ) -> list[Image.Image]:
-    """Produit une image par panneau, jamais le poster entier en mémoire."""
+    """Produit une image par panneau. Les garde toutes en mémoire : préférer
+    `export_poster`, qui écrit chaque panneau avant de rendre le suivant."""
     plan = plan_poster(grid, cards, settings)
-    _, paper_h = settings.paper_px
+    return [render_panel(grid, cards, plan, panel, full_resolution)
+            for panel in range(settings.panels)]
 
-    panels = []
-    for panel in range(settings.panels):
-        x0, x1 = plan.panel_bounds(panel)
-        image = _render_window(grid, cards, plan, (x0, 0, x1, paper_h), full_resolution)
-        if settings.crop_marks:
-            _draw_crop_marks(image, plan, panel)
-        panels.append(image)
-    return panels
+
+def panel_paths(path: str, panels: int) -> list[str]:
+    """Chemins des fichiers que produirait un export vers `path`.
+
+    Sert aussi à prévenir l'utilisateur de ce qui va être écrasé : avec plusieurs
+    panneaux, choisir « poster.png » écrit en réalité « poster_1of2.png » et
+    « poster_2of2.png », qu'aucun sélecteur de fichier ne signale.
+    """
+    base, extension = os.path.splitext(path)
+    extension = extension.lower()
+    if extension not in SUPPORTED_EXTENSIONS:
+        raise ValueError(f"Format non géré : {extension} (attendu .png, .jpg ou .pdf)")
+    if panels == 1:
+        return [f"{base}{extension}"]
+    return [f"{base}_{panel}of{panels}{extension}"
+            for panel in range(1, panels + 1)]
 
 
 def export_poster(
@@ -218,17 +259,19 @@ def export_poster(
     settings: PosterSettings,
     path: str,
     full_resolution: bool = True,
+    on_progress: Callable[[int, int, str], None] | None = None,
+    check_cancelled: Callable[[], bool] | None = None,
 ) -> list[str]:
     """Écrit le poster. Renvoie la liste des fichiers produits.
 
     Le format se déduit de l'extension : `.png`, `.jpg`/`.jpeg`, `.pdf`. Le PDF porte
     les dimensions physiques et le DPI, ce qui lève toute ambiguïté chez l'imprimeur.
     Avec plusieurs panneaux, un suffixe `_1of2` est ajouté à chaque fichier.
+
+    Chaque panneau est rendu **puis écrit** avant que le suivant ne commence : garder
+    les deux moitiés d'un A0 en mémoire ferait 836 Mo pour rien.
     """
-    base, extension = os.path.splitext(path)
-    extension = extension.lower()
-    if extension not in (".png", ".jpg", ".jpeg", ".pdf"):
-        raise ValueError(f"Format non géré : {extension} (attendu .png, .jpg ou .pdf)")
+    targets = panel_paths(path, settings.panels)
 
     parent = os.path.dirname(path)
     if parent:
@@ -238,17 +281,34 @@ def export_poster(
     for warning in plan.warnings:
         print(f"  ⚠️  {warning}")
 
-    images = render_panels(grid, cards, settings, full_resolution)
-    written = []
-    for panel, image in enumerate(images, start=1):
-        suffix = f"_{panel}of{settings.panels}" if settings.panels > 1 else ""
-        target = f"{base}{suffix}{extension}"
-        if extension == ".pdf":
-            image.save(target, "PDF", resolution=float(settings.dpi))
-        elif extension in (".jpg", ".jpeg"):
-            image.save(target, quality=settings.jpeg_quality, dpi=(settings.dpi,) * 2)
-        else:
-            image.save(target, dpi=(settings.dpi,) * 2)
-        written.append(target)
-        print(f"Enregistré : {target} ({image.width}x{image.height} px)")
+    written: list[str] = []
+    try:
+        for panel, target in enumerate(targets):
+            if on_progress is not None:
+                on_progress(panel, settings.panels, target)
+            image = render_panel(grid, cards, plan, panel,
+                                 full_resolution, check_cancelled)
+            _save(image, target, settings)
+            written.append(target)
+            print(f"Enregistré : {target} ({image.width}x{image.height} px)")
+    except ExportCancelled:
+        # Un fichier partiel est pire qu'aucun fichier : rien ne le distingue
+        # d'un poster terminé au moment de l'envoyer à l'imprimeur.
+        for target in written:
+            with contextlib.suppress(OSError):
+                os.remove(target)
+        raise
+
+    if on_progress is not None:
+        on_progress(settings.panels, settings.panels, "")
     return written
+
+
+def _save(image: Image.Image, target: str, settings: PosterSettings) -> None:
+    extension = os.path.splitext(target)[1].lower()
+    if extension == ".pdf":
+        image.save(target, "PDF", resolution=float(settings.dpi))
+    elif extension in (".jpg", ".jpeg"):
+        image.save(target, quality=settings.jpeg_quality, dpi=(settings.dpi,) * 2)
+    else:
+        image.save(target, dpi=(settings.dpi,) * 2)

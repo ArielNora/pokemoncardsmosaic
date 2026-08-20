@@ -95,6 +95,120 @@
     </message>
 </context>
 <context>
+    <name>ExportDialog</name>
+    <message>
+        <location filename="../src/pokemon_mosaic/ui/export_dialog.py" line="121"/>
+        <source>Exporter le poster</source>
+        <translation>Export the poster</translation>
+    </message>
+    <message>
+        <location filename="../src/pokemon_mosaic/ui/export_dialog.py" line="122"/>
+        <source>Mise en page</source>
+        <translation>Layout</translation>
+    </message>
+    <message>
+        <location filename="../src/pokemon_mosaic/ui/export_dialog.py" line="123"/>
+        <source>Format</source>
+        <translation>Format</translation>
+    </message>
+    <message>
+        <location filename="../src/pokemon_mosaic/ui/export_dialog.py" line="124"/>
+        <source>Résolution</source>
+        <translation>Resolution</translation>
+    </message>
+    <message>
+        <location filename="../src/pokemon_mosaic/ui/export_dialog.py" line="125"/>
+        <source>Qualité JPEG</source>
+        <translation>JPEG quality</translation>
+    </message>
+    <message>
+        <location filename="../src/pokemon_mosaic/ui/export_dialog.py" line="126"/>
+        <source>Chevauchement</source>
+        <translation>Overlap</translation>
+    </message>
+    <message>
+        <location filename="../src/pokemon_mosaic/ui/export_dialog.py" line="127"/>
+        <source>Repères de coupe</source>
+        <translation>Crop marks</translation>
+    </message>
+    <message>
+        <location filename="../src/pokemon_mosaic/ui/export_dialog.py" line="128"/>
+        <source>Fichier</source>
+        <translation>File</translation>
+    </message>
+    <message>
+        <location filename="../src/pokemon_mosaic/ui/export_dialog.py" line="129"/>
+        <source>Parcourir…</source>
+        <translation>Browse…</translation>
+    </message>
+    <message>
+        <location filename="../src/pokemon_mosaic/ui/export_dialog.py" line="131"/>
+        <source>Pleine résolution (relit les images d&apos;origine)</source>
+        <translation>Full resolution (re-reads the original images)</translation>
+    </message>
+    <message>
+        <location filename="../src/pokemon_mosaic/ui/export_dialog.py" line="133"/>
+        <source>Tracer les repères aux angles</source>
+        <translation>Draw marks at the corners</translation>
+    </message>
+    <message>
+        <location filename="../src/pokemon_mosaic/ui/export_dialog.py" line="161"/>
+        <source>Enregistrer le poster</source>
+        <translation>Save the poster</translation>
+    </message>
+    <message>
+        <location filename="../src/pokemon_mosaic/ui/export_dialog.py" line="191"/>
+        <source>paysage</source>
+        <translation>landscape</translation>
+    </message>
+    <message>
+        <location filename="../src/pokemon_mosaic/ui/export_dialog.py" line="192"/>
+        <source>portrait</source>
+        <translation>portrait</translation>
+    </message>
+    <message numerus="yes">
+        <location filename="../src/pokemon_mosaic/ui/export_dialog.py" line="193"/>
+        <source>%n panneau(x)</source>
+        <translation>
+            <numerusform>%n panel</numerusform>
+            <numerusform>%n panels</numerusform>
+        </translation>
+    </message>
+    <message>
+        <location filename="../src/pokemon_mosaic/ui/export_dialog.py" line="212"/>
+        <source>images d&apos;origine</source>
+        <translation>original images</translation>
+    </message>
+    <message>
+        <location filename="../src/pokemon_mosaic/ui/export_dialog.py" line="213"/>
+        <source>vignettes, rendu rapide et flou à l&apos;impression</source>
+        <translation>thumbnails, fast to render and blurry in print</translation>
+    </message>
+    <message>
+        <location filename="../src/pokemon_mosaic/ui/export_dialog.py" line="215"/>
+        <source>%1 × %2 cartes de %3 × %4 px — %5 × %6 px par panneau, %7 Mpx au total (%8)</source>
+        <translation>%1 × %2 cards of %3 × %4 px — %5 × %6 px per panel, %7 Mpx in total (%8)</translation>
+    </message>
+    <message>
+        <location filename="../src/pokemon_mosaic/ui/export_dialog.py" line="240"/>
+        <source>Fichier(s) : %1</source>
+        <translation>File(s): %1</translation>
+    </message>
+    <message numerus="yes">
+        <location filename="../src/pokemon_mosaic/ui/export_dialog.py" line="242"/>
+        <source>%n fichier(s) seront écrasés</source>
+        <translation>
+            <numerusform>%n file will be overwritten</numerusform>
+            <numerusform>%n files will be overwritten</numerusform>
+        </translation>
+    </message>
+    <message>
+        <location filename="../src/pokemon_mosaic/ui/export_dialog.py" line="251"/>
+        <source>Choisissez un fichier de destination.</source>
+        <translation>Choose a destination file.</translation>
+    </message>
+</context>
+<context>
     <name>LayoutStep</name>
     <message>
         <location filename="../src/pokemon_mosaic/ui/layout_step.py" line="116"/>
@@ -346,107 +460,145 @@
 <context>
     <name>RunStep</name>
     <message>
-        <location filename="../src/pokemon_mosaic/ui/run_step.py" line="157"/>
+        <location filename="../src/pokemon_mosaic/ui/run_step.py" line="186"/>
         <source>Lancer</source>
         <translation>Start</translation>
     </message>
     <message>
-        <location filename="../src/pokemon_mosaic/ui/run_step.py" line="158"/>
+        <location filename="../src/pokemon_mosaic/ui/run_step.py" line="187"/>
         <source>Arrêter</source>
         <translation>Stop</translation>
     </message>
     <message>
-        <location filename="../src/pokemon_mosaic/ui/run_step.py" line="159"/>
+        <location filename="../src/pokemon_mosaic/ui/run_step.py" line="188"/>
         <source>Dernier</source>
         <translation>Latest</translation>
     </message>
     <message>
-        <location filename="../src/pokemon_mosaic/ui/run_step.py" line="160"/>
+        <location filename="../src/pokemon_mosaic/ui/run_step.py" line="189"/>
+        <source>Exporter ce cliché…</source>
+        <translation>Export this snapshot…</translation>
+    </message>
+    <message>
+        <location filename="../src/pokemon_mosaic/ui/run_step.py" line="190"/>
+        <source>Annuler l&apos;export</source>
+        <translation>Cancel the export</translation>
+    </message>
+    <message>
+        <location filename="../src/pokemon_mosaic/ui/run_step.py" line="191"/>
         <source>Ajuster</source>
         <translation>Fit</translation>
     </message>
     <message>
-        <location filename="../src/pokemon_mosaic/ui/run_step.py" line="161"/>
+        <location filename="../src/pokemon_mosaic/ui/run_step.py" line="192"/>
         <source>Dézoomer (touche −)</source>
         <translation>Zoom out (− key)</translation>
     </message>
     <message>
-        <location filename="../src/pokemon_mosaic/ui/run_step.py" line="162"/>
+        <location filename="../src/pokemon_mosaic/ui/run_step.py" line="193"/>
         <source>Zoomer (touche +)</source>
         <translation>Zoom in (+ key)</translation>
     </message>
     <message>
-        <location filename="../src/pokemon_mosaic/ui/run_step.py" line="163"/>
+        <location filename="../src/pokemon_mosaic/ui/run_step.py" line="194"/>
         <source>Revenir à l&apos;image entière</source>
         <translation>Back to the whole image</translation>
     </message>
     <message>
-        <location filename="../src/pokemon_mosaic/ui/run_step.py" line="165"/>
+        <location filename="../src/pokemon_mosaic/ui/run_step.py" line="196"/>
         <source>Flèches gauche et droite pour parcourir les clichés.</source>
         <translation>Left and right arrows step through the snapshots.</translation>
     </message>
     <message>
-        <location filename="../src/pokemon_mosaic/ui/run_step.py" line="171"/>
+        <location filename="../src/pokemon_mosaic/ui/run_step.py" line="202"/>
         <source>Lancez le calcul pour voir la mosaïque se construire.</source>
         <translation>Start the run to watch the mosaic take shape.</translation>
     </message>
     <message>
-        <location filename="../src/pokemon_mosaic/ui/run_step.py" line="187"/>
+        <location filename="../src/pokemon_mosaic/ui/run_step.py" line="218"/>
         <source>Calcul en cours…</source>
         <translation>Running…</translation>
     </message>
     <message>
-        <location filename="../src/pokemon_mosaic/ui/run_step.py" line="239"/>
+        <location filename="../src/pokemon_mosaic/ui/run_step.py" line="266"/>
+        <source>Export en cours…</source>
+        <translation>Exporting…</translation>
+    </message>
+    <message>
+        <location filename="../src/pokemon_mosaic/ui/run_step.py" line="282"/>
+        <source>Panneau %1 / %2 : %3</source>
+        <translation>Panel %1 / %2: %3</translation>
+    </message>
+    <message numerus="yes">
+        <location filename="../src/pokemon_mosaic/ui/run_step.py" line="297"/>
+        <source>%n fichier(s) écrit(s) : %1</source>
+        <translation>
+            <numerusform>%n file written: %1</numerusform>
+            <numerusform>%n files written: %1</numerusform>
+        </translation>
+    </message>
+    <message>
+        <location filename="../src/pokemon_mosaic/ui/run_step.py" line="304"/>
+        <source>Export annulé ; les fichiers partiels ont été effacés.</source>
+        <translation>Export cancelled; the partial files were removed.</translation>
+    </message>
+    <message>
+        <location filename="../src/pokemon_mosaic/ui/run_step.py" line="310"/>
+        <source>Échec de l&apos;export : %1</source>
+        <translation>Export failed: %1</translation>
+    </message>
+    <message>
+        <location filename="../src/pokemon_mosaic/ui/run_step.py" line="365"/>
         <source>itérations épuisées</source>
         <translation>iterations exhausted</translation>
     </message>
     <message>
-        <location filename="../src/pokemon_mosaic/ui/run_step.py" line="240"/>
+        <location filename="../src/pokemon_mosaic/ui/run_step.py" line="366"/>
         <source>score atteint</source>
         <translation>target score reached</translation>
     </message>
     <message>
-        <location filename="../src/pokemon_mosaic/ui/run_step.py" line="241"/>
+        <location filename="../src/pokemon_mosaic/ui/run_step.py" line="367"/>
         <source>stagnation</source>
         <translation>stagnation</translation>
     </message>
     <message>
-        <location filename="../src/pokemon_mosaic/ui/run_step.py" line="242"/>
+        <location filename="../src/pokemon_mosaic/ui/run_step.py" line="368"/>
         <source>budget de temps</source>
         <translation>time budget</translation>
     </message>
     <message>
-        <location filename="../src/pokemon_mosaic/ui/run_step.py" line="243"/>
+        <location filename="../src/pokemon_mosaic/ui/run_step.py" line="369"/>
         <source>arrêt demandé</source>
         <translation>stopped by user</translation>
     </message>
     <message>
-        <location filename="../src/pokemon_mosaic/ui/run_step.py" line="250"/>
+        <location filename="../src/pokemon_mosaic/ui/run_step.py" line="376"/>
         <source>Score %1 → %2 (%3 % de gain) — arrêt : %4</source>
         <translation>Score %1 → %2 (%3% gain) — stopped: %4</translation>
     </message>
     <message>
-        <location filename="../src/pokemon_mosaic/ui/run_step.py" line="256"/>
+        <location filename="../src/pokemon_mosaic/ui/run_step.py" line="382"/>
         <source>Calcul terminé.</source>
         <translation>Run finished.</translation>
     </message>
     <message>
-        <location filename="../src/pokemon_mosaic/ui/run_step.py" line="262"/>
+        <location filename="../src/pokemon_mosaic/ui/run_step.py" line="388"/>
         <source>Échec du calcul : %1</source>
         <translation>Run failed: %1</translation>
     </message>
     <message>
-        <location filename="../src/pokemon_mosaic/ui/run_step.py" line="477"/>
+        <location filename="../src/pokemon_mosaic/ui/run_step.py" line="616"/>
         <source>Reprendre</source>
         <translation>Resume</translation>
     </message>
     <message>
-        <location filename="../src/pokemon_mosaic/ui/run_step.py" line="477"/>
+        <location filename="../src/pokemon_mosaic/ui/run_step.py" line="616"/>
         <source>Pause</source>
         <translation>Pause</translation>
     </message>
     <message>
-        <location filename="../src/pokemon_mosaic/ui/run_step.py" line="484"/>
+        <location filename="../src/pokemon_mosaic/ui/run_step.py" line="623"/>
         <source>cliché %1 / %2</source>
         <translation>snapshot %1 of %2</translation>
     </message>

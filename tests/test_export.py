@@ -1,5 +1,6 @@
 """Tests de l'export : mise en page, panneaux, chevauchement, formats."""
 
+import os
 import re
 
 import numpy as np
@@ -7,7 +8,14 @@ import pytest
 from test_scoring import make_cards
 
 from pokemon_mosaic.cards import CardSet
-from pokemon_mosaic.export import PosterSettings, export_poster, plan_poster, render_panels
+from pokemon_mosaic.export import (
+    ExportCancelled,
+    PosterSettings,
+    export_poster,
+    panel_paths,
+    plan_poster,
+    render_panels,
+)
 from pokemon_mosaic.layout import paper_size_mm
 from pokemon_mosaic.scoring import EMPTY
 
@@ -168,3 +176,70 @@ def test_export_refuses_a_grid_that_cannot_be_split(tmp_path):
     with pytest.raises(ValueError, match="ne se divisent pas"):
         export_poster(small_grid(4, 4), card_set(16), settings,
                       str(tmp_path / "poster.png"), full_resolution=False)
+
+
+# --- Progression, annulation, écriture panneau par panneau -----------------
+
+def test_panel_paths_names_each_panel():
+    assert panel_paths("/tmp/poster.png", 1) == ["/tmp/poster.png"]
+    assert panel_paths("/tmp/poster.png", 2) == ["/tmp/poster_1of2.png",
+                                                 "/tmp/poster_2of2.png"]
+
+
+def test_panel_paths_refuses_an_unknown_format():
+    with pytest.raises(ValueError, match="Format non géré"):
+        panel_paths("/tmp/poster.tiff", 1)
+
+
+def test_each_panel_is_written_before_the_next_is_rendered(tmp_path):
+    """Le module promet de ne jamais tenir le poster entier en mémoire : rendre
+    les deux panneaux avant d'écrire quoi que ce soit trahirait cette promesse."""
+    seen = []
+    export_poster(
+        small_grid(4, 4), card_set(16), PosterSettings(paper="A5", dpi=72, panels=2),
+        str(tmp_path / "poster.png"), full_resolution=False,
+        on_progress=lambda panel, total, target: seen.append(
+            (panel, sorted(p.name for p in tmp_path.glob("*.png")))
+        ),
+    )
+    # Au démarrage du second panneau, le premier est déjà sur le disque.
+    assert seen[0] == (0, [])
+    assert seen[1] == (1, ["poster_1of2.png"])
+    assert seen[2][0] == 2 and len(seen[2][1]) == 2
+
+
+def test_a_cancelled_export_leaves_no_file_behind(tmp_path):
+    """Un poster à moitié rendu ne se distingue pas d'un poster fini au moment
+    de l'envoyer à l'imprimeur."""
+    written_before_cancelling = []
+    calls = []
+
+    def cancel_during_the_second_panel():
+        calls.append(1)
+        # Le contrôle a lieu à chaque ligne : 4 lignes pour le premier panneau,
+        # donc le 6e appel tombe au milieu du second, le premier étant écrit.
+        if len(calls) == 6:
+            written_before_cancelling.extend(p.name for p in tmp_path.glob("*.png"))
+            return True
+        return False
+
+    with pytest.raises(ExportCancelled):
+        export_poster(
+            small_grid(4, 4), card_set(16),
+            PosterSettings(paper="A5", dpi=72, panels=2),
+            str(tmp_path / "poster.png"), full_resolution=False,
+            check_cancelled=cancel_during_the_second_panel,
+        )
+    # Le test ne vaut que si un fichier existait bel et bien au moment de l'arrêt.
+    assert written_before_cancelling == ["poster_1of2.png"]
+    assert list(tmp_path.glob("*.png")) == []
+
+
+def test_an_export_that_is_never_cancelled_writes_everything(tmp_path):
+    written = export_poster(
+        small_grid(4, 4), card_set(16), PosterSettings(paper="A5", dpi=72, panels=2),
+        str(tmp_path / "poster.png"), full_resolution=False,
+        check_cancelled=lambda: False,
+    )
+    assert len(written) == 2
+    assert all(os.path.exists(path) for path in written)

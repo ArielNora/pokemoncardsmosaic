@@ -1,0 +1,262 @@
+"""Choix du format et de la destination avant d'écrire le poster.
+
+Le format d'impression, l'orientation, le DPI et le nombre de panneaux viennent
+de l'étape 2 : ils sont rappelés ici sans être modifiables, pour qu'on sache ce
+qu'on exporte sans avoir à revenir en arrière. Ne restent réglables que les
+décisions propres à l'écriture du fichier.
+"""
+
+import os
+
+from PySide6.QtCore import QStandardPaths
+from PySide6.QtWidgets import (
+    QCheckBox,
+    QComboBox,
+    QDialog,
+    QDialogButtonBox,
+    QDoubleSpinBox,
+    QFileDialog,
+    QFormLayout,
+    QHBoxLayout,
+    QLabel,
+    QLineEdit,
+    QPushButton,
+    QSpinBox,
+    QVBoxLayout,
+)
+
+from ..export import PosterSettings, panel_paths, plan_poster
+from .session import Session
+
+# Extension par format, dans l'ordre d'affichage.
+FORMATS = (("PNG", ".png"), ("JPEG", ".jpg"), ("PDF", ".pdf"))
+
+
+class ExportDialog(QDialog):
+    """Recueille tout ce qu'il faut pour écrire le poster."""
+
+    def __init__(self, session: Session, grid, cards, parent=None):
+        super().__init__(parent)
+        self._session = session
+        self._grid = grid
+        self._cards = cards
+        # None tant que les réglages décrivent un poster impossible : c'est ce
+        # qui interdit de valider un export dont l'échec est déjà connu.
+        self._plan = None
+        self._build()
+
+    def _build(self) -> None:
+        self._format = QComboBox()
+        for name, extension in FORMATS:
+            self._format.addItem(name, extension)
+        self._format.currentIndexChanged.connect(self._on_format_changed)
+
+        self._full_resolution = QCheckBox()
+        self._full_resolution.setChecked(True)
+        self._full_resolution.stateChanged.connect(self._update_plan)
+
+        self._quality = QSpinBox()
+        self._quality.setRange(1, 100)
+        self._quality.setValue(95)
+
+        self._overlap = QDoubleSpinBox()
+        self._overlap.setRange(0.0, 50.0)
+        self._overlap.setDecimals(1)
+        self._overlap.setSingleStep(1.0)
+        self._overlap.setSuffix(" mm")
+        self._overlap.valueChanged.connect(self._update_plan)
+
+        self._crop_marks = QCheckBox()
+
+        self._path = QLineEdit(self._default_path())
+        self._path.textChanged.connect(self._update_plan)
+        self._browse = QPushButton()
+        self._browse.clicked.connect(lambda: self._pick_file())
+        path_row = QHBoxLayout()
+        path_row.addWidget(self._path, 1)
+        path_row.addWidget(self._browse)
+
+        self._layout_recap = QLabel()
+        self._plan_label = QLabel()
+        self._plan_label.setWordWrap(True)
+        self._warnings = QLabel()
+        self._warnings.setWordWrap(True)
+        self._warnings.setStyleSheet("color: #a60;")
+        self._files = QLabel()
+        self._files.setWordWrap(True)
+
+        self._form = QFormLayout()
+        self._layout_row = QLabel()
+        self._form.addRow(self._layout_row, self._layout_recap)
+        self._format_row = QLabel()
+        self._form.addRow(self._format_row, self._format)
+        self._resolution_row = QLabel()
+        self._form.addRow(self._resolution_row, self._full_resolution)
+        self._quality_row = QLabel()
+        self._form.addRow(self._quality_row, self._quality)
+        self._overlap_row = QLabel()
+        self._form.addRow(self._overlap_row, self._overlap)
+        self._marks_row = QLabel()
+        self._form.addRow(self._marks_row, self._crop_marks)
+        self._file_row = QLabel()
+        self._form.addRow(self._file_row, path_row)
+
+        self._buttons = QDialogButtonBox(
+            QDialogButtonBox.Ok | QDialogButtonBox.Cancel
+        )
+        self._buttons.accepted.connect(self._try_accept)
+        self._buttons.rejected.connect(self.reject)
+
+        layout = QVBoxLayout(self)
+        layout.addLayout(self._form)
+        layout.addWidget(self._plan_label)
+        layout.addWidget(self._files)
+        layout.addWidget(self._warnings)
+        layout.addWidget(self._buttons)
+        self.resize(560, 360)
+        self.retranslate_ui()
+        self._on_format_changed()
+
+    def retranslate_ui(self) -> None:
+        self.setWindowTitle(self.tr("Exporter le poster"))
+        self._layout_row.setText(self.tr("Mise en page"))
+        self._format_row.setText(self.tr("Format"))
+        self._resolution_row.setText(self.tr("Résolution"))
+        self._quality_row.setText(self.tr("Qualité JPEG"))
+        self._overlap_row.setText(self.tr("Chevauchement"))
+        self._marks_row.setText(self.tr("Repères de coupe"))
+        self._file_row.setText(self.tr("Fichier"))
+        self._browse.setText(self.tr("Parcourir…"))
+        self._full_resolution.setText(
+            self.tr("Pleine résolution (relit les images d'origine)")
+        )
+        self._crop_marks.setText(self.tr("Tracer les repères aux angles"))
+        self._update_plan()
+
+    # --- Réglages ---------------------------------------------------------
+
+    def _default_path(self) -> str:
+        folder = QStandardPaths.writableLocation(QStandardPaths.PicturesLocation)
+        return os.path.join(folder or os.getcwd(), "poster.png")
+
+    def _extension(self) -> str:
+        return self._format.currentData()
+
+    def _on_format_changed(self) -> None:
+        extension = self._extension()
+        is_jpeg = extension in (".jpg", ".jpeg")
+        self._quality.setVisible(is_jpeg)
+        self._quality_row.setVisible(is_jpeg)
+        # L'extension suit le format choisi : laisser « poster.png » alors que
+        # JPEG est sélectionné écrirait un PNG sans le dire.
+        base = os.path.splitext(self._path.text())[0]
+        if base:
+            self._path.setText(base + extension)
+        self._update_plan()
+
+    def _pick_file(self) -> None:
+        name = self._format.currentText()
+        extension = self._extension()
+        chosen, _ = QFileDialog.getSaveFileName(
+            self, self.tr("Enregistrer le poster"), self._path.text(),
+            f"{name} (*{extension})"
+        )
+        if chosen:
+            base = os.path.splitext(chosen)[0]
+            self._path.setText(base + extension)
+
+    def settings(self) -> PosterSettings:
+        session = self._session
+        return PosterSettings(
+            paper=session.paper,
+            landscape=session.landscape,
+            dpi=session.dpi,
+            panels=session.panels,
+            overlap_mm=self._overlap.value(),
+            crop_marks=self._crop_marks.isChecked(),
+            empty_colour=session.empty_colour,
+            jpeg_quality=self._quality.value(),
+        )
+
+    def path(self) -> str:
+        return self._path.text().strip()
+
+    def full_resolution(self) -> bool:
+        return self._full_resolution.isChecked()
+
+    # --- Aperçu chiffré ---------------------------------------------------
+
+    def _update_plan(self, *_) -> None:
+        session = self._session
+        orientation = (self.tr("paysage") if session.landscape
+                       else self.tr("portrait"))
+        panels = self.tr("%n panneau(x)", "", session.panels)
+        self._layout_recap.setText(
+            f"{session.paper} {orientation} — {session.dpi} DPI — {panels}"
+        )
+        self._overlap.setEnabled(session.panels > 1)
+
+        try:
+            plan = self._plan = plan_poster(self._grid, self._cards, self.settings())
+        except ValueError as error:
+            self._plan = None
+            self._plan_label.setText(str(error))
+            self._files.setText("")
+            self._warnings.setText("")
+            self._buttons.button(QDialogButtonBox.Ok).setEnabled(False)
+            return
+        self._buttons.button(QDialogButtonBox.Ok).setEnabled(True)
+
+        panel_w, panel_h = plan.settings.paper_px
+        megapixels = panel_w * panel_h * plan.settings.panels / 1e6
+        source = (self.tr("images d'origine") if self.full_resolution()
+                  else self.tr("vignettes, rendu rapide et flou à l'impression"))
+        self._plan_label.setText(
+            self.tr("%1 × %2 cartes de %3 × %4 px — %5 × %6 px par panneau, "
+                    "%7 Mpx au total (%8)")
+            .replace("%1", str(plan.cols)).replace("%2", str(plan.rows))
+            .replace("%3", str(plan.card_px[0])).replace("%4", str(plan.card_px[1]))
+            .replace("%5", str(panel_w)).replace("%6", str(panel_h))
+            .replace("%7", f"{megapixels:.0f}")
+            .replace("%8", source)
+        )
+        self._warnings.setText("\n".join(plan.warnings))
+        self._show_targets()
+
+    def _show_targets(self) -> None:
+        """Nomme les fichiers qui seront écrits, et signale ceux qui existent.
+
+        Avec plusieurs panneaux, choisir « poster.png » écrit en réalité
+        « poster_1of2.png » et « poster_2of2.png » : aucun sélecteur de fichier
+        ne prévient de leur écrasement.
+        """
+        try:
+            targets = panel_paths(self.path(), self._session.panels)
+        except ValueError:
+            self._files.setText("")
+            return
+        existing = [t for t in targets if os.path.exists(t)]
+        names = ", ".join(os.path.basename(t) for t in targets)
+        text = self.tr("Fichier(s) : %1").replace("%1", names)
+        if existing:
+            text += "  —  " + self.tr("%n fichier(s) seront écrasés", "",
+                                      len(existing))
+        self._files.setText(text)
+
+    # --- Validation -------------------------------------------------------
+
+    def _try_accept(self) -> None:
+        path = self.path()
+        if not path:
+            self._warnings.setText(self.tr("Choisissez un fichier de destination."))
+            return
+        if self._plan is None:
+            # Le plan est déjà affiché en clair : accepter lancerait un fil de
+            # fond pour qu'il échoue aussitôt sur la même erreur.
+            return
+        try:
+            panel_paths(path, self._session.panels)
+        except ValueError as error:
+            self._warnings.setText(str(error))
+            return
+        self.accept()

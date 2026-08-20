@@ -1,5 +1,7 @@
 """Vue d'exécution — l'image se construit, la timeline se remplit."""
 
+import os
+
 import numpy as np
 from PySide6.QtCore import QSize, Qt, QTimer, Signal
 from PySide6.QtGui import QImage, QPixmap
@@ -7,6 +9,7 @@ from PySide6.QtWidgets import (
     QFrame,
     QHBoxLayout,
     QLabel,
+    QProgressBar,
     QPushButton,
     QScrollArea,
     QSlider,
@@ -17,6 +20,8 @@ from PySide6.QtWidgets import (
 from ..control import RunControl
 from ..optimize import StopReason
 from ..scoring import EMPTY
+from .export_dialog import ExportDialog
+from .exporter import start_export
 from .runner import start_run
 from .session import Session
 
@@ -33,6 +38,10 @@ ZOOM_CEILING = 8.0
 # On borne donc la cadence : les clichés sont tous enregistrés, seul l'affichage
 # est limité.
 RENDER_INTERVAL_MS = 100
+
+# L'annulation étant vérifiée à chaque ligne de cartes, l'arrêt prend au plus le
+# temps de finir la ligne en cours ; ce délai n'est qu'un filet.
+SHUTDOWN_TIMEOUT_MS = 5000
 
 
 class ImageView(QScrollArea):
@@ -61,6 +70,8 @@ class RunStep(QWidget):
         self._control: RunControl | None = None
         self._thread = None
         self._worker = None
+        self._export_thread = None
+        self._export_worker = None
         self._cards = None
         self._timeline = None
         self._following = True      # suit le dernier cliché tant qu'on ne touche pas
@@ -142,10 +153,25 @@ class RunStep(QWidget):
         self._pause.clicked.connect(self._toggle_pause)
         self._stop.clicked.connect(self._request_stop)
 
+        # L'export porte sur le cliché affiché, d'où sa place à côté des
+        # commandes de calcul et non dans un menu : c'est la timeline qui choisit
+        # ce qui est exporté.
+        self._export = QPushButton()
+        self._export.clicked.connect(lambda: self._open_export())
+        self._export.setEnabled(False)
+        self._cancel_export = QPushButton()
+        self._cancel_export.clicked.connect(self._request_export_stop)
+        self._cancel_export.hide()
+        self._export_progress = QProgressBar()
+        self._export_progress.hide()
+
         controls = QHBoxLayout()
         controls.addWidget(self._start)
         controls.addWidget(self._pause)
         controls.addWidget(self._stop)
+        controls.addWidget(self._export)
+        controls.addWidget(self._cancel_export)
+        controls.addWidget(self._export_progress)
         controls.addStretch(1)
         self._summary = QLabel()
         controls.addWidget(self._summary)
@@ -160,6 +186,8 @@ class RunStep(QWidget):
         self._start.setText(self.tr("Lancer"))
         self._stop.setText(self.tr("Arrêter"))
         self._latest.setText(self.tr("Dernier"))
+        self._export.setText(self.tr("Exporter ce cliché…"))
+        self._cancel_export.setText(self.tr("Annuler l'export"))
         self._zoom_fit.setText(self.tr("Ajuster"))
         self._zoom_out.setToolTip(self.tr("Dézoomer (touche −)"))
         self._zoom_in.setToolTip(self.tr("Zoomer (touche +)"))
@@ -202,16 +230,108 @@ class RunStep(QWidget):
         if self._control is not None:
             self._control.stop()
 
+    # --- Export -----------------------------------------------------------
+
+    def current_grid(self):
+        """Grille du cliché affiché — c'est elle que l'export écrit."""
+        if not self._timeline:
+            return None
+        index = max(0, min(len(self._timeline) - 1, self._slider.value()))
+        return self._timeline[index].grid
+
+    def _open_export(self) -> None:
+        grid = self.current_grid()
+        if grid is None or self._export_thread is not None:
+            return
+        dialog = ExportDialog(self._session, grid, self._cards, parent=self)
+        try:
+            if not dialog.exec():
+                return
+            settings, path = dialog.settings(), dialog.path()
+            full_resolution = dialog.full_resolution()
+        finally:
+            # Parenté à l'écran, le dialogue survivrait à sa fermeture.
+            dialog.deleteLater()
+        self._start_export(grid, settings, path, full_resolution)
+
+    def _start_export(self, grid, settings, path, full_resolution) -> None:
+        self._export.setEnabled(False)
+        self._cancel_export.show()
+        # Un seul panneau n'a aucune étape intermédiaire à annoncer : une barre
+        # figée à 0 % pendant plusieurs secondes se lit comme un export bloqué.
+        # Indéterminée, elle dit la seule chose vraie — que ça travaille.
+        self._export_progress.setRange(0, settings.panels if settings.panels > 1 else 0)
+        self._export_progress.setValue(0)
+        self._export_progress.show()
+        self.status_message.emit(self.tr("Export en cours…"))
+        self._export_thread, self._export_worker = start_export(
+            self, grid, self._cards, settings, path, full_resolution,
+            progress=self._on_export_progress, exported=self._on_exported,
+            cancelled=self._on_export_cancelled, failed=self._on_export_failed,
+        )
+
+    def _request_export_stop(self) -> None:
+        if self._export_worker is not None:
+            self._export_worker.cancel()
+            self._cancel_export.setEnabled(False)
+
+    def _on_export_progress(self, panel: int, total: int, target: str) -> None:
+        self._export_progress.setValue(panel)
+        if target:
+            self.status_message.emit(
+                self.tr("Panneau %1 / %2 : %3")
+                .replace("%1", str(panel + 1)).replace("%2", str(total))
+                .replace("%3", os.path.basename(target))
+            )
+
+    def _end_export(self) -> None:
+        self._export_thread = self._export_worker = None
+        self._export.setEnabled(bool(self._timeline))
+        self._cancel_export.hide()
+        self._cancel_export.setEnabled(True)
+        self._export_progress.hide()
+
+    def _on_exported(self, written: list) -> None:
+        self._end_export()
+        self.status_message.emit(
+            self.tr("%n fichier(s) écrit(s) : %1", "", len(written))
+            .replace("%1", ", ".join(os.path.basename(p) for p in written))
+        )
+
+    def _on_export_cancelled(self) -> None:
+        self._end_export()
+        self.status_message.emit(
+            self.tr("Export annulé ; les fichiers partiels ont été effacés.")
+        )
+
+    def _on_export_failed(self, message: str) -> None:
+        self._end_export()
+        self.status_message.emit(
+            self.tr("Échec de l'export : %1").replace("%1", message)
+        )
+
     def shutdown(self) -> None:
         """Arrête le calcul avant que les widgets ne disparaissent."""
         if self._control is not None:
             self._control.stop()
+        if self._export_worker is not None:
+            self._export_worker.cancel()
+
         if self._thread is not None and self._thread.isRunning():
             self._thread.quit()
-            if not self._thread.wait(5000):
+            if not self._thread.wait(SHUTDOWN_TIMEOUT_MS):
                 print("Le calcul ne s'est pas arrêté dans le délai imparti.")
                 return
         self._thread = self._worker = None
+
+        if self._export_thread is not None and self._export_thread.isRunning():
+            self._export_thread.quit()
+            if not self._export_thread.wait(SHUTDOWN_TIMEOUT_MS):
+                # Lâcher la référence d'un fil encore actif rouvrirait le crash
+                # que cette méthode existe pour éviter.
+                print("L'export ne s'est pas arrêté dans le délai imparti.")
+                return
+        self._export_thread = self._export_worker = None
 
     # --- Réactions du calcul ---------------------------------------------
 
@@ -219,6 +339,7 @@ class RunStep(QWidget):
         self._cards = cards
         self._timeline = timeline
         self._slider.setEnabled(True)
+        self._export.setEnabled(True)
         # Le plafond se déduit de la grille : une grille plus petite que la
         # précédente l'abaisse, et le zoom hérité doit redescendre avec lui.
         self._zoom = min(self._zoom, self._max_zoom())

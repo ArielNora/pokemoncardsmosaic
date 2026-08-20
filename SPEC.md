@@ -335,6 +335,12 @@ tous les états enregistrés, **pendant que l'algorithme continue de tourner**.
 économiser la place. L'image est reconstruite à la demande, en résolution réduite
 mais suffisante pour reconnaître les cartes.
 ✅ À la fin, l'utilisateur **choisit quel état exporter** ; les autres sont jetés.
+C'est le cliché **affiché** que le bouton exporte, la timeline servant à le choisir.
+Le dialogue ne propose que ce qui relève de l'écriture du fichier — format, pleine
+résolution ou vignettes, chevauchement, repères de coupe — et rappelle sans le
+rendre modifiable ce qui vient de l'étape 2. L'export tourne en fond, avec
+progression par panneau et annulation : 7,3 s mesurées pour un A3 en deux panneaux
+à 300 DPI, soit bien assez pour figer la fenêtre.
 
 ✅ **Navigation au clavier** : flèches gauche et droite pour reculer et avancer
 d'un cliché, Origine et Fin pour les extrémités.
@@ -511,16 +517,15 @@ timeline de clichés, export poster en PNG/JPEG/PDF avec découpage en panneaux.
 2. Grille et format : presets d'impression, aperçu fil de fer, cases vides cliquables
 3. Réglages de base et avancés, avec aperçus et projections chiffrées
 4. Vue d'exécution : image live, timeline navigable au clavier, zoom,
-   lancer/pause/arrêter
+   lancer/pause/arrêter, export du cliché affiché
 
 **Outillage** — hook `pre-commit` (ruff + pytest), interface bilingue FR/EN,
-310 tests.
+332 tests.
 
 ### Reste à faire pour la v1
 
 | Sujet | État |
 |---|---|
-| **Export depuis un cliché choisi** | `export_poster` fait tout le travail ; il manque le bouton dans la vue d'exécution et le choix du format. |
 | **Prolonger / reprendre depuis un cliché** | `RunWorker` accepte déjà `previous_grid`, testé. Il manque les commandes. |
 | **Préréglages nommés** | Rien de fait. Doit couvrir sélection, liens actifs, grille et réglages. La bibliothèque de liens est séparée et ne doit pas y entrer. |
 | **Empaquetage** | Rien de fait. PyInstaller, macOS d'abord. |
@@ -560,3 +565,5 @@ timeline de clichés, export poster en PNG/JPEG/PDF avec découpage en panneaux.
 | 2026-08-20 | Liens composés dans un **dialogue à deux listes** (cartes disponibles / séquence) : une case à cocher n'a pas de rang, une ligne de liste en a un |
 | 2026-08-20 | Les traductions Qt (`qtbase`) sont chargées **aussi en français** : sans elles un dialogue affiche « Cancel » en pleine interface française |
 | 2026-08-20 | Aperçu d'exécution : ajustement sur les **deux** dimensions, zoom plafonné à la résolution des vignettes, et zoom conservé d'un cliché à l'autre |
+| 2026-08-20 | L'export porte sur le **cliché affiché** ; format, orientation, DPI et panneaux restent à l'étape 2, seules les décisions d'écriture sont dans le dialogue |
+| 2026-08-20 | Chaque panneau est **écrit avant que le suivant ne soit rendu**, et un export annulé efface ses fichiers partiels |
