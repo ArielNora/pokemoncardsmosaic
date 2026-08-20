@@ -336,6 +336,19 @@ tous les états enregistrés, **pendant que l'algorithme continue de tourner**.
 mais suffisante pour reconnaître les cartes.
 ✅ À la fin, l'utilisateur **choisit quel état exporter** ; les autres sont jetés.
 
+✅ **Navigation au clavier** : flèches gauche et droite pour reculer et avancer
+d'un cliché, Origine et Fin pour les extrémités.
+
+✅ **Zoom sur l'aperçu.** Par défaut l'image tient **entière** dans le cadre, haut
+et bas compris — l'ajustement se calcule sur les deux dimensions, borner la seule
+largeur laissait un poster en portrait dépasser. Les touches `+` et `−`,
+Ctrl+molette et les boutons zooment jusqu'à la résolution des vignettes, jamais
+au-delà : agrandir davantage n'ajouterait aucun détail. Le **zoom appartient à
+l'écran, pas au cliché** : parcourir la timeline le conserve, ce qui permet de
+comparer deux états au même endroit du poster. Le rendu du zoom passe par la même
+cadence bornée que le reste, une rafale de molette produisant des dizaines de
+crans par seconde pour un rendu qui coûte 55 ms.
+
 ### Coût de stockage — distinguer la grille de son rendu
 
 ⚠️ Le raisonnement « un snapshot ne pèse rien » n'est vrai **que pour la grille**, pas
@@ -497,10 +510,11 @@ timeline de clichés, export poster en PNG/JPEG/PDF avec découpage en panneaux.
    bibliothèque de liens (créer, modifier, activer, liens par défaut)
 2. Grille et format : presets d'impression, aperçu fil de fer, cases vides cliquables
 3. Réglages de base et avancés, avec aperçus et projections chiffrées
-4. Vue d'exécution : image live, timeline navigable, lancer/pause/arrêter
+4. Vue d'exécution : image live, timeline navigable au clavier, zoom,
+   lancer/pause/arrêter
 
 **Outillage** — hook `pre-commit` (ruff + pytest), interface bilingue FR/EN,
-297 tests.
+310 tests.
 
 ### Reste à faire pour la v1
 
@@ -545,3 +559,4 @@ timeline de clichés, export poster en PNG/JPEG/PDF avec découpage en panneaux.
 | 2026-08-16 | **Matrices de distances précalculées** (gain ×21), à intégrer **avant** l'interface |
 | 2026-08-20 | Liens composés dans un **dialogue à deux listes** (cartes disponibles / séquence) : une case à cocher n'a pas de rang, une ligne de liste en a un |
 | 2026-08-20 | Les traductions Qt (`qtbase`) sont chargées **aussi en français** : sans elles un dialogue affiche « Cancel » en pleine interface française |
+| 2026-08-20 | Aperçu d'exécution : ajustement sur les **deux** dimensions, zoom plafonné à la résolution des vignettes, et zoom conservé d'un cliché à l'autre |

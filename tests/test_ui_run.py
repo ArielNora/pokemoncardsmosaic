@@ -360,3 +360,222 @@ def test_an_unknown_stop_reason_is_passed_through(qt_app, session):
 
     assert RunStep(session)._stop_reason("quelque chose d'inédit") == \
         "quelque chose d'inédit"
+
+
+# --- Zoom et clavier -------------------------------------------------------
+
+def press(widget, key, modifiers=None):
+    from PySide6.QtCore import QEvent, Qt
+    from PySide6.QtGui import QKeyEvent
+
+    widget.keyPressEvent(
+        QKeyEvent(QEvent.KeyPress, key, modifiers or Qt.NoModifier)
+    )
+
+
+@pytest.fixture
+def shown(qt_app):
+    """Un écran réellement mis en page, sur des vignettes de taille réaliste.
+
+    Les 12×16 px des autres tests donneraient une mosaïque plus petite que le
+    cadre : elle serait déjà agrandie à l'ajustement, le plafond de zoom vaudrait
+    1, et les tests de zoom passeraient sans rien vérifier.
+    """
+    from pokemon_mosaic.ui.run_step import RunStep
+    from pokemon_mosaic.ui.session import Session
+
+    session = Session()
+    session.set_cards(card_set(20, size=(178, 246)), "/fake")
+    session.set_layout(cols=5, rows=4)
+    session.set_algorithm(iterations=2000, snapshot_every=2, use_annealing=False)
+
+    widget = RunStep(session)
+    widget.show()
+    widget.resize(900, 600)
+    feed(widget, session)
+    widget._flush_render()
+    return widget, session
+
+
+def test_the_whole_image_fits_by_default(shown):
+    """L'aperçu doit montrer le haut et le bas du poster sans défilement :
+    borner la seule largeur laissait un poster en portrait dépasser du cadre."""
+    widget, _ = shown
+    viewport = widget._scroll.viewport()
+    assert widget._zoom == 1.0
+    assert widget._image.width() <= viewport.width()
+    assert widget._image.height() <= viewport.height()
+    # Et l'image occupe bien la place disponible dans l'une des deux dimensions.
+    assert (widget._image.width() == viewport.width()
+            or widget._image.height() == viewport.height())
+
+
+def test_arrows_move_along_the_timeline(shown):
+    from PySide6.QtCore import Qt
+
+    widget, _ = shown
+    last = len(widget._timeline) - 1
+    press(widget, Qt.Key_Left)
+    assert widget._slider.value() == last - 1
+    press(widget, Qt.Key_Left)
+    assert widget._slider.value() == last - 2
+    press(widget, Qt.Key_Right)
+    assert widget._slider.value() == last - 1
+
+
+def test_arrows_stop_at_both_ends(shown):
+    from PySide6.QtCore import Qt
+
+    widget, _ = shown
+    press(widget, Qt.Key_Home)
+    assert widget._slider.value() == 0
+    press(widget, Qt.Key_Left)
+    assert widget._slider.value() == 0
+
+    press(widget, Qt.Key_End)
+    assert widget._slider.value() == len(widget._timeline) - 1
+    press(widget, Qt.Key_Right)
+    assert widget._slider.value() == len(widget._timeline) - 1
+
+
+def test_the_zoom_survives_a_move_on_the_timeline(shown):
+    """Sinon comparer deux états au même endroit du poster serait impossible."""
+    from PySide6.QtCore import Qt
+
+    widget, _ = shown
+    widget._zoom_by(2)
+    widget._flush_render()      # le rendu du zoom passe par la cadence bornée
+    zoomed = widget._zoom
+    size = widget._image.size()
+    assert zoomed > 1.0
+
+    press(widget, Qt.Key_Left)
+    widget._flush_render()
+    assert widget._zoom == zoomed
+    assert widget._image.size() == size
+
+
+def test_zooming_out_stops_at_the_full_image(shown):
+    """En dessous de l'ajustement, l'image entière est déjà visible : réduire
+    encore ne montrerait rien de plus."""
+    widget, _ = shown
+    for _ in range(10):
+        widget._zoom_by(-1)
+    assert widget._zoom == 1.0
+
+
+def test_zooming_in_stops_at_the_thumbnail_resolution(shown):
+    """Au-delà, l'agrandissement n'est plus que de l'interpolation."""
+    widget, _ = shown
+    for _ in range(40):
+        widget._zoom_by(1)
+    assert widget._zoom == pytest.approx(widget._max_zoom())
+    assert not widget._zoom_in.isEnabled()
+
+
+def test_the_label_follows_the_zoomed_image(shown):
+    """Le cadre ne redimensionne pas son contenu : sans cet ajustement, l'image
+    zoomée serait rognée sans qu'aucune barre de défilement n'apparaisse."""
+    widget, _ = shown
+    widget._zoom_by(4)
+    widget._flush_render()
+    assert widget._image.height() == widget._image.pixmap().height()
+    assert widget._scroll.verticalScrollBar().maximum() > 0
+
+
+def test_reset_zoom_comes_back_to_the_whole_image(shown):
+    widget, _ = shown
+    widget._zoom_by(3)
+    widget._flush_render()
+    widget._reset_zoom()
+    assert widget._zoom == 1.0
+    assert widget._image.height() <= widget._scroll.viewport().height()
+
+
+def test_control_wheel_zooms_and_a_plain_wheel_scrolls(qt_app):
+    """Sans le modificateur, la molette doit continuer à faire défiler."""
+    from PySide6.QtCore import QPoint, QPointF, Qt
+    from PySide6.QtGui import QWheelEvent
+
+    from pokemon_mosaic.ui.run_step import ImageView
+
+    view = ImageView()
+    seen = []
+    view.zoom_requested.connect(seen.append)
+
+    def wheel(delta, modifiers):
+        return QWheelEvent(QPointF(10, 10), QPointF(10, 10), QPoint(0, 0),
+                           QPoint(0, delta), Qt.NoButton, modifiers,
+                           Qt.NoScrollPhase, False)
+
+    view.wheelEvent(wheel(120, Qt.ControlModifier))
+    view.wheelEvent(wheel(-120, Qt.ControlModifier))
+    view.wheelEvent(wheel(120, Qt.NoModifier))
+    assert seen == [1, -1]
+
+
+def test_the_zoom_keeps_the_centre_of_the_view(qt_app, shown):
+    """Sinon l'endroit qu'on examinait saute hors du cadre à chaque cran."""
+    widget, _ = shown
+    widget._zoom_by(1)
+    widget._flush_render()
+    qt_app.processEvents()
+    bar = widget._scroll.verticalScrollBar()
+    bar.setValue(bar.maximum() // 2)
+    before = widget._relative_centre()
+
+    widget._zoom_by(1)
+    # Le rendu est cadencé, et le recentrage différé à la mise en page qui suit.
+    widget._flush_render()
+    qt_app.processEvents()
+    # Le test ne vaut que si le zoom a bougé : au plafond, `_zoom_by` sort sans
+    # rien faire et le recentrage serait vérifié à vide.
+    from pokemon_mosaic.ui.run_step import ZOOM_STEP
+
+    assert widget._zoom > ZOOM_STEP
+    after = widget._relative_centre()
+    assert after[0] == pytest.approx(before[0], abs=0.02)
+    assert after[1] == pytest.approx(before[1], abs=0.02)
+
+
+def test_enlarging_the_window_lowers_the_zoom_ceiling(shown):
+    """Agrandir la fenêtre augmente l'échelle d'ajustement : le zoom doit
+    redescendre avec le plafond, sinon il interpole des pixels inexistants."""
+    widget, _ = shown
+    for _ in range(40):
+        widget._zoom_by(1)
+    at_ceiling = widget._zoom
+
+    widget.resize(1400, 1000)
+    assert widget._max_zoom() < at_ceiling
+    assert widget._zoom == pytest.approx(widget._max_zoom())
+
+
+def test_a_burst_of_zooms_renders_only_once(shown):
+    """Rendre coûte 55 ms quel que soit le zoom, et une rafale de molette
+    produit des dizaines de crans par seconde : rendre à chaque cran bloquerait
+    le fil principal une seconde entière pour un seul geste."""
+    widget, _ = shown
+    renders = []
+    widget._render = lambda grid: renders.append(grid) or None
+
+    for _ in range(12):
+        widget._zoom_by(1)
+    assert renders == [], "aucun rendu ne doit avoir lieu hors de la cadence"
+    widget._flush_render()
+    assert len(renders) == 1
+
+
+def test_a_new_run_lowers_a_zoom_above_the_new_ceiling(shown):
+    """Un zoom hérité d'une grande grille interpolerait des pixels inexistants
+    sur une plus petite."""
+    widget, session = shown
+    for _ in range(40):
+        widget._zoom_by(1)
+    assert widget._zoom > 1.0
+
+    session.set_excluded(range(4, 20), True)
+    session.set_layout(cols=2, rows=2)
+    feed(widget, session)
+    assert widget._max_zoom() == 1.0
+    assert widget._zoom == 1.0
