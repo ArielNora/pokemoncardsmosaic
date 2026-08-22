@@ -1,0 +1,5379 @@
+{
+ "cards": [
+  {
+   "bytes": 86586,
+   "category": "Pokemon",
+   "id": "A1-227",
+   "illustrator": "Ryota Murayama",
+   "language": "fr",
+   "name_language": "fr",
+   "names": {
+    "en": "Bulbasaur",
+    "fr": "Bulbizarre"
+   },
+   "number": "227",
+   "path": "a1-puissance-genetique/a1-227-bulbizarre.webp",
+   "rarity": "One Star",
+   "set": "A1",
+   "sha256": "cc6f119d1e6d3cc8cf29323b15fdfeca3caa0689d0a40f6f7c47243585f41577",
+   "url": "[adresse retirée]"
+  },
+  {
+   "bytes": 60532,
+   "category": "Pokemon",
+   "id": "A1-228",
+   "illustrator": "OKACHEKE",
+   "language": "fr",
+   "name_language": "fr",
+   "names": {
+    "en": "Gloom",
+    "fr": "Ortide"
+   },
+   "number": "228",
+   "path": "a1-puissance-genetique/a1-228-ortide.webp",
+   "rarity": "One Star",
+   "set": "A1",
+   "sha256": "4ca5bb9aa941964a54e1e5740a781553c51d51b38eef78492c4adc6acf78a64e",
+   "url": "[adresse retirée]"
+  },
+  {
+   "bytes": 85854,
+   "category": "Pokemon",
+   "id": "A1-229",
+   "illustrator": "Scav",
+   "language": "fr",
+   "name_language": "fr",
+   "names": {
+    "en": "Pinsir",
+    "fr": "Scarabrute"
+   },
+   "number": "229",
+   "path": "a1-puissance-genetique/a1-229-scarabrute.webp",
+   "rarity": "One Star",
+   "set": "A1",
+   "sha256": "f9cb5ec84e93fa3beeb769e1d5315f5a84bec038e0c43cf509f20f38aaa18487",
+   "url": "[adresse retirée]"
+  },
+  {
+   "bytes": 93350,
+   "category": "Pokemon",
+   "id": "A1-230",
+   "illustrator": "GIDORA",
+   "language": "fr",
+   "name_language": "fr",
+   "names": {
+    "en": "Charmander",
+    "fr": "Salamèche"
+   },
+   "number": "230",
+   "path": "a1-puissance-genetique/a1-230-salameche.webp",
+   "rarity": "One Star",
+   "set": "A1",
+   "sha256": "5ab9a343f6dacf80b9912a1ddabfe71117643a23789344d8f48e66b7d7c666a3",
+   "url": "[adresse retirée]"
+  },
+  {
+   "bytes": 74886,
+   "category": "Pokemon",
+   "id": "A1-231",
+   "illustrator": "Taira Akitsu",
+   "language": "fr",
+   "name_language": "fr",
+   "names": {
+    "en": "Rapidash",
+    "fr": "Galopa"
+   },
+   "number": "231",
+   "path": "a1-puissance-genetique/a1-231-galopa.webp",
+   "rarity": "One Star",
+   "set": "A1",
+   "sha256": "11014e606fd530f30a3e5563a9954b3e40d5a26ef461830bd92ff954c8218c94",
+   "url": "[adresse retirée]"
+  },
+  {
+   "bytes": 77112,
+   "category": "Pokemon",
+   "id": "A1-232",
+   "illustrator": "Taira Akitsu",
+   "language": "fr",
+   "name_language": "fr",
+   "names": {
+    "en": "Squirtle",
+    "fr": "Carapuce"
+   },
+   "number": "232",
+   "path": "a1-puissance-genetique/a1-232-carapuce.webp",
+   "rarity": "One Star",
+   "set": "A1",
+   "sha256": "af71d7a903ef39b290161590bedb85e87886e1627d86827783764965c64f086b",
+   "url": "[adresse retirée]"
+  },
+  {
+   "bytes": 83538,
+   "category": "Pokemon",
+   "id": "A1-233",
+   "illustrator": "Nurikabe",
+   "language": "fr",
+   "name_language": "fr",
+   "names": {
+    "en": "Gyarados",
+    "fr": "Léviator"
+   },
+   "number": "233",
+   "path": "a1-puissance-genetique/a1-233-leviator.webp",
+   "rarity": "One Star",
+   "set": "A1",
+   "sha256": "be446d34fbfee7275daeef10665b9d4e76594ebc9c630de5335cdef6409d021c",
+   "url": "[adresse retirée]"
+  },
+  {
+   "bytes": 121898,
+   "category": "Pokemon",
+   "id": "A1-234",
+   "illustrator": "Haru Akasaka",
+   "language": "fr",
+   "name_language": "fr",
+   "names": {
+    "en": "Lapras",
+    "fr": "Lokhlass"
+   },
+   "number": "234",
+   "path": "a1-puissance-genetique/a1-234-lokhlass.webp",
+   "rarity": "One Star",
+   "set": "A1",
+   "sha256": "35a1bbc87439d11a2a4262e2186ed8c6dfcd5bef97c5a983f36a06e706fbf0e5",
+   "url": "[adresse retirée]"
+  },
+  {
+   "bytes": 91710,
+   "category": "Pokemon",
+   "id": "A1-235",
+   "illustrator": "DOM",
+   "language": "fr",
+   "name_language": "fr",
+   "names": {
+    "en": "Electrode",
+    "fr": "Électrode"
+   },
+   "number": "235",
+   "path": "a1-puissance-genetique/a1-235-electrode.webp",
+   "rarity": "One Star",
+   "set": "A1",
+   "sha256": "0407c024f05fd3347e181b02da39bf969437e27e273d4a1eff9621009e5226bd",
+   "url": "[adresse retirée]"
+  },
+  {
+   "bytes": 130554,
+   "category": "Pokemon",
+   "id": "A1-236",
+   "illustrator": "AKIRA EGAWA",
+   "language": "fr",
+   "name_language": "fr",
+   "names": {
+    "en": "Alakazam",
+    "fr": "Alakazam"
+   },
+   "number": "236",
+   "path": "a1-puissance-genetique/a1-236-alakazam.webp",
+   "rarity": "One Star",
+   "set": "A1",
+   "sha256": "3d72c8d6e1aa4711ae556f1f3ff4cc6bb28f4b5999c2e1cc245b2690a50b2332",
+   "url": "[adresse retirée]"
+  },
+  {
+   "bytes": 41870,
+   "category": "Pokemon",
+   "id": "A1-237",
+   "illustrator": "Miki Tanaka",
+   "language": "fr",
+   "name_language": "fr",
+   "names": {
+    "en": "Slowpoke",
+    "fr": "Ramoloss"
+   },
+   "number": "237",
+   "path": "a1-puissance-genetique/a1-237-ramoloss.webp",
+   "rarity": "One Star",
+   "set": "A1",
+   "sha256": "4d8455d82a7e3a90ad8abe8fec19bad95e9c72574b76829d81879d60023377e8",
+   "url": "[adresse retirée]"
+  },
+  {
+   "bytes": 97462,
+   "category": "Pokemon",
+   "id": "A1-238",
+   "illustrator": "Shinya Komatsu",
+   "language": "fr",
+   "name_language": "fr",
+   "names": {
+    "en": "Diglett",
+    "fr": "Taupiqueur"
+   },
+   "number": "238",
+   "path": "a1-puissance-genetique/a1-238-taupiqueur.webp",
+   "rarity": "One Star",
+   "set": "A1",
+   "sha256": "34e76771da9eb5df11aec06e6b5a99f7a5e267adadb7a98278e378c5c57c7b47",
+   "url": "[adresse retirée]"
+  },
+  {
+   "bytes": 79812,
+   "category": "Pokemon",
+   "id": "A1-239",
+   "illustrator": "Teeziro",
+   "language": "fr",
+   "name_language": "fr",
+   "names": {
+    "en": "Cubone",
+    "fr": "Osselait"
+   },
+   "number": "239",
+   "path": "a1-puissance-genetique/a1-239-osselait.webp",
+   "rarity": "One Star",
+   "set": "A1",
+   "sha256": "5ef4dffa3c923851d56af278f68a63e9156107cef48ae21c35aa29f71e0d8b41",
+   "url": "[adresse retirée]"
+  },
+  {
+   "bytes": 81378,
+   "category": "Pokemon",
+   "id": "A1-240",
+   "illustrator": "aoki",
+   "language": "fr",
+   "name_language": "fr",
+   "names": {
+    "en": "Nidoqueen",
+    "fr": "Nidoqueen"
+   },
+   "number": "240",
+   "path": "a1-puissance-genetique/a1-240-nidoqueen.webp",
+   "rarity": "One Star",
+   "set": "A1",
+   "sha256": "3f3c5179e1af9505e55413405d3a0bfec4c59df31498091205460f59efd70316",
+   "url": "[adresse retirée]"
+  },
+  {
+   "bytes": 90624,
+   "category": "Pokemon",
+   "id": "A1-241",
+   "illustrator": "nagimiso",
+   "language": "fr",
+   "name_language": "fr",
+   "names": {
+    "en": "Nidoking",
+    "fr": "Nidoking"
+   },
+   "number": "241",
+   "path": "a1-puissance-genetique/a1-241-nidoking.webp",
+   "rarity": "One Star",
+   "set": "A1",
+   "sha256": "ad91a5dcd5d2bff95dea5fa34827241eb52cc240a2f0aed1a4bbaaaa96d8dfa2",
+   "url": "[adresse retirée]"
+  },
+  {
+   "bytes": 105640,
+   "category": "Pokemon",
+   "id": "A1-242",
+   "illustrator": "Tomokazu Komiya",
+   "language": "fr",
+   "name_language": "fr",
+   "names": {
+    "en": "Golbat",
+    "fr": "Nosferalto"
+   },
+   "number": "242",
+   "path": "a1-puissance-genetique/a1-242-nosferalto.webp",
+   "rarity": "One Star",
+   "set": "A1",
+   "sha256": "c9510ef2ec0df9705e123665b272b6ebd8b8e92010e676a5a8e05eec9e004658",
+   "url": "[adresse retirée]"
+  },
+  {
+   "bytes": 81452,
+   "category": "Pokemon",
+   "id": "A1-243",
+   "illustrator": "KEIICHIRO ITO",
+   "language": "fr",
+   "name_language": "fr",
+   "names": {
+    "en": "Weezing",
+    "fr": "Smogogo"
+   },
+   "number": "243",
+   "path": "a1-puissance-genetique/a1-243-smogogo.webp",
+   "rarity": "One Star",
+   "set": "A1",
+   "sha256": "f612c78467c63653e4b3cd03160230e0ab264e6122cf49d9b494db256642f3ce",
+   "url": "[adresse retirée]"
+  },
+  {
+   "bytes": 85944,
+   "category": "Pokemon",
+   "id": "A1-244",
+   "illustrator": "Gemi",
+   "language": "fr",
+   "name_language": "fr",
+   "names": {
+    "en": "Dragonite",
+    "fr": "Dracolosse"
+   },
+   "number": "244",
+   "path": "a1-puissance-genetique/a1-244-dracolosse.webp",
+   "rarity": "One Star",
+   "set": "A1",
+   "sha256": "3aa8c65fd9b04e47a0d5795a90341d4859456ff89822c770a71bfbb26a443b2f",
+   "url": "[adresse retirée]"
+  },
+  {
+   "bytes": 107784,
+   "category": "Pokemon",
+   "id": "A1-245",
+   "illustrator": "Anesaki Dynamic",
+   "language": "fr",
+   "name_language": "fr",
+   "names": {
+    "en": "Pidgeot",
+    "fr": "Roucarnage"
+   },
+   "number": "245",
+   "path": "a1-puissance-genetique/a1-245-roucarnage.webp",
+   "rarity": "One Star",
+   "set": "A1",
+   "sha256": "e96ac48761a27822b352b600d84d14673ae055ea431c5997d9783f6762ae45eb",
+   "url": "[adresse retirée]"
+  },
+  {
+   "bytes": 106710,
+   "category": "Pokemon",
+   "id": "A1-246",
+   "illustrator": "Mina Nakai",
+   "language": "fr",
+   "name_language": "fr",
+   "names": {
+    "en": "Meowth",
+    "fr": "Miaouss"
+   },
+   "number": "246",
+   "path": "a1-puissance-genetique/a1-246-miaouss.webp",
+   "rarity": "One Star",
+   "set": "A1",
+   "sha256": "d809e0d635d671fa4846177129063c2c5657052f4fcc9e191e9b3a44c77a3e42",
+   "url": "[adresse retirée]"
+  },
+  {
+   "bytes": 97770,
+   "category": "Pokemon",
+   "id": "A1-247",
+   "illustrator": "Jerky",
+   "language": "fr",
+   "name_language": "fr",
+   "names": {
+    "en": "Ditto",
+    "fr": "Métamorph"
+   },
+   "number": "247",
+   "path": "a1-puissance-genetique/a1-247-metamorph.webp",
+   "rarity": "One Star",
+   "set": "A1",
+   "sha256": "ca0de9f5a6f0399cd12d28b8f7848d9ab8798c1b53b148c320f2955131277894",
+   "url": "[adresse retirée]"
+  },
+  {
+   "bytes": 82200,
+   "category": "Pokemon",
+   "id": "A1-248",
+   "illustrator": "sowsow",
+   "language": "fr",
+   "name_language": "fr",
+   "names": {
+    "en": "Eevee",
+    "fr": "Évoli"
+   },
+   "number": "248",
+   "path": "a1-puissance-genetique/a1-248-evoli.webp",
+   "rarity": "One Star",
+   "set": "A1",
+   "sha256": "3821f884ecc0747a60c29e1f8c511d66d011fe9fc2eb4d39b71a3cb228d45cc1",
+   "url": "[adresse retirée]"
+  },
+  {
+   "bytes": 93120,
+   "category": "Pokemon",
+   "id": "A1-249",
+   "illustrator": "Akira Komayama",
+   "language": "fr",
+   "name_language": "fr",
+   "names": {
+    "en": "Porygon",
+    "fr": "Porygon"
+   },
+   "number": "249",
+   "path": "a1-puissance-genetique/a1-249-porygon.webp",
+   "rarity": "One Star",
+   "set": "A1",
+   "sha256": "37c34b0bd37f2b1c085031cf8e105e5d11356e9a969bcdb07f66e2498ddb2717",
+   "url": "[adresse retirée]"
+  },
+  {
+   "bytes": 55482,
+   "category": "Pokemon",
+   "id": "A1-250",
+   "illustrator": "HYOGONOSUKE",
+   "language": "fr",
+   "name_language": "fr",
+   "names": {
+    "en": "Snorlax",
+    "fr": "Ronflex"
+   },
+   "number": "250",
+   "path": "a1-puissance-genetique/a1-250-ronflex.webp",
+   "rarity": "One Star",
+   "set": "A1",
+   "sha256": "a8626dc208175dafe36da2a80fe8a97306b6e032406669e749a94a8842f8a613",
+   "url": "[adresse retirée]"
+  },
+  {
+   "bytes": 75442,
+   "category": "Pokemon",
+   "id": "A1-274",
+   "illustrator": "hncl",
+   "language": "fr",
+   "name_language": "fr",
+   "names": {
+    "en": "Moltres ex",
+    "fr": "Sulfura-ex"
+   },
+   "number": "274",
+   "path": "a1-puissance-genetique/a1-274-sulfura-ex.webp",
+   "rarity": "Two Star",
+   "set": "A1",
+   "sha256": "28ca29665e72876a8523b300ef90f2d0ae35baab623a43d77abe67117de37849",
+   "url": "[adresse retirée]"
+  },
+  {
+   "bytes": 59696,
+   "category": "Pokemon",
+   "id": "A1-275",
+   "illustrator": "kodama",
+   "language": "fr",
+   "name_language": "fr",
+   "names": {
+    "en": "Articuno ex",
+    "fr": "Artikodin-ex"
+   },
+   "number": "275",
+   "path": "a1-puissance-genetique/a1-275-artikodin-ex.webp",
+   "rarity": "Two Star",
+   "set": "A1",
+   "sha256": "195f1c1565c2686588b725daeb5752877ec171be6a9558e4d3e7c29fe559a3ba",
+   "url": "[adresse retirée]"
+  },
+  {
+   "bytes": 80814,
+   "category": "Pokemon",
+   "id": "A1-276",
+   "illustrator": "GOSSAN",
+   "language": "fr",
+   "name_language": "fr",
+   "names": {
+    "en": "Zapdos ex",
+    "fr": "Électhor-ex"
+   },
+   "number": "276",
+   "path": "a1-puissance-genetique/a1-276-electhor-ex.webp",
+   "rarity": "Two Star",
+   "set": "A1",
+   "sha256": "babc8c8a356309e24554cdb0bbc53d34f7eff3123ca5b412a09de5d0ee4ce920",
+   "url": "[adresse retirée]"
+  },
+  {
+   "bytes": 81360,
+   "category": "Pokemon",
+   "id": "A1-277",
+   "illustrator": "NC Empire",
+   "language": "fr",
+   "name_language": "fr",
+   "names": {
+    "en": "Gengar ex",
+    "fr": "Ectoplasma-ex"
+   },
+   "number": "277",
+   "path": "a1-puissance-genetique/a1-277-ectoplasma-ex.webp",
+   "rarity": "Two Star",
+   "set": "A1",
+   "sha256": "cf2ce8f0cfd71ba12681438a6f94dac0e4c09ce18e16f2200516ae12b14ef6a9",
+   "url": "[adresse retirée]"
+  },
+  {
+   "bytes": 116626,
+   "category": "Pokemon",
+   "id": "A1-278",
+   "illustrator": "AKIRA EGAWA",
+   "language": "fr",
+   "name_language": "fr",
+   "names": {
+    "en": "Machamp ex",
+    "fr": "Mackogneur-ex"
+   },
+   "number": "278",
+   "path": "a1-puissance-genetique/a1-278-mackogneur-ex.webp",
+   "rarity": "Two Star",
+   "set": "A1",
+   "sha256": "04a33f19f2e5cd8122c968d640a7aff47135d5154b46c1806e234b77d1dee268",
+   "url": "[adresse retirée]"
+  },
+  {
+   "bytes": 93352,
+   "category": "Pokemon",
+   "id": "A1-280",
+   "illustrator": "kantaro",
+   "language": "fr",
+   "name_language": "fr",
+   "names": {
+    "en": "Charizard ex",
+    "fr": "Dracaufeu-ex"
+   },
+   "number": "280",
+   "path": "a1-puissance-genetique/a1-280-dracaufeu-ex.webp",
+   "rarity": "Three Star",
+   "set": "A1",
+   "sha256": "9473c424063f53f1b4303796f6bb00e5a666868322ed997e0635f867cbd1fe00",
+   "url": "[adresse retirée]"
+  },
+  {
+   "bytes": 75254,
+   "category": "Pokemon",
+   "id": "A1-281",
+   "illustrator": "Ryota Murayama",
+   "language": "fr",
+   "name_language": "fr",
+   "names": {
+    "en": "Pikachu ex",
+    "fr": "Pikachu-ex"
+   },
+   "number": "281",
+   "path": "a1-puissance-genetique/a1-281-pikachu-ex.webp",
+   "rarity": "Three Star",
+   "set": "A1",
+   "sha256": "6ddec2b05deff3b3dc1b0ee1e5b5d25ebae66b96c224126438a3132b2672b568",
+   "url": "[adresse retirée]"
+  },
+  {
+   "bytes": 61472,
+   "category": "Pokemon",
+   "id": "A1-282",
+   "illustrator": "Nurikabe",
+   "language": "fr",
+   "name_language": "fr",
+   "names": {
+    "en": "Mewtwo ex",
+    "fr": "Mewtwo-ex"
+   },
+   "number": "282",
+   "path": "a1-puissance-genetique/a1-282-mewtwo-ex.webp",
+   "rarity": "Three Star",
+   "set": "A1",
+   "sha256": "b98d3511990238c13dad0d26b651f1b639ac31134ceb475c041f8059bfc88374",
+   "url": "[adresse retirée]"
+  },
+  {
+   "bytes": 44842,
+   "category": "Pokemon",
+   "id": "A1-283",
+   "illustrator": "Amelicart",
+   "language": "fr",
+   "name_language": "fr",
+   "names": {
+    "en": "Mew",
+    "fr": "Mew"
+   },
+   "number": "283",
+   "path": "a1-puissance-genetique/a1-283-mew.webp",
+   "rarity": "Three Star",
+   "set": "A1",
+   "sha256": "1353a3dbc8fb53e259b0e9d175e371ccfc35cf3ba1e863e1093a2225e928dcab",
+   "url": "[adresse retirée]"
+  },
+  {
+   "bytes": 105570,
+   "category": "Pokemon",
+   "id": "A1a-069",
+   "illustrator": "Gapao",
+   "language": "fr",
+   "name_language": "fr",
+   "names": {
+    "en": "Exeggutor",
+    "fr": "Noadkoko"
+   },
+   "number": "069",
+   "path": "a1a-l-ile-fabuleuse/a1a-069-noadkoko.webp",
+   "rarity": "One Star",
+   "set": "A1a",
+   "sha256": "562c732fb333f32edd05f95b568bfaeafb0fc289e33480cb1c670f0cef8efa3a",
+   "url": "[adresse retirée]"
+  },
+  {
+   "bytes": 97672,
+   "category": "Pokemon",
+   "id": "A1a-070",
+   "illustrator": "rika",
+   "language": "fr",
+   "name_language": "fr",
+   "names": {
+    "en": "Serperior",
+    "fr": "Majaspic"
+   },
+   "number": "070",
+   "path": "a1a-l-ile-fabuleuse/a1a-070-majaspic.webp",
+   "rarity": "One Star",
+   "set": "A1a",
+   "sha256": "61951b3dd2a8370239d1783bad7f94ff34b72314983ad021163d18bd658485c0",
+   "url": "[adresse retirée]"
+  },
+  {
+   "bytes": 58806,
+   "category": "Pokemon",
+   "id": "A1a-071",
+   "illustrator": "Nurikabe",
+   "language": "fr",
+   "name_language": "fr",
+   "names": {
+    "en": "Salandit",
+    "fr": "Tritox"
+   },
+   "number": "071",
+   "path": "a1a-l-ile-fabuleuse/a1a-071-tritox.webp",
+   "rarity": "One Star",
+   "set": "A1a",
+   "sha256": "e96a274515402713fdaffb4967f25cd12f5ababe68a04def43286b93e755a770",
+   "url": "[adresse retirée]"
+  },
+  {
+   "bytes": 81088,
+   "category": "Pokemon",
+   "id": "A1a-072",
+   "illustrator": "aspara",
+   "language": "fr",
+   "name_language": "fr",
+   "names": {
+    "en": "Vaporeon",
+    "fr": "Aquali"
+   },
+   "number": "072",
+   "path": "a1a-l-ile-fabuleuse/a1a-072-aquali.webp",
+   "rarity": "One Star",
+   "set": "A1a",
+   "sha256": "13fc74c34c06881de1586fcacd2e3d7578815e3aadbf981b33c8a3d6ef895800",
+   "url": "[adresse retirée]"
+  },
+  {
+   "bytes": 84926,
+   "category": "Pokemon",
+   "id": "A1a-073",
+   "illustrator": "Yuu Nishida",
+   "language": "fr",
+   "name_language": "fr",
+   "names": {
+    "en": "Dedenne",
+    "fr": "Dedenne"
+   },
+   "number": "073",
+   "path": "a1a-l-ile-fabuleuse/a1a-073-dedenne.webp",
+   "rarity": "One Star",
+   "set": "A1a",
+   "sha256": "c2e38c886b30b4de3f9c76f12848474af8cd9e48e73ff7558dcf7439f2ede9b3",
+   "url": "[adresse retirée]"
+  },
+  {
+   "bytes": 68148,
+   "category": "Pokemon",
+   "id": "A1a-074",
+   "illustrator": "OKACHEKE",
+   "language": "fr",
+   "name_language": "fr",
+   "names": {
+    "en": "Marshadow",
+    "fr": "Marshadow"
+   },
+   "number": "074",
+   "path": "a1a-l-ile-fabuleuse/a1a-074-marshadow.webp",
+   "rarity": "One Star",
+   "set": "A1a",
+   "sha256": "509f44ad736be0ef0e5969a47ab005eaa2f2bbe9e46f949a4563ed93112e191a",
+   "url": "[adresse retirée]"
+  },
+  {
+   "bytes": 56396,
+   "category": "Pokemon",
+   "id": "A1a-083",
+   "illustrator": "HYOGONOSUKE",
+   "language": "fr",
+   "name_language": "fr",
+   "names": {
+    "en": "Mew ex",
+    "fr": "Mew-ex"
+   },
+   "number": "083",
+   "path": "a1a-l-ile-fabuleuse/a1a-083-mew-ex.webp",
+   "rarity": "Two Star",
+   "set": "A1a",
+   "sha256": "bbc05dba25521a42dc347e425f904052b6c1eead4df4ae15a75d4cc3a2e2c1d5",
+   "url": "[adresse retirée]"
+  },
+  {
+   "bytes": 105080,
+   "category": "Pokemon",
+   "id": "A1a-084",
+   "illustrator": "danciao",
+   "language": "fr",
+   "name_language": "fr",
+   "names": {
+    "en": "Aerodactyl ex",
+    "fr": "Ptéra-ex"
+   },
+   "number": "084",
+   "path": "a1a-l-ile-fabuleuse/a1a-084-ptera-ex.webp",
+   "rarity": "Two Star",
+   "set": "A1a",
+   "sha256": "f6fc95f2ea4bc139035c617746fe433b1eb64d39a34ec90b82d58d55bc47ecce",
+   "url": "[adresse retirée]"
+  },
+  {
+   "bytes": 66130,
+   "category": "Pokemon",
+   "id": "A1a-085",
+   "illustrator": "kantaro",
+   "language": "fr",
+   "name_language": "fr",
+   "names": {
+    "en": "Celebi ex",
+    "fr": "Celebi-ex"
+   },
+   "number": "085",
+   "path": "a1a-l-ile-fabuleuse/a1a-085-celebi-ex.webp",
+   "rarity": "Three Star",
+   "set": "A1a",
+   "sha256": "058deedd4de10d10dd27871c2f0b8ae4a7167f50a76de26a9f4dade587c04731",
+   "url": "[adresse retirée]"
+  },
+  {
+   "bytes": 85626,
+   "category": "Pokemon",
+   "id": "A2-156",
+   "illustrator": "Saboteri",
+   "language": "fr",
+   "name_language": "fr",
+   "names": {
+    "en": "Tangrowth",
+    "fr": "Bouldeneu"
+   },
+   "number": "156",
+   "path": "a2-choc-spatio-temporel/a2-156-bouldeneu.webp",
+   "rarity": "One Star",
+   "set": "A2",
+   "sha256": "f7cd30900533aa896b0dbb2eaa25ab6653b9419807677c244c5781ac9fd583cb",
+   "url": "[adresse retirée]"
+  },
+  {
+   "bytes": 98680,
+   "category": "Pokemon",
+   "id": "A2-157",
+   "illustrator": "Shibuzoh.",
+   "language": "fr",
+   "name_language": "fr",
+   "names": {
+    "en": "Combee",
+    "fr": "Apitrini"
+   },
+   "number": "157",
+   "path": "a2-choc-spatio-temporel/a2-157-apitrini.webp",
+   "rarity": "One Star",
+   "set": "A2",
+   "sha256": "8295b31841379f325b3f828c6523e11caaa068e67246117b3a335ea351728003",
+   "url": "[adresse retirée]"
+  },
+  {
+   "bytes": 70310,
+   "category": "Pokemon",
+   "id": "A2-158",
+   "illustrator": "Yoriyuki Ikegami",
+   "language": "fr",
+   "name_language": "fr",
+   "names": {
+    "en": "Carnivine",
+    "fr": "Vortente"
+   },
+   "number": "158",
+   "path": "a2-choc-spatio-temporel/a2-158-vortente.webp",
+   "rarity": "One Star",
+   "set": "A2",
+   "sha256": "0a2b82df13fa4b2fa66f3f60b29dac8811e999e27a7a9e1ede96c266540772df",
+   "url": "[adresse retirée]"
+  },
+  {
+   "bytes": 70494,
+   "category": "Pokemon",
+   "id": "A2-159",
+   "illustrator": "REND",
+   "language": "fr",
+   "name_language": "fr",
+   "names": {
+    "en": "Shaymin",
+    "fr": "Shaymin"
+   },
+   "number": "159",
+   "path": "a2-choc-spatio-temporel/a2-159-shaymin.webp",
+   "rarity": "One Star",
+   "set": "A2",
+   "sha256": "108b34b6d96a13074df335da1ee53c57780a889c75db530cd4b471aceb2ba812",
+   "url": "[adresse retirée]"
+  },
+  {
+   "bytes": 71886,
+   "category": "Pokemon",
+   "id": "A2-160",
+   "illustrator": "OKACHEKE",
+   "language": "fr",
+   "name_language": "fr",
+   "names": {
+    "en": "Mamoswine",
+    "fr": "Mammochon"
+   },
+   "number": "160",
+   "path": "a2-choc-spatio-temporel/a2-160-mammochon.webp",
+   "rarity": "One Star",
+   "set": "A2",
+   "sha256": "160766913ddb735826eb9662011ad8015faef4daa3148ab6ffdb919eafb52e8b",
+   "url": "[adresse retirée]"
+  },
+  {
+   "bytes": 127266,
+   "category": "Pokemon",
+   "id": "A2-161",
+   "illustrator": "takashi shiraishi",
+   "language": "fr",
+   "name_language": "fr",
+   "names": {
+    "en": "Gastrodon",
+    "fr": "Tritosor"
+   },
+   "number": "161",
+   "path": "a2-choc-spatio-temporel/a2-161-tritosor.webp",
+   "rarity": "One Star",
+   "set": "A2",
+   "sha256": "e20ba209027bb06c38273854b6b768ff7e7cdf5cfa925b07ad495b7feea1d1c2",
+   "url": "[adresse retirée]"
+  },
+  {
+   "bytes": 76624,
+   "category": "Pokemon",
+   "id": "A2-162",
+   "illustrator": "miki kudo",
+   "language": "fr",
+   "name_language": "fr",
+   "names": {
+    "en": "Manaphy",
+    "fr": "Manaphy"
+   },
+   "number": "162",
+   "path": "a2-choc-spatio-temporel/a2-162-manaphy.webp",
+   "rarity": "One Star",
+   "set": "A2",
+   "sha256": "e07f9124cf98d959dd3a28558e9f62433c5ff616298e9fa90ebf95a3c3f2c3f0",
+   "url": "[adresse retirée]"
+  },
+  {
+   "bytes": 79572,
+   "category": "Pokemon",
+   "id": "A2-163",
+   "illustrator": "Yuu Nishida",
+   "language": "fr",
+   "name_language": "fr",
+   "names": {
+    "en": "Shinx",
+    "fr": "Lixy"
+   },
+   "number": "163",
+   "path": "a2-choc-spatio-temporel/a2-163-lixy.webp",
+   "rarity": "One Star",
+   "set": "A2",
+   "sha256": "73e91fb5486bf4bb4f738a5cefce8d093115cf8cb2c55239f47d19e258779620",
+   "url": "[adresse retirée]"
+  },
+  {
+   "bytes": 102530,
+   "category": "Pokemon",
+   "id": "A2-164",
+   "illustrator": "Shimaris Yukichi",
+   "language": "fr",
+   "name_language": "fr",
+   "names": {
+    "en": "Rotom",
+    "fr": "Motisma"
+   },
+   "number": "164",
+   "path": "a2-choc-spatio-temporel/a2-164-motisma.webp",
+   "rarity": "One Star",
+   "set": "A2",
+   "sha256": "336608348c4f031e4befe15983106ee3733ae59f2ec33ea5fa665a6368db9be6",
+   "url": "[adresse retirée]"
+  },
+  {
+   "bytes": 76674,
+   "category": "Pokemon",
+   "id": "A2-165",
+   "illustrator": "Orca",
+   "language": "fr",
+   "name_language": "fr",
+   "names": {
+    "en": "Drifloon",
+    "fr": "Baudrive"
+   },
+   "number": "165",
+   "path": "a2-choc-spatio-temporel/a2-165-baudrive.webp",
+   "rarity": "One Star",
+   "set": "A2",
+   "sha256": "8f88d0c92b77d39f6fe53ff5fab74af48c446ac7c6f26d12c706a90e6201d81c",
+   "url": "[adresse retirée]"
+  },
+  {
+   "bytes": 68496,
+   "category": "Pokemon",
+   "id": "A2-166",
+   "illustrator": "Orca",
+   "language": "fr",
+   "name_language": "fr",
+   "names": {
+    "en": "Mesprit",
+    "fr": "Créfollet"
+   },
+   "number": "166",
+   "path": "a2-choc-spatio-temporel/a2-166-crefollet.webp",
+   "rarity": "One Star",
+   "set": "A2",
+   "sha256": "a2bde5ea4a8c123d5d5bdf48ad1ea822485cd6e74924e6565a8e338b501187d1",
+   "url": "[adresse retirée]"
+  },
+  {
+   "bytes": 80004,
+   "category": "Pokemon",
+   "id": "A2-167",
+   "illustrator": "Rond",
+   "language": "fr",
+   "name_language": "fr",
+   "names": {
+    "en": "Giratina",
+    "fr": "Giratina"
+   },
+   "number": "167",
+   "path": "a2-choc-spatio-temporel/a2-167-giratina.webp",
+   "rarity": "One Star",
+   "set": "A2",
+   "sha256": "0f57fe40a0953d81fba5c5a518489aa873a98ff2b1a4c24114ff53a3f7509b8b",
+   "url": "[adresse retirée]"
+  },
+  {
+   "bytes": 82240,
+   "category": "Pokemon",
+   "id": "A2-168",
+   "illustrator": "rika",
+   "language": "fr",
+   "name_language": "fr",
+   "names": {
+    "en": "Cresselia",
+    "fr": "Cresselia"
+   },
+   "number": "168",
+   "path": "a2-choc-spatio-temporel/a2-168-cresselia.webp",
+   "rarity": "One Star",
+   "set": "A2",
+   "sha256": "54f26ac4655fd368151c040df8eb7a4e1c7d2540d0af4a4f2d17f67d9a6d7d7d",
+   "url": "[adresse retirée]"
+  },
+  {
+   "bytes": 74722,
+   "category": "Pokemon",
+   "id": "A2-169",
+   "illustrator": "Taiga Kayama",
+   "language": "fr",
+   "name_language": "fr",
+   "names": {
+    "en": "Rhyperior",
+    "fr": "Rhinastoc"
+   },
+   "number": "169",
+   "path": "a2-choc-spatio-temporel/a2-169-rhinastoc.webp",
+   "rarity": "One Star",
+   "set": "A2",
+   "sha256": "a99b19e1834f3959ffc54a2a611031a2a87c320cd962924258b21415fe76e566",
+   "url": "[adresse retirée]"
+  },
+  {
+   "bytes": 102640,
+   "category": "Pokemon",
+   "id": "A2-170",
+   "illustrator": "Akira Komayama",
+   "language": "fr",
+   "name_language": "fr",
+   "names": {
+    "en": "Lucario",
+    "fr": "Lucario"
+   },
+   "number": "170",
+   "path": "a2-choc-spatio-temporel/a2-170-lucario.webp",
+   "rarity": "One Star",
+   "set": "A2",
+   "sha256": "ef82d04d6354443834eacd183e0056a4508f8588d6f17367e4050623ba3a2451",
+   "url": "[adresse retirée]"
+  },
+  {
+   "bytes": 59778,
+   "category": "Pokemon",
+   "id": "A2-171",
+   "illustrator": "Teeziro",
+   "language": "fr",
+   "name_language": "fr",
+   "names": {
+    "en": "Hippopotas",
+    "fr": "Hippopotas"
+   },
+   "number": "171",
+   "path": "a2-choc-spatio-temporel/a2-171-hippopotas.webp",
+   "rarity": "One Star",
+   "set": "A2",
+   "sha256": "df0a70bb4ebc655a3bc4ff4f4685e546a9cbfcc86783ff06d3b2d076ae8fda8e",
+   "url": "[adresse retirée]"
+  },
+  {
+   "bytes": 153222,
+   "category": "Pokemon",
+   "id": "A2-172",
+   "illustrator": "Shinji Kanda",
+   "language": "fr",
+   "name_language": "fr",
+   "names": {
+    "en": "Spiritomb",
+    "fr": "Spiritomb"
+   },
+   "number": "172",
+   "path": "a2-choc-spatio-temporel/a2-172-spiritomb.webp",
+   "rarity": "One Star",
+   "set": "A2",
+   "sha256": "975b8dc7788289a767bec26a14f8868dc24ee28d27130777f0d9b386b8e42d81",
+   "url": "[adresse retirée]"
+  },
+  {
+   "bytes": 87186,
+   "category": "Pokemon",
+   "id": "A2-173",
+   "illustrator": "GOSSAN",
+   "language": "fr",
+   "name_language": "fr",
+   "names": {
+    "en": "Croagunk",
+    "fr": "Cradopaud"
+   },
+   "number": "173",
+   "path": "a2-choc-spatio-temporel/a2-173-cradopaud.webp",
+   "rarity": "One Star",
+   "set": "A2",
+   "sha256": "357b9000abcc9abf40f0d9223002f20fe79eb8de7c57aaa2c518d3aad958ac91",
+   "url": "[adresse retirée]"
+  },
+  {
+   "bytes": 77652,
+   "category": "Pokemon",
+   "id": "A2-174",
+   "illustrator": "OKUBO",
+   "language": "fr",
+   "name_language": "fr",
+   "names": {
+    "en": "Heatran",
+    "fr": "Heatran"
+   },
+   "number": "174",
+   "path": "a2-choc-spatio-temporel/a2-174-heatran.webp",
+   "rarity": "One Star",
+   "set": "A2",
+   "sha256": "dcecbc087402170ca802a98b3ab6f423c298fee9b31b9a8c345a4f06b8342101",
+   "url": "[adresse retirée]"
+  },
+  {
+   "bytes": 67424,
+   "category": "Pokemon",
+   "id": "A2-175",
+   "illustrator": "MINAMINAMI Take",
+   "language": "fr",
+   "name_language": "fr",
+   "names": {
+    "en": "Garchomp",
+    "fr": "Carchacrok"
+   },
+   "number": "175",
+   "path": "a2-choc-spatio-temporel/a2-175-carchacrok.webp",
+   "rarity": "One Star",
+   "set": "A2",
+   "sha256": "f4943e284a3f44cf2a75cc0e3a7279f052a19c6efb2efc7db740616de8715959",
+   "url": "[adresse retirée]"
+  },
+  {
+   "bytes": 83140,
+   "category": "Pokemon",
+   "id": "A2-176",
+   "illustrator": "Ryota Murayama",
+   "language": "fr",
+   "name_language": "fr",
+   "names": {
+    "en": "Staraptor",
+    "fr": "Étouraptor"
+   },
+   "number": "176",
+   "path": "a2-choc-spatio-temporel/a2-176-etouraptor.webp",
+   "rarity": "One Star",
+   "set": "A2",
+   "sha256": "ba123f76d024c5409ed886bdf8ec818f7d3eea9a52082fd74b661b39fb8f801a",
+   "url": "[adresse retirée]"
+  },
+  {
+   "bytes": 105428,
+   "category": "Pokemon",
+   "id": "A2-177",
+   "illustrator": "Shinya Komatsu",
+   "language": "fr",
+   "name_language": "fr",
+   "names": {
+    "en": "Bidoof",
+    "fr": "Keunotor"
+   },
+   "number": "177",
+   "path": "a2-choc-spatio-temporel/a2-177-keunotor.webp",
+   "rarity": "One Star",
+   "set": "A2",
+   "sha256": "3fc83d3e751335477733c4e6bfbb71e06335ff71ce20344666b4d841335eeae4",
+   "url": "[adresse retirée]"
+  },
+  {
+   "bytes": 71066,
+   "category": "Pokemon",
+   "id": "A2-178",
+   "illustrator": "matazo",
+   "language": "fr",
+   "name_language": "fr",
+   "names": {
+    "en": "Glameow",
+    "fr": "Chaglam"
+   },
+   "number": "178",
+   "path": "a2-choc-spatio-temporel/a2-178-chaglam.webp",
+   "rarity": "One Star",
+   "set": "A2",
+   "sha256": "8a8ad3602f882f540d8d7ace24526df5f52a10ad4f6d1698be063319edab514a",
+   "url": "[adresse retirée]"
+  },
+  {
+   "bytes": 119666,
+   "category": "Pokemon",
+   "id": "A2-179",
+   "illustrator": "Tetsu Kayama",
+   "language": "fr",
+   "name_language": "fr",
+   "names": {
+    "en": "Regigigas",
+    "fr": "Regigigas"
+   },
+   "number": "179",
+   "path": "a2-choc-spatio-temporel/a2-179-regigigas.webp",
+   "rarity": "One Star",
+   "set": "A2",
+   "sha256": "640b64e25b4e3dca320315f0e1d55f6405c21d3ba5a95360c0be9596213c1577",
+   "url": "[adresse retirée]"
+  },
+  {
+   "bytes": 78416,
+   "category": "Pokemon",
+   "id": "A2-196",
+   "illustrator": "Mina Nakai",
+   "language": "fr",
+   "name_language": "fr",
+   "names": {
+    "en": "Yanmega ex",
+    "fr": "Yanmega-ex"
+   },
+   "number": "196",
+   "path": "a2-choc-spatio-temporel/a2-196-yanmega-ex.webp",
+   "rarity": "Two Star",
+   "set": "A2",
+   "sha256": "1b464b36ba50c72668402df5d89df2b2332964593b787041c654ad1e55b0d370",
+   "url": "[adresse retirée]"
+  },
+  {
+   "bytes": 75778,
+   "category": "Pokemon",
+   "id": "A2-197",
+   "illustrator": "nagimiso",
+   "language": "fr",
+   "name_language": "fr",
+   "names": {
+    "en": "Infernape ex",
+    "fr": "Simiabraz-ex"
+   },
+   "number": "197",
+   "path": "a2-choc-spatio-temporel/a2-197-simiabraz-ex.webp",
+   "rarity": "Two Star",
+   "set": "A2",
+   "sha256": "377829e1466c473f2ae82fb3615157d60bb44a751e94b44d023b44ecd6b99826",
+   "url": "[adresse retirée]"
+  },
+  {
+   "bytes": 66950,
+   "category": "Pokemon",
+   "id": "A2-198",
+   "illustrator": "Nurikabe",
+   "language": "fr",
+   "name_language": "fr",
+   "names": {
+    "en": "Pachirisu ex",
+    "fr": "Pachirisu-ex"
+   },
+   "number": "198",
+   "path": "a2-choc-spatio-temporel/a2-198-pachirisu-ex.webp",
+   "rarity": "Two Star",
+   "set": "A2",
+   "sha256": "f0b9a339978a244ff9a3b9aeb9455c719176dd35385a3578be9c0b3139610f74",
+   "url": "[adresse retirée]"
+  },
+  {
+   "bytes": 95672,
+   "category": "Pokemon",
+   "id": "A2-199",
+   "illustrator": "Kuroimori",
+   "language": "fr",
+   "name_language": "fr",
+   "names": {
+    "en": "Mismagius ex",
+    "fr": "Magirêve-ex"
+   },
+   "number": "199",
+   "path": "a2-choc-spatio-temporel/a2-199-magireve-ex.webp",
+   "rarity": "Two Star",
+   "set": "A2",
+   "sha256": "20e80b10fe42fd5c1a16f6b823a2a4bd76f60a23eb601ffabcd440c18fc9d996",
+   "url": "[adresse retirée]"
+  },
+  {
+   "bytes": 69140,
+   "category": "Pokemon",
+   "id": "A2-200",
+   "illustrator": "Takumi Wada",
+   "language": "fr",
+   "name_language": "fr",
+   "names": {
+    "en": "Gallade ex",
+    "fr": "Gallame-ex"
+   },
+   "number": "200",
+   "path": "a2-choc-spatio-temporel/a2-200-gallame-ex.webp",
+   "rarity": "Two Star",
+   "set": "A2",
+   "sha256": "7bcba20dc831aa9068b794cf19d5c02c035f3afa3a07e0aced64d411f5a1f8d1",
+   "url": "[adresse retirée]"
+  },
+  {
+   "bytes": 64464,
+   "category": "Pokemon",
+   "id": "A2-201",
+   "illustrator": "hncl",
+   "language": "fr",
+   "name_language": "fr",
+   "names": {
+    "en": "Weavile ex",
+    "fr": "Dimoret-ex"
+   },
+   "number": "201",
+   "path": "a2-choc-spatio-temporel/a2-201-dimoret-ex.webp",
+   "rarity": "Two Star",
+   "set": "A2",
+   "sha256": "59538fd42dc21868a6797006cfadb7d8dbea8fa976037166b9d55022c138bd91",
+   "url": "[adresse retirée]"
+  },
+  {
+   "bytes": 77646,
+   "category": "Pokemon",
+   "id": "A2-202",
+   "illustrator": "Oswaldo KATO",
+   "language": "fr",
+   "name_language": "fr",
+   "names": {
+    "en": "Darkrai ex",
+    "fr": "Darkrai-ex"
+   },
+   "number": "202",
+   "path": "a2-choc-spatio-temporel/a2-202-darkrai-ex.webp",
+   "rarity": "Two Star",
+   "set": "A2",
+   "sha256": "2bf425413377ee8a7c358954f53fc64415919669b93f4fb0c2414e1c6a32932c",
+   "url": "[adresse retirée]"
+  },
+  {
+   "bytes": 93448,
+   "category": "Pokemon",
+   "id": "A2-203",
+   "illustrator": "Jerky",
+   "language": "fr",
+   "name_language": "fr",
+   "names": {
+    "en": "Lickilicky ex",
+    "fr": "Coudlangue-ex"
+   },
+   "number": "203",
+   "path": "a2-choc-spatio-temporel/a2-203-coudlangue-ex.webp",
+   "rarity": "Two Star",
+   "set": "A2",
+   "sha256": "58b1fced0cba901d59100c329cbc87cd86b143f2301aae2faab95978a303bb90",
+   "url": "[adresse retirée]"
+  },
+  {
+   "bytes": 118660,
+   "category": "Pokemon",
+   "id": "A2-204",
+   "illustrator": "N-DESIGN Inc.",
+   "language": "fr",
+   "name_language": "fr",
+   "names": {
+    "en": "Palkia ex",
+    "fr": "Palkia-ex"
+   },
+   "number": "204",
+   "path": "a2-choc-spatio-temporel/a2-204-palkia-ex.webp",
+   "rarity": "Three Star",
+   "set": "A2",
+   "sha256": "818cf92f7e2ff5ddde7c8adfcd0950fdd42b281679ce3b3efed883aedba8d929",
+   "url": "[adresse retirée]"
+  },
+  {
+   "bytes": 59134,
+   "category": "Pokemon",
+   "id": "A2-205",
+   "illustrator": "N-DESIGN Inc.",
+   "language": "fr",
+   "name_language": "fr",
+   "names": {
+    "en": "Dialga ex",
+    "fr": "Dialga-ex"
+   },
+   "number": "205",
+   "path": "a2-choc-spatio-temporel/a2-205-dialga-ex.webp",
+   "rarity": "Three Star",
+   "set": "A2",
+   "sha256": "780cf954501dfd3dceea36673e86d1f458057119409f71d92e656bf886d006c9",
+   "url": "[adresse retirée]"
+  },
+  {
+   "bytes": 65190,
+   "category": "Pokemon",
+   "id": "A2a-076",
+   "illustrator": "matazo",
+   "language": "fr",
+   "name_language": "fr",
+   "names": {
+    "en": "Houndoom",
+    "fr": "Démolosse"
+   },
+   "number": "076",
+   "path": "a2a-lumiere-triomphale/a2a-076-demolosse.webp",
+   "rarity": "One Star",
+   "set": "A2a",
+   "sha256": "2c8b75599d84ab8bbc367a1281e4f783dcc8e9b8b0a34f52ebce5f5a7f3839d2",
+   "url": "[adresse retirée]"
+  },
+  {
+   "bytes": 74600,
+   "category": "Pokemon",
+   "id": "A2a-077",
+   "illustrator": "Taiga Kayama",
+   "language": "fr",
+   "name_language": "fr",
+   "names": {
+    "en": "Marill",
+    "fr": "Marill"
+   },
+   "number": "077",
+   "path": "a2a-lumiere-triomphale/a2a-077-marill.webp",
+   "rarity": "One Star",
+   "set": "A2a",
+   "sha256": "d1bb1ed08050f1a3968cf5fad1a77dc4b13c5f9320b41e2ae3b9ea629b1966e0",
+   "url": "[adresse retirée]"
+  },
+  {
+   "bytes": 115700,
+   "category": "Pokemon",
+   "id": "A2a-078",
+   "illustrator": "IKEDA Saki",
+   "language": "fr",
+   "name_language": "fr",
+   "names": {
+    "en": "Unown",
+    "fr": "Zarbi"
+   },
+   "number": "078",
+   "path": "a2a-lumiere-triomphale/a2a-078-zarbi.webp",
+   "rarity": "One Star",
+   "set": "A2a",
+   "sha256": "6bccb4332f4144e6ad390e19f1a64347c07677adc382bb7f61da9e8575d8a18b",
+   "url": "[adresse retirée]"
+  },
+  {
+   "bytes": 102374,
+   "category": "Pokemon",
+   "id": "A2a-079",
+   "illustrator": "Yuriko Akase",
+   "language": "fr",
+   "name_language": "fr",
+   "names": {
+    "en": "Sudowoodo",
+    "fr": "Simularbre"
+   },
+   "number": "079",
+   "path": "a2a-lumiere-triomphale/a2a-079-simularbre.webp",
+   "rarity": "One Star",
+   "set": "A2a",
+   "sha256": "decb3e4812e2cd6ded9028b3c69e494f5fbda5cc5d1969ec3fd26861c351e964",
+   "url": "[adresse retirée]"
+  },
+  {
+   "bytes": 80730,
+   "category": "Pokemon",
+   "id": "A2a-080",
+   "illustrator": "Yukihiro Tada",
+   "language": "fr",
+   "name_language": "fr",
+   "names": {
+    "en": "Magnemite",
+    "fr": "Magnéti"
+   },
+   "number": "080",
+   "path": "a2a-lumiere-triomphale/a2a-080-magneti.webp",
+   "rarity": "One Star",
+   "set": "A2a",
+   "sha256": "98c9c65281b257bbf1db23b97c3b9111d18ad8e1861ca1fba1c057808cb6ef76",
+   "url": "[adresse retirée]"
+  },
+  {
+   "bytes": 87160,
+   "category": "Pokemon",
+   "id": "A2a-081",
+   "illustrator": "MINAMINAMI Take",
+   "language": "fr",
+   "name_language": "fr",
+   "names": {
+    "en": "Shaymin",
+    "fr": "Shaymin"
+   },
+   "number": "081",
+   "path": "a2a-lumiere-triomphale/a2a-081-shaymin.webp",
+   "rarity": "One Star",
+   "set": "A2a",
+   "sha256": "790193756e95e5b78e7e1586f7333f05f2ecc5dd20d5bea9e59fefab0a12c06a",
+   "url": "[adresse retirée]"
+  },
+  {
+   "bytes": 102692,
+   "category": "Pokemon",
+   "id": "A2a-091",
+   "illustrator": "saino misaki",
+   "language": "fr",
+   "name_language": "fr",
+   "names": {
+    "en": "Leafeon ex",
+    "fr": "Phyllali-ex"
+   },
+   "number": "091",
+   "path": "a2a-lumiere-triomphale/a2a-091-phyllali-ex.webp",
+   "rarity": "Two Star",
+   "set": "A2a",
+   "sha256": "b5e25e4c59a11420c1d55f980af03a5fc09cc70658fd4dcb23b303d18a5be8fa",
+   "url": "[adresse retirée]"
+  },
+  {
+   "bytes": 87688,
+   "category": "Pokemon",
+   "id": "A2a-092",
+   "illustrator": "rika",
+   "language": "fr",
+   "name_language": "fr",
+   "names": {
+    "en": "Glaceon ex",
+    "fr": "Givrali-ex"
+   },
+   "number": "092",
+   "path": "a2a-lumiere-triomphale/a2a-092-givrali-ex.webp",
+   "rarity": "Two Star",
+   "set": "A2a",
+   "sha256": "de9b97555c86c0aa269ee7fc64338f4cd8932061b9f6b1a93f9964086c04a46d",
+   "url": "[adresse retirée]"
+  },
+  {
+   "bytes": 73902,
+   "category": "Pokemon",
+   "id": "A2a-093",
+   "illustrator": "toriyufu",
+   "language": "fr",
+   "name_language": "fr",
+   "names": {
+    "en": "Garchomp ex",
+    "fr": "Carchacrok-ex"
+   },
+   "number": "093",
+   "path": "a2a-lumiere-triomphale/a2a-093-carchacrok-ex.webp",
+   "rarity": "Two Star",
+   "set": "A2a",
+   "sha256": "8c88d9594dbcbb2895fd9025867fc1d936c4c630be42b6678f67e2c6d007fdca",
+   "url": "[adresse retirée]"
+  },
+  {
+   "bytes": 60156,
+   "category": "Pokemon",
+   "id": "A2a-094",
+   "illustrator": "Masa",
+   "language": "fr",
+   "name_language": "fr",
+   "names": {
+    "en": "Probopass ex",
+    "fr": "Tarinorme-ex"
+   },
+   "number": "094",
+   "path": "a2a-lumiere-triomphale/a2a-094-tarinorme-ex.webp",
+   "rarity": "Two Star",
+   "set": "A2a",
+   "sha256": "cc5357a465c2f5b5dbcbed277adfd9d36aded0255cd9986beb79c55b7262f607",
+   "url": "[adresse retirée]"
+  },
+  {
+   "bytes": 89276,
+   "category": "Pokemon",
+   "id": "A2a-095",
+   "illustrator": "Takumi Wada",
+   "language": "fr",
+   "name_language": "fr",
+   "names": {
+    "en": "Arceus ex",
+    "fr": "Arceus-ex"
+   },
+   "number": "095",
+   "path": "a2a-lumiere-triomphale/a2a-095-arceus-ex.webp",
+   "rarity": "Three Star",
+   "set": "A2a",
+   "sha256": "abd2a8585a5e394b6aea8ba6b249e4074b90cd833ab371f1c2c0ad7bd6629746",
+   "url": "[adresse retirée]"
+  },
+  {
+   "bytes": 96440,
+   "category": "Pokemon",
+   "id": "A2b-073",
+   "illustrator": "danciao",
+   "language": "fr",
+   "name_language": "fr",
+   "names": {
+    "en": "Meowscarada",
+    "fr": "Miascarade"
+   },
+   "number": "073",
+   "path": "a2b-rejouissances-rayonnantes/a2b-073-miascarade.webp",
+   "rarity": "One Star",
+   "set": "A2b",
+   "sha256": "f01cb1b1b4c02a24783e4f0f43c689da06f7ded4673fedea1a1f1cdbc959b9a7",
+   "url": "[adresse retirée]"
+  },
+  {
+   "bytes": 91324,
+   "category": "Pokemon",
+   "id": "A2b-074",
+   "illustrator": "Shimaris Yukichi",
+   "language": "fr",
+   "name_language": "fr",
+   "names": {
+    "en": "Buizel",
+    "fr": "Mustébouée"
+   },
+   "number": "074",
+   "path": "a2b-rejouissances-rayonnantes/a2b-074-mustebouee.webp",
+   "rarity": "One Star",
+   "set": "A2b",
+   "sha256": "92e0ff0193a9e31a6711681c4fd91b7dda2395576104b3259cacd98858ca0ee8",
+   "url": "[adresse retirée]"
+  },
+  {
+   "bytes": 74120,
+   "category": "Pokemon",
+   "id": "A2b-075",
+   "illustrator": "cochi8i",
+   "language": "fr",
+   "name_language": "fr",
+   "names": {
+    "en": "Tatsugiri",
+    "fr": "Nigirigon"
+   },
+   "number": "075",
+   "path": "a2b-rejouissances-rayonnantes/a2b-075-nigirigon.webp",
+   "rarity": "One Star",
+   "set": "A2b",
+   "sha256": "3f80c88da8233ee0fcc2cdad64aa5a8aaf1e24d43a5025d6d841dc6f1bdcd067",
+   "url": "[adresse retirée]"
+  },
+  {
+   "bytes": 84168,
+   "category": "Pokemon",
+   "id": "A2b-076",
+   "illustrator": "Teeziro",
+   "language": "fr",
+   "name_language": "fr",
+   "names": {
+    "en": "Grafaiai",
+    "fr": "Tag-Tag"
+   },
+   "number": "076",
+   "path": "a2b-rejouissances-rayonnantes/a2b-076-tag-tag.webp",
+   "rarity": "One Star",
+   "set": "A2b",
+   "sha256": "f2752ce0556000bbd05a401950f740df6d60b07f6ed43e308a449973e558e4f2",
+   "url": "[adresse retirée]"
+  },
+  {
+   "bytes": 87132,
+   "category": "Pokemon",
+   "id": "A2b-077",
+   "illustrator": "Jerky",
+   "language": "fr",
+   "name_language": "fr",
+   "names": {
+    "en": "Gholdengo",
+    "fr": "Gromago"
+   },
+   "number": "077",
+   "path": "a2b-rejouissances-rayonnantes/a2b-077-gromago.webp",
+   "rarity": "One Star",
+   "set": "A2b",
+   "sha256": "7ccc3e76edbad51b81f221d5952f687750e2536b125fd3e40ec4f7b587c81f98",
+   "url": "[adresse retirée]"
+  },
+  {
+   "bytes": 45406,
+   "category": "Pokemon",
+   "id": "A2b-078",
+   "illustrator": "5ban Graphics",
+   "language": "fr",
+   "name_language": "fr",
+   "names": {
+    "en": "Wigglytuff",
+    "fr": "Grodoudou"
+   },
+   "number": "078",
+   "path": "a2b-rejouissances-rayonnantes/a2b-078-grodoudou.webp",
+   "rarity": "One Star",
+   "set": "A2b",
+   "sha256": "db729c205b5440f42b51fea608eaf46bcebd668fa180c5ae8db9cc555de14a47",
+   "url": "[adresse retirée]"
+  },
+  {
+   "bytes": 70356,
+   "category": "Pokemon",
+   "id": "A2b-092",
+   "illustrator": "You Iribi",
+   "language": "fr",
+   "name_language": "fr",
+   "names": {
+    "en": "Pikachu ex",
+    "fr": "Pikachu-ex"
+   },
+   "number": "092",
+   "path": "a2b-rejouissances-rayonnantes/a2b-092-pikachu-ex.webp",
+   "rarity": "Two Star",
+   "set": "A2b",
+   "sha256": "d83d96da68f7f4be837cf6719851bde48f30b23a218e1333bd348cc591e11c8a",
+   "url": "[adresse retirée]"
+  },
+  {
+   "bytes": 53662,
+   "category": "Pokemon",
+   "id": "A2b-093",
+   "illustrator": "REND",
+   "language": "fr",
+   "name_language": "fr",
+   "names": {
+    "en": "Paldean Clodsire ex",
+    "fr": "Terraistede Paldea-ex"
+   },
+   "number": "093",
+   "path": "a2b-rejouissances-rayonnantes/a2b-093-terraistede-paldea-ex.webp",
+   "rarity": "Two Star",
+   "set": "A2b",
+   "sha256": "bf1f8aaf1761f57ca97330b8d35f5054d84c18dbae4346c11cf1cf3c8bb76c38",
+   "url": "[adresse retirée]"
+  },
+  {
+   "bytes": 82850,
+   "category": "Pokemon",
+   "id": "A2b-094",
+   "illustrator": "kurumitsu",
+   "language": "fr",
+   "name_language": "fr",
+   "names": {
+    "en": "Tinkaton ex",
+    "fr": "Forgelina-ex"
+   },
+   "number": "094",
+   "path": "a2b-rejouissances-rayonnantes/a2b-094-forgelina-ex.webp",
+   "rarity": "Two Star",
+   "set": "A2b",
+   "sha256": "4b11414e36adac7ae024305fc84d1bd7aa961bb2010eb9d5acebdf901dfdb9b0",
+   "url": "[adresse retirée]"
+  },
+  {
+   "bytes": 63570,
+   "category": "Pokemon",
+   "id": "A2b-095",
+   "illustrator": "USGMEN",
+   "language": "fr",
+   "name_language": "fr",
+   "names": {
+    "en": "Bibarel ex",
+    "fr": "Castorno-ex"
+   },
+   "number": "095",
+   "path": "a2b-rejouissances-rayonnantes/a2b-095-castorno-ex.webp",
+   "rarity": "Two Star",
+   "set": "A2b",
+   "sha256": "9ef278ad05d932711982380b4894789c4645ff387b6d2a77f433a2acce0a3c27",
+   "url": "[adresse retirée]"
+  },
+  {
+   "bytes": 114322,
+   "category": "Pokemon",
+   "id": "A2b-096",
+   "illustrator": "Shinji Kanda",
+   "language": "fr",
+   "name_language": "fr",
+   "names": {
+    "en": "Giratina ex",
+    "fr": "Giratina-ex"
+   },
+   "number": "096",
+   "path": "a2b-rejouissances-rayonnantes/a2b-096-giratina-ex.webp",
+   "rarity": "Three Star",
+   "set": "A2b",
+   "sha256": "ed2f74ece1f94b46ba5f00c8d8c6f06a9b25bb4ba2ac7a28036542777c2e07bc",
+   "url": "[adresse retirée]"
+  },
+  {
+   "bytes": 110824,
+   "category": "Pokemon",
+   "id": "A3-156",
+   "illustrator": "Saboteri",
+   "language": "fr",
+   "name_language": "fr",
+   "names": {
+    "en": "Alolan Exeggutor",
+    "fr": "Noadkokod'Alola"
+   },
+   "number": "156",
+   "path": "a3-gardiens-astraux/a3-156-noadkokod-alola.webp",
+   "rarity": "One Star",
+   "set": "A3",
+   "sha256": "0a5cb29a5afb3209195fe6c9592b94f06769393118e4112766f6d01b812b73f8",
+   "url": "[adresse retirée]"
+  },
+  {
+   "bytes": 84390,
+   "category": "Pokemon",
+   "id": "A3-157",
+   "illustrator": "kamonabe",
+   "language": "fr",
+   "name_language": "fr",
+   "names": {
+    "en": "Morelull",
+    "fr": "Spododo"
+   },
+   "number": "157",
+   "path": "a3-gardiens-astraux/a3-157-spododo.webp",
+   "rarity": "One Star",
+   "set": "A3",
+   "sha256": "4b470197b62f00a58f1e05f14d2e8f30d24602a3bd1deb96d9501e6774449069",
+   "url": "[adresse retirée]"
+  },
+  {
+   "bytes": 76480,
+   "category": "Pokemon",
+   "id": "A3-158",
+   "illustrator": "Ligton",
+   "language": "fr",
+   "name_language": "fr",
+   "names": {
+    "en": "Tsareena",
+    "fr": "Sucreine"
+   },
+   "number": "158",
+   "path": "a3-gardiens-astraux/a3-158-sucreine.webp",
+   "rarity": "One Star",
+   "set": "A3",
+   "sha256": "36df0caa28878c698af059f20c6025129f980758ba955cc684b4495965d7309b",
+   "url": "[adresse retirée]"
+  },
+  {
+   "bytes": 95406,
+   "category": "Pokemon",
+   "id": "A3-159",
+   "illustrator": "OKACHEKE",
+   "language": "fr",
+   "name_language": "fr",
+   "names": {
+    "en": "Tapu Bulu",
+    "fr": "Tokotoro"
+   },
+   "number": "159",
+   "path": "a3-gardiens-astraux/a3-159-tokotoro.webp",
+   "rarity": "One Star",
+   "set": "A3",
+   "sha256": "e0f690017c0ec7210bee8cd59eafaf4bd062a6278136b969c58492e722597650",
+   "url": "[adresse retirée]"
+  },
+  {
+   "bytes": 99186,
+   "category": "Pokemon",
+   "id": "A3-160",
+   "illustrator": "Gemi",
+   "language": "fr",
+   "name_language": "fr",
+   "names": {
+    "en": "Alolan Marowak",
+    "fr": "Ossatueurd'Alola"
+   },
+   "number": "160",
+   "path": "a3-gardiens-astraux/a3-160-ossatueurd-alola.webp",
+   "rarity": "One Star",
+   "set": "A3",
+   "sha256": "06d94efc321fc1a6d9eea38a8261df38fa0bb4aa4c781451306dcb8d9fc58665",
+   "url": "[adresse retirée]"
+  },
+  {
+   "bytes": 104058,
+   "category": "Pokemon",
+   "id": "A3-161",
+   "illustrator": "akagi",
+   "language": "fr",
+   "name_language": "fr",
+   "names": {
+    "en": "Turtonator",
+    "fr": "Boumata"
+   },
+   "number": "161",
+   "path": "a3-gardiens-astraux/a3-161-boumata.webp",
+   "rarity": "One Star",
+   "set": "A3",
+   "sha256": "a35393406861d6e25f5fc611c821f7417a3eb559222dbc489ab7bac7b04662b0",
+   "url": "[adresse retirée]"
+  },
+  {
+   "bytes": 60808,
+   "category": "Pokemon",
+   "id": "A3-162",
+   "illustrator": "tono",
+   "language": "fr",
+   "name_language": "fr",
+   "names": {
+    "en": "Alolan Vulpix",
+    "fr": "Goupixd'Alola"
+   },
+   "number": "162",
+   "path": "a3-gardiens-astraux/a3-162-goupixd-alola.webp",
+   "rarity": "One Star",
+   "set": "A3",
+   "sha256": "854948757e42138953d3180d5b8a6efe6fa7ff511c16e90bb33c640a77f952ff",
+   "url": "[adresse retirée]"
+  },
+  {
+   "bytes": 55656,
+   "category": "Pokemon",
+   "id": "A3-163",
+   "illustrator": "Toshinao Aoki",
+   "language": "fr",
+   "name_language": "fr",
+   "names": {
+    "en": "Pyukumuku",
+    "fr": "Concombaffe"
+   },
+   "number": "163",
+   "path": "a3-gardiens-astraux/a3-163-concombaffe.webp",
+   "rarity": "One Star",
+   "set": "A3",
+   "sha256": "7c791101e7271de57572127f54817587beacd6b5ab6e4eabeebd243e08962805",
+   "url": "[adresse retirée]"
+  },
+  {
+   "bytes": 95340,
+   "category": "Pokemon",
+   "id": "A3-164",
+   "illustrator": "OKACHEKE",
+   "language": "fr",
+   "name_language": "fr",
+   "names": {
+    "en": "Tapu Fini",
+    "fr": "Tokopisco"
+   },
+   "number": "164",
+   "path": "a3-gardiens-astraux/a3-164-tokopisco.webp",
+   "rarity": "One Star",
+   "set": "A3",
+   "sha256": "082dc5fd3c11c3cfe6bb2f204c53e9f96f4bda11163be1a6ecdb8da53d2a25fe",
+   "url": "[adresse retirée]"
+  },
+  {
+   "bytes": 86956,
+   "category": "Pokemon",
+   "id": "A3-165",
+   "illustrator": "USGMEN",
+   "language": "fr",
+   "name_language": "fr",
+   "names": {
+    "en": "Oricorio",
+    "fr": "Plumeline"
+   },
+   "number": "165",
+   "path": "a3-gardiens-astraux/a3-165-plumeline.webp",
+   "rarity": "One Star",
+   "set": "A3",
+   "sha256": "7ff44342d3fdb53a17db508a9c5c0c7beb4bc5a9c494bc44e23fdedbb5c80460",
+   "url": "[adresse retirée]"
+  },
+  {
+   "bytes": 97518,
+   "category": "Pokemon",
+   "id": "A3-166",
+   "illustrator": "OKACHEKE",
+   "language": "fr",
+   "name_language": "fr",
+   "names": {
+    "en": "Tapu Koko",
+    "fr": "Tokorico"
+   },
+   "number": "166",
+   "path": "a3-gardiens-astraux/a3-166-tokorico.webp",
+   "rarity": "One Star",
+   "set": "A3",
+   "sha256": "0744e6f4ee0d70c95bde4857876da99808ed7d9d61b2c6167517ea7dd1158295",
+   "url": "[adresse retirée]"
+  },
+  {
+   "bytes": 86446,
+   "category": "Pokemon",
+   "id": "A3-167",
+   "illustrator": "kamonabe",
+   "language": "fr",
+   "name_language": "fr",
+   "names": {
+    "en": "Cutiefly",
+    "fr": "Bombydou"
+   },
+   "number": "167",
+   "path": "a3-gardiens-astraux/a3-167-bombydou.webp",
+   "rarity": "One Star",
+   "set": "A3",
+   "sha256": "f866100c21c6c7a99ad2af866811cfb6975f004ebeb5f936fc5ee7797b039122",
+   "url": "[adresse retirée]"
+  },
+  {
+   "bytes": 78126,
+   "category": "Pokemon",
+   "id": "A3-168",
+   "illustrator": "mashu",
+   "language": "fr",
+   "name_language": "fr",
+   "names": {
+    "en": "Comfey",
+    "fr": "Guérilande"
+   },
+   "number": "168",
+   "path": "a3-gardiens-astraux/a3-168-guerilande.webp",
+   "rarity": "One Star",
+   "set": "A3",
+   "sha256": "6e9a51ce157901b3827ce17ee4189e716358749813c29d084a590f91b8c9ab5e",
+   "url": "[adresse retirée]"
+  },
+  {
+   "bytes": 112858,
+   "category": "Pokemon",
+   "id": "A3-169",
+   "illustrator": "Yukihiro Tada",
+   "language": "fr",
+   "name_language": "fr",
+   "names": {
+    "en": "Sandygast",
+    "fr": "Bacabouh"
+   },
+   "number": "169",
+   "path": "a3-gardiens-astraux/a3-169-bacabouh.webp",
+   "rarity": "One Star",
+   "set": "A3",
+   "sha256": "5212327594c9e488c6ca9780852f12fb8b2b0b2dc490e25357aed86647ca6aa5",
+   "url": "[adresse retirée]"
+  },
+  {
+   "bytes": 94688,
+   "category": "Pokemon",
+   "id": "A3-170",
+   "illustrator": "OKACHEKE",
+   "language": "fr",
+   "name_language": "fr",
+   "names": {
+    "en": "Tapu Lele",
+    "fr": "Tokopiyon"
+   },
+   "number": "170",
+   "path": "a3-gardiens-astraux/a3-170-tokopiyon.webp",
+   "rarity": "One Star",
+   "set": "A3",
+   "sha256": "5db1507c88b40b3d5ce8d2477b06807ef3d9770e3db535a5c779adf1d36eeb4a",
+   "url": "[adresse retirée]"
+  },
+  {
+   "bytes": 65238,
+   "category": "Pokemon",
+   "id": "A3-171",
+   "illustrator": "Yoko Hishida",
+   "language": "fr",
+   "name_language": "fr",
+   "names": {
+    "en": "Cosmog",
+    "fr": "Cosmog"
+   },
+   "number": "171",
+   "path": "a3-gardiens-astraux/a3-171-cosmog.webp",
+   "rarity": "One Star",
+   "set": "A3",
+   "sha256": "22fd5125aaf2af51769a871971c6162908947e4f92e1a19c2c57ce0189a6ce13",
+   "url": "[adresse retirée]"
+  },
+  {
+   "bytes": 72956,
+   "category": "Pokemon",
+   "id": "A3-172",
+   "illustrator": "mele",
+   "language": "fr",
+   "name_language": "fr",
+   "names": {
+    "en": "Rockruff",
+    "fr": "Rocabot"
+   },
+   "number": "172",
+   "path": "a3-gardiens-astraux/a3-172-rocabot.webp",
+   "rarity": "One Star",
+   "set": "A3",
+   "sha256": "ce676b8ac21ab87ba6a50ff26f67a13fdab7f0ea4fb40e4a12c8b1a7e7b72628",
+   "url": "[adresse retirée]"
+  },
+  {
+   "bytes": 85110,
+   "category": "Pokemon",
+   "id": "A3-173",
+   "illustrator": "Teeziro",
+   "language": "fr",
+   "name_language": "fr",
+   "names": {
+    "en": "Mudsdale",
+    "fr": "Bourrinos"
+   },
+   "number": "173",
+   "path": "a3-gardiens-astraux/a3-173-bourrinos.webp",
+   "rarity": "One Star",
+   "set": "A3",
+   "sha256": "648767baaf8a91c6821cab4ba87d86af156f006da890b446845cc1b491378622",
+   "url": "[adresse retirée]"
+  },
+  {
+   "bytes": 75432,
+   "category": "Pokemon",
+   "id": "A3-174",
+   "illustrator": "imoniii",
+   "language": "fr",
+   "name_language": "fr",
+   "names": {
+    "en": "Minior",
+    "fr": "Météno"
+   },
+   "number": "174",
+   "path": "a3-gardiens-astraux/a3-174-meteno.webp",
+   "rarity": "One Star",
+   "set": "A3",
+   "sha256": "0c84e5102782a965cdd3fd517f3eed805faa0d1f669d42b8aab2032b2e198c59",
+   "url": "[adresse retirée]"
+  },
+  {
+   "bytes": 88588,
+   "category": "Pokemon",
+   "id": "A3-175",
+   "illustrator": "Kuroimori",
+   "language": "fr",
+   "name_language": "fr",
+   "names": {
+    "en": "Magearna",
+    "fr": "Magearna"
+   },
+   "number": "175",
+   "path": "a3-gardiens-astraux/a3-175-magearna.webp",
+   "rarity": "One Star",
+   "set": "A3",
+   "sha256": "948fc0cfd61fab1bc6019f04cec6ed53bcfc64e144e6355d23a8dfa2283db851",
+   "url": "[adresse retirée]"
+  },
+  {
+   "bytes": 135734,
+   "category": "Pokemon",
+   "id": "A3-176",
+   "illustrator": "Shinji Kanda",
+   "language": "fr",
+   "name_language": "fr",
+   "names": {
+    "en": "Drampa",
+    "fr": "Draïeul"
+   },
+   "number": "176",
+   "path": "a3-gardiens-astraux/a3-176-draieul.webp",
+   "rarity": "One Star",
+   "set": "A3",
+   "sha256": "1e57f3c92093201b6a52e3fd499f5ef6bd5f4b14772014ec98cdca6dc354ad50",
+   "url": "[adresse retirée]"
+  },
+  {
+   "bytes": 81782,
+   "category": "Pokemon",
+   "id": "A3-177",
+   "illustrator": "Narumi Sato",
+   "language": "fr",
+   "name_language": "fr",
+   "names": {
+    "en": "Pikipek",
+    "fr": "Picassaut"
+   },
+   "number": "177",
+   "path": "a3-gardiens-astraux/a3-177-picassaut.webp",
+   "rarity": "One Star",
+   "set": "A3",
+   "sha256": "14e4b5214f077e75c9cf8b06bd73ed4616102b3458b684fe68274df781fe9b54",
+   "url": "[adresse retirée]"
+  },
+  {
+   "bytes": 68124,
+   "category": "Pokemon",
+   "id": "A3-178",
+   "illustrator": "Tomowaka",
+   "language": "fr",
+   "name_language": "fr",
+   "names": {
+    "en": "Bewear",
+    "fr": "Chelours"
+   },
+   "number": "178",
+   "path": "a3-gardiens-astraux/a3-178-chelours.webp",
+   "rarity": "One Star",
+   "set": "A3",
+   "sha256": "01c780edbb6565b85b771aa1d9a54d7390c521b97e7bf68d35f81f3931bc30f6",
+   "url": "[adresse retirée]"
+  },
+  {
+   "bytes": 80594,
+   "category": "Pokemon",
+   "id": "A3-179",
+   "illustrator": "GOTO minori",
+   "language": "fr",
+   "name_language": "fr",
+   "names": {
+    "en": "Komala",
+    "fr": "Dodoala"
+   },
+   "number": "179",
+   "path": "a3-gardiens-astraux/a3-179-dodoala.webp",
+   "rarity": "One Star",
+   "set": "A3",
+   "sha256": "47f1512ffe495de1be8b4b9fe4e778d650d38d06c0b14984ae81db40b79cefca",
+   "url": "[adresse retirée]"
+  },
+  {
+   "bytes": 68152,
+   "category": "Pokemon",
+   "id": "A3-198",
+   "illustrator": "Takumi Wada",
+   "language": "fr",
+   "name_language": "fr",
+   "names": {
+    "en": "Decidueye ex",
+    "fr": "Archéduc-ex"
+   },
+   "number": "198",
+   "path": "a3-gardiens-astraux/a3-198-archeduc-ex.webp",
+   "rarity": "Two Star",
+   "set": "A3",
+   "sha256": "3021ad49afedbe99273cef8773a3f3a3cf9f0275f09063c4106705307d439f77",
+   "url": "[adresse retirée]"
+  },
+  {
+   "bytes": 79962,
+   "category": "Pokemon",
+   "id": "A3-199",
+   "illustrator": "IKEDA Saki",
+   "language": "fr",
+   "name_language": "fr",
+   "names": {
+    "en": "Dhelmise ex",
+    "fr": "Sinistrail-ex"
+   },
+   "number": "199",
+   "path": "a3-gardiens-astraux/a3-199-sinistrail-ex.webp",
+   "rarity": "Two Star",
+   "set": "A3",
+   "sha256": "9c3b590d170d38099a038bdbb92ffa4bd4a15486f4f6aaa0aba44d779d9e8ce4",
+   "url": "[adresse retirée]"
+  },
+  {
+   "bytes": 105930,
+   "category": "Pokemon",
+   "id": "A3-200",
+   "illustrator": "Kazumasa Yasukuni",
+   "language": "fr",
+   "name_language": "fr",
+   "names": {
+    "en": "Incineroar ex",
+    "fr": "Félinferno-ex"
+   },
+   "number": "200",
+   "path": "a3-gardiens-astraux/a3-200-felinferno-ex.webp",
+   "rarity": "Two Star",
+   "set": "A3",
+   "sha256": "dbd8c25c3f7750d06f3ca3982d3e6a2e7603d0480acff38b75494c1511885f5f",
+   "url": "[adresse retirée]"
+  },
+  {
+   "bytes": 52060,
+   "category": "Pokemon",
+   "id": "A3-201",
+   "illustrator": "Miki Tanaka",
+   "language": "fr",
+   "name_language": "fr",
+   "names": {
+    "en": "Crabominable ex",
+    "fr": "Crabominable-ex"
+   },
+   "number": "201",
+   "path": "a3-gardiens-astraux/a3-201-crabominable-ex.webp",
+   "rarity": "Two Star",
+   "set": "A3",
+   "sha256": "0aa29424c8999f5ea966d29248ec05d819976eb1a1a6981bf187f9f0419db6a8",
+   "url": "[adresse retirée]"
+  },
+  {
+   "bytes": 52978,
+   "category": "Pokemon",
+   "id": "A3-202",
+   "illustrator": "Nurikabe",
+   "language": "fr",
+   "name_language": "fr",
+   "names": {
+    "en": "Wishiwashi ex",
+    "fr": "Froussardine-ex"
+   },
+   "number": "202",
+   "path": "a3-gardiens-astraux/a3-202-froussardine-ex.webp",
+   "rarity": "Two Star",
+   "set": "A3",
+   "sha256": "592f5cbffec81dba32e8cfec7f7ea255277eed1f78256d34e4762fe432af1e3c",
+   "url": "[adresse retirée]"
+  },
+  {
+   "bytes": 89064,
+   "category": "Pokemon",
+   "id": "A3-203",
+   "illustrator": "Yoshimi Miyoshi",
+   "language": "fr",
+   "name_language": "fr",
+   "names": {
+    "en": "Alolan Raichu ex",
+    "fr": "Raichud'Alola-ex"
+   },
+   "number": "203",
+   "path": "a3-gardiens-astraux/a3-203-raichud-alola-ex.webp",
+   "rarity": "Two Star",
+   "set": "A3",
+   "sha256": "d99a9d23df1ba9457d157d61d94764e96cb441ccbca19a36c8411c0a022da135",
+   "url": "[adresse retirée]"
+  },
+  {
+   "bytes": 100982,
+   "category": "Pokemon",
+   "id": "A3-204",
+   "illustrator": "AKIRA EGAWA",
+   "language": "fr",
+   "name_language": "fr",
+   "names": {
+    "en": "Lunala ex",
+    "fr": "Lunala-ex"
+   },
+   "number": "204",
+   "path": "a3-gardiens-astraux/a3-204-lunala-ex.webp",
+   "rarity": "Two Star",
+   "set": "A3",
+   "sha256": "a42fa217d75f2930d5bb262cf2d17af214b5ac630b53e4163d659e7a28fde4bb",
+   "url": "[adresse retirée]"
+  },
+  {
+   "bytes": 96690,
+   "category": "Pokemon",
+   "id": "A3-205",
+   "illustrator": "Taiga Kayama",
+   "language": "fr",
+   "name_language": "fr",
+   "names": {
+    "en": "Passimian ex",
+    "fr": "Quartermac-ex"
+   },
+   "number": "205",
+   "path": "a3-gardiens-astraux/a3-205-quartermac-ex.webp",
+   "rarity": "Two Star",
+   "set": "A3",
+   "sha256": "1c444bcc7b1f33f5eeeccee9f211480a26f9f7b06a7ec651dbb91c56ec1ac633",
+   "url": "[adresse retirée]"
+  },
+  {
+   "bytes": 85846,
+   "category": "Pokemon",
+   "id": "A3-206",
+   "illustrator": "Jerky",
+   "language": "fr",
+   "name_language": "fr",
+   "names": {
+    "en": "Alolan Muk ex",
+    "fr": "Grotadmorvd'Alola-ex"
+   },
+   "number": "206",
+   "path": "a3-gardiens-astraux/a3-206-grotadmorvd-alola-ex.webp",
+   "rarity": "Two Star",
+   "set": "A3",
+   "sha256": "d601a9fee40ddc0be02c046add877adb40d669c2f2289af05c9719802f81c750",
+   "url": "[adresse retirée]"
+  },
+  {
+   "bytes": 104030,
+   "category": "Pokemon",
+   "id": "A3-207",
+   "illustrator": "AKIRA EGAWA",
+   "language": "fr",
+   "name_language": "fr",
+   "names": {
+    "en": "Solgaleo ex",
+    "fr": "Solgaleo-ex"
+   },
+   "number": "207",
+   "path": "a3-gardiens-astraux/a3-207-solgaleo-ex.webp",
+   "rarity": "Two Star",
+   "set": "A3",
+   "sha256": "eacbd58f346aebd2c4b9f5f0cf3a0bf0f4e8b14cc10ab8a5e732f2b30ad89bd2",
+   "url": "[adresse retirée]"
+  },
+  {
+   "bytes": 73644,
+   "category": "Trainer",
+   "id": "A3-208",
+   "illustrator": "danciao",
+   "language": "fr",
+   "name_language": "fr",
+   "names": {
+    "en": "Guzma",
+    "fr": "Guzma"
+   },
+   "number": "208",
+   "path": "a3-gardiens-astraux/a3-208-guzma.webp",
+   "rarity": "Three Star",
+   "set": "A3",
+   "sha256": "e86065cae93bbdbc99ece92306e988872ee3cc7b6dea95d1dfb550524c7cf17e",
+   "url": "[adresse retirée]"
+  },
+  {
+   "bytes": 68892,
+   "category": "Trainer",
+   "id": "A3-209",
+   "illustrator": "Atsushi Furusawa",
+   "language": "fr",
+   "name_language": "fr",
+   "names": {
+    "en": "Lillie",
+    "fr": "Lilie"
+   },
+   "number": "209",
+   "path": "a3-gardiens-astraux/a3-209-lilie.webp",
+   "rarity": "Three Star",
+   "set": "A3",
+   "sha256": "b977959763eb0d6c1bd893eb0014393de993b931b620e514c54ab2d335da1e78",
+   "url": "[adresse retirée]"
+  },
+  {
+   "bytes": 79706,
+   "category": "Pokemon",
+   "id": "A3a-070",
+   "illustrator": "OKACHEKE",
+   "language": "fr",
+   "name_language": "fr",
+   "names": {
+    "en": "Rowlet",
+    "fr": "Brindibou"
+   },
+   "number": "070",
+   "path": "a3a-crise-interdimensionnelle/a3a-070-brindibou.webp",
+   "rarity": "One Star",
+   "set": "A3a",
+   "sha256": "73ba2e8756722855b42e2573a14f6f779ada4ce1c30337494e373fada6210426",
+   "url": "[adresse retirée]"
+  },
+  {
+   "bytes": 54982,
+   "category": "Pokemon",
+   "id": "A3a-071",
+   "illustrator": "matazo",
+   "language": "fr",
+   "name_language": "fr",
+   "names": {
+    "en": "Pheromosa",
+    "fr": "Cancrelove"
+   },
+   "number": "071",
+   "path": "a3a-crise-interdimensionnelle/a3a-071-cancrelove.webp",
+   "rarity": "One Star",
+   "set": "A3a",
+   "sha256": "7d6a62f2328a2dba18fa246937452d615c9a8d9922a492e8cb61e076cdc9683d",
+   "url": "[adresse retirée]"
+  },
+  {
+   "bytes": 95300,
+   "category": "Pokemon",
+   "id": "A3a-072",
+   "illustrator": "akagi",
+   "language": "fr",
+   "name_language": "fr",
+   "names": {
+    "en": "Blacephalon",
+    "fr": "Pierroteknik"
+   },
+   "number": "072",
+   "path": "a3a-crise-interdimensionnelle/a3a-072-pierroteknik.webp",
+   "rarity": "One Star",
+   "set": "A3a",
+   "sha256": "ce1a1e85a7a0b724d2f23908d692fc5fae9f6275f50a680ee1ffdaf6fecf14b3",
+   "url": "[adresse retirée]"
+  },
+  {
+   "bytes": 109728,
+   "category": "Pokemon",
+   "id": "A3a-073",
+   "illustrator": "Mina Nakai",
+   "language": "fr",
+   "name_language": "fr",
+   "names": {
+    "en": "Alolan Meowth",
+    "fr": "Miaouss d'Alola"
+   },
+   "number": "073",
+   "path": "a3a-crise-interdimensionnelle/a3a-073-miaouss-d-alola.webp",
+   "rarity": "One Star",
+   "set": "A3a",
+   "sha256": "bfa282e65bc43b8e91610b05d2fa9302ed2125f2079d0ca287cd30701e2bca00",
+   "url": "[adresse retirée]"
+  },
+  {
+   "bytes": 80936,
+   "category": "Pokemon",
+   "id": "A3a-074",
+   "illustrator": "hncl",
+   "language": "fr",
+   "name_language": "fr",
+   "names": {
+    "en": "Silvally",
+    "fr": "Silvallié"
+   },
+   "number": "074",
+   "path": "a3a-crise-interdimensionnelle/a3a-074-silvallie.webp",
+   "rarity": "One Star",
+   "set": "A3a",
+   "sha256": "9a7317440de73d274a8c115dbf1ecf3a0488b0b6c4e802bdd4c0dbf8758fce3d",
+   "url": "[adresse retirée]"
+  },
+  {
+   "bytes": 82856,
+   "category": "Pokemon",
+   "id": "A3a-075",
+   "illustrator": "REND",
+   "language": "fr",
+   "name_language": "fr",
+   "names": {
+    "en": "Celesteela",
+    "fr": "Bamboiselle"
+   },
+   "number": "075",
+   "path": "a3a-crise-interdimensionnelle/a3a-075-bamboiselle.webp",
+   "rarity": "One Star",
+   "set": "A3a",
+   "sha256": "328f31bcaf5167f070d506305a768e9352505d31af4784af452bdf04c5f162f4",
+   "url": "[adresse retirée]"
+  },
+  {
+   "bytes": 109880,
+   "category": "Pokemon",
+   "id": "A3a-084",
+   "illustrator": "Dsuke",
+   "language": "fr",
+   "name_language": "fr",
+   "names": {
+    "en": "Tapu Koko ex",
+    "fr": "Tokorico-ex"
+   },
+   "number": "084",
+   "path": "a3a-crise-interdimensionnelle/a3a-084-tokorico-ex.webp",
+   "rarity": "Two Star",
+   "set": "A3a",
+   "sha256": "fc3edcfe0661b4179ed035601f3ab8ec9da75b943c16c82ef1a36bd2ee6a7de4",
+   "url": "[adresse retirée]"
+  },
+  {
+   "bytes": 67780,
+   "category": "Pokemon",
+   "id": "A3a-085",
+   "illustrator": "Jiro Sasumo",
+   "language": "fr",
+   "name_language": "fr",
+   "names": {
+    "en": "Lycanroc ex",
+    "fr": "Lougaroc-ex"
+   },
+   "number": "085",
+   "path": "a3a-crise-interdimensionnelle/a3a-085-lougaroc-ex.webp",
+   "rarity": "Two Star",
+   "set": "A3a",
+   "sha256": "ab10c491b9d11744e4f6705204b468db099035d04aef5bb1cfca2eb4520dc51f",
+   "url": "[adresse retirée]"
+  },
+  {
+   "bytes": 76056,
+   "category": "Pokemon",
+   "id": "A3a-086",
+   "illustrator": "Nurikabe",
+   "language": "fr",
+   "name_language": "fr",
+   "names": {
+    "en": "Guzzlord ex",
+    "fr": "Engloutyran-ex"
+   },
+   "number": "086",
+   "path": "a3a-crise-interdimensionnelle/a3a-086-engloutyran-ex.webp",
+   "rarity": "Two Star",
+   "set": "A3a",
+   "sha256": "c94be806c813991dc58dd0f367c062c315e030daefc8611f6655fa14dcb8416c",
+   "url": "[adresse retirée]"
+  },
+  {
+   "bytes": 97450,
+   "category": "Pokemon",
+   "id": "A3a-087",
+   "illustrator": "KEIICHIRO ITO",
+   "language": "fr",
+   "name_language": "fr",
+   "names": {
+    "en": "Alolan Dugtrio ex",
+    "fr": "Triopikeur d'Alola-ex"
+   },
+   "number": "087",
+   "path": "a3a-crise-interdimensionnelle/a3a-087-triopikeur-d-alola-ex.webp",
+   "rarity": "Two Star",
+   "set": "A3a",
+   "sha256": "0a1d30b07b0a720c169588cdda2d97e93b2eca10be823fee9b05451704cc978b",
+   "url": "[adresse retirée]"
+  },
+  {
+   "bytes": 79184,
+   "category": "Pokemon",
+   "id": "A3a-088",
+   "illustrator": "akagi",
+   "language": "fr",
+   "name_language": "fr",
+   "names": {
+    "en": "Buzzwole ex",
+    "fr": "Mouscoto-ex"
+   },
+   "number": "088",
+   "path": "a3a-crise-interdimensionnelle/a3a-088-mouscoto-ex.webp",
+   "rarity": "Three Star",
+   "set": "A3a",
+   "sha256": "ab8eae281141c5a715793efbce76d5a97afa9a40452be074f8f355814b3c3c26",
+   "url": "[adresse retirée]"
+  },
+  {
+   "bytes": 99606,
+   "category": "Pokemon",
+   "id": "A3b-070",
+   "illustrator": "Ryota Murayama",
+   "language": "en",
+   "name_language": "en",
+   "names": {
+    "en": "Leafeon",
+    "fr": "Phyllali"
+   },
+   "number": "070",
+   "path": "a3b-la-clairiere-d-evoli/a3b-070-leafeon.webp",
+   "rarity": "One Star",
+   "set": "A3b",
+   "sha256": "7627afec1062434e70e9c4656263ee599989de80418a7b81e843cb00f33a58de",
+   "url": "[adresse retirée]"
+  },
+  {
+   "bytes": 104572,
+   "category": "Pokemon",
+   "id": "A3b-071",
+   "illustrator": "Teeziro",
+   "language": "en",
+   "name_language": "en",
+   "names": {
+    "en": "Flareon",
+    "fr": "Pyroli"
+   },
+   "number": "071",
+   "path": "a3b-la-clairiere-d-evoli/a3b-071-flareon.webp",
+   "rarity": "One Star",
+   "set": "A3b",
+   "sha256": "b3a88a59fe0f7dda13fd10cb76836af86653f36e524ab90587f3f0ae2bbc1592",
+   "url": "[adresse retirée]"
+  },
+  {
+   "bytes": 106596,
+   "category": "Pokemon",
+   "id": "A3b-072",
+   "illustrator": "chibi",
+   "language": "en",
+   "name_language": "en",
+   "names": {
+    "en": "Vaporeon",
+    "fr": "Aquali"
+   },
+   "number": "072",
+   "path": "a3b-la-clairiere-d-evoli/a3b-072-vaporeon.webp",
+   "rarity": "One Star",
+   "set": "A3b",
+   "sha256": "59e977224dfc37a484eb0efa9a39b470aa044dbc9eb501ba68d753aee00dc81b",
+   "url": "[adresse retirée]"
+  },
+  {
+   "bytes": 81236,
+   "category": "Pokemon",
+   "id": "A3b-073",
+   "illustrator": "Fujimoto Gold",
+   "language": "en",
+   "name_language": "en",
+   "names": {
+    "en": "Glaceon",
+    "fr": "Givrali"
+   },
+   "number": "073",
+   "path": "a3b-la-clairiere-d-evoli/a3b-073-glaceon.webp",
+   "rarity": "One Star",
+   "set": "A3b",
+   "sha256": "b082c18062d1b9b7edbb8048ef3e8a5922c85eed482b83879504b5316b8b49e9",
+   "url": "[adresse retirée]"
+  },
+  {
+   "bytes": 113576,
+   "category": "Pokemon",
+   "id": "A3b-074",
+   "illustrator": "Nisota Niso",
+   "language": "en",
+   "name_language": "en",
+   "names": {
+    "en": "Jolteon",
+    "fr": "Voltali"
+   },
+   "number": "074",
+   "path": "a3b-la-clairiere-d-evoli/a3b-074-jolteon.webp",
+   "rarity": "One Star",
+   "set": "A3b",
+   "sha256": "dee38984db00ecbab743c2c873f5bec625ec8c2176249c4475adc523a83053a3",
+   "url": "[adresse retirée]"
+  },
+  {
+   "bytes": 110200,
+   "category": "Pokemon",
+   "id": "A3b-075",
+   "illustrator": "rika",
+   "language": "en",
+   "name_language": "en",
+   "names": {
+    "en": "Espeon",
+    "fr": "Mentali"
+   },
+   "number": "075",
+   "path": "a3b-la-clairiere-d-evoli/a3b-075-espeon.webp",
+   "rarity": "One Star",
+   "set": "A3b",
+   "sha256": "77f8b2230e2741a76f0610377e4bd5bbc6092825761acde5ed6c521854a6e7db",
+   "url": "[adresse retirée]"
+  },
+  {
+   "bytes": 99554,
+   "category": "Pokemon",
+   "id": "A3b-076",
+   "illustrator": "saino misaki",
+   "language": "en",
+   "name_language": "en",
+   "names": {
+    "en": "Sylveon",
+    "fr": "Nymphali"
+   },
+   "number": "076",
+   "path": "a3b-la-clairiere-d-evoli/a3b-076-sylveon.webp",
+   "rarity": "One Star",
+   "set": "A3b",
+   "sha256": "f91bbf1db71cfa3d5d665dc14e3d247fe17692c75cadec2c68d57927986d3e1c",
+   "url": "[adresse retirée]"
+  },
+  {
+   "bytes": 84628,
+   "category": "Pokemon",
+   "id": "A3b-077",
+   "illustrator": "kawayoo",
+   "language": "en",
+   "name_language": "en",
+   "names": {
+    "en": "Umbreon",
+    "fr": "Noctali"
+   },
+   "number": "077",
+   "path": "a3b-la-clairiere-d-evoli/a3b-077-umbreon.webp",
+   "rarity": "One Star",
+   "set": "A3b",
+   "sha256": "01c2a431268e153294e9f53352a78d1a4d93fc0ccc1702d2968f9e44898b7d18",
+   "url": "[adresse retirée]"
+  },
+  {
+   "bytes": 109768,
+   "category": "Pokemon",
+   "id": "A3b-078",
+   "illustrator": "Narumi Sato",
+   "language": "en",
+   "name_language": "en",
+   "names": {
+    "en": "Eevee",
+    "fr": "Évoli"
+   },
+   "number": "078",
+   "path": "a3b-la-clairiere-d-evoli/a3b-078-eevee.webp",
+   "rarity": "One Star",
+   "set": "A3b",
+   "sha256": "2c13fb7d61e0f4b9d434bd27616e040059483a66f66de1fb4f90033760707a7c",
+   "url": "[adresse retirée]"
+  },
+  {
+   "bytes": 139648,
+   "category": "Pokemon",
+   "id": "A3b-087",
+   "illustrator": "Kuroimori",
+   "language": "en",
+   "name_language": "en",
+   "names": {
+    "en": "Flareon ex",
+    "fr": "Pyroli-ex"
+   },
+   "number": "087",
+   "path": "a3b-la-clairiere-d-evoli/a3b-087-flareon-ex.webp",
+   "rarity": "Two Star",
+   "set": "A3b",
+   "sha256": "3eba171e9e86ed0a3453a0055e57c197978bffa0053ab56b89a784ebd02b0193",
+   "url": "[adresse retirée]"
+  },
+  {
+   "bytes": 96908,
+   "category": "Pokemon",
+   "id": "A3b-088",
+   "illustrator": "DOM",
+   "language": "en",
+   "name_language": "en",
+   "names": {
+    "en": "Primarina ex",
+    "fr": "Oratoria-ex"
+   },
+   "number": "088",
+   "path": "a3b-la-clairiere-d-evoli/a3b-088-primarina-ex.webp",
+   "rarity": "Two Star",
+   "set": "A3b",
+   "sha256": "977a222c22f21eaba16520f115f3f75b6c05293965f4f47824b1c14c5231577d",
+   "url": "[adresse retirée]"
+  },
+  {
+   "bytes": 99514,
+   "category": "Pokemon",
+   "id": "A3b-089",
+   "illustrator": "Yuu Nishida",
+   "language": "en",
+   "name_language": "en",
+   "names": {
+    "en": "Sylveon ex",
+    "fr": "Nymphali-ex"
+   },
+   "number": "089",
+   "path": "a3b-la-clairiere-d-evoli/a3b-089-sylveon-ex.webp",
+   "rarity": "Two Star",
+   "set": "A3b",
+   "sha256": "35e85f01251748390520849537ffd08b32827c52634c08666e48ea35ad4127a3",
+   "url": "[adresse retirée]"
+  },
+  {
+   "bytes": 116496,
+   "category": "Pokemon",
+   "id": "A3b-090",
+   "illustrator": "Mori Yuu",
+   "language": "en",
+   "name_language": "en",
+   "names": {
+    "en": "Dragonite ex",
+    "fr": "Dracolosse-ex"
+   },
+   "number": "090",
+   "path": "a3b-la-clairiere-d-evoli/a3b-090-dragonite-ex.webp",
+   "rarity": "Two Star",
+   "set": "A3b",
+   "sha256": "7a1bbafe405f81918793253d23ce95f6c67d729ba62cb9807d67e6bb94baf302",
+   "url": "[adresse retirée]"
+  },
+  {
+   "bytes": 78066,
+   "category": "Pokemon",
+   "id": "A3b-091",
+   "illustrator": "Mékayu",
+   "language": "en",
+   "name_language": "en",
+   "names": {
+    "en": "Snorlax ex",
+    "fr": "Ronflex-ex"
+   },
+   "number": "091",
+   "path": "a3b-la-clairiere-d-evoli/a3b-091-snorlax-ex.webp",
+   "rarity": "Two Star",
+   "set": "A3b",
+   "sha256": "ef2c8d36c9fadaa6db555c8bd60e5b8ec3ff5d5659223fc5d11fa3aa1f9a32c9",
+   "url": "[adresse retirée]"
+  },
+  {
+   "bytes": 110708,
+   "category": "Pokemon",
+   "id": "A3b-092",
+   "illustrator": "kurumitsu",
+   "language": "en",
+   "name_language": "en",
+   "names": {
+    "en": "Eevee ex",
+    "fr": "Évoli-ex"
+   },
+   "number": "092",
+   "path": "a3b-la-clairiere-d-evoli/a3b-092-eevee-ex.webp",
+   "rarity": "Three Star",
+   "set": "A3b",
+   "sha256": "f331c53083855dc741357451e7380324242e1c05035e51a9e099ba3d09450d0d",
+   "url": "[adresse retirée]"
+  },
+  {
+   "bytes": 91462,
+   "category": "Pokemon",
+   "id": "A4-162",
+   "illustrator": "Keisin",
+   "language": "fr",
+   "name_language": "fr",
+   "names": {
+    "en": "Chikorita",
+    "fr": "Germignon"
+   },
+   "number": "162",
+   "path": "a4-sagesse-entre-ciel-et-mer/a4-162-germignon.webp",
+   "rarity": "One Star",
+   "set": "A4",
+   "sha256": "55f1323e0ca42cc5f38ccd573b7a02b6148dfc3650d6ca5a38d938896659af88",
+   "url": "[adresse retirée]"
+  },
+  {
+   "bytes": 92764,
+   "category": "Pokemon",
+   "id": "A4-163",
+   "illustrator": "Yuka Tanaka",
+   "language": "fr",
+   "name_language": "fr",
+   "names": {
+    "en": "Bellossom",
+    "fr": "Joliflor"
+   },
+   "number": "163",
+   "path": "a4-sagesse-entre-ciel-et-mer/a4-163-joliflor.webp",
+   "rarity": "One Star",
+   "set": "A4",
+   "sha256": "145ec4bb93026515b0f63d14bb0d6cbdd252a23c8dcb74bfb6e57cbe1abfa115",
+   "url": "[adresse retirée]"
+  },
+  {
+   "bytes": 93322,
+   "category": "Pokemon",
+   "id": "A4-164",
+   "illustrator": "GOSSAN",
+   "language": "fr",
+   "name_language": "fr",
+   "names": {
+    "en": "Heracross",
+    "fr": "Scarhino"
+   },
+   "number": "164",
+   "path": "a4-sagesse-entre-ciel-et-mer/a4-164-scarhino.webp",
+   "rarity": "One Star",
+   "set": "A4",
+   "sha256": "00a5ba3c755dd26c548a22ab09c29de35d27b508e5bd582b6e657750fc413ac3",
+   "url": "[adresse retirée]"
+  },
+  {
+   "bytes": 86330,
+   "category": "Pokemon",
+   "id": "A4-165",
+   "illustrator": "buchi",
+   "language": "fr",
+   "name_language": "fr",
+   "names": {
+    "en": "Cyndaquil",
+    "fr": "Héricendre"
+   },
+   "number": "165",
+   "path": "a4-sagesse-entre-ciel-et-mer/a4-165-hericendre.webp",
+   "rarity": "One Star",
+   "set": "A4",
+   "sha256": "6f074f456ef3aaaf73d6df3a94ee9dd32bcc9ed62c48268383a240a2d5a61a2c",
+   "url": "[adresse retirée]"
+  },
+  {
+   "bytes": 78316,
+   "category": "Pokemon",
+   "id": "A4-166",
+   "illustrator": "Makura Tami",
+   "language": "fr",
+   "name_language": "fr",
+   "names": {
+    "en": "Magby",
+    "fr": "Magby"
+   },
+   "number": "166",
+   "path": "a4-sagesse-entre-ciel-et-mer/a4-166-magby.webp",
+   "rarity": "One Star",
+   "set": "A4",
+   "sha256": "3168ebb64c8687b1c5bb116b8fe2f311d48031acb46fada2589ece1d66bff678",
+   "url": "[adresse retirée]"
+  },
+  {
+   "bytes": 92512,
+   "category": "Pokemon",
+   "id": "A4-167",
+   "illustrator": "Ayako Ozaki",
+   "language": "fr",
+   "name_language": "fr",
+   "names": {
+    "en": "Totodile",
+    "fr": "Kaiminus"
+   },
+   "number": "167",
+   "path": "a4-sagesse-entre-ciel-et-mer/a4-167-kaiminus.webp",
+   "rarity": "One Star",
+   "set": "A4",
+   "sha256": "6bf8c668d5ccf8d943a334faca60dd67344d98a003ccf8ce8e3345b245baadf1",
+   "url": "[adresse retirée]"
+  },
+  {
+   "bytes": 66040,
+   "category": "Pokemon",
+   "id": "A4-168",
+   "illustrator": "June",
+   "language": "fr",
+   "name_language": "fr",
+   "names": {
+    "en": "Qwilfish",
+    "fr": "Qwilfish"
+   },
+   "number": "168",
+   "path": "a4-sagesse-entre-ciel-et-mer/a4-168-qwilfish.webp",
+   "rarity": "One Star",
+   "set": "A4",
+   "sha256": "3337def5f4417986dfa7aff7f874f8984f8c32075bcf5a3e1863b3170eba61e9",
+   "url": "[adresse retirée]"
+  },
+  {
+   "bytes": 83652,
+   "category": "Pokemon",
+   "id": "A4-169",
+   "illustrator": "REND",
+   "language": "fr",
+   "name_language": "fr",
+   "names": {
+    "en": "Octillery",
+    "fr": "Octillery"
+   },
+   "number": "169",
+   "path": "a4-sagesse-entre-ciel-et-mer/a4-169-octillery.webp",
+   "rarity": "One Star",
+   "set": "A4",
+   "sha256": "a09e81c5d872dcbf29476a9012a281346868093eaf213dee3a738c0e3f39de57",
+   "url": "[adresse retirée]"
+  },
+  {
+   "bytes": 76474,
+   "category": "Pokemon",
+   "id": "A4-170",
+   "illustrator": "Mékayu",
+   "language": "fr",
+   "name_language": "fr",
+   "names": {
+    "en": "Delibird",
+    "fr": "Cadoizo"
+   },
+   "number": "170",
+   "path": "a4-sagesse-entre-ciel-et-mer/a4-170-cadoizo.webp",
+   "rarity": "One Star",
+   "set": "A4",
+   "sha256": "0fb2d98ec56a3873366eea3a7302a2c95be744d2d0286e414fe01a25d0e492e9",
+   "url": "[adresse retirée]"
+  },
+  {
+   "bytes": 49702,
+   "category": "Pokemon",
+   "id": "A4-171",
+   "illustrator": "Kanami Ogata",
+   "language": "fr",
+   "name_language": "fr",
+   "names": {
+    "en": "Pichu",
+    "fr": "Pichu"
+   },
+   "number": "171",
+   "path": "a4-sagesse-entre-ciel-et-mer/a4-171-pichu.webp",
+   "rarity": "One Star",
+   "set": "A4",
+   "sha256": "9dccff9e2d3b90a5e61ec1c54712942e2418d66665711bf96526ed28a989be20",
+   "url": "[adresse retirée]"
+  },
+  {
+   "bytes": 99364,
+   "category": "Pokemon",
+   "id": "A4-172",
+   "illustrator": "Whisker",
+   "language": "fr",
+   "name_language": "fr",
+   "names": {
+    "en": "Ampharos",
+    "fr": "Pharamp"
+   },
+   "number": "172",
+   "path": "a4-sagesse-entre-ciel-et-mer/a4-172-pharamp.webp",
+   "rarity": "One Star",
+   "set": "A4",
+   "sha256": "5d566d2b9385b775689ef807b01a12d57ad0bf6f86c9800a82f1274d0d86969d",
+   "url": "[adresse retirée]"
+  },
+  {
+   "bytes": 70402,
+   "category": "Pokemon",
+   "id": "A4-173",
+   "illustrator": "Terada Tera",
+   "language": "fr",
+   "name_language": "fr",
+   "names": {
+    "en": "Togepi",
+    "fr": "Togepi"
+   },
+   "number": "173",
+   "path": "a4-sagesse-entre-ciel-et-mer/a4-173-togepi.webp",
+   "rarity": "One Star",
+   "set": "A4",
+   "sha256": "ba8daab6c9eb6f5e6ef64eb6e44a25554d2fce4dab20b80f6c1f9b30cd5f2333",
+   "url": "[adresse retirée]"
+  },
+  {
+   "bytes": 105996,
+   "category": "Pokemon",
+   "id": "A4-174",
+   "illustrator": "Masako Tomii",
+   "language": "fr",
+   "name_language": "fr",
+   "names": {
+    "en": "Xatu",
+    "fr": "Xatu"
+   },
+   "number": "174",
+   "path": "a4-sagesse-entre-ciel-et-mer/a4-174-xatu.webp",
+   "rarity": "One Star",
+   "set": "A4",
+   "sha256": "ada46f58faf4519345e7fe911ea611fc247961de2897bf9a4bd012c477aa3694",
+   "url": "[adresse retirée]"
+  },
+  {
+   "bytes": 76178,
+   "category": "Pokemon",
+   "id": "A4-175",
+   "illustrator": "GOTO minori",
+   "language": "fr",
+   "name_language": "fr",
+   "names": {
+    "en": "Wobbuffet",
+    "fr": "Qulbutoké"
+   },
+   "number": "175",
+   "path": "a4-sagesse-entre-ciel-et-mer/a4-175-qulbutoke.webp",
+   "rarity": "One Star",
+   "set": "A4",
+   "sha256": "695f354cf8a6d773fa5641895861c1c28cb4af678eaf81bc5f9d5406c9252cfb",
+   "url": "[adresse retirée]"
+  },
+  {
+   "bytes": 53818,
+   "category": "Pokemon",
+   "id": "A4-176",
+   "illustrator": "HYOGONOSUKE",
+   "language": "fr",
+   "name_language": "fr",
+   "names": {
+    "en": "Gligar",
+    "fr": "Scorplane"
+   },
+   "number": "176",
+   "path": "a4-sagesse-entre-ciel-et-mer/a4-176-scorplane.webp",
+   "rarity": "One Star",
+   "set": "A4",
+   "sha256": "3fb04772d10ba59ecd2757df4396c3d1dd651d0500f445a6cd1b6470701e32c3",
+   "url": "[adresse retirée]"
+  },
+  {
+   "bytes": 96130,
+   "category": "Pokemon",
+   "id": "A4-177",
+   "illustrator": "IKEDA Saki",
+   "language": "fr",
+   "name_language": "fr",
+   "names": {
+    "en": "Spinarak",
+    "fr": "Mimigal"
+   },
+   "number": "177",
+   "path": "a4-sagesse-entre-ciel-et-mer/a4-177-mimigal.webp",
+   "rarity": "One Star",
+   "set": "A4",
+   "sha256": "5b5c815a10afda2a7906f0450c3be11e1a4b921ba5df5c984eacb49a066497fc",
+   "url": "[adresse retirée]"
+  },
+  {
+   "bytes": 92468,
+   "category": "Pokemon",
+   "id": "A4-178",
+   "illustrator": "kamonabe",
+   "language": "fr",
+   "name_language": "fr",
+   "names": {
+    "en": "Murkrow",
+    "fr": "Cornèbre"
+   },
+   "number": "178",
+   "path": "a4-sagesse-entre-ciel-et-mer/a4-178-cornebre.webp",
+   "rarity": "One Star",
+   "set": "A4",
+   "sha256": "b652ae306ac2bbd9af12f50174eafb7176a4069506c7bf6fd6077083bf74a245",
+   "url": "[adresse retirée]"
+  },
+  {
+   "bytes": 98690,
+   "category": "Pokemon",
+   "id": "A4-179",
+   "illustrator": "Saboteri",
+   "language": "fr",
+   "name_language": "fr",
+   "names": {
+    "en": "Tyranitar",
+    "fr": "Tyranocif"
+   },
+   "number": "179",
+   "path": "a4-sagesse-entre-ciel-et-mer/a4-179-tyranocif.webp",
+   "rarity": "One Star",
+   "set": "A4",
+   "sha256": "16f42ac4eade068565107def0ab006edc7c816808256a4c56741302a144dbe7e",
+   "url": "[adresse retirée]"
+  },
+  {
+   "bytes": 77940,
+   "category": "Pokemon",
+   "id": "A4-180",
+   "illustrator": "danciao",
+   "language": "fr",
+   "name_language": "fr",
+   "names": {
+    "en": "Scizor",
+    "fr": "Cizayox"
+   },
+   "number": "180",
+   "path": "a4-sagesse-entre-ciel-et-mer/a4-180-cizayox.webp",
+   "rarity": "One Star",
+   "set": "A4",
+   "sha256": "6bfa62668c78a38b1e46cf3c9f8afa731207089341bb2c9321e68df307e67a24",
+   "url": "[adresse retirée]"
+  },
+  {
+   "bytes": 74138,
+   "category": "Pokemon",
+   "id": "A4-181",
+   "illustrator": "saino misaki",
+   "language": "fr",
+   "name_language": "fr",
+   "names": {
+    "en": "Sentret",
+    "fr": "Fouinette"
+   },
+   "number": "181",
+   "path": "a4-sagesse-entre-ciel-et-mer/a4-181-fouinette.webp",
+   "rarity": "One Star",
+   "set": "A4",
+   "sha256": "567ee2c4057649aaeffe182a8065c96fb02496b13f4651cc5a192652cb32a4ca",
+   "url": "[adresse retirée]"
+  },
+  {
+   "bytes": 88394,
+   "category": "Pokemon",
+   "id": "A4-182",
+   "illustrator": "Uninori",
+   "language": "fr",
+   "name_language": "fr",
+   "names": {
+    "en": "Hoothoot",
+    "fr": "Hoothoot"
+   },
+   "number": "182",
+   "path": "a4-sagesse-entre-ciel-et-mer/a4-182-hoothoot.webp",
+   "rarity": "One Star",
+   "set": "A4",
+   "sha256": "d98b47f1a3f0a9e46e369ffe7e98e2785a1a8120970a149dac740df1899f2a41",
+   "url": "[adresse retirée]"
+  },
+  {
+   "bytes": 92200,
+   "category": "Pokemon",
+   "id": "A4-183",
+   "illustrator": "Noriaki Tanimura",
+   "language": "fr",
+   "name_language": "fr",
+   "names": {
+    "en": "Stantler",
+    "fr": "Cerfrousse"
+   },
+   "number": "183",
+   "path": "a4-sagesse-entre-ciel-et-mer/a4-183-cerfrousse.webp",
+   "rarity": "One Star",
+   "set": "A4",
+   "sha256": "803de4a0ed91b4a164b74fabeca82ee8b13f065d1b6b1e35a8d072130259e984",
+   "url": "[adresse retirée]"
+  },
+  {
+   "bytes": 76934,
+   "category": "Pokemon",
+   "id": "A4-184",
+   "illustrator": "MINAMINAMI Take",
+   "language": "fr",
+   "name_language": "fr",
+   "names": {
+    "en": "Smeargle",
+    "fr": "Queulorior"
+   },
+   "number": "184",
+   "path": "a4-sagesse-entre-ciel-et-mer/a4-184-queulorior.webp",
+   "rarity": "One Star",
+   "set": "A4",
+   "sha256": "aa4b5a5e543eeeb8a32df235940df0fa8f39f165cc2b30215e7cdd9d549e2d6c",
+   "url": "[adresse retirée]"
+  },
+  {
+   "bytes": 86378,
+   "category": "Pokemon",
+   "id": "A4-185",
+   "illustrator": "Natsumi Yoshida",
+   "language": "fr",
+   "name_language": "fr",
+   "names": {
+    "en": "Blissey",
+    "fr": "Leuphorie"
+   },
+   "number": "185",
+   "path": "a4-sagesse-entre-ciel-et-mer/a4-185-leuphorie.webp",
+   "rarity": "One Star",
+   "set": "A4",
+   "sha256": "853dc977a28097f5aa932e5f163279e7530803e914054ba2c7a43902456243e4",
+   "url": "[adresse retirée]"
+  },
+  {
+   "bytes": 110688,
+   "category": "Pokemon",
+   "id": "A4-202",
+   "illustrator": "Yoshimi Miyoshi",
+   "language": "fr",
+   "name_language": "fr",
+   "names": {
+    "en": "Shuckle ex",
+    "fr": "Caratroc-ex"
+   },
+   "number": "202",
+   "path": "a4-sagesse-entre-ciel-et-mer/a4-202-caratroc-ex.webp",
+   "rarity": "Two Star",
+   "set": "A4",
+   "sha256": "03db62ac2fee895e8261da83a109aa385e9ecf09bb32e35ed437939438d4a9b9",
+   "url": "[adresse retirée]"
+  },
+  {
+   "bytes": 100956,
+   "category": "Pokemon",
+   "id": "A4-203",
+   "illustrator": "Takumi Wada",
+   "language": "fr",
+   "name_language": "fr",
+   "names": {
+    "en": "Kingdra ex",
+    "fr": "Hyporoi-ex"
+   },
+   "number": "203",
+   "path": "a4-sagesse-entre-ciel-et-mer/a4-203-hyporoi-ex.webp",
+   "rarity": "Two Star",
+   "set": "A4",
+   "sha256": "60fd776dead31c455cbfcd851c4b5eeabc83140bc38a2dcfe3caa375649bfb50",
+   "url": "[adresse retirée]"
+  },
+  {
+   "bytes": 66838,
+   "category": "Pokemon",
+   "id": "A4-204",
+   "illustrator": "Fujimoto Gold",
+   "language": "fr",
+   "name_language": "fr",
+   "names": {
+    "en": "Lanturn ex",
+    "fr": "Lanturn-ex"
+   },
+   "number": "204",
+   "path": "a4-sagesse-entre-ciel-et-mer/a4-204-lanturn-ex.webp",
+   "rarity": "Two Star",
+   "set": "A4",
+   "sha256": "d14dd9d17e7c3ea8362d215a4a02b8e1ef144fe65a90416d6b41b4312bb2b56f",
+   "url": "[adresse retirée]"
+  },
+  {
+   "bytes": 67920,
+   "category": "Pokemon",
+   "id": "A4-205",
+   "illustrator": "Taira Akitsu",
+   "language": "fr",
+   "name_language": "fr",
+   "names": {
+    "en": "Espeon ex",
+    "fr": "Mentali-ex"
+   },
+   "number": "205",
+   "path": "a4-sagesse-entre-ciel-et-mer/a4-205-mentali-ex.webp",
+   "rarity": "Two Star",
+   "set": "A4",
+   "sha256": "80ab73662cc1759f260465f76a2a6ab1c59381fc526a207165d6a73f579bc842",
+   "url": "[adresse retirée]"
+  },
+  {
+   "bytes": 107474,
+   "category": "Pokemon",
+   "id": "A4-206",
+   "illustrator": "Yuriko Akase",
+   "language": "fr",
+   "name_language": "fr",
+   "names": {
+    "en": "Donphan ex",
+    "fr": "Donphan-ex"
+   },
+   "number": "206",
+   "path": "a4-sagesse-entre-ciel-et-mer/a4-206-donphan-ex.webp",
+   "rarity": "Two Star",
+   "set": "A4",
+   "sha256": "cc5f84bbfa1442f87bd0d33a7f91ba3baf5822b6411f22315076bcf6b10811c4",
+   "url": "[adresse retirée]"
+  },
+  {
+   "bytes": 140228,
+   "category": "Pokemon",
+   "id": "A4-207",
+   "illustrator": "Shinji Kanda",
+   "language": "fr",
+   "name_language": "fr",
+   "names": {
+    "en": "Crobat ex",
+    "fr": "Nostenfer-ex"
+   },
+   "number": "207",
+   "path": "a4-sagesse-entre-ciel-et-mer/a4-207-nostenfer-ex.webp",
+   "rarity": "Two Star",
+   "set": "A4",
+   "sha256": "b6bab3283ed22e4946a23a3eaf0036a767ba466ed0ae069ce29c82635a010d69",
+   "url": "[adresse retirée]"
+  },
+  {
+   "bytes": 113488,
+   "category": "Pokemon",
+   "id": "A4-208",
+   "illustrator": "AKIRA EGAWA",
+   "language": "fr",
+   "name_language": "fr",
+   "names": {
+    "en": "Umbreon ex",
+    "fr": "Noctali-ex"
+   },
+   "number": "208",
+   "path": "a4-sagesse-entre-ciel-et-mer/a4-208-noctali-ex.webp",
+   "rarity": "Two Star",
+   "set": "A4",
+   "sha256": "95ee09c7a4a89807a1c13b8e5b23216df78e2404457e3b91e0eb3d11c18efa12",
+   "url": "[adresse retirée]"
+  },
+  {
+   "bytes": 64032,
+   "category": "Pokemon",
+   "id": "A4-209",
+   "illustrator": "toriyufu",
+   "language": "fr",
+   "name_language": "fr",
+   "names": {
+    "en": "Skarmory ex",
+    "fr": "Airmure-ex"
+   },
+   "number": "209",
+   "path": "a4-sagesse-entre-ciel-et-mer/a4-209-airmure-ex.webp",
+   "rarity": "Two Star",
+   "set": "A4",
+   "sha256": "d9c29e0a0f6fd31cf2d4dcbfe21bfca730b877a1058c6c7c2e81159952413b94",
+   "url": "[adresse retirée]"
+  },
+  {
+   "bytes": 84066,
+   "category": "Pokemon",
+   "id": "A4-210",
+   "illustrator": "SIE NANAHARA",
+   "language": "fr",
+   "name_language": "fr",
+   "names": {
+    "en": "Ho-Oh ex",
+    "fr": "Ho-Oh-ex"
+   },
+   "number": "210",
+   "path": "a4-sagesse-entre-ciel-et-mer/a4-210-ho-oh-ex.webp",
+   "rarity": "Three Star",
+   "set": "A4",
+   "sha256": "d7f147e76359f2217a155d418cab4bf42b07b3166eedbdc95714bf25025b53d5",
+   "url": "[adresse retirée]"
+  },
+  {
+   "bytes": 67982,
+   "category": "Pokemon",
+   "id": "A4-211",
+   "illustrator": "SIE NANAHARA",
+   "language": "fr",
+   "name_language": "fr",
+   "names": {
+    "en": "Lugia ex",
+    "fr": "Lugia-ex"
+   },
+   "number": "211",
+   "path": "a4-sagesse-entre-ciel-et-mer/a4-211-lugia-ex.webp",
+   "rarity": "Three Star",
+   "set": "A4",
+   "sha256": "77df2f34660fe09c2308bc522641dfa77c19b1acffbd816017716a8105020af4",
+   "url": "[adresse retirée]"
+  },
+  {
+   "bytes": 118748,
+   "category": "Pokemon",
+   "id": "A4a-072",
+   "illustrator": "YASHIRO Nanaco",
+   "language": "en",
+   "name_language": "en",
+   "names": {
+    "en": "Milotic",
+    "fr": "Milobellus"
+   },
+   "number": "072",
+   "path": "a4a-source-secrete/a4a-072-milotic.webp",
+   "rarity": "One Star",
+   "set": "A4a",
+   "sha256": "312dc208ba7a1f2958ef77f62ae85125abb41a4e7834299f73b0f1531886b099",
+   "url": "[adresse retirée]"
+  },
+  {
+   "bytes": 85512,
+   "category": "Pokemon",
+   "id": "A4a-073",
+   "illustrator": "Akira Komayama",
+   "language": "en",
+   "name_language": "en",
+   "names": {
+    "en": "Stunfisk",
+    "fr": "Limonde"
+   },
+   "number": "073",
+   "path": "a4a-source-secrete/a4a-073-stunfisk.webp",
+   "rarity": "One Star",
+   "set": "A4a",
+   "sha256": "263ee403f167246f76e5e71e6e9d02a5bdca5352d909152a050770206703640d",
+   "url": "[adresse retirée]"
+  },
+  {
+   "bytes": 104178,
+   "category": "Pokemon",
+   "id": "A4a-074",
+   "illustrator": "Souichirou Gunjima",
+   "language": "en",
+   "name_language": "en",
+   "names": {
+    "en": "Yamper",
+    "fr": "Voltoutou"
+   },
+   "number": "074",
+   "path": "a4a-source-secrete/a4a-074-yamper.webp",
+   "rarity": "One Star",
+   "set": "A4a",
+   "sha256": "c271973ededeb30b7841663a43876277b30b19311943c8ae79fc7473363b21c2",
+   "url": "[adresse retirée]"
+  },
+  {
+   "bytes": 87012,
+   "category": "Pokemon",
+   "id": "A4a-075",
+   "illustrator": "kodama",
+   "language": "en",
+   "name_language": "en",
+   "names": {
+    "en": "Latios",
+    "fr": "Latios"
+   },
+   "number": "075",
+   "path": "a4a-source-secrete/a4a-075-latios.webp",
+   "rarity": "One Star",
+   "set": "A4a",
+   "sha256": "59a0d9252d55ccf6a5d7751c9fd135a8a44d3c884a4408e5307bc8039fe3cbb7",
+   "url": "[adresse retirée]"
+  },
+  {
+   "bytes": 92798,
+   "category": "Pokemon",
+   "id": "A4a-076",
+   "illustrator": "OKACHEKE",
+   "language": "en",
+   "name_language": "en",
+   "names": {
+    "en": "Phanpy",
+    "fr": "Phanpy"
+   },
+   "number": "076",
+   "path": "a4a-source-secrete/a4a-076-phanpy.webp",
+   "rarity": "One Star",
+   "set": "A4a",
+   "sha256": "2ab89bec3db8197fe95d69c81211b3d458f9621bbff310a9563246a247dbda7f",
+   "url": "[adresse retirée]"
+  },
+  {
+   "bytes": 70548,
+   "category": "Pokemon",
+   "id": "A4a-077",
+   "illustrator": "ryoma uratsuka",
+   "language": "en",
+   "name_language": "en",
+   "names": {
+    "en": "Azurill",
+    "fr": "Azurill"
+   },
+   "number": "077",
+   "path": "a4a-source-secrete/a4a-077-azurill.webp",
+   "rarity": "One Star",
+   "set": "A4a",
+   "sha256": "d96f309834354451ba0e1dfd45692646109ffaa739bbffa6d083aa9d6f17cc60",
+   "url": "[adresse retirée]"
+  },
+  {
+   "bytes": 112480,
+   "category": "Pokemon",
+   "id": "A4a-086",
+   "illustrator": "takashi shiraishi",
+   "language": "en",
+   "name_language": "en",
+   "names": {
+    "en": "Jumpluff ex",
+    "fr": "Cotovol-ex"
+   },
+   "number": "086",
+   "path": "a4a-source-secrete/a4a-086-jumpluff-ex.webp",
+   "rarity": "Two Star",
+   "set": "A4a",
+   "sha256": "799630a62455e82289c7b5efe61fe9544ce3b5bf4f9050753f709abe2477be8a",
+   "url": "[adresse retirée]"
+  },
+  {
+   "bytes": 93166,
+   "category": "Pokemon",
+   "id": "A4a-087",
+   "illustrator": "Tsuyoshi Nagano",
+   "language": "en",
+   "name_language": "en",
+   "names": {
+    "en": "Entei ex",
+    "fr": "Entei-ex"
+   },
+   "number": "087",
+   "path": "a4a-source-secrete/a4a-087-entei-ex.webp",
+   "rarity": "Two Star",
+   "set": "A4a",
+   "sha256": "7f5ce5bc0ac2f64e44ae4eb813d92be44c0e1ac1c9dd95d9fadc6679d601dc90",
+   "url": "[adresse retirée]"
+  },
+  {
+   "bytes": 98014,
+   "category": "Pokemon",
+   "id": "A4a-088",
+   "illustrator": "Tsuyoshi Nagano",
+   "language": "en",
+   "name_language": "en",
+   "names": {
+    "en": "Raikou ex",
+    "fr": "Raikou-ex"
+   },
+   "number": "088",
+   "path": "a4a-source-secrete/a4a-088-raikou-ex.webp",
+   "rarity": "Two Star",
+   "set": "A4a",
+   "sha256": "535ccb326a6a60cefcecedf7130fd28cdf344f29be31ef4f390404e26e0360b7",
+   "url": "[adresse retirée]"
+  },
+  {
+   "bytes": 81964,
+   "category": "Pokemon",
+   "id": "A4a-089",
+   "illustrator": "Teeziro",
+   "language": "en",
+   "name_language": "en",
+   "names": {
+    "en": "Poliwrath ex",
+    "fr": "Tartard-ex"
+   },
+   "number": "089",
+   "path": "a4a-source-secrete/a4a-089-poliwrath-ex.webp",
+   "rarity": "Two Star",
+   "set": "A4a",
+   "sha256": "60550c631230fcbf901b000e1bc49c3bb0d842965758b55bc1bd5ec052dbea97",
+   "url": "[adresse retirée]"
+  },
+  {
+   "bytes": 118754,
+   "category": "Pokemon",
+   "id": "A4a-090",
+   "illustrator": "mele",
+   "language": "en",
+   "name_language": "en",
+   "names": {
+    "en": "Suicune ex",
+    "fr": "Suicune-ex"
+   },
+   "number": "090",
+   "path": "a4a-source-secrete/a4a-090-suicune-ex.webp",
+   "rarity": "Three Star",
+   "set": "A4a",
+   "sha256": "41e33cb25eeb3065e30203c63c46cb61d06e59e87e9ad7b83c3e0e80d01c57b9",
+   "url": "[adresse retirée]"
+  },
+  {
+   "bytes": 98318,
+   "category": "Pokemon",
+   "id": "B1-227",
+   "illustrator": "tono",
+   "language": "en",
+   "name_language": "en",
+   "names": {
+    "en": "Beautifly"
+   },
+   "number": "227",
+   "path": "b1-mega-ascension/b1-227-beautifly.webp",
+   "rarity": "One Star",
+   "set": "B1",
+   "sha256": "d1613cb22e2b452a3da98fa2461fd5c24d9b47036a0da72445b67920d3a57cd1",
+   "url": "[adresse retirée]"
+  },
+  {
+   "bytes": 111262,
+   "category": "Pokemon",
+   "id": "B1-228",
+   "illustrator": "Shinya Komatsu",
+   "language": "en",
+   "name_language": "en",
+   "names": {
+    "en": "Skiddo"
+   },
+   "number": "228",
+   "path": "b1-mega-ascension/b1-228-skiddo.webp",
+   "rarity": "One Star",
+   "set": "B1",
+   "sha256": "004b42bae93bea75cf244ea902d156379b9676be7e407edff37005658e5431b5",
+   "url": "[adresse retirée]"
+  },
+  {
+   "bytes": 114650,
+   "category": "Pokemon",
+   "id": "B1-229",
+   "illustrator": "osare",
+   "language": "en",
+   "name_language": "en",
+   "names": {
+    "en": "Rillaboom"
+   },
+   "number": "229",
+   "path": "b1-mega-ascension/b1-229-rillaboom.webp",
+   "rarity": "One Star",
+   "set": "B1",
+   "sha256": "f4b99d38e06ed3830df74178f311fc7865396522fb7ad1a2d25e467a42749b50",
+   "url": "[adresse retirée]"
+  },
+  {
+   "bytes": 78090,
+   "category": "Pokemon",
+   "id": "B1-230",
+   "illustrator": "Yuu Nishida",
+   "language": "en",
+   "name_language": "en",
+   "names": {
+    "en": "Growlithe"
+   },
+   "number": "230",
+   "path": "b1-mega-ascension/b1-230-growlithe.webp",
+   "rarity": "One Star",
+   "set": "B1",
+   "sha256": "f1283f96deeb2d8982c303deda7fc27b9ff17a5fd1aaa06016b825912a7d8aba",
+   "url": "[adresse retirée]"
+  },
+  {
+   "bytes": 90230,
+   "category": "Pokemon",
+   "id": "B1-231",
+   "illustrator": "REND",
+   "language": "en",
+   "name_language": "en",
+   "names": {
+    "en": "Chandelure"
+   },
+   "number": "231",
+   "path": "b1-mega-ascension/b1-231-chandelure.webp",
+   "rarity": "One Star",
+   "set": "B1",
+   "sha256": "b8c24db1f7ddbd1423bce25ba3c9b83210b07d4f0a479f46656be4bea225878c",
+   "url": "[adresse retirée]"
+  },
+  {
+   "bytes": 148882,
+   "category": "Pokemon",
+   "id": "B1-232",
+   "illustrator": "Tetsu Kayama",
+   "language": "en",
+   "name_language": "en",
+   "names": {
+    "en": "Magikarp"
+   },
+   "number": "232",
+   "path": "b1-mega-ascension/b1-232-magikarp.webp",
+   "rarity": "One Star",
+   "set": "B1",
+   "sha256": "0fbe24c650ff171b75f68df773385225653d7b3ad4db0e68f60154ad21ea7bf4",
+   "url": "[adresse retirée]"
+  },
+  {
+   "bytes": 108602,
+   "category": "Pokemon",
+   "id": "B1-233",
+   "illustrator": "Shimaris Yukichi",
+   "language": "en",
+   "name_language": "en",
+   "names": {
+    "en": "Ludicolo"
+   },
+   "number": "233",
+   "path": "b1-mega-ascension/b1-233-ludicolo.webp",
+   "rarity": "One Star",
+   "set": "B1",
+   "sha256": "77d3d0faf59ed96769bbc186577ffb07d9e40e0bb23e41f6faef1d1ec8c8fdbc",
+   "url": "[adresse retirée]"
+  },
+  {
+   "bytes": 130130,
+   "category": "Pokemon",
+   "id": "B1-234",
+   "illustrator": "Haru Akasaka",
+   "language": "en",
+   "name_language": "en",
+   "names": {
+    "en": "Jellicent"
+   },
+   "number": "234",
+   "path": "b1-mega-ascension/b1-234-jellicent.webp",
+   "rarity": "One Star",
+   "set": "B1",
+   "sha256": "dbace134dcfd2c6a735bc5970556effa41fb8adc90ac1f9c81279318e3acb55a",
+   "url": "[adresse retirée]"
+  },
+  {
+   "bytes": 103584,
+   "category": "Pokemon",
+   "id": "B1-235",
+   "illustrator": "Narumi Sato",
+   "language": "en",
+   "name_language": "en",
+   "names": {
+    "en": "Keldeo"
+   },
+   "number": "235",
+   "path": "b1-mega-ascension/b1-235-keldeo.webp",
+   "rarity": "One Star",
+   "set": "B1",
+   "sha256": "352cd8d175c3ab4f842c5781a82a0dc9eb91f8a5d05db3fb7b1552050c1c5569",
+   "url": "[adresse retirée]"
+  },
+  {
+   "bytes": 75616,
+   "category": "Pokemon",
+   "id": "B1-236",
+   "illustrator": "Mékayu",
+   "language": "en",
+   "name_language": "en",
+   "names": {
+    "en": "Eiscue"
+   },
+   "number": "236",
+   "path": "b1-mega-ascension/b1-236-eiscue.webp",
+   "rarity": "One Star",
+   "set": "B1",
+   "sha256": "8ded155a473c68e589ed87671165e0c49e9d631a6f1d6aab83be3026b4261fdb",
+   "url": "[adresse retirée]"
+  },
+  {
+   "bytes": 104970,
+   "category": "Pokemon",
+   "id": "B1-237",
+   "illustrator": "GIDORA",
+   "language": "en",
+   "name_language": "en",
+   "names": {
+    "en": "Luxray"
+   },
+   "number": "237",
+   "path": "b1-mega-ascension/b1-237-luxray.webp",
+   "rarity": "One Star",
+   "set": "B1",
+   "sha256": "a70c6f04f76d04583c0e22b029a1fdc1d3c8cc9ea9ea5ceb0c358a97460f155b",
+   "url": "[adresse retirée]"
+  },
+  {
+   "bytes": 99270,
+   "category": "Pokemon",
+   "id": "B1-238",
+   "illustrator": "Apios",
+   "language": "en",
+   "name_language": "en",
+   "names": {
+    "en": "Cofagrigus"
+   },
+   "number": "238",
+   "path": "b1-mega-ascension/b1-238-cofagrigus.webp",
+   "rarity": "One Star",
+   "set": "B1",
+   "sha256": "8e707c977f931dab53a1d7de943862e108fb93b7d7470523806d26479af5c3a6",
+   "url": "[adresse retirée]"
+  },
+  {
+   "bytes": 74344,
+   "category": "Pokemon",
+   "id": "B1-239",
+   "illustrator": "Orca",
+   "language": "en",
+   "name_language": "en",
+   "names": {
+    "en": "Gothita"
+   },
+   "number": "239",
+   "path": "b1-mega-ascension/b1-239-gothita.webp",
+   "rarity": "One Star",
+   "set": "B1",
+   "sha256": "86160b72cafbc645f5846eb159af0dea538e2b08aa72bc5decf5a708c083b223",
+   "url": "[adresse retirée]"
+  },
+  {
+   "bytes": 98766,
+   "category": "Pokemon",
+   "id": "B1-240",
+   "illustrator": "Koji Nakata",
+   "language": "en",
+   "name_language": "en",
+   "names": {
+    "en": "Makuhita"
+   },
+   "number": "240",
+   "path": "b1-mega-ascension/b1-240-makuhita.webp",
+   "rarity": "One Star",
+   "set": "B1",
+   "sha256": "bc48cc7e4157e0c46e2abbf39100a1f2821c9ebc71a49c35b3abb42b0e60b2a2",
+   "url": "[adresse retirée]"
+  },
+  {
+   "bytes": 84576,
+   "category": "Pokemon",
+   "id": "B1-241",
+   "illustrator": "Teeziro",
+   "language": "en",
+   "name_language": "en",
+   "names": {
+    "en": "Hippowdon"
+   },
+   "number": "241",
+   "path": "b1-mega-ascension/b1-241-hippowdon.webp",
+   "rarity": "One Star",
+   "set": "B1",
+   "sha256": "1bd81f3566e0386b0c448744b046d989ba2256d084812996dd54cdaa3dcba167",
+   "url": "[adresse retirée]"
+  },
+  {
+   "bytes": 102004,
+   "category": "Pokemon",
+   "id": "B1-242",
+   "illustrator": "OKUBO",
+   "language": "en",
+   "name_language": "en",
+   "names": {
+    "en": "Archeops"
+   },
+   "number": "242",
+   "path": "b1-mega-ascension/b1-242-archeops.webp",
+   "rarity": "One Star",
+   "set": "B1",
+   "sha256": "e538cfe30d99e7b6b9cf28067a0c5d5dcec940387c1a1b14a06ee2ce04005242",
+   "url": "[adresse retirée]"
+  },
+  {
+   "bytes": 146494,
+   "category": "Pokemon",
+   "id": "B1-243",
+   "illustrator": "Yukihiro Tada",
+   "language": "en",
+   "name_language": "en",
+   "names": {
+    "en": "Pancham"
+   },
+   "number": "243",
+   "path": "b1-mega-ascension/b1-243-pancham.webp",
+   "rarity": "One Star",
+   "set": "B1",
+   "sha256": "02b461b3a8a39abc16b285599f14033bf94adefa1e0d2056ec1ed724bb094824",
+   "url": "[adresse retirée]"
+  },
+  {
+   "bytes": 69008,
+   "category": "Pokemon",
+   "id": "B1-244",
+   "illustrator": "IKEDA Saki",
+   "language": "en",
+   "name_language": "en",
+   "names": {
+    "en": "Honchkrow"
+   },
+   "number": "244",
+   "path": "b1-mega-ascension/b1-244-honchkrow.webp",
+   "rarity": "One Star",
+   "set": "B1",
+   "sha256": "5e3d1abad0c9846c6252221fa6a0576dd1d9556d4f374cbd1a2971eb4e9e8cc7",
+   "url": "[adresse retirée]"
+  },
+  {
+   "bytes": 107746,
+   "category": "Pokemon",
+   "id": "B1-245",
+   "illustrator": "matazo",
+   "language": "en",
+   "name_language": "en",
+   "names": {
+    "en": "Hydreigon"
+   },
+   "number": "245",
+   "path": "b1-mega-ascension/b1-245-hydreigon.webp",
+   "rarity": "One Star",
+   "set": "B1",
+   "sha256": "7bdd5d5c6ae118a9825a58a5bc1d86da9da6fd90cdfce4a30e375598fe6c4f54",
+   "url": "[adresse retirée]"
+  },
+  {
+   "bytes": 92704,
+   "category": "Pokemon",
+   "id": "B1-246",
+   "illustrator": "hncl",
+   "language": "en",
+   "name_language": "en",
+   "names": {
+    "en": "Corviknight"
+   },
+   "number": "246",
+   "path": "b1-mega-ascension/b1-246-corviknight.webp",
+   "rarity": "One Star",
+   "set": "B1",
+   "sha256": "0cf9b544ded8a92267762967b85c130877ff93217014fddb986c7a0a16716386",
+   "url": "[adresse retirée]"
+  },
+  {
+   "bytes": 134262,
+   "category": "Pokemon",
+   "id": "B1-247",
+   "illustrator": "Kariya",
+   "language": "en",
+   "name_language": "en",
+   "names": {
+    "en": "Goomy"
+   },
+   "number": "247",
+   "path": "b1-mega-ascension/b1-247-goomy.webp",
+   "rarity": "One Star",
+   "set": "B1",
+   "sha256": "1b4215992090f14953e7e727a3074ff8310885de56347fcf1cf5da32e0ec89d4",
+   "url": "[adresse retirée]"
+  },
+  {
+   "bytes": 82754,
+   "category": "Pokemon",
+   "id": "B1-248",
+   "illustrator": "MINAMINAMI Take",
+   "language": "en",
+   "name_language": "en",
+   "names": {
+    "en": "Delcatty"
+   },
+   "number": "248",
+   "path": "b1-mega-ascension/b1-248-delcatty.webp",
+   "rarity": "One Star",
+   "set": "B1",
+   "sha256": "b2d623970cac0e32df5e8f5f67b8d3328de88621843d9e6ae7cd8d50cfb8bb29",
+   "url": "[adresse retirée]"
+  },
+  {
+   "bytes": 92436,
+   "category": "Pokemon",
+   "id": "B1-249",
+   "illustrator": "Whisker",
+   "language": "en",
+   "name_language": "en",
+   "names": {
+    "en": "Stoutland"
+   },
+   "number": "249",
+   "path": "b1-mega-ascension/b1-249-stoutland.webp",
+   "rarity": "One Star",
+   "set": "B1",
+   "sha256": "4aff48cf748e5ce42e25c131eb38029993406fe915e0e2a06e9780f4189e58b1",
+   "url": "[adresse retirée]"
+  },
+  {
+   "bytes": 102170,
+   "category": "Pokemon",
+   "id": "B1-250",
+   "illustrator": "Saboteri",
+   "language": "en",
+   "name_language": "en",
+   "names": {
+    "en": "Rufflet"
+   },
+   "number": "250",
+   "path": "b1-mega-ascension/b1-250-rufflet.webp",
+   "rarity": "One Star",
+   "set": "B1",
+   "sha256": "e1113beffe5f2f29edd5544693e33a2bbdd1e73ebd00872f08c463e42e17a890",
+   "url": "[adresse retirée]"
+  },
+  {
+   "bytes": 112376,
+   "category": "Pokemon",
+   "id": "B1-272",
+   "illustrator": "Krgc",
+   "language": "en",
+   "name_language": "en",
+   "names": {
+    "en": "Mega Pinsir ex"
+   },
+   "number": "272",
+   "path": "b1-mega-ascension/b1-272-mega-pinsir-ex.webp",
+   "rarity": "Two Star",
+   "set": "B1",
+   "sha256": "659ee1381f6b7bf1c6938fdf2919140bf661a2d6e01564b645d1636d6e376eb4",
+   "url": "[adresse retirée]"
+  },
+  {
+   "bytes": 79790,
+   "category": "Pokemon",
+   "id": "B1-273",
+   "illustrator": "Kanami Ogata",
+   "language": "en",
+   "name_language": "en",
+   "names": {
+    "en": "Whimsicott ex"
+   },
+   "number": "273",
+   "path": "b1-mega-ascension/b1-273-whimsicott-ex.webp",
+   "rarity": "Two Star",
+   "set": "B1",
+   "sha256": "3eba6dc28213609c009d1b518c4aebfa1b2f371e0b7dc58367192b13ada18c7c",
+   "url": "[adresse retirée]"
+  },
+  {
+   "bytes": 108848,
+   "category": "Pokemon",
+   "id": "B1-274",
+   "illustrator": "Kuroimori",
+   "language": "en",
+   "name_language": "en",
+   "names": {
+    "en": "Rapidash ex"
+   },
+   "number": "274",
+   "path": "b1-mega-ascension/b1-274-rapidash-ex.webp",
+   "rarity": "Two Star",
+   "set": "B1",
+   "sha256": "818d7ab34ee1c03866bb2535cb3510be48a411f6b7f4f00227bcabd070b8776b",
+   "url": "[adresse retirée]"
+  },
+  {
+   "bytes": 123982,
+   "category": "Pokemon",
+   "id": "B1-275",
+   "illustrator": "Raita Kazama",
+   "language": "en",
+   "name_language": "en",
+   "names": {
+    "en": "Greninja ex"
+   },
+   "number": "275",
+   "path": "b1-mega-ascension/b1-275-greninja-ex.webp",
+   "rarity": "Two Star",
+   "set": "B1",
+   "sha256": "048758b43cd4c5b0ae74fe195ef001187f2a0f8330fdfb3ccc2412890ff510ae",
+   "url": "[adresse retirée]"
+  },
+  {
+   "bytes": 98978,
+   "category": "Pokemon",
+   "id": "B1-276",
+   "illustrator": "kodama",
+   "language": "en",
+   "name_language": "en",
+   "names": {
+    "en": "Jolteon ex"
+   },
+   "number": "276",
+   "path": "b1-mega-ascension/b1-276-jolteon-ex.webp",
+   "rarity": "Two Star",
+   "set": "B1",
+   "sha256": "26d058f0c22954840a589b70a91b7460773b640410c43c71064585e7fa775ccf",
+   "url": "[adresse retirée]"
+  },
+  {
+   "bytes": 82972,
+   "category": "Pokemon",
+   "id": "B1-277",
+   "illustrator": "Amelicart",
+   "language": "en",
+   "name_language": "en",
+   "names": {
+    "en": "Mega Ampharos ex"
+   },
+   "number": "277",
+   "path": "b1-mega-ascension/b1-277-mega-ampharos-ex.webp",
+   "rarity": "Two Star",
+   "set": "B1",
+   "sha256": "5ace5c1e81eb452e0a1d26435adfe1f78aa63a67a5b463bcb401aa4214203d13",
+   "url": "[adresse retirée]"
+  },
+  {
+   "bytes": 112900,
+   "category": "Pokemon",
+   "id": "B1-278",
+   "illustrator": "Keisin",
+   "language": "en",
+   "name_language": "en",
+   "names": {
+    "en": "Indeedee ex"
+   },
+   "number": "278",
+   "path": "b1-mega-ascension/b1-278-indeedee-ex.webp",
+   "rarity": "Two Star",
+   "set": "B1",
+   "sha256": "1ebbf87c438de05d4c73fb5f7d6d9b0fc6cb53dd1fdfa54375e4e8f198100224",
+   "url": "[adresse retirée]"
+  },
+  {
+   "bytes": 92192,
+   "category": "Pokemon",
+   "id": "B1-279",
+   "illustrator": "nagimiso",
+   "language": "en",
+   "name_language": "en",
+   "names": {
+    "en": "Hitmonchan ex"
+   },
+   "number": "279",
+   "path": "b1-mega-ascension/b1-279-hitmonchan-ex.webp",
+   "rarity": "Two Star",
+   "set": "B1",
+   "sha256": "25609d7130b6e2cda4650c3be12f4b036b2e551f43c222ca1ae02017b92f33fa",
+   "url": "[adresse retirée]"
+  },
+  {
+   "bytes": 79964,
+   "category": "Pokemon",
+   "id": "B1-280",
+   "illustrator": "kawayoo",
+   "language": "en",
+   "name_language": "en",
+   "names": {
+    "en": "Mega Absol ex"
+   },
+   "number": "280",
+   "path": "b1-mega-ascension/b1-280-mega-absol-ex.webp",
+   "rarity": "Two Star",
+   "set": "B1",
+   "sha256": "6d63124c61d4df58da53036df652dfce6efbab63b3f80dc3502389a9c30d9210",
+   "url": "[adresse retirée]"
+  },
+  {
+   "bytes": 167818,
+   "category": "Pokemon",
+   "id": "B1-281",
+   "illustrator": "Shinji Kanda",
+   "language": "en",
+   "name_language": "en",
+   "names": {
+    "en": "Dragalge ex"
+   },
+   "number": "281",
+   "path": "b1-mega-ascension/b1-281-dragalge-ex.webp",
+   "rarity": "Two Star",
+   "set": "B1",
+   "sha256": "5c10b34d7eac214d435271fdefe4738cacd423b3cefc441435fadc835b8e62e3",
+   "url": "[adresse retirée]"
+  },
+  {
+   "bytes": 88384,
+   "category": "Pokemon",
+   "id": "B1-282",
+   "illustrator": "toriyufu",
+   "language": "en",
+   "name_language": "en",
+   "names": {
+    "en": "Melmetal ex"
+   },
+   "number": "282",
+   "path": "b1-mega-ascension/b1-282-melmetal-ex.webp",
+   "rarity": "Two Star",
+   "set": "B1",
+   "sha256": "f402a18a2b24b11b10085b8d06bf6e234bcc171aeeedb7d28e1d74337b0b0280",
+   "url": "[adresse retirée]"
+  },
+  {
+   "bytes": 83796,
+   "category": "Pokemon",
+   "id": "B1-283",
+   "illustrator": "Ounishi",
+   "language": "en",
+   "name_language": "en",
+   "names": {
+    "en": "Tauros ex"
+   },
+   "number": "283",
+   "path": "b1-mega-ascension/b1-283-tauros-ex.webp",
+   "rarity": "Two Star",
+   "set": "B1",
+   "sha256": "5fc19261901bf4dbc3ad713f7480d692e472e8d2c13ffe7aaadfc463f0148a43",
+   "url": "[adresse retirée]"
+  },
+  {
+   "bytes": 111214,
+   "category": "Pokemon",
+   "id": "B1-284",
+   "illustrator": "AKIRA EGAWA",
+   "language": "en",
+   "name_language": "en",
+   "names": {
+    "en": "Mega Blaziken ex"
+   },
+   "number": "284",
+   "path": "b1-mega-ascension/b1-284-mega-blaziken-ex.webp",
+   "rarity": "Three Star",
+   "set": "B1",
+   "sha256": "dcb006c5b9bd53ce7c208655f19598a4c4f578ca2600786a17a4d1da053d67ab",
+   "url": "[adresse retirée]"
+  },
+  {
+   "bytes": 113164,
+   "category": "Pokemon",
+   "id": "B1-285",
+   "illustrator": "danciao",
+   "language": "en",
+   "name_language": "en",
+   "names": {
+    "en": "Mega Gyarados ex"
+   },
+   "number": "285",
+   "path": "b1-mega-ascension/b1-285-mega-gyarados-ex.webp",
+   "rarity": "Three Star",
+   "set": "B1",
+   "sha256": "eae50466e56a676d7dd4b2e8d3e8828b6f3adaa53a069617d7007bd9a2fd17a0",
+   "url": "[adresse retirée]"
+  },
+  {
+   "bytes": 129120,
+   "category": "Pokemon",
+   "id": "B1-286",
+   "illustrator": "Susumu Maeya",
+   "language": "en",
+   "name_language": "en",
+   "names": {
+    "en": "Mega Altaria ex"
+   },
+   "number": "286",
+   "path": "b1-mega-ascension/b1-286-mega-altaria-ex.webp",
+   "rarity": "Three Star",
+   "set": "B1",
+   "sha256": "facb8329719a9fefca7c5ecbccfef852b7e06cdbee17054034b78f097f11bc64",
+   "url": "[adresse retirée]"
+  },
+  {
+   "bytes": 83264,
+   "category": "Pokemon",
+   "id": "B1a-070",
+   "illustrator": "KEIICHIRO ITO",
+   "language": "en",
+   "name_language": "en",
+   "names": {
+    "en": "Ariados"
+   },
+   "number": "070",
+   "path": "b1a-embrasement-ecarlate/b1a-070-ariados.webp",
+   "rarity": "One Star",
+   "set": "B1a",
+   "sha256": "e09251e051684647a4fa9c17a2e0938875910859991e1d2a1c410f86a4def9c4",
+   "url": "[adresse retirée]"
+  },
+  {
+   "bytes": 99136,
+   "category": "Pokemon",
+   "id": "B1a-071",
+   "illustrator": "OKACHEKE",
+   "language": "en",
+   "name_language": "en",
+   "names": {
+    "en": "Sunflora"
+   },
+   "number": "071",
+   "path": "b1a-embrasement-ecarlate/b1a-071-sunflora.webp",
+   "rarity": "One Star",
+   "set": "B1a",
+   "sha256": "29fbb85cd9145437483854539a94cb913d83fc96d2f36448cd385beb0736ca05",
+   "url": "[adresse retirée]"
+  },
+  {
+   "bytes": 99666,
+   "category": "Pokemon",
+   "id": "B1a-072",
+   "illustrator": "chibi",
+   "language": "en",
+   "name_language": "en",
+   "names": {
+    "en": "Reuniclus"
+   },
+   "number": "072",
+   "path": "b1a-embrasement-ecarlate/b1a-072-reuniclus.webp",
+   "rarity": "One Star",
+   "set": "B1a",
+   "sha256": "93b49e3784779066605d039a6252076aae42354fdc735a824b126d56c0d6137b",
+   "url": "[adresse retirée]"
+  },
+  {
+   "bytes": 96018,
+   "category": "Pokemon",
+   "id": "B1a-073",
+   "illustrator": "mashu",
+   "language": "en",
+   "name_language": "en",
+   "names": {
+    "en": "Xerneas"
+   },
+   "number": "073",
+   "path": "b1a-embrasement-ecarlate/b1a-073-xerneas.webp",
+   "rarity": "One Star",
+   "set": "B1a",
+   "sha256": "a463615077193f67c24c8b7e2c4588681df7dbb73e13a5be49fbf50fe59867ad",
+   "url": "[adresse retirée]"
+  },
+  {
+   "bytes": 88984,
+   "category": "Pokemon",
+   "id": "B1a-074",
+   "illustrator": "Saboteri",
+   "language": "en",
+   "name_language": "en",
+   "names": {
+    "en": "Trubbish"
+   },
+   "number": "074",
+   "path": "b1a-embrasement-ecarlate/b1a-074-trubbish.webp",
+   "rarity": "One Star",
+   "set": "B1a",
+   "sha256": "bf4c4456bdd667bc6719e2056ff5ee2da3346b3f44a0404b5a10858d9e58273b",
+   "url": "[adresse retirée]"
+  },
+  {
+   "bytes": 82954,
+   "category": "Pokemon",
+   "id": "B1a-075",
+   "illustrator": "Terada Tera",
+   "language": "en",
+   "name_language": "en",
+   "names": {
+    "en": "Buneary"
+   },
+   "number": "075",
+   "path": "b1a-embrasement-ecarlate/b1a-075-buneary.webp",
+   "rarity": "One Star",
+   "set": "B1a",
+   "sha256": "18734816c2bea1634dff7346e4b830ba7524be2f28c273e7e4517021d131d518",
+   "url": "[adresse retirée]"
+  },
+  {
+   "bytes": 142778,
+   "category": "Pokemon",
+   "id": "B1a-083",
+   "illustrator": "Mori Yuu",
+   "language": "en",
+   "name_language": "en",
+   "names": {
+    "en": "Mega Venusaur ex"
+   },
+   "number": "083",
+   "path": "b1a-embrasement-ecarlate/b1a-083-mega-venusaur-ex.webp",
+   "rarity": "Two Star",
+   "set": "B1a",
+   "sha256": "ad70e5547b891d10876e7717f9941acc491264f1029e9d6c55aea86992baaf1e",
+   "url": "[adresse retirée]"
+  },
+  {
+   "bytes": 133820,
+   "category": "Pokemon",
+   "id": "B1a-084",
+   "illustrator": "Kazumasa Yasukuni",
+   "language": "en",
+   "name_language": "en",
+   "names": {
+    "en": "Mega Blastoise ex"
+   },
+   "number": "084",
+   "path": "b1a-embrasement-ecarlate/b1a-084-mega-blastoise-ex.webp",
+   "rarity": "Two Star",
+   "set": "B1a",
+   "sha256": "44991b72b79a4fbdd2dddcd54ba78510e20e5d9a2ab4c150efad6cea1e98af38",
+   "url": "[adresse retirée]"
+  },
+  {
+   "bytes": 105366,
+   "category": "Pokemon",
+   "id": "B1a-085",
+   "illustrator": "DOM",
+   "language": "en",
+   "name_language": "en",
+   "names": {
+    "en": "Mega Lopunny ex"
+   },
+   "number": "085",
+   "path": "b1a-embrasement-ecarlate/b1a-085-mega-lopunny-ex.webp",
+   "rarity": "Two Star",
+   "set": "B1a",
+   "sha256": "ac7e6eb0dea12dea43a55cbb7886d094fd0b783c026823476a9cf6b7235bb56a",
+   "url": "[adresse retirée]"
+  },
+  {
+   "bytes": 78712,
+   "category": "Pokemon",
+   "id": "B1a-086",
+   "illustrator": "matazo",
+   "language": "en",
+   "name_language": "en",
+   "names": {
+    "en": "Mega Steelix ex"
+   },
+   "number": "086",
+   "path": "b1a-embrasement-ecarlate/b1a-086-mega-steelix-ex.webp",
+   "rarity": "Two Star",
+   "set": "B1a",
+   "sha256": "c042b6a7617a5265344152c2589d5395b1b3aa242bb52235f74925529347fb37",
+   "url": "[adresse retirée]"
+  },
+  {
+   "bytes": 107750,
+   "category": "Pokemon",
+   "id": "B1a-087",
+   "illustrator": "Nurikabe",
+   "language": "en",
+   "name_language": "en",
+   "names": {
+    "en": "Mega Charizard Y ex"
+   },
+   "number": "087",
+   "path": "b1a-embrasement-ecarlate/b1a-087-mega-charizard-y-ex.webp",
+   "rarity": "Three Star",
+   "set": "B1a",
+   "sha256": "048b9b811510458d52219877f649ddfb5feef4da2c887499fe14ba0407080664",
+   "url": "[adresse retirée]"
+  },
+  {
+   "bytes": 96566,
+   "category": "Pokemon",
+   "id": "B2-156",
+   "illustrator": "Mina Nakai",
+   "language": "en",
+   "name_language": "en",
+   "names": {
+    "en": "Cacnea"
+   },
+   "number": "156",
+   "path": "b2-parade-onirique/b2-156-cacnea.webp",
+   "rarity": "One Star",
+   "set": "B2",
+   "sha256": "591ed751e831fca7f0fcf591a9c97a4bb9a2700e3c3a8d0788eed0819b11cae8",
+   "url": "[adresse retirée]"
+  },
+  {
+   "bytes": 118754,
+   "category": "Pokemon",
+   "id": "B2-157",
+   "illustrator": "tono",
+   "language": "en",
+   "name_language": "en",
+   "names": {
+    "en": "Roserade"
+   },
+   "number": "157",
+   "path": "b2-parade-onirique/b2-157-roserade.webp",
+   "rarity": "One Star",
+   "set": "B2",
+   "sha256": "75c667acce0f29f950f8e7b582f3d4d5201d582481ddc726eb671bc6dc8999d8",
+   "url": "[adresse retirée]"
+  },
+  {
+   "bytes": 101422,
+   "category": "Pokemon",
+   "id": "B2-158",
+   "illustrator": "mingo",
+   "language": "en",
+   "name_language": "en",
+   "names": {
+    "en": "Vivillon"
+   },
+   "number": "158",
+   "path": "b2-parade-onirique/b2-158-vivillon.webp",
+   "rarity": "One Star",
+   "set": "B2",
+   "sha256": "5375292859ddb9bee818b68f238508b8c9b08b81b80701c6b451efcfe74728fa",
+   "url": "[adresse retirée]"
+  },
+  {
+   "bytes": 147422,
+   "category": "Pokemon",
+   "id": "B2-159",
+   "illustrator": "Dsuke",
+   "language": "en",
+   "name_language": "en",
+   "names": {
+    "en": "Buzzwole"
+   },
+   "number": "159",
+   "path": "b2-parade-onirique/b2-159-buzzwole.webp",
+   "rarity": "One Star",
+   "set": "B2",
+   "sha256": "cdfbdcbc1b4f875751735101f92861bd8526e626288d10359773472b6a1f9df8",
+   "url": "[adresse retirée]"
+  },
+  {
+   "bytes": 81026,
+   "category": "Pokemon",
+   "id": "B2-160",
+   "illustrator": "toriyufu",
+   "language": "en",
+   "name_language": "en",
+   "names": {
+    "en": "Reshiram"
+   },
+   "number": "160",
+   "path": "b2-parade-onirique/b2-160-reshiram.webp",
+   "rarity": "One Star",
+   "set": "B2",
+   "sha256": "14da6792c087a025c00ce0d528602cbd9e27e4adb02c703f6abdb0b87c9d5ecf",
+   "url": "[adresse retirée]"
+  },
+  {
+   "bytes": 92284,
+   "category": "Pokemon",
+   "id": "B2-161",
+   "illustrator": "0313",
+   "language": "en",
+   "name_language": "en",
+   "names": {
+    "en": "Oricorio"
+   },
+   "number": "161",
+   "path": "b2-parade-onirique/b2-161-oricorio.webp",
+   "rarity": "One Star",
+   "set": "B2",
+   "sha256": "b50502d3586e49cdea123b354637947f54b9ffc7d66fd74cf0b84d2e576a2e20",
+   "url": "[adresse retirée]"
+  },
+  {
+   "bytes": 75002,
+   "category": "Pokemon",
+   "id": "B2-162",
+   "illustrator": "You Iribi",
+   "language": "en",
+   "name_language": "en",
+   "names": {
+    "en": "Scorbunny"
+   },
+   "number": "162",
+   "path": "b2-parade-onirique/b2-162-scorbunny.webp",
+   "rarity": "One Star",
+   "set": "B2",
+   "sha256": "14a93b789312c3b95792aaa5107d94e1395e21e70379a5e880f5dd236e939ec4",
+   "url": "[adresse retirée]"
+  },
+  {
+   "bytes": 76770,
+   "category": "Pokemon",
+   "id": "B2-163",
+   "illustrator": "sui",
+   "language": "en",
+   "name_language": "en",
+   "names": {
+    "en": "Aurorus"
+   },
+   "number": "163",
+   "path": "b2-parade-onirique/b2-163-aurorus.webp",
+   "rarity": "One Star",
+   "set": "B2",
+   "sha256": "12c182d5752e4b3f38c4c5650bab32ab1d7915898852a31f2236d7312c150fe2",
+   "url": "[adresse retirée]"
+  },
+  {
+   "bytes": 91688,
+   "category": "Pokemon",
+   "id": "B2-164",
+   "illustrator": "osare",
+   "language": "en",
+   "name_language": "en",
+   "names": {
+    "en": "Cramorant"
+   },
+   "number": "164",
+   "path": "b2-parade-onirique/b2-164-cramorant.webp",
+   "rarity": "One Star",
+   "set": "B2",
+   "sha256": "5772deb01d0233f51f13379b73584e9e6f4c9299487888eab398fcbb0a58b276",
+   "url": "[adresse retirée]"
+  },
+  {
+   "bytes": 92684,
+   "category": "Pokemon",
+   "id": "B2-165",
+   "illustrator": "Kariya",
+   "language": "en",
+   "name_language": "en",
+   "names": {
+    "en": "Minun"
+   },
+   "number": "165",
+   "path": "b2-parade-onirique/b2-165-minun.webp",
+   "rarity": "One Star",
+   "set": "B2",
+   "sha256": "369acb75b796d9ab9bfe105317cdd384aca95960d910dce517052d7df2d54974",
+   "url": "[adresse retirée]"
+  },
+  {
+   "bytes": 93662,
+   "category": "Pokemon",
+   "id": "B2-166",
+   "illustrator": "Taiga Kayama",
+   "language": "en",
+   "name_language": "en",
+   "names": {
+    "en": "Toxel"
+   },
+   "number": "166",
+   "path": "b2-parade-onirique/b2-166-toxel.webp",
+   "rarity": "One Star",
+   "set": "B2",
+   "sha256": "d49c25489f75fffb2c5d098892294486750dd579267b0c540b4ee1bd32c21b4c",
+   "url": "[adresse retirée]"
+  },
+  {
+   "bytes": 76758,
+   "category": "Pokemon",
+   "id": "B2-167",
+   "illustrator": "Orca",
+   "language": "en",
+   "name_language": "en",
+   "names": {
+    "en": "Galarian Ponyta"
+   },
+   "number": "167",
+   "path": "b2-parade-onirique/b2-167-galarian-ponyta.webp",
+   "rarity": "One Star",
+   "set": "B2",
+   "sha256": "0793564add916877ec72cf8efc3656d28b917beca7ae0744f0601ae5c18d4c18",
+   "url": "[adresse retirée]"
+  },
+  {
+   "bytes": 76392,
+   "category": "Pokemon",
+   "id": "B2-168",
+   "illustrator": "OKUBO",
+   "language": "en",
+   "name_language": "en",
+   "names": {
+    "en": "Snubbull"
+   },
+   "number": "168",
+   "path": "b2-parade-onirique/b2-168-snubbull.webp",
+   "rarity": "One Star",
+   "set": "B2",
+   "sha256": "efc4883a1aedcd2b162b66ec0b4d7909fd10b26d4f1e65385c690d5d55e3e34a",
+   "url": "[adresse retirée]"
+  },
+  {
+   "bytes": 97136,
+   "category": "Pokemon",
+   "id": "B2-169",
+   "illustrator": "saino misaki",
+   "language": "en",
+   "name_language": "en",
+   "names": {
+    "en": "Indeedee"
+   },
+   "number": "169",
+   "path": "b2-parade-onirique/b2-169-indeedee.webp",
+   "rarity": "One Star",
+   "set": "B2",
+   "sha256": "87e7c07c64908a463ba2e3a4d39a2c90e6cf4493a505fb1e16d184ee284a24b4",
+   "url": "[adresse retirée]"
+  },
+  {
+   "bytes": 120778,
+   "category": "Pokemon",
+   "id": "B2-170",
+   "illustrator": "Uninori",
+   "language": "en",
+   "name_language": "en",
+   "names": {
+    "en": "Sandshrew"
+   },
+   "number": "170",
+   "path": "b2-parade-onirique/b2-170-sandshrew.webp",
+   "rarity": "One Star",
+   "set": "B2",
+   "sha256": "e13a63b12b478438b8ba7edf44c72879f2d238fe148ead622316ac2c6a8a29b7",
+   "url": "[adresse retirée]"
+  },
+  {
+   "bytes": 126598,
+   "category": "Pokemon",
+   "id": "B2-171",
+   "illustrator": "Yuriko Akase",
+   "language": "en",
+   "name_language": "en",
+   "names": {
+    "en": "Tyrantrum"
+   },
+   "number": "171",
+   "path": "b2-parade-onirique/b2-171-tyrantrum.webp",
+   "rarity": "One Star",
+   "set": "B2",
+   "sha256": "7c55ec38758d54c3b6b7ec465892a5c34323009010fdafcb2251bdb12be8d86c",
+   "url": "[adresse retirée]"
+  },
+  {
+   "bytes": 110214,
+   "category": "Pokemon",
+   "id": "B2-172",
+   "illustrator": "okayamatakatoshi",
+   "language": "en",
+   "name_language": "en",
+   "names": {
+    "en": "Falinks"
+   },
+   "number": "172",
+   "path": "b2-parade-onirique/b2-172-falinks.webp",
+   "rarity": "One Star",
+   "set": "B2",
+   "sha256": "a01d54a79d7e58f10e3bec6ccac2440b80bd32120446cf224504626802bb2548",
+   "url": "[adresse retirée]"
+  },
+  {
+   "bytes": 90872,
+   "category": "Pokemon",
+   "id": "B2-173",
+   "illustrator": "Mékayu",
+   "language": "en",
+   "name_language": "en",
+   "names": {
+    "en": "Alolan Muk"
+   },
+   "number": "173",
+   "path": "b2-parade-onirique/b2-173-alolan-muk.webp",
+   "rarity": "One Star",
+   "set": "B2",
+   "sha256": "92aa64a5cb4bb89e69ea8296975474a9bfb7748596ec405702a5d1f853780f16",
+   "url": "[adresse retirée]"
+  },
+  {
+   "bytes": 88724,
+   "category": "Pokemon",
+   "id": "B2-174",
+   "illustrator": "Yoriyuki Ikegami",
+   "language": "en",
+   "name_language": "en",
+   "names": {
+    "en": "Purrloin"
+   },
+   "number": "174",
+   "path": "b2-parade-onirique/b2-174-purrloin.webp",
+   "rarity": "One Star",
+   "set": "B2",
+   "sha256": "2daa118af0469cca7347e62431396ec7188c59c469e92f426112d017bc0d4077",
+   "url": "[adresse retirée]"
+  },
+  {
+   "bytes": 83632,
+   "category": "Pokemon",
+   "id": "B2-175",
+   "illustrator": "Nurikabe",
+   "language": "en",
+   "name_language": "en",
+   "names": {
+    "en": "Yveltal"
+   },
+   "number": "175",
+   "path": "b2-parade-onirique/b2-175-yveltal.webp",
+   "rarity": "One Star",
+   "set": "B2",
+   "sha256": "60582bf053d889d789ff3b232e6e5fe939de6cc485b49ea213e24d5583c420d5",
+   "url": "[adresse retirée]"
+  },
+  {
+   "bytes": 104546,
+   "category": "Pokemon",
+   "id": "B2-176",
+   "illustrator": "Mousho",
+   "language": "en",
+   "name_language": "en",
+   "names": {
+    "en": "Galarian Obstagoon"
+   },
+   "number": "176",
+   "path": "b2-parade-onirique/b2-176-galarian-obstagoon.webp",
+   "rarity": "One Star",
+   "set": "B2",
+   "sha256": "8dd565cbaf5880c95d6e0927ffae6b8a78f5e82d9d56f24beb6d7ea35846a7c5",
+   "url": "[adresse retirée]"
+  },
+  {
+   "bytes": 107894,
+   "category": "Pokemon",
+   "id": "B2-177",
+   "illustrator": "MINAMINAMI Take",
+   "language": "en",
+   "name_language": "en",
+   "names": {
+    "en": "Galarian Perrserker"
+   },
+   "number": "177",
+   "path": "b2-parade-onirique/b2-177-galarian-perrserker.webp",
+   "rarity": "One Star",
+   "set": "B2",
+   "sha256": "5e1f535ed774673db4a917aebe4f3254d792bc0368b901ddd44a88442a466a68",
+   "url": "[adresse retirée]"
+  },
+  {
+   "bytes": 88060,
+   "category": "Pokemon",
+   "id": "B2-178",
+   "illustrator": "Shiburingaru",
+   "language": "en",
+   "name_language": "en",
+   "names": {
+    "en": "Salamence"
+   },
+   "number": "178",
+   "path": "b2-parade-onirique/b2-178-salamence.webp",
+   "rarity": "One Star",
+   "set": "B2",
+   "sha256": "c254a1f22e1dc97d57b4d318682a3c7c8a33198bd05be9c23cc7fd16662e435a",
+   "url": "[adresse retirée]"
+  },
+  {
+   "bytes": 107988,
+   "category": "Pokemon",
+   "id": "B2-179",
+   "illustrator": "Miki Tanaka",
+   "language": "en",
+   "name_language": "en",
+   "names": {
+    "en": "Slakoth"
+   },
+   "number": "179",
+   "path": "b2-parade-onirique/b2-179-slakoth.webp",
+   "rarity": "One Star",
+   "set": "B2",
+   "sha256": "14003fb217f352f3c84a621304e6f3a7a5f851e9448db2a5a3883f9f97938902",
+   "url": "[adresse retirée]"
+  },
+  {
+   "bytes": 119370,
+   "category": "Pokemon",
+   "id": "B2-180",
+   "illustrator": "5ban Graphics",
+   "language": "en",
+   "name_language": "en",
+   "names": {
+    "en": "Teal Mask Ogerpon ex"
+   },
+   "number": "180",
+   "path": "b2-parade-onirique/b2-180-teal-mask-ogerpon-ex.webp",
+   "rarity": "Two Star",
+   "set": "B2",
+   "sha256": "da453e5dcc13bb6b7dcf282340a8adab84efb72a69d5e2d2392bf7897fd3f806",
+   "url": "[adresse retirée]"
+  },
+  {
+   "bytes": 104302,
+   "category": "Pokemon",
+   "id": "B2-181",
+   "illustrator": "5ban Graphics",
+   "language": "en",
+   "name_language": "en",
+   "names": {
+    "en": "Blacephalon ex"
+   },
+   "number": "181",
+   "path": "b2-parade-onirique/b2-181-blacephalon-ex.webp",
+   "rarity": "Two Star",
+   "set": "B2",
+   "sha256": "5ab8c11450ca837195ba3803acd82502cc19661499e14c9125f796c70065c88b",
+   "url": "[adresse retirée]"
+  },
+  {
+   "bytes": 102724,
+   "category": "Pokemon",
+   "id": "B2-194",
+   "illustrator": "imoniii",
+   "language": "en",
+   "name_language": "en",
+   "names": {
+    "en": "Teal Mask Ogerpon ex"
+   },
+   "number": "194",
+   "path": "b2-parade-onirique/b2-194-teal-mask-ogerpon-ex.webp",
+   "rarity": "Two Star",
+   "set": "B2",
+   "sha256": "e30109389e6ebe28ba950025bf9c051d3376c00c4b9ad6bb6b5fd32b1cb15baa",
+   "url": "[adresse retirée]"
+  },
+  {
+   "bytes": 113492,
+   "category": "Pokemon",
+   "id": "B2-195",
+   "illustrator": "YASHIRO Nanaco",
+   "language": "en",
+   "name_language": "en",
+   "names": {
+    "en": "Blacephalon ex"
+   },
+   "number": "195",
+   "path": "b2-parade-onirique/b2-195-blacephalon-ex.webp",
+   "rarity": "Two Star",
+   "set": "B2",
+   "sha256": "9b5d1f1ca4a7ff8c7f08be701def421257c65a2ccb0a4fa448cd9bde3bdf5809",
+   "url": "[adresse retirée]"
+  },
+  {
+   "bytes": 97476,
+   "category": "Pokemon",
+   "id": "B2-196",
+   "illustrator": "mashu",
+   "language": "en",
+   "name_language": "en",
+   "names": {
+    "en": "Alolan Ninetales ex"
+   },
+   "number": "196",
+   "path": "b2-parade-onirique/b2-196-alolan-ninetales-ex.webp",
+   "rarity": "Two Star",
+   "set": "B2",
+   "sha256": "74c6282133deca5ac24484b00cf1718c9781ef57bc10d43c8121746636009b6c",
+   "url": "[adresse retirée]"
+  },
+  {
+   "bytes": 109560,
+   "category": "Pokemon",
+   "id": "B2-197",
+   "illustrator": "nagimiso",
+   "language": "en",
+   "name_language": "en",
+   "names": {
+    "en": "Mega Swampert ex"
+   },
+   "number": "197",
+   "path": "b2-parade-onirique/b2-197-mega-swampert-ex.webp",
+   "rarity": "Two Star",
+   "set": "B2",
+   "sha256": "df9afe20f492daa4a96334c82b29a1958c8d90a2ded363023907d6a8a7f40023",
+   "url": "[adresse retirée]"
+  },
+  {
+   "bytes": 95530,
+   "category": "Pokemon",
+   "id": "B2-198",
+   "illustrator": "akagi",
+   "language": "en",
+   "name_language": "en",
+   "names": {
+    "en": "Toxtricity ex"
+   },
+   "number": "198",
+   "path": "b2-parade-onirique/b2-198-toxtricity-ex.webp",
+   "rarity": "Two Star",
+   "set": "B2",
+   "sha256": "85c04c36076be92aab7c0e631f40507f9379069a53a8f434323cc5bd10819e8d",
+   "url": "[adresse retirée]"
+  },
+  {
+   "bytes": 135246,
+   "category": "Pokemon",
+   "id": "B2-199",
+   "illustrator": "Mori Yuu",
+   "language": "en",
+   "name_language": "en",
+   "names": {
+    "en": "Mimikyu ex"
+   },
+   "number": "199",
+   "path": "b2-parade-onirique/b2-199-mimikyu-ex.webp",
+   "rarity": "Two Star",
+   "set": "B2",
+   "sha256": "6da228dccc86853044cdaec10b0270c05a653d683a6a399c50e433601a9ae346",
+   "url": "[adresse retirée]"
+  },
+  {
+   "bytes": 114162,
+   "category": "Pokemon",
+   "id": "B2-200",
+   "illustrator": "Takumi Wada",
+   "language": "en",
+   "name_language": "en",
+   "names": {
+    "en": "Gigalith ex"
+   },
+   "number": "200",
+   "path": "b2-parade-onirique/b2-200-gigalith-ex.webp",
+   "rarity": "Two Star",
+   "set": "B2",
+   "sha256": "2fbd697969e03e6396adb896f6bec4eb903f5614b7667c8d1cdb01b76650be20",
+   "url": "[adresse retirée]"
+  },
+  {
+   "bytes": 100232,
+   "category": "Pokemon",
+   "id": "B2-201",
+   "illustrator": "NC Empire",
+   "language": "en",
+   "name_language": "en",
+   "names": {
+    "en": "Mega Mawile ex"
+   },
+   "number": "201",
+   "path": "b2-parade-onirique/b2-201-mega-mawile-ex.webp",
+   "rarity": "Two Star",
+   "set": "B2",
+   "sha256": "80b2f38adb0b11458c427ee39b63fdaff3fce3b984cac703d6361ae3153a4214",
+   "url": "[adresse retirée]"
+  },
+  {
+   "bytes": 100404,
+   "category": "Pokemon",
+   "id": "B2-202",
+   "illustrator": "hncl",
+   "language": "en",
+   "name_language": "en",
+   "names": {
+    "en": "Mega Kangaskhan ex"
+   },
+   "number": "202",
+   "path": "b2-parade-onirique/b2-202-mega-kangaskhan-ex.webp",
+   "rarity": "Two Star",
+   "set": "B2",
+   "sha256": "cabd2b0b4abb3c51e7ae5dff36bda654a3c77859642a3d918aef63a3e5054294",
+   "url": "[adresse retirée]"
+  },
+  {
+   "bytes": 95368,
+   "category": "Pokemon",
+   "id": "B2-203",
+   "illustrator": "DOM",
+   "language": "en",
+   "name_language": "en",
+   "names": {
+    "en": "Mega Gardevoir ex"
+   },
+   "number": "203",
+   "path": "b2-parade-onirique/b2-203-mega-gardevoir-ex.webp",
+   "rarity": "Three Star",
+   "set": "B2",
+   "sha256": "8c994cd13be590166395a6c9c7c18ed670079c4f7f766293e9dd7d819e424727",
+   "url": "[adresse retirée]"
+  },
+  {
+   "bytes": 76502,
+   "category": "Pokemon",
+   "id": "B2-204",
+   "illustrator": "Teeziro",
+   "language": "en",
+   "name_language": "en",
+   "names": {
+    "en": "Meowth"
+   },
+   "number": "204",
+   "path": "b2-parade-onirique/b2-204-meowth.webp",
+   "rarity": "Three Star",
+   "set": "B2",
+   "sha256": "fe90f1ce9e01db23e9b0b606c0bfe9254d14fddcbf798f060e75060e6640c2c5",
+   "url": "[adresse retirée]"
+  },
+  {
+   "bytes": 58240,
+   "category": "Pokemon",
+   "id": "P-A-066",
+   "illustrator": "Amelicart",
+   "language": "fr",
+   "name_language": "fr",
+   "names": {
+    "en": "Mimikyu",
+    "fr": "Mimiqui"
+   },
+   "number": "066",
+   "path": "p-a-promo-a/p-a-066-mimiqui.webp",
+   "rarity": "One Star",
+   "set": "P-A",
+   "sha256": "3a6032d15bce647bf3774cb1735b308835ff21e8adc806a8004a88f6316456f6",
+   "url": "[adresse retirée]"
+  },
+  {
+   "bytes": 74602,
+   "category": "Pokemon",
+   "id": "P-A-070",
+   "illustrator": "tono",
+   "language": "fr",
+   "name_language": "fr",
+   "names": {
+    "en": "Alolan Ninetales",
+    "fr": "Feunardd'Alola"
+   },
+   "number": "070",
+   "path": "p-a-promo-a/p-a-070-feunardd-alola.webp",
+   "rarity": "One Star",
+   "set": "P-A",
+   "sha256": "92ed85de7b173ac1dfe01179384a68e783856690dbe2e846207d9361b3670ee5",
+   "url": "[adresse retirée]"
+  },
+  {
+   "bytes": 109976,
+   "category": "Pokemon",
+   "id": "P-A-074",
+   "illustrator": "GIDORA",
+   "language": "fr",
+   "name_language": "en",
+   "names": {
+    "en": "Zeraora"
+   },
+   "number": "074",
+   "path": "p-a-promo-a/p-a-074-zeraora.webp",
+   "rarity": "One Star",
+   "set": "P-A",
+   "sha256": "e04b78278db3ace1eecd574d462cb9d42e3ba23fee41f2e7bfd5429b578dd5b5",
+   "url": "[adresse retirée]"
+  },
+  {
+   "bytes": 90046,
+   "category": "Pokemon",
+   "id": "P-A-087",
+   "illustrator": "Tika Matsuno",
+   "language": "fr",
+   "name_language": "en",
+   "names": {
+    "en": "Alcremie"
+   },
+   "number": "087",
+   "path": "p-a-promo-a/p-a-087-alcremie.webp",
+   "rarity": "One Star",
+   "set": "P-A",
+   "sha256": "fce23ec6535ff471b9c53c16692738c5fefaaf94a658e56faf984bd2ce43da56",
+   "url": "[adresse retirée]"
+  },
+  {
+   "bytes": 52310,
+   "category": "Pokemon",
+   "id": "P-A-093",
+   "illustrator": "Tika Matsuno",
+   "language": "fr",
+   "name_language": "en",
+   "names": {
+    "en": "Cleffa"
+   },
+   "number": "093",
+   "path": "p-a-promo-a/p-a-093-cleffa.webp",
+   "rarity": "One Star",
+   "set": "P-A",
+   "sha256": "f6c9c47ed008f9a45075513b262195b9ba8eb76c171c7fae4e97963f051b0fc5",
+   "url": "[adresse retirée]"
+  }
+ ],
+ "criteria": {
+  "excluded_illustrator_prefix": "PLANETA",
+  "rarities": [
+   "One Star",
+   "Two Star",
+   "Three Star"
+  ],
+  "trainer_kept_rarities": [
+   "Three Star"
+  ]
+ },
+ "generated_at": "2026-08-22",
+ "languages": [
+  "fr",
+  "en"
+ ],
+ "sets": {
+  "A1": {
+   "folder": "a1-puissance-genetique",
+   "names": {
+    "en": "Genetic Apex",
+    "fr": "Puissance Génétique"
+   }
+  },
+  "A1a": {
+   "folder": "a1a-l-ile-fabuleuse",
+   "names": {
+    "en": "Mythical Island",
+    "fr": "L’Île Fabuleuse"
+   }
+  },
+  "A2": {
+   "folder": "a2-choc-spatio-temporel",
+   "names": {
+    "en": "Space-Time Smackdown",
+    "fr": "Choc Spatio-Temporel"
+   }
+  },
+  "A2a": {
+   "folder": "a2a-lumiere-triomphale",
+   "names": {
+    "en": "Triumphant Light",
+    "fr": "Lumière Triomphale"
+   }
+  },
+  "A2b": {
+   "folder": "a2b-rejouissances-rayonnantes",
+   "names": {
+    "en": "Shining Revelry",
+    "fr": "Réjouissances Rayonnantes"
+   }
+  },
+  "A3": {
+   "folder": "a3-gardiens-astraux",
+   "names": {
+    "en": "Celestial Guardians",
+    "fr": "Gardiens Astraux"
+   }
+  },
+  "A3a": {
+   "folder": "a3a-crise-interdimensionnelle",
+   "names": {
+    "en": "Extradimensional Crisis",
+    "fr": "Crise Interdimensionnelle"
+   }
+  },
+  "A3b": {
+   "folder": "a3b-la-clairiere-d-evoli",
+   "names": {
+    "en": "Eevee Grove",
+    "fr": "La Clairière d'Évoli"
+   }
+  },
+  "A4": {
+   "folder": "a4-sagesse-entre-ciel-et-mer",
+   "names": {
+    "en": "Wisdom of Sea and Sky",
+    "fr": "Sagesse Entre Ciel et Mer"
+   }
+  },
+  "A4a": {
+   "folder": "a4a-source-secrete",
+   "names": {
+    "en": "Secluded Springs",
+    "fr": "Source Secrète"
+   }
+  },
+  "B1": {
+   "folder": "b1-mega-ascension",
+   "names": {
+    "en": "Mega Rising",
+    "fr": "Méga-Ascension"
+   }
+  },
+  "B1a": {
+   "folder": "b1a-embrasement-ecarlate",
+   "names": {
+    "en": "Crimson Blaze",
+    "fr": "Embrasement Écarlate"
+   }
+  },
+  "B2": {
+   "folder": "b2-parade-onirique",
+   "names": {
+    "en": "Fantastical Parade",
+    "fr": "Parade Onirique"
+   }
+  },
+  "P-A": {
+   "folder": "p-a-promo-a",
+   "names": {
+    "en": "Promos-A",
+    "fr": "Promo-A"
+   }
+  }
+ },
+ "source": "l'ancienne source",
+ "source_url": "[adresse retirée]",
+ "version": 1
+}

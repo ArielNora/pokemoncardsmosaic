@@ -550,14 +550,14 @@ timeline de clichés, export poster en PNG/JPEG/PDF avec découpage en panneaux.
    affiché
 
 **Outillage** — hook `pre-commit` (ruff + pytest fichier par fichier), interface bilingue FR/EN,
-388 tests.
+417 tests.
 
 ### Reste à faire pour la v1
 
 | Sujet | État |
 |---|---|
 | **Empaquetage** | Rien de fait. PyInstaller, macOS d'abord. |
-| **Stockage partagé des images** | Non tranché. Recommandation : une archive zip par extension attachée à une release GitHub, plus un script de récupération. Voir `TODO.md`. |
+| ~~Stockage partagé des images~~ | **Tranché le 2026-08-22.** Les images ne sont pas stockées : `cards.json` décrit les 297 cartes et `scripts/fetch_cards.py` les récupère chez l'ancienne source (MIT) en 4 s et 27 Mo. Rien n'est rediffusé. Voir `docs/RECUPERATION_IMAGES.md`. |
 
 ## 10. Journal des décisions
 
@@ -598,4 +598,7 @@ timeline de clichés, export poster en PNG/JPEG/PDF avec découpage en panneaux.
 | 2026-08-20 | Préréglages **désignés par chemin** et non par indice, pour survivre à l'arrivée d'une extension ; ce sont les cartes **retirées** qui sont mémorisées |
 | 2026-08-20 | `platformdirs` écarté : `QStandardPaths` suffit, le socle reste à trois dépendances |
 | 2026-08-20 | Les formulaires **renvoient à la session** la valeur qu'ils ont écrêtée, un préréglage étant modifiable à la main |
+| 2026-08-22 | **Images récupérées chez l'ancienne source** (MIT) par manifeste et script, jamais stockées ni rediffusées — le serveur d'origine interdit son API et ses assets et oppose deux protections anti-robot |
+| 2026-08-22 | Sélection reconstituée par règle : trois raretés étoilées, hors illustrateur `PLANETA*` (rendus 3D), hors Dresseur sauf en Three Star. Reproduit la sélection existante sur **12 extensions sur 12** |
+| 2026-08-22 | Français avec repli anglais ; l'image dépendant de la langue, le manifeste note celle retenue par carte pour ne retélécharger que les cartes concernées quand le français se complétera |
 | 2026-08-20 | Prolonger **poursuit la timeline** ; repartir d'un cliché **tronque** ce qui suit. Une timeline non vide passée à `optimize_grid` signifie « reprise » et reporte les compteurs |

@@ -11,7 +11,9 @@ from dataclasses import dataclass, field, replace
 import numpy as np
 from PIL import Image
 
-VALID_EXTENSIONS = (".jpg", ".jpeg", ".png", ".bmp", ".tif", ".tiff")
+# `.webp` est le format servi par l'ancienne source, donc celui de tout jeu récupéré par
+# `scripts/fetch_cards.py` : sans lui, le chargement ne trouverait aucune carte.
+VALID_EXTENSIONS = (".jpg", ".jpeg", ".png", ".webp", ".bmp", ".tif", ".tiff")
 
 # Les mosaïques dépassent la limite anti-décompression-bomb de Pillow.
 Image.MAX_IMAGE_PIXELS = None

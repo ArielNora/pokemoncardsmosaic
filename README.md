@@ -68,25 +68,59 @@ uv sync --extra experiments
 
 ## Données
 
-**Les cartes ne sont pas versionnées** (~350 Mo de PNG). Place-les toi-même dans :
+**Les images ne sont pas versionnées.** Elles se récupèrent en une commande :
+
+```bash
+uv run python scripts/fetch_cards.py
+```
+
+297 cartes, 27 Mo, environ quatre secondes. Les images viennent de
+[l'ancienne source]([adresse retirée]) (licence MIT) : le dépôt ne contient que
+`cards.json`, qui décrit quelles cartes composent le jeu et où les prendre. Rien
+n'est rediffusé — chacun télécharge à la source.
+
+Relancer la commande ne récupère que ce qui manque ou ne correspond plus à son
+empreinte : elle est reprenable après une interruption. Pour contrôler sans rien
+écrire :
+
+```bash
+uv run python scripts/fetch_cards.py --check
+```
+
+Les fichiers arrivent dans `data/pokemoncards/`, un dossier par extension :
 
 ```
 data/pokemoncards/
-├── serie_A/
-│   ├── 0_promo/
-│   ├── 1_puissance_genetique/
+├── a1-puissance-genetique/
+│   ├── a1-227-bulbizarre.webp
 │   └── ...
-└── serie_B/
-    ├── 0_promo/
-    └── ...
+├── a1a-l-ile-fabuleuse/
+└── ...
 ```
 
-Un fichier PNG par carte, nommé d'après le Pokémon (`lucario.png`). Le dossier est
-parcouru récursivement : l'organisation en séries/extensions est pour ta lisibilité,
-le code ne s'en sert pas.
+### À l'arrivée d'une nouvelle extension
 
-> Stocker ces images de façon partageable entre plusieurs machines reste à faire —
-> voir [TODO.md](TODO.md).
+```bash
+uv run python scripts/build_manifest.py    # met cards.json à jour
+uv run python scripts/fetch_cards.py       # récupère les nouvelles cartes
+```
+
+Le manifeste retient les cartes dont l'illustration occupe toute la carte : les
+trois raretés étoilées, sans les rendus 3D du studio PLANETA ni les cartes
+Dresseur — sauf en Three Star, qui sont de vraies scènes. La règle et son
+établissement sont détaillés dans
+[docs/RECUPERATION_IMAGES.md](docs/RECUPERATION_IMAGES.md).
+
+Les images sont en français quand l'ancienne source les a, en anglais sinon (113 des 297 à
+ce jour). Le texte de la carte étant incrusté dans l'image, relancer
+`build_manifest.py` quand le français se complétera fera retélécharger les
+cartes concernées.
+
+### Utiliser un autre jeu d'images
+
+Le dossier est parcouru récursivement et accepte `.webp`, `.png`, `.jpg`,
+`.bmp` et `.tif`. Un fichier par carte, l'organisation en sous-dossiers ne sert
+qu'à filtrer dans l'interface.
 
 ## Utilisation
 

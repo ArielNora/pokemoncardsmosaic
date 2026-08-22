@@ -30,21 +30,15 @@ Tous décidés le 2026-08-16. À traiter **une fois toute la v1 terminée**, pas
   identiques semblent donc parfaitement compatibles. Piste : découper chaque bord en
   plusieurs sous-bandes avec recouvrement, et sommer les distances.
 
-## Stockage des cartes (à trancher)
+## Stockage des cartes — tranché le 2026-08-22
 
-Les ~350 Mo d'images sont hors dépôt. Il faut un moyen de les partager entre
-plusieurs machines, sachant qu'une nouvelle extension sort plusieurs fois par an
-(ajouts groupés, jamais de modification des cartes existantes).
+Les images **ne sont pas stockées** : `cards.json` décrit les 297 cartes et
+`scripts/fetch_cards.py` les récupère chez l'ancienne source. 27 Mo, 4 secondes, rien de
+rediffusé. Voir `docs/RECUPERATION_IMAGES.md` pour l'enquête complète.
 
-Piste privilégiée : **une archive zip par extension, attachée à une *release*
-GitHub**, plus un petit script `fetch_cards.py` qui lit un manifeste et télécharge ce
-qui manque. Gratuit, pas de compte supplémentaire, limite de 2 Go par fichier, et le
-rythme « un lot par sortie d'extension » colle exactement au modèle des releases.
-
-Alternatives écartées ou à reconsidérer :
-- *Git LFS* — bien intégré, mais 1 Go de quota gratuit seulement, vite atteint.
-- *Google Drive / rclone* — pratique manuellement, mais scriptable moins proprement
-  et pas versionné.
+Reste ouvert : les 16 cartes de `B2a` sans illustration chez l'ancienne source, et les 113
+cartes dont l'image n'existe qu'en anglais. Les deux se résorberont d'eux-mêmes
+en relançant `build_manifest.py`.
 
 ## Limitations connues à corriger
 

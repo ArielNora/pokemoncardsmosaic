@@ -238,6 +238,22 @@ def test_load_cards_reads_a_real_folder(tmp_path):
     assert all(card.top is not None for card in cards)
 
 
+def test_load_cards_accepts_webp(tmp_path):
+    """C'est le format servi par l'ancienne source, donc celui de tout jeu récupéré par
+    `scripts/fetch_cards.py` : sans lui, le chargement ne trouve aucune carte."""
+    from PIL import Image
+
+    from pokemon_mosaic.cards import load_cards
+
+    folder = tmp_path / "a1-jeu"
+    folder.mkdir()
+    for i in range(3):
+        Image.new("RGB", (60, 84), (i * 40, 100, 200)).save(folder / f"c{i}.webp")
+    cards = load_cards(str(tmp_path))
+    assert len(cards) == 3
+    assert cards.full_size == (60, 84)
+
+
 def test_load_cards_reports_folders_and_progress(tmp_path):
     from pokemon_mosaic.cards import load_cards
 
