@@ -16,7 +16,7 @@ def card_set_in(tmp_path, layout):
         directory = tmp_path / folder
         directory.mkdir(parents=True, exist_ok=True)
         for name in names:
-            path = directory / f"{name}.png"
+            path = directory / f"{name}.webp"
             path.touch()
             card = Card(path=str(path), index=len(cards),
                         thumbnail=np.zeros((8, 6, 3), np.uint8))
@@ -31,9 +31,11 @@ def session(qt_app, tmp_path):
 
     session = Session()
     session.set_cards(
-        card_set_in(tmp_path, {"serie_A/6_gardiens_astraux":
-                               ["solgaleo", "lunala", "necrozma"],
-                               "serie_A/10_source_secrete": ["entei", "raikou"]}),
+        card_set_in(tmp_path, {"a3-gardiens-celestes":
+                               ["a3-207-solgaleo-ex", "a3-204-lunala-ex",
+                                "a3-206-necrozma-ex"],
+                               "a4a-source-secrete":
+                               ["a4a-087-entei-ex", "a4a-088-raikou-ex"]}),
         str(tmp_path),
     )
     return session
@@ -123,8 +125,8 @@ def test_default_links_leave_an_existing_link_alone(session):
     assert [link.cards for link in session.links] == [(0, 3)]
     # Seules les cartes déjà engagées sont signalées introuvables ; leurs
     # partenaires restent libres, mais le lien par défaut n'est pas posé.
-    assert missing == ["serie_A/6_gardiens_astraux/solgaleo.png",
-                       "serie_A/10_source_secrete/entei.png"]
+    assert missing == ["a3-gardiens-celestes/a3-207-solgaleo-ex.webp",
+                       "a4a-source-secrete/a4a-087-entei-ex.webp"]
 
 
 def test_disabling_a_link_keeps_it_in_the_library(session):
@@ -155,8 +157,8 @@ def panel(session):
 def test_the_panel_names_the_cards_and_shows_the_direction(panel, session):
     session.add_link(Link(cards=(0, 1)))
     session.add_link(Link(cards=(3, 4), ordered=False))
-    assert panel._list.item(0).text() == "solgaleo → lunala"
-    assert panel._list.item(1).text() == "entei ↔ raikou"
+    assert panel._list.item(0).text() == "a3-207-solgaleo-ex → a3-204-lunala-ex"
+    assert panel._list.item(1).text() == "a4a-087-entei-ex ↔ a4a-088-raikou-ex"
 
 
 def test_unchecking_a_row_disables_the_link(panel, session):
@@ -192,11 +194,15 @@ def dialog_for(session):
 
 
 def pick(dialog, *names):
-    """Sélectionne des cartes par nom dans la liste de gauche, dans cet ordre."""
+    """Sélectionne des cartes par nom dans la liste de gauche, dans cet ordre.
+
+    Rapprochement par fragment : les noms de fichiers portent désormais le code
+    et le numéro de la carte (`a4a-087-entei-ex`), et non plus le seul nom.
+    """
     for name in names:
         for row in range(dialog._candidates.count()):
             item = dialog._candidates.item(row)
-            if item.text().startswith(name):
+            if name in item.text():
                 dialog._candidates.setCurrentItem(item)
                 break
         else:

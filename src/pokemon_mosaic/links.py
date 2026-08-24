@@ -15,10 +15,10 @@ from dataclasses import dataclass, field
 # Liens fournis d'office : ces cartes vont par paires dans un sens qui a un sens.
 # Décrits par fragments de chemin, parce que les indices dépendent du dossier chargé.
 DEFAULT_PAIRS = (
-    ("serie_A/6_gardiens_astraux/solgaleo.png",
-     "serie_A/6_gardiens_astraux/lunala.png"),
-    ("serie_A/10_source_secrete/entei.png",
-     "serie_A/10_source_secrete/raikou.png"),
+    ("a3-gardiens-celestes/a3-207-solgaleo-ex.webp",
+     "a3-gardiens-celestes/a3-204-lunala-ex.webp"),
+    ("a4a-source-secrete/a4a-087-entei-ex.webp",
+     "a4a-source-secrete/a4a-088-raikou-ex.webp"),
 )
 
 
