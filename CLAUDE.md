@@ -11,6 +11,35 @@
    propre diff et passer `ruff` n'est pas une revue.
 2. `ruff` et `pytest` passent — le hook `pre-commit` le refuse sinon.
 
+## `/verif-code` — plus rare, plus large
+
+Audit en lecture seule d'un **périmètre** : un dossier, une liste de fichiers,
+ou les deux. Complémentaire de `/code-review`, qui ne regarde que le diff.
+
+**Cadence : tous les 3 ou 4 commits**, ou après un gros volume de changements —
+seuil nettement plus haut que celui de `/code-review`. À lancer **juste avant un
+commit**, comme la revue.
+
+**Pas sur tout le projet d'un coup** : une invocation par grosse partie. Les
+découpages qui ont du sens ici :
+
+- la chaîne d'acquisition — `scripts/` + `src/pokemon_mosaic/artwork.py`
+- le cœur de calcul — `optimize.py`, `annealing.py`, `timeline.py`,
+  `scoring.py`, `control.py`
+- l'état et les données — `cards.py`, `presets.py`, `links.py`, `layout.py`,
+  `grid.py`, `export.py`
+- l'interface — `src/pokemon_mosaic/ui/`
+
+**L'enchaînement se fait d'un bout à l'autre, sans rien demander** :
+
+1. `/verif-code` sur chaque lot ;
+2. **toutes** les corrections nécessaires, jusqu'à ce que les lots passent ;
+3. `/code-review` pour contrôler ce qui vient d'être écrit, et les corrections
+   qu'il appelle à son tour ;
+4. le commit.
+
+Ses constats se vérifient un par un, comme ceux de toute revue.
+
 ## Lancer les tests
 
 **Fichier par fichier**, pas en un bloc — la machine de l'utilisateur est juste

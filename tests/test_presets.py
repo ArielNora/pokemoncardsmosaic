@@ -1,5 +1,6 @@
 """Tests des préréglages : format, identité par chemin, aller-retour complet."""
 
+import itertools
 import json
 import os
 
@@ -65,12 +66,6 @@ def test_an_unknown_version_is_refused():
         Preset.from_json(json.dumps(payload))
 
 
-def test_two_different_names_never_share_a_file():
-    """Effacer les caractères interdits ferait collisionner « a/b » et « ab »,
-    et enregistrer l'un écraserait l'autre sans un mot."""
-    assert safe_filename("a/b") != safe_filename("ab")
-
-
 @pytest.mark.parametrize("name", ["", "   ", ".", ".."])
 def test_an_unusable_name_is_refused(name):
     with pytest.raises(ValueError, match="inutilisable"):
@@ -79,8 +74,13 @@ def test_an_unusable_name_is_refused(name):
 
 def test_forbidden_characters_are_encoded_not_dropped():
     """Encodés, « a/b » et « ab » restent distincts ; effacés, ils désigneraient
-    le même fichier et l'un écraserait l'autre."""
-    assert safe_filename("a/b") == "a_2fb.json"
+    le même fichier et l'un écraserait l'autre.
+
+    Le code est **borné** par un second `_` : sa longueur va de un à six
+    chiffres, et sans terminateur `_5` suivi d'un « f » littéral se confondrait
+    avec `_5f`, le code de `_` lui-même.
+    """
+    assert safe_filename("a/b") == "a_2f_b.json"
 
 
 def test_accents_are_kept_in_filenames():
@@ -280,3 +280,96 @@ def test_a_link_already_in_the_library_keeps_its_own_flags(session):
     session.apply_preset(preset)
     assert session.links.active[0].ordered is False
     assert len(session.links) == 1, "aucun doublon ne doit apparaître"
+
+
+# --- Non-régressions de la revue du 2026-08-24 -----------------------------
+
+def test_two_different_names_never_share_a_file():
+    """`safe_filename` promet d'être injective. Elle ne l'était pas : un
+    `.strip()` final effaçait les espaces de bord sans les coder, et le
+    caractère d'échappement `_` n'était pas échappé lui-même."""
+    paires = [("a/b", "ab"),               # effacer, au lieu de coder
+              ("Essai 1", "Essai 1 "),      # frappe ordinaire
+              ("Noel", "  Noel"),
+              ("vacances", " vacances"),
+              ("a/b", "a_2fb"),            # le caractère d'échappement
+              ("a_2f_b", "a/b")]
+    for premier, second in paires:
+        assert safe_filename(premier) != safe_filename(second), (premier, second)
+
+
+def test_safe_filename_is_injective_over_tricky_names():
+    """Contrôle par force brute : les caractères qui se combinent mal entre eux."""
+    alphabet = "a_ /5f2.é"
+    vus = {}
+    for longueur in (1, 2, 3):
+        for combo in itertools.product(alphabet, repeat=longueur):
+            nom = "".join(combo)
+            try:
+                fichier = safe_filename(nom)
+            except ValueError:
+                continue
+            assert vus.setdefault(fichier, nom) == nom, f"{nom!r} entre en collision"
+
+
+def test_saving_two_close_names_keeps_both(tmp_path):
+    """Le défaut visible : le second enregistrement écrasait le premier, sans
+    confirmation, et la liste n'affichait qu'une entrée."""
+    save_preset(str(tmp_path), Preset(name="Essai 1"))
+    save_preset(str(tmp_path), Preset(name="Essai 1 "))
+    assert list_presets(str(tmp_path)) == ["Essai 1", "Essai 1 "]
+    assert load_preset(str(tmp_path), "Essai 1").name == "Essai 1"
+    assert load_preset(str(tmp_path), "Essai 1 ").name == "Essai 1 "
+
+
+def test_a_preset_saved_under_the_old_name_is_still_readable(tmp_path):
+    """Les préréglages écrits avant le changement portent l'ancien nom de
+    fichier. Sans recours, tout nom contenant un `_` deviendrait introuvable."""
+    ancien = tmp_path / "essai_1.json"
+    ancien.write_text(Preset(name="essai_1").to_json(), encoding="utf-8")
+    assert list_presets(str(tmp_path)) == ["essai_1"]
+    assert load_preset(str(tmp_path), "essai_1").name == "essai_1"
+    delete_preset(str(tmp_path), "essai_1")
+    assert not ancien.exists()
+
+
+def test_a_hand_edited_preset_says_what_is_missing():
+    """L'en-tête du module présente le JSON comme modifiable à la main. Une
+    ligne retirée par mégarde remontait un `KeyError` nu, qui ne nomme ni le
+    champ ni le fichier — alors que l'erreur de version, elle, était claire."""
+    payload = json.loads(Preset(name="x").to_json())
+    del payload["name"]
+    with pytest.raises(ValueError, match="champ 'name' manquant"):
+        Preset.from_json(json.dumps(payload))
+
+    payload = json.loads(Preset(name="x").to_json())
+    payload["active_links"] = [{"ordered": True}]     # « cards » retiré
+    with pytest.raises(ValueError, match="champ 'cards' manquant"):
+        Preset.from_json(json.dumps(payload))
+
+
+def test_a_broken_preset_does_not_break_the_whole_list(tmp_path):
+    save_preset(str(tmp_path), Preset(name="bon"))
+    (tmp_path / "casse.json").write_text('{"version": 1}', encoding="utf-8")
+    assert list_presets(str(tmp_path)) == ["bon"]
+
+
+def test_saving_migrates_a_legacy_named_preset_instead_of_duplicating_it(tmp_path):
+    """`load_preset` sait lire l'ancien nom ; laisser le fichier en place faisait
+    apparaître le préréglage deux fois dans la liste — celle-ci lisant le nom
+    dans le contenu —, dont une fois avec la configuration d'avant."""
+    ancien = tmp_path / "essai_1.json"
+    ancien.write_text(Preset(name="essai_1").to_json(), encoding="utf-8")
+    save_preset(str(tmp_path), load_preset(str(tmp_path), "essai_1"))
+    assert not ancien.exists()
+    assert list_presets(str(tmp_path)) == ["essai_1"]
+    assert [p.name for p in tmp_path.iterdir()] == [safe_filename("essai_1")]
+
+
+def test_migrating_never_deletes_a_neighbours_preset(tmp_path):
+    """L'ancien nom de fichier n'est pas injectif — c'est ce qui a motivé le
+    changement. Effacer sur sa seule foi détruirait le préréglage du voisin :
+    « Essai 1 » et « Essai 1 » s'y ramenaient au même fichier."""
+    save_preset(str(tmp_path), Preset(name="Essai 1"))
+    save_preset(str(tmp_path), Preset(name="Essai 1 "))
+    assert list_presets(str(tmp_path)) == ["Essai 1", "Essai 1 "]

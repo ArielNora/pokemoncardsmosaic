@@ -43,27 +43,33 @@ class Annealing:
         if not 0.0 < self.final_ratio < 1.0:
             raise ValueError("final_ratio doit être strictement entre 0 et 1.")
 
-    def calibrate(
+    def mean_penalty(
         self,
         grid: np.ndarray,
         distances: EdgeDistances,
         rng: random.Random,
         samples: int = 400,
-    ) -> float:
-        """Déduit la température de départ de l'ampleur typique d'une dégradation.
+    ) -> float | None:
+        """Dégradation moyenne d'un échange au hasard, ou None si non mesurable.
 
-        On tire des échanges au hasard et on retient la dégradation moyenne. La
-        température qui accepte une telle dégradation avec la probabilité `p` vaut
-        `Δ / ln(1/p)`.
+        ⚠️ Les couples sont tirés **parmi les cases occupées**, jamais dans toute
+        la grille. Tirer à plat puis rejeter les cases vides rendait le coût
+        dépendant du remplissage : à 3 % de cases occupées, la probabilité que
+        les deux tirages tombent juste est d'une sur mille, et les 400 essais
+        n'en retenaient aucun. La fonction rendait alors une constante sans
+        rapport avec l'échelle du score, et le recuit — accepter `exp(-Δ/T)`
+        avec T = 1 et Δ ≈ 250 — dégénérait en descente stricte sans le dire.
+
+        Mesuré avant correction : à 10 % de remplissage, trois tirages sur cinq
+        tombaient sur le repli, les deux autres s'écartant d'un facteur 1,6.
         """
-        rows, cols = grid.shape
-        penalties = []
+        occupees = [(int(r), int(c)) for r, c in np.argwhere(grid != EMPTY)]
+        if len(occupees) < 2:
+            return None
 
+        penalties = []
         for _ in range(samples):
-            r1, c1 = rng.randrange(rows), rng.randrange(cols)
-            r2, c2 = rng.randrange(rows), rng.randrange(cols)
-            if (r1, c1) == (r2, c2) or grid[r1, c1] == EMPTY or grid[r2, c2] == EMPTY:
-                continue
+            (r1, c1), (r2, c2) = rng.sample(occupees, 2)
             cells = [(r1, c1), (r2, c2)]
             before = local_score(cells, grid, distances)
             grid[r1, c1], grid[r2, c2] = grid[r2, c2], grid[r1, c1]
@@ -73,9 +79,18 @@ class Annealing:
                 penalties.append(delta)
 
         if not penalties:
-            return 1.0
-        mean_penalty = sum(penalties) / len(penalties)
-        return mean_penalty / math.log(1.0 / self.initial_acceptance)
+            return None
+        return sum(penalties) / len(penalties)
+
+    def temperature_from(self, penalty: float) -> float:
+        """Température acceptant une dégradation `penalty` avec la probabilité voulue.
+
+        Séparée de la mesure pour que la reprise puisse **réutiliser la
+        dégradation mesurée à la première passe tout en suivant un taux
+        d'acceptation modifié depuis** : c'est le taux, et lui seul, qui change
+        ici.
+        """
+        return penalty / math.log(1.0 / self.initial_acceptance)
 
     def temperature_at(self, progress: float, initial: float) -> float:
         """Température à l'avancement `progress` (0 au début, 1 à la fin).

@@ -241,17 +241,43 @@ def optimize_grid(
 
     stopped_by = StopReason.EXHAUSTED
 
+    # Le refroidissement se mesure sur **tout** le calcul, pas sur cette passe.
+    # Sans le cumul, une prolongation repartirait au début du programme de
+    # refroidissement et rejouerait la phase chaude sur une grille déjà bonne.
+    total_progress = base_iteration + total_iterations
+
     if annealing is not None:
-        temperature_0 = annealing.initial_temperature or annealing.calibrate(
-            grid, distances, rng
-        )
+        # Ordre voulu : une température imposée prime sur tout ; sinon on repart
+        # de la dégradation mesurée à la première passe, et on ne mesure à
+        # nouveau qu'à défaut. Mesurer sur une grille déjà optimisée surestime la
+        # température — ×3,6 — et remet le recuit à chaud.
+        #
+        # La conversion en température se refait **à chaque passe**, avec le taux
+        # d'acceptation courant : l'utilisateur qui juge le recuit trop timide et
+        # porte l'acceptation de 0,5 à 0,9 avant de prolonger doit être suivi.
+        temperature_0 = annealing.initial_temperature
+        if temperature_0 is None:
+            penalty = timeline.mean_penalty if timeline is not None else None
+            if penalty is None:
+                penalty = annealing.mean_penalty(grid, distances, rng)
+                if timeline is not None:
+                    timeline.mean_penalty = penalty
+            if penalty is None:
+                # Aucune dégradation mesurable veut dire aucune couture : les
+                # cartes sont trop dispersées pour se toucher, le score vaut 0 et
+                # il n'y a rien à optimiser. Vérifié — 12 cartes dans 20×20
+                # donnent 0 couture. La valeur retenue est alors sans effet.
+                temperature_0 = 1.0
+            else:
+                temperature_0 = annealing.temperature_from(penalty)
 
     def accept(delta: float) -> bool:
         if annealing is None:
             return delta < 0
-        temperature = annealing.temperature_at(
-            iteration / total_iterations if total_iterations else 1.0, temperature_0
+        progress = (
+            (base_iteration + iteration) / total_progress if total_progress else 1.0
         )
+        temperature = annealing.temperature_at(progress, temperature_0)
         return annealing.accepts(delta, temperature, rng)
 
     if timeline is not None and not resumed:

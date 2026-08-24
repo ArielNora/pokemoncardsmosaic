@@ -5,6 +5,7 @@ pleine résolution ne sont relues du disque qu'au moment de l'export. Voir SPEC.
 """
 
 import os
+from collections import Counter
 from collections.abc import Callable, Iterator, Sequence
 from dataclasses import dataclass, field, replace
 
@@ -195,27 +196,45 @@ def load_cards(
     if not paths:
         return CardSet(cards=[], full_size=(0, 0), thumb_size=(0, 0))
 
-    # Passe 1 — en-têtes seulement, pour la plus petite taille commune.
-    min_w, min_h = None, None
+    # Passe 1 — en-têtes seulement, pour établir le format commun.
+    sizes: Counter = Counter()
     readable: list[str] = []
     for path in paths:
         if check_cancelled is not None:
             check_cancelled()
         try:
             with Image.open(path) as img:
-                w, h = img.size
+                size = img.size
         except Exception as e:  # noqa: BLE001 - un fichier abîmé ne doit pas
             # interrompre le chargement des 280 autres cartes.
             print(f"  Illisible, ignorée : {path} ({e})")
             continue
         readable.append(path)
-        min_w = w if min_w is None else min(min_w, w)
-        min_h = h if min_h is None else min(min_h, h)
+        sizes[size] += 1
 
     if not readable:
         return CardSet(cards=[], full_size=(0, 0), thumb_size=(0, 0))
 
-    full_size = (min_w, min_h)
+    # ⚠️ Le format **le plus fréquent**, et non la largeur et la hauteur
+    # minimales prises séparément. Ces deux minima donnaient un couple que
+    # personne ne portait : trois fichiers en 734×1024, 717×1050 et 734×1024
+    # produisaient un `full_size` de 717×1024, de rapport d'aspect étranger aux
+    # trois, et **toutes** les cartes étaient déformées de 2,3 % — sans un mot.
+    # Le défaut s'est produit le 2026-08-22 avec deux fichiers retouchés à la
+    # main. Le format retenu est désormais celui d'une carte réelle, et les
+    # écarts se signalent au lieu d'être absorbés.
+    # Ex aequo départagés par la **plus petite surface** : à égalité de
+    # fréquence, mieux vaut réduire que d'agrandir sans gagner de détail. Sans
+    # règle explicite, l'ordre de rencontre des fichiers déciderait.
+    full_size = min(sizes, key=lambda taille: (-sizes[taille], taille[0] * taille[1]))
+    majority = sizes[full_size]
+    if len(sizes) > 1:
+        autres = sum(n for taille, n in sizes.items() if taille != full_size)
+        detail = ", ".join(f"{w}×{h} ({n})" for (w, h), n in sizes.most_common()[1:6])
+        print(f"  ⚠️ {autres} carte(s) sur {len(readable)} ne sont pas au format "
+              f"{full_size[0]}×{full_size[1]} retenu pour les {majority} autres : "
+              f"{detail}. Elles seront mises à l'échelle.")
+    min_w, min_h = full_size
     thumb_size = (max(1, round(min_w * scale)), max(1, round(min_h * scale)))
 
     # Passe 2 — décodage et réduction directe à la taille de vignette.

@@ -298,7 +298,15 @@ def test_load_cards_excludes_by_path_fragment(tmp_path):
     assert [card.name for card in cards] == ["garder"]
 
 
-def test_load_cards_shrinks_everything_to_the_smallest(tmp_path):
+def test_load_cards_settles_on_a_real_card_size(tmp_path):
+    """Le format commun est celui **d'une carte réelle**, jamais un couple
+    composé de la largeur minimale et de la hauteur minimale prises séparément :
+    734×1024 et 717×1050 donnaient 717×1024, que personne ne portait, et toutes
+    les cartes s'en trouvaient déformées de 2,3 %.
+
+    À égalité de fréquence — ici une carte de chaque taille — c'est la plus
+    petite surface qui l'emporte : mieux vaut réduire qu'agrandir.
+    """
     from pokemon_mosaic.cards import load_cards
 
     _write_png(tmp_path / "grand.png", size=(40, 60))

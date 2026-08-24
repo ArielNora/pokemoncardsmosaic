@@ -97,6 +97,11 @@ class RunStep(QWidget):
         session.selection_changed.connect(self._update_resume_buttons)
         session.links_changed.connect(self._update_resume_buttons)
         session.layout_changed.connect(self._update_resume_buttons)
+        # L'épaisseur des bandes entre dans la signature de reprise : sans ce
+        # rafraîchissement, les boutons resteraient actifs après un changement
+        # de réglage, et cliquer dessus ne ferait rien — `_extend_run` sort
+        # aussitôt sur `can_resume()`.
+        session.algorithm_changed.connect(self._update_resume_buttons)
 
     # --- Construction -----------------------------------------------------
 
@@ -255,12 +260,20 @@ class RunStep(QWidget):
         ferait désigner d'autres cartes par les mêmes indices, en silence. Les
         liens comptent aussi, l'optimiseur exigeant que chaque bloc soit déjà
         intact dans la grille de départ.
+
+        L'épaisseur des bandes en fait partie pour une autre raison : elle
+        recalcule les signatures, donc les distances, donc **l'échelle du
+        score**. Mesuré — la même grille vaut 621,7 avec une bande de 0,10 et
+        552,0 avec 0,30, soit 11 % d'écart. Prolonger sans le prendre en compte
+        mêlait deux métriques dans une seule timeline, et la courbe montrait une
+        chute soudaine alors qu'aucune carte n'avait bougé.
         """
         session = self._session
         return (
             tuple(session.selected_indices()),
             tuple(sorted(link.cards for link in session.usable_links().active)),
             (session.rows, session.cols),
+            session.strip_size,
         )
 
     def can_resume(self) -> bool:

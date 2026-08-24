@@ -16,6 +16,18 @@ from pokemon_mosaic.optimize import (
 from pokemon_mosaic.scoring import EdgeDistances, grid_score
 from pokemon_mosaic.timeline import Timeline
 
+
+def _temperature(annealing, grid, distances, rng):
+    """Température de départ : la mesure, puis sa conversion.
+
+    Les deux étapes sont séparées dans le code pour qu'une prolongation puisse
+    réutiliser la mesure tout en suivant un taux d'acceptation modifié.
+    """
+    penalty = annealing.mean_penalty(grid, distances, rng)
+    assert penalty is not None, "cette grille doit avoir des coutures"
+    return annealing.temperature_from(penalty)
+
+
 # --- Recuit ---------------------------------------------------------------
 
 def test_annealing_rejects_impossible_settings():
@@ -65,8 +77,9 @@ def test_calibration_scales_with_the_data():
             setattr(card, side, getattr(card, side) / 100)
 
     grid = np.arange(30).reshape(5, 6)
-    t_small = Annealing().calibrate(grid, EdgeDistances(small), random.Random(0))
-    t_large = Annealing().calibrate(
+    t_small = _temperature(Annealing(), grid, EdgeDistances(small), random.Random(0))
+    t_large = _temperature(
+        Annealing(),
         grid, EdgeDistances(make_cards(30, seed=1)), random.Random(0)
     )
     assert t_large > t_small * 10
@@ -379,3 +392,163 @@ def test_continuing_records_no_duplicate_starting_snapshot():
                   rng=random.Random(1))
     # Une cadence hors d'atteinte : seul le cliché final imposé s'ajoute.
     assert len(timeline) == before + 1
+
+
+# --- Prolonger un calcul ne doit pas remettre le recuit à chaud -------------
+
+def _jeu(n=40, graine=0):
+    cartes = make_cards(n, seed=graine)
+    return cartes, EdgeDistances(cartes)
+
+
+def test_the_first_pass_stores_its_measurement_on_the_timeline():
+    """C'est la **dégradation** qui est gardée, pas la température : celle-ci
+    encode aussi le taux d'acceptation, modifiable entre deux passes."""
+    cartes, distances = _jeu()
+    grille = build_initial_grid(cartes, shape=(8, 5), rng=random.Random(0))
+    timeline = Timeline()
+    assert timeline.mean_penalty is None
+    optimize_grid(grille, distances, iterations=200, rng=random.Random(1),
+                  annealing=Annealing(initial_acceptance=0.5), timeline=timeline)
+    assert timeline.mean_penalty > 0
+
+
+def test_resuming_reuses_the_measurement_instead_of_taking_a_new_one(monkeypatch):
+    """Mesurer sur une grille déjà optimisée surestime la dégradation — la
+    température en sortait ×3,6 — parce qu'un échange au hasard y dégrade bien
+    plus le score. Le recuit repartait à chaud, et prolonger coûtait 2,6 %."""
+    cartes, distances = _jeu()
+    grille = build_initial_grid(cartes, shape=(8, 5), rng=random.Random(0))
+    timeline = Timeline()
+
+    appels = []
+    vraie = Annealing.mean_penalty
+
+    def compte(self, grid, dist, rng, samples=400):
+        appels.append(1)
+        return vraie(self, grid, dist, rng, samples)
+
+    monkeypatch.setattr(Annealing, "mean_penalty", compte)
+    for _ in range(3):        # une passe puis deux prolongations
+        optimize_grid(grille, distances, iterations=200, rng=random.Random(1),
+                      annealing=Annealing(initial_acceptance=0.5), timeline=timeline)
+    assert len(appels) == 1, "la dégradation ne doit être mesurée qu'une fois"
+
+
+def test_an_explicit_temperature_still_wins_over_the_stored_one():
+    cartes, distances = _jeu()
+    grille = build_initial_grid(cartes, shape=(8, 5), rng=random.Random(0))
+    timeline = Timeline(mean_penalty=999.0)
+    vues = []
+    annealing = Annealing(initial_acceptance=0.5, initial_temperature=42.0)
+    vraie = Annealing.temperature_at
+    annealing.temperature_at = lambda p, t: (vues.append(t), vraie(annealing, p, t))[1]
+    optimize_grid(grille, distances, iterations=50, rng=random.Random(1),
+                  annealing=annealing, timeline=timeline)
+    assert vues and set(vues) == {42.0}
+
+
+def test_resuming_continues_the_cooling_schedule_instead_of_restarting_it():
+    """Sans le cumul, `iteration / total_iterations` repart de zéro : la
+    prolongation rejoue toute la phase chaude sur une grille déjà bonne."""
+    cartes, distances = _jeu()
+    grille = build_initial_grid(cartes, shape=(8, 5), rng=random.Random(0))
+    timeline = Timeline()
+    optimize_grid(grille, distances, iterations=1000, rng=random.Random(1),
+                  annealing=Annealing(initial_acceptance=0.5), timeline=timeline)
+
+    progressions = []
+    annealing = Annealing(initial_acceptance=0.5)
+    vraie = Annealing.temperature_at
+    annealing.temperature_at = lambda p, t: (progressions.append(p),
+                                             vraie(annealing, p, t))[1]
+    optimize_grid(grille, distances, iterations=1000, rng=random.Random(2),
+                  annealing=annealing, timeline=timeline)
+
+    # La prolongation démarre à mi-parcours (1000 déjà faites sur 2000 au total),
+    # et non à zéro comme si le calcul commençait.
+    assert progressions
+    assert min(progressions) >= 0.49, f"reparti de {min(progressions):.3f}"
+    assert max(progressions) <= 1.0
+
+
+# --- Non-régressions du /verif-code du 2026-08-24 ---------------------------
+
+def _grille_creuse(n, rows, cols, graine=0):
+    """`n` cartes dispersées au hasard dans une grille de `rows`×`cols`."""
+    cartes = make_cards(n, seed=graine)
+    grille = np.full((rows, cols), -1, dtype=int)
+    plat = grille.reshape(-1)
+    for rang, position in enumerate(
+            random.Random(graine).sample(range(rows * cols), n)):
+        plat[position] = rang
+    return cartes, EdgeDistances(cartes), grille
+
+
+def test_calibration_does_not_collapse_on_a_sparsely_filled_grid():
+    """Les couples étaient tirés dans toute la grille puis rejetés s'ils
+    touchaient une case vide : à 10 % de remplissage, trois tirages sur cinq
+    tombaient sur le repli à 1,0 — et le recuit, acceptant `exp(-250/1)`,
+    dégénérait en descente stricte sans le dire."""
+    _, distances, grille = _grille_creuse(40, 20, 20)
+    annealing = Annealing(initial_acceptance=0.5)
+    temperatures = [_temperature(annealing, grille.copy(), distances, random.Random(s))
+                    for s in range(5)]
+    assert all(t > 10.0 for t in temperatures), temperatures
+    # et l'ordre de grandeur reste celui d'une grille pleine
+    assert max(temperatures) / min(temperatures) < 3.0, temperatures
+
+
+def test_a_grid_without_any_seam_has_no_measurable_penalty():
+    """12 cartes dans 20×20 ne se touchent jamais : score nul, rien à optimiser.
+    Le repli est alors sans effet, et c'est le seul cas où il survient."""
+    _, distances, grille = _grille_creuse(12, 20, 20)
+    assert grid_score(grille, distances) == 0.0
+    assert Annealing().mean_penalty(grille, distances, random.Random(0)) is None
+
+
+def test_a_changed_acceptance_is_honoured_when_extending():
+    """La température encode le taux d'acceptation. La mémoriser telle quelle
+    faisait ignorer un réglage modifié entre deux passes : l'utilisateur portait
+    l'acceptation de 0,5 à 0,9 et rien ne changeait."""
+    cartes, distances, _ = _grille_creuse(60, 6, 10)
+    grille = build_initial_grid(cartes, shape=(10, 6), rng=random.Random(0))
+    timeline = Timeline()
+    optimize_grid(grille, distances, iterations=500, rng=random.Random(1),
+                  annealing=Annealing(initial_acceptance=0.5), timeline=timeline)
+    assert timeline.mean_penalty > 0
+
+    def temperatures_employees(acceptance):
+        """Les T0 réellement passées au programme de refroidissement."""
+        vues = []
+        annealing = Annealing(initial_acceptance=acceptance)
+        vraie = Annealing.temperature_at
+        annealing.temperature_at = (
+            lambda p, t, _a=annealing, _v=vues, _f=vraie: (_v.append(t), _f(_a, p, t))[1]
+        )
+        optimize_grid(grille.copy(), distances, iterations=200, rng=random.Random(2),
+                      annealing=annealing, timeline=timeline)
+        assert vues
+        return set(vues)
+
+    employees = {p: temperatures_employees(p) for p in (0.1, 0.5, 0.9)}
+
+    assert len({next(iter(v)) for v in employees.values()}) == 3
+    # Plus on accepte, plus il fait chaud.
+    assert (next(iter(employees[0.1])) < next(iter(employees[0.5]))
+            < next(iter(employees[0.9])))
+    # La dégradation, elle, n'est mesurée qu'une fois.
+    assert timeline.mean_penalty > 0
+
+
+def test_rewinding_restores_the_requested_snapshot_cadence():
+    """Chaque élagage double `every`. Repartir d'un cliché en gardant la cadence
+    grossie ne laissait presque aucun cliché à la nouvelle branche."""
+    cartes, distances, _ = _grille_creuse(60, 6, 10)
+    grille = build_initial_grid(cartes, shape=(10, 6), rng=random.Random(0))
+    timeline = Timeline(every=10, max_snapshots=8)
+    optimize_grid(grille, distances, iterations=20000, rng=random.Random(3),
+                  annealing=Annealing(initial_acceptance=0.5), timeline=timeline)
+    assert timeline.every > 10, "l'élagage doit avoir grossi la cadence"
+    timeline.truncate_after(2)
+    assert timeline.every == 10

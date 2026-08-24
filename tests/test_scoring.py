@@ -133,3 +133,35 @@ def test_distances_refuse_a_discontinuous_numbering():
     selection = [cards[0], cards[2], cards[4]]  # indices 0, 2, 4
     with pytest.raises(ValueError, match="Numérotation discontinue"):
         EdgeDistances(selection)
+
+
+# --- Non-régressions du /verif-code du 2026-08-24 ---------------------------
+
+def _ecrire(dossier, tailles):
+    from PIL import Image
+    dossier.mkdir(parents=True, exist_ok=True)
+    for nom, taille in tailles.items():
+        Image.new("RGB", taille, (10, 20, 30)).save(dossier / f"{nom}.webp")
+
+
+def test_the_common_size_is_a_real_card_size_not_two_independent_minima(tmp_path,
+                                                                       capsys):
+    """La largeur et la hauteur minimales prises séparément donnaient un couple
+    que personne ne portait : 734×1024 et 717×1050 produisaient 717×1024, de
+    rapport d'aspect étranger aux deux, et **toutes** les cartes étaient
+    déformées de 2,3 % sans un mot. Survenu le 2026-08-22."""
+    from pokemon_mosaic.cards import load_cards
+
+    _ecrire(tmp_path / "jeu", {"a": (734, 1024), "b": (717, 1050), "c": (734, 1024)})
+    cards = load_cards(str(tmp_path))
+    assert cards.full_size == (734, 1024)
+    assert "ne sont pas au format" in capsys.readouterr().out
+
+
+def test_a_homogeneous_collection_reports_nothing(tmp_path, capsys):
+    from pokemon_mosaic.cards import load_cards
+
+    _ecrire(tmp_path / "jeu", {"a": (60, 80), "b": (60, 80)})
+    cards = load_cards(str(tmp_path))
+    assert cards.full_size == (60, 80)
+    assert "ne sont pas au format" not in capsys.readouterr().out

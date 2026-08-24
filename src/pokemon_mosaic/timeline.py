@@ -50,11 +50,28 @@ class Timeline:
     every: int = 10
     max_snapshots: int | None = 70
     snapshots: list[Snapshot] = field(default_factory=list)
+    # Dégradation moyenne mesurée sur la grille **de départ**, à la première
+    # passe. Une prolongation la réutilise au lieu de remesurer : mesurer sur une
+    # grille déjà optimisée donne une valeur bien plus haute — température ×3,6 —,
+    # parce qu'un échange au hasard y dégrade davantage le score. Remettre ainsi
+    # le recuit à chaud défait une partie du travail acquis.
+    #
+    # C'est la **dégradation** qui est gardée, et non la température qu'on en
+    # tire : la température encode aussi le taux d'acceptation, et la mémoriser
+    # ferait ignorer un taux modifié entre deux passes.
+    mean_penalty: float | None = None
     # Appelé à chaque cliché enregistré. Un simple rappel, pas un signal Qt : le
     # cœur doit rester utilisable sans interface. C'est à l'appelant de faire le
     # pont s'il vit dans un autre fil.
     on_record: Callable[[Snapshot], None] | None = None
     _next_at: int = 0
+    # Cadence demandée à la construction. `every` grossit à chaque élagage ;
+    # celle-ci ne bouge pas, et sert à repartir d'un cliché sans hériter d'une
+    # cadence calculée pour une timeline bien plus longue.
+    _every_0: int = field(init=False, repr=False, default=0)
+
+    def __post_init__(self):
+        self._every_0 = self.every
 
     def __len__(self) -> int:
         return len(self.snapshots)
@@ -127,6 +144,10 @@ class Timeline:
             raise IndexError(f"Cliché {index} hors de la timeline "
                              f"({len(self.snapshots)} clichés).")
         self.snapshots = self.snapshots[: index + 1]
+        # La cadence redescend à la valeur demandée : la branche repartant d'ici
+        # est neuve et courte, et garder l'intervalle grossi par les élagages
+        # d'une timeline dix fois plus longue n'y laisserait presque aucun cliché.
+        self.every = self._every_0
         self._next_at = self.snapshots[-1].accepted + self.every
 
     def best(self) -> Snapshot | None:
