@@ -35,7 +35,11 @@ from pokemon_mosaic.artwork import MANIFEST_VERSION
 
 DEFAULT_MANIFEST = "cards.json"
 DEFAULT_IMAGES = os.path.join("data", "pokemoncards")
-DEFAULT_REPO = "ArielNora/pokemoncardsmosaic"
+# Un dépôt **dédié**, public, sans code ni historique : le miroir y est seul.
+# Le risque est ainsi cantonné — un signalement viserait ce dépôt-là, qui ne
+# contient que ce qui est litigieux et se reconstruit en trente secondes depuis
+# `data/pokemoncards/`. Le dépôt de code n'est pas atteint.
+DEFAULT_REPO = "ArielNora/pokemoncardsmosaic-images"
 # Le nom de la balise porte la version du manifeste : un changement de format
 # des entrées doit produire un miroir distinct, sinon un ancien client
 # téléchargerait des archives qu'il ne sait plus décrire.

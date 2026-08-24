@@ -8405,7 +8405,7 @@
  ],
  "generated_at": "2026-08-24T11:48:04Z",
  "mirror": {
-  "repo": "ArielNora/pokemoncardsmosaic",
+  "repo": "ArielNora/pokemoncardsmosaic-images",
   "sets": {
    "A1": {
     "archive": "a1-puissance-genetique.zip",
@@ -8541,7 +8541,7 @@
    }
   },
   "tag": "cards-v3",
-  "url": "https://github.com/ArielNora/pokemoncardsmosaic/releases/download/cards-v3"
+  "url": "https://github.com/ArielNora/pokemoncardsmosaic-images/releases/download/cards-v3"
  },
  "rarities": [
   "AR",

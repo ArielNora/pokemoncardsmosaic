@@ -78,8 +78,10 @@ uv run python scripts/fetch_cards.py
 contient que `cards.json`, qui décrit quelles cartes composent le jeu et où les
 prendre.
 
-La commande passe par le **miroir** publié en *release* du dépôt : une archive
-par extension, dont l'empreinte est vérifiée, puis celle de chaque image. C'est
+La commande passe par le **miroir**, publié en *release* d'un dépôt dédié —
+[pokemoncardsmosaic-images](https://github.com/ArielNora/pokemoncardsmosaic-images) —
+sous forme d'une archive par extension, dont l'empreinte est vérifiée, puis
+celle de chaque image. C'est
 la seule voie qui donne à tout le monde exactement les mêmes octets — un
 réencodage local dépendrait de la version de libwebp installée — et la seule qui
 rende les douze illustrations qu'aucune source publique ne publie au format
