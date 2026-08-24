@@ -180,6 +180,7 @@ def main(argv=None) -> int:
     # cartes locales récupérables ailleurs que sur cette machine.
     manifest["mirror"] = {
         "tag": TAG,
+        "repo": args.repo,
         "url": f"https://github.com/{args.repo}/releases/download/{TAG}",
         "sets": mirror,
     }

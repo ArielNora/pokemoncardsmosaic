@@ -940,8 +940,10 @@ def test_a_tampered_archive_is_refused_whole(tmp_path):
 
     sortie = tmp_path / "sortie"
     tally, echecs = fetch.fetch_mirror(manifest, str(sortie), workers=1)
-    assert len(echecs) == 2
-    assert all("altérée" in message for _, message in echecs)
+    # Un échec d'archive est rapporté **une fois**, pour toutes ses cartes.
+    assert len(echecs) == 1
+    libelle, message = echecs[0]
+    assert "2 cartes" in libelle and "altérée" in message
     assert tally.get(fetch.Outcome.FETCHED, 0) == 0
     assert not list(sortie.rglob("*.webp"))
 
@@ -962,3 +964,51 @@ def test_an_archive_entry_cannot_write_outside_the_output(tmp_path):
     fetch.fetch_mirror(manifest, str(sortie), workers=1)
     assert not (tmp_path / "evade.webp").exists()
     assert not (tmp_path.parent / "evade.webp").exists()
+
+
+def test_an_unreachable_archive_is_reported_once_not_once_per_card(tmp_path,
+                                                                   monkeypatch):
+    """441 lignes « 404 » identiques noieraient la seule information utile :
+    la cause. Un échec d'archive vaut pour toutes ses cartes."""
+    import urllib.error
+
+    manifest, cartes = _manifeste_jouet(tmp_path)
+    _miroir(tmp_path, manifest, cartes)
+    monkeypatch.setattr(
+        fetch.urllib.request, "urlopen",
+        lambda *a, **k: (_ for _ in ()).throw(
+            urllib.error.HTTPError("u", 404, "Not Found", {}, None)))
+
+    _, echecs = fetch.fetch_mirror(manifest, str(tmp_path / "sortie"), workers=1)
+    assert len(echecs) == 1, echecs
+    libelle, message = echecs[0]
+    assert "2 cartes" in libelle
+    assert "GH_TOKEN" in message, "la cause probable doit être nommée"
+
+
+def test_a_private_mirror_is_read_through_the_asset_endpoint(tmp_path, monkeypatch):
+    """Sur un dépôt privé, l'adresse publique répond 404 **même munie du
+    jeton** : seul `releases/assets/{id}` sert le fichier. Mesuré le 2026-08-24."""
+    manifest, cartes = _manifeste_jouet(tmp_path)
+    dossier = _miroir(tmp_path, manifest, cartes)
+    manifest["mirror"]["repo"] = "ArielNora/pokemoncardsmosaic"
+    manifest["mirror"]["url"] = "https://example.invalid/publique"
+    monkeypatch.setenv("GH_TOKEN", "jeton-de-test")
+    monkeypatch.setattr(fetch, "_assets_by_name", lambda repo, tag, token: {
+        entry["archive"]: 4242 for entry in manifest["mirror"]["sets"].values()})
+
+    demandes = []
+
+    def faux_urlopen(request, timeout=None):
+        demandes.append((request.full_url, request.headers))
+        nom = manifest["mirror"]["sets"]["A1"]["archive"]
+        return io.BytesIO((dossier / nom).read_bytes())
+
+    monkeypatch.setattr(fetch.urllib.request, "urlopen", faux_urlopen)
+    _, echecs = fetch.fetch_mirror(manifest, str(tmp_path / "sortie"), workers=1)
+
+    assert echecs == []
+    url, entetes = demandes[0]
+    assert url.endswith("/releases/assets/4242")
+    assert entetes["Accept"] == "application/octet-stream"
+    assert "example.invalid" not in url, "l'adresse publique ne sert à rien ici"
