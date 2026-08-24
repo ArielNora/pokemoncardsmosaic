@@ -872,3 +872,93 @@ def test_a_locally_deposited_card_says_the_mirror_is_the_only_way():
     « hors cache » laisserait croire qu'il suffit de réessayer."""
     assert "miroir" in fetch._pourquoi({"local": True})
     assert "hors cache" in fetch._pourquoi({})
+
+
+# --- Le miroir --------------------------------------------------------------
+
+def _miroir(tmp_path, manifest, cartes):
+    """Une archive par extension, comme `publish_release.py` les produit."""
+    import zipfile
+    dossier = tmp_path / "miroir"
+    dossier.mkdir()
+    sets = {}
+    par_jeu = {}
+    for card in cartes:
+        par_jeu.setdefault(card["set"], []).append(card)
+    for jeu, lot in par_jeu.items():
+        nom = lot[0]["path"].rsplit("/", 1)[0] + ".zip"
+        chemin = dossier / nom
+        with zipfile.ZipFile(chemin, "w") as zf:
+            for card in lot:
+                zf.writestr(card["path"], card["_contenu"])
+        sets[jeu] = {"archive": nom,
+                     "sha256": hashlib.sha256(chemin.read_bytes()).hexdigest(),
+                     "bytes": chemin.stat().st_size, "cards": len(lot)}
+    manifest["mirror"] = {"tag": "cards-v3", "url": dossier.as_uri(), "sets": sets}
+    return dossier
+
+
+def _manifeste_jouet(tmp_path):
+    cartes = []
+    for numero in (1, 2):
+        contenu = png_bytes((8, 12)) + bytes([numero])
+        cartes.append({
+            "id": f"A1-{numero:03d}", "set": "A1", "number": numero,
+            "path": f"a1-jeu/a1-{numero:03d}-carte.webp",
+            "url": "https://example.invalid/x", "bytes": len(contenu),
+            "sha256": hashlib.sha256(contenu).hexdigest(),
+            "source_sha256": hashlib.sha256(contenu).hexdigest(),
+            "source_bytes": len(contenu), "_contenu": contenu,
+        })
+    manifest = {"version": artwork.MANIFEST_VERSION, "cards": cartes}
+    return manifest, cartes
+
+
+def test_the_mirror_delivers_every_card_and_is_idempotent(tmp_path):
+    manifest, cartes = _manifeste_jouet(tmp_path)
+    _miroir(tmp_path, manifest, cartes)
+    sortie = tmp_path / "sortie"
+
+    tally, echecs = fetch.fetch_mirror(manifest, str(sortie), workers=1)
+    assert echecs == []
+    assert tally[fetch.Outcome.FETCHED] == 2
+    for card in cartes:
+        ecrit = sortie / card["path"]
+        assert hashlib.sha256(ecrit.read_bytes()).hexdigest() == card["sha256"]
+
+    tally, echecs = fetch.fetch_mirror(manifest, str(sortie), workers=1)
+    assert echecs == [] and tally[fetch.Outcome.KEPT] == 2
+
+
+def test_a_tampered_archive_is_refused_whole(tmp_path):
+    """L'empreinte de l'archive fait foi avant toute extraction : une archive
+    modifiée ne doit pas livrer même ses fichiers intacts."""
+    manifest, cartes = _manifeste_jouet(tmp_path)
+    dossier = _miroir(tmp_path, manifest, cartes)
+    archive = dossier / manifest["mirror"]["sets"]["A1"]["archive"]
+    archive.write_bytes(archive.read_bytes() + b"X")
+
+    sortie = tmp_path / "sortie"
+    tally, echecs = fetch.fetch_mirror(manifest, str(sortie), workers=1)
+    assert len(echecs) == 2
+    assert all("altérée" in message for _, message in echecs)
+    assert tally.get(fetch.Outcome.FETCHED, 0) == 0
+    assert not list(sortie.rglob("*.webp"))
+
+
+def test_an_archive_entry_cannot_write_outside_the_output(tmp_path):
+    """Les chemins viennent du manifeste, jamais de l'archive : une entrée
+    nommée `../../evade.webp` n'a aucun effet."""
+    import zipfile
+    manifest, cartes = _manifeste_jouet(tmp_path)
+    dossier = _miroir(tmp_path, manifest, cartes)
+    archive = dossier / manifest["mirror"]["sets"]["A1"]["archive"]
+    with zipfile.ZipFile(archive, "a") as zf:
+        zf.writestr("../../evade.webp", b"pas la bonne carte")
+    manifest["mirror"]["sets"]["A1"]["sha256"] = hashlib.sha256(
+        archive.read_bytes()).hexdigest()
+
+    sortie = tmp_path / "sortie"
+    fetch.fetch_mirror(manifest, str(sortie), workers=1)
+    assert not (tmp_path / "evade.webp").exists()
+    assert not (tmp_path.parent / "evade.webp").exists()

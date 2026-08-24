@@ -74,10 +74,27 @@ uv sync --extra experiments
 uv run python scripts/fetch_cards.py
 ```
 
-297 cartes, 27 Mo, environ quatre secondes. Les images viennent de
-[l'ancienne source]([adresse retirée]) (licence MIT) : le dépôt ne contient que
-`cards.json`, qui décrit quelles cartes composent le jeu et où les prendre. Rien
-n'est rediffusé — chacun télécharge à la source.
+441 illustrations nues — sans cadre ni texte —, 734×1024, 56,4 Mo. Le dépôt ne
+contient que `cards.json`, qui décrit quelles cartes composent le jeu et où les
+prendre.
+
+La commande passe par le **miroir** publié en *release* du dépôt : une archive
+par extension, dont l'empreinte est vérifiée, puis celle de chaque image. C'est
+la seule voie qui donne à tout le monde exactement les mêmes octets — un
+réencodage local dépendrait de la version de libwebp installée — et la seule qui
+rende les douze illustrations qu'aucune source publique ne publie au format
+natif récupérables ailleurs que sur la machine qui les a produites.
+
+Pour remonter aux sources d'origine plutôt qu'au miroir — [la source]([adresse retirée])
+et [le forum]([adresse retirée]),
+qui les créditent l'un et l'autre à le serveur d'origine :
+
+```bash
+uv run python scripts/fetch_cards.py --from source
+```
+
+Ces douze-là y échoueront, faute de source publique. Voir
+`docs/SOURCES_SOURCE_FORUM.md`.
 
 Relancer la commande ne récupère que ce qui manque ou ne correspond plus à son
 empreinte : elle est reprenable après une interruption. Pour contrôler sans rien

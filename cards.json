@@ -8404,6 +8404,144 @@
   }
  ],
  "generated_at": "2026-08-24T11:48:04Z",
+ "mirror": {
+  "sets": {
+   "A1": {
+    "archive": "a1-puissance-genetique.zip",
+    "bytes": 4806310,
+    "cards": 34,
+    "sha256": "10fea6d63407f929ca8ddf107bb96370f28eaf398aeabd41c06b0a5c7b777651"
+   },
+   "A1a": {
+    "archive": "a1a-l-ile-fabuleuse.zip",
+    "bytes": 1228420,
+    "cards": 9,
+    "sha256": "e69ef47c57f86d4b5c469559bf4c44cc4809ffcac3dc08e7e45de191f9dd44be"
+   },
+   "A2": {
+    "archive": "a2-choc-spatio-temporel.zip",
+    "bytes": 4861594,
+    "cards": 34,
+    "sha256": "2daac9c886c1705e6171a8028b019ed93acad1e265dac15de94df0311314a912"
+   },
+   "A2a": {
+    "archive": "a2a-lumiere-triomphale.zip",
+    "bytes": 1514344,
+    "cards": 11,
+    "sha256": "f1f1337b44a567aa7885a2a37c177f96f3c2fc64a13797cf465576022a704c1a"
+   },
+   "A2b": {
+    "archive": "a2b-rejouissances-rayonnantes.zip",
+    "bytes": 1205118,
+    "cards": 11,
+    "sha256": "fe8b09e25a7eea1999f611d335274576cedfc3c03bd810d40e4c75040e3aef66"
+   },
+   "A3": {
+    "archive": "a3-gardiens-celestes.zip",
+    "bytes": 5158626,
+    "cards": 36,
+    "sha256": "072f15469e2a8da19cc41be281b2db0db1af846529055e5f19afbe2b62b02584"
+   },
+   "A3a": {
+    "archive": "a3a-crise-interdimensionnelle.zip",
+    "bytes": 1337630,
+    "cards": 11,
+    "sha256": "3308f07356d3d9263445507dd3d9d7a04dd397cdde391305b59f327119ab5db0"
+   },
+   "A3b": {
+    "archive": "a3b-la-clairiere-d-evoli.zip",
+    "bytes": 1974304,
+    "cards": 15,
+    "sha256": "c184aa3f429f0f67be3766939dfb1d7f25f1f290e3c7fb5fc0f995796ea924bf"
+   },
+   "A4": {
+    "archive": "a4-sagesse-entre-ciel-et-mer.zip",
+    "bytes": 4591276,
+    "cards": 34,
+    "sha256": "55ba77248289ca75b67f7607f69fda56de5db1779970dfe2a20a932d6146bef6"
+   },
+   "A4a": {
+    "archive": "a4a-source-secrete.zip",
+    "bytes": 1348130,
+    "cards": 11,
+    "sha256": "c02fcc9133360ff6d901bbf8fd6e72220983590fa914b8d06370ec2add005165"
+   },
+   "A4b": {
+    "archive": "a4b-booster-de-luxe-ex.zip",
+    "bytes": 930636,
+    "cards": 7,
+    "sha256": "5907df6f99fd8085db9d76a0aa16844f1a43a251f52d2d9738100f760fb64188"
+   },
+   "B1": {
+    "archive": "b1-mega-ascension.zip",
+    "bytes": 5107520,
+    "cards": 39,
+    "sha256": "3cdb38f16917272e1d0919976b931caccc632ce39192e07765e6f260b24b7f22"
+   },
+   "B1a": {
+    "archive": "b1a-embrasement-ecarlate.zip",
+    "bytes": 1295626,
+    "cards": 11,
+    "sha256": "936dfcd0c4e12f14cffdbc98a6f9c7eed179ae07865634d01df7e23177d7427e"
+   },
+   "B2": {
+    "archive": "b2-parade-onirique.zip",
+    "bytes": 4121418,
+    "cards": 35,
+    "sha256": "8ab3e105ecc6d1576ca18968608adbc6af5670dfeb3283931bdca53379be36b3"
+   },
+   "B2a": {
+    "archive": "b2a-merveilles-de-paldea.zip",
+    "bytes": 1172002,
+    "cards": 12,
+    "sha256": "322d10e28d5961d997a295052b1808909879028a6bc5db2f3c6be50b68ac7ec4"
+   },
+   "B2b": {
+    "archive": "b2b-mega-rayonnement.zip",
+    "bytes": 1012646,
+    "cards": 10,
+    "sha256": "16cd33e79c045ebdf480fb0d12b71c05a74dd9b171941253a6869a5b3c5f10ff"
+   },
+   "B3": {
+    "archive": "b3-aura-palpitante.zip",
+    "bytes": 4159022,
+    "cards": 35,
+    "sha256": "fbba5658f575b6c9d4f0055eb280075f6f12ef4a28a0852cd695390874f1a737"
+   },
+   "B3a": {
+    "archive": "b3a-propulsion-paradoxe.zip",
+    "bytes": 1419478,
+    "cards": 11,
+    "sha256": "e8f1c4764e480da530b9d8f0d1a32df923b1eb0acad59f19723e2e36a0548d43"
+   },
+   "B3b": {
+    "archive": "b3b-jours-heureux.zip",
+    "bytes": 1403336,
+    "cards": 13,
+    "sha256": "6ba4b4dffe2f4454fae21ea410511ad1a7e2c1812531853c2c583bc3b3c21688"
+   },
+   "B4": {
+    "archive": "b4-domination-celeste.zip",
+    "bytes": 4600456,
+    "cards": 34,
+    "sha256": "c522686a4f28fa8cb47a84013014f4f992c8561480bffa35db630c78f18b4064"
+   },
+   "PROMO-A": {
+    "archive": "promo-a-promo-a.zip",
+    "bytes": 2152266,
+    "cards": 17,
+    "sha256": "0c7528b61c943428d3b2ca4b22725b42832e3f8be67958ccd0f379ffc1fa9b6c"
+   },
+   "PROMO-B": {
+    "archive": "promo-b-promo-b.zip",
+    "bytes": 1031880,
+    "cards": 11,
+    "sha256": "a6f0b3c691132cad15f251421319df95b8d576052825abb2095741e180597fa5"
+   }
+  },
+  "tag": "cards-v3",
+  "url": "https://github.com/ArielNora/pokemoncardsmosaic/releases/download/cards-v3"
+ },
  "rarities": [
   "AR",
   "SAR",
