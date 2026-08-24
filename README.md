@@ -124,14 +124,11 @@ uv run python scripts/fetch_cards.py       # récupère les nouvelles cartes
 
 Le manifeste retient les cartes dont l'illustration occupe toute la carte : les
 trois raretés étoilées, sans les rendus 3D du studio PLANETA ni les cartes
-Dresseur — sauf en Three Star, qui sont de vraies scènes. La règle et son
-établissement sont détaillés dans
-[docs/RECUPERATION_IMAGES.md](docs/RECUPERATION_IMAGES.md).
+Dresseur — sauf en Three Star, qui sont de vraies scènes.
 
-Les images sont en français quand l'ancienne source les a, en anglais sinon (113 des 297 à
-ce jour). Le texte de la carte étant incrusté dans l'image, relancer
-`build_manifest.py` quand le français se complétera fera retélécharger les
-cartes concernées.
+Les noms sont en français quand le catalogue les a, en anglais sinon — 440 des
+441 à ce jour. Ils ne servent qu'à nommer les fichiers : l'illustration est nue,
+sans texte incrusté.
 
 ### Utiliser un autre jeu d'images
 

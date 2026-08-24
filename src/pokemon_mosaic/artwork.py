@@ -5,8 +5,8 @@ cadre ni texte —, qui est la texture que le jeu compose à l'affichage. Ce mod
 porte ce que `scripts/build_manifest.py` et `scripts/fetch_cards.py` partagent :
 quelles cartes retenir, où trouver leur image, et comment la préparer.
 
-Voir `docs/SOURCES_SOURCE_FORUM.md` pour la comparaison des sources et
-`docs/PLAN_IMAGES.md` pour le plan.
+Voir `docs/SOURCES_SOURCE_FORUM.md` : format attendu, mesures d'encodage, et
+provenance.
 """
 
 import io

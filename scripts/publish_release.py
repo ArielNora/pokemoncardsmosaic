@@ -14,7 +14,7 @@ Le dépôt ne versionne aucune image : `cards.json` dit où les prendre, et
 
 ⚠️ **Point de droit, rappelé.** Héberger ces illustrations est une rediffusion
 d'œuvres protégées, contrairement au montage « chacun télécharge à la source ».
-Voir `docs/PLAN_IMAGES.md` §5.
+Voir `docs/SOURCES_SOURCE_FORUM.md`.
 
 ⚠️ **Ne jamais lancer `gh auth setup-git`**, et répondre *non* à « Authenticate
 Git with your GitHub credentials? ». Le compte `gh` actif est unique et global :

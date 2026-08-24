@@ -42,10 +42,9 @@ au format natif par aucune des deux : elles se déposent dans `data/local/`,
 nommées par identifiant, et priment sur les sources distantes.
 Voir `docs/SOURCES_SOURCE_FORUM.md`.
 
-⚠️ Deux sources écartées :
-- **l'ancienne source** ne sert que des cartes **encadrées** (`docs/PISTES_ILLUSTRATIONS.md`) ;
-- **le serveur d'origine** sert les bonnes images mais refuse toute image absente de son
-  cache, à n'importe quel client (`docs/RECUPERATION_IMAGES.md`).
+⚠️ Deux sources écartées : **l'ancienne source**, qui ne sert que des cartes **encadrées**,
+et **le serveur d'origine**, dont les images conviennent mais qui n'en sert aucune de
+façon fiable.
 
 ## Limitations connues à corriger
 
