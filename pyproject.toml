@@ -25,6 +25,12 @@ dev = [
     "pytest>=8",
     "ruff>=0.9",
 ]
+# Empaquetage macOS. Séparé de `dev` : il pèse lourd et ne sert qu'à produire
+# une livraison.
+#   uv sync --extra package
+package = [
+    "pyinstaller>=6.11",
+]
 
 # matplotlib était installé dans l'ancien venv mais n'est importé nulle part.
 # Volontairement non réinstallé.

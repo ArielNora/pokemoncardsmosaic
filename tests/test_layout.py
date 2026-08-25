@@ -320,3 +320,41 @@ def test_load_cards_on_an_empty_folder(tmp_path):
     from pokemon_mosaic.cards import load_cards
 
     assert len(load_cards(str(tmp_path))) == 0
+
+
+# --- Chemins : en source comme empaqueté -----------------------------------
+
+def test_paths_resolve_inside_the_repository_when_running_from_source():
+    from pokemon_mosaic import paths
+
+    racine = paths.resource_dir()
+    assert not paths.frozen()
+    assert (racine / "pyproject.toml").is_file(), racine
+    assert paths.user_data_dir() == racine / "data"
+    assert paths.output_dir() == racine / "output"
+
+
+def test_paths_follow_the_unpacked_resources_once_frozen(tmp_path, monkeypatch):
+    """PyInstaller déplie les ressources dans un dossier temporaire qu'il
+    désigne par `sys._MEIPASS`. `Path(sys.executable).parent` pointerait sur
+    `Contents/MacOS`, où il n'y a ni traductions ni données."""
+    from pokemon_mosaic import paths
+
+    monkeypatch.setattr(paths.sys, "frozen", True, raising=False)
+    monkeypatch.setattr(paths.sys, "_MEIPASS", str(tmp_path), raising=False)
+    assert paths.frozen()
+    assert paths.resource_dir() == tmp_path
+
+
+def test_frozen_data_never_lands_next_to_the_executable(monkeypatch):
+    """Un `.app` vit dans `/Applications`, en lecture seule pour l'utilisateur
+    courant : y écrire les cartes échouerait."""
+    from pathlib import Path
+
+    from pokemon_mosaic import paths
+
+    monkeypatch.setattr(paths.sys, "frozen", True, raising=False)
+    monkeypatch.setattr(paths.sys, "_MEIPASS", "/tmp/deplie", raising=False)
+    for dossier in (paths.user_data_dir(), paths.output_dir()):
+        assert Path.home() in dossier.parents, dossier
+        assert "/tmp/deplie" not in str(dossier)

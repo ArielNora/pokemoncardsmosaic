@@ -1,17 +1,18 @@
 """Point d'entrée de l'interface graphique."""
 
 import sys
-from pathlib import Path
 
 from PySide6.QtWidgets import QApplication
 
+from ..paths import user_data_dir
 from .i18n import LanguageManager
 from .main_window import MainWindow
 from .session import Session
 
 # Dossier de cartes proposé par défaut s'il existe, pour éviter de le chercher
-# à chaque lancement pendant le développement.
-DEFAULT_DATA_DIR = Path(__file__).resolve().parents[3] / "data" / "pokemoncards"
+# à chaque lancement. Absent — le cas d'une installation neuve —, l'utilisateur
+# le désigne lui-même à l'étape 1.
+DEFAULT_DATA_DIR = user_data_dir() / "pokemoncards"
 
 
 def main(argv=None) -> int:

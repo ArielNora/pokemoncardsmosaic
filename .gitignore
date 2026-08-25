@@ -23,3 +23,7 @@ venv/
 
 # Captures des outils de navigation
 .playwright-mcp/
+
+# Paquets construits
+dist/
+build/

@@ -12,7 +12,9 @@ from pathlib import Path
 
 from PySide6.QtCore import QLibraryInfo, QLocale, QObject, QTranslator, Signal
 
-TRANSLATIONS_DIR = Path(__file__).resolve().parents[3] / "translations"
+from ..paths import resource_dir
+
+TRANSLATIONS_DIR = resource_dir() / "translations"
 
 # Langues proposées : code interne -> nom affiché dans son propre alphabet.
 LANGUAGES = {"fr": "Français", "en": "English"}

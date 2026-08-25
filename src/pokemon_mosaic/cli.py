@@ -12,12 +12,11 @@ from .imaging import print_image_properties, resize_and_save
 from .layout import GridFit, distribute_empty_cells
 from .links import DEFAULT_PAIRS, LinkLibrary, resolve_links
 from .optimize import StopConditions, generate_grid
+from .paths import output_dir, user_data_dir
 from .timeline import Timeline
 
-# Racine du dépôt : src/pokemon_mosaic/cli.py -> remonter de trois niveaux
-REPO_ROOT = Path(__file__).resolve().parents[2]
-DEFAULT_DATA_DIR = REPO_ROOT / "data" / "pokemoncards"
-DEFAULT_OUTPUT_DIR = REPO_ROOT / "output"
+DEFAULT_DATA_DIR = user_data_dir() / "pokemoncards"
+DEFAULT_OUTPUT_DIR = output_dir()
 
 DEFAULT_ITERATIONS = 1_000_000
 

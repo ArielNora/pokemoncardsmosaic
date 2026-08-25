@@ -535,7 +535,7 @@ beaucoup plus d'itérations que la descente stricte.
 
 ## 9. Avancement
 
-État au 2026-08-20. À tenir à jour : c'est ce document qui fait foi si la
+État au 2026-08-24. À tenir à jour : c'est ce document qui fait foi si la
 conversation est perdue.
 
 ### Fait
@@ -554,14 +554,14 @@ timeline de clichés, export poster en PNG/JPEG/PDF avec découpage en panneaux.
    affiché
 
 **Outillage** — hook `pre-commit` (ruff + pytest fichier par fichier), interface bilingue FR/EN,
-423 tests.
+489 tests.
 
-### Reste à faire pour la v1
+### Les deux derniers chantiers de la v1 — faits
 
 | Sujet | État |
 |---|---|
-| **Empaquetage** | Rien de fait. PyInstaller, macOS d'abord. |
-| **Images des cartes** | ✅ **441/441 récupérées** (56,4 Mo), illustrations nues 734×1024 en WebP q80 : 344 chez la source, 85 chez le forum, 12 déposées dans `data/local/`. Reste : publier le miroir en *release* GitHub. Voir `docs/SOURCES_SOURCE_FORUM.md`. |
+| **Empaquetage** | ✅ `.app` macOS autonome, 118 Mo, construit par `paquet/construire.sh`. ⚠️ Non signé valablement : démarre sur vos machines, refusé par Gatekeeper ailleurs. Voir `paquet/README.md`. |
+| **Images des cartes** | ✅ **441/441**, illustrations nues 734×1024 en WebP q80 (56,4 Mo). Miroir public publié dans un dépôt dédié, récupération anonyme en 3 s. Voir `docs/SOURCES_SOURCE_FORUM.md`. |
 
 ## 10. Journal des décisions
 
