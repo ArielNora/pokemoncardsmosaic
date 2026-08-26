@@ -104,17 +104,16 @@ def release_notes(manifest: dict, mirror: dict) -> str:
         (f"Miroir des {cartes} illustrations décrites par `cards.json` "
          f"(version {manifest['version']}), une archive par extension."),
         "",
-        ("Ces archives ne sont pas destinées à être téléchargées à la main : "
-         "`scripts/fetch_cards.py` s'en sert, vérifie l'empreinte de chaque "
-         "fichier, et range le tout."),
+        ("Un `git clone` ne les rapporte pas : les fichiers d'une *release* ne "
+         "sont pas dans git. `scripts/fetch_cards.py` s'en charge, vérifie "
+         "l'empreinte de chaque archive puis de chaque image, et range le tout."),
         "",
         "```bash",
         "uv run python scripts/fetch_cards.py",
         "```",
         "",
-        (f"Illustrations nues 734×1024, WebP qualité 80, {total / 1e6:.1f} Mo "
-         f"au total. Sources : la source, le forum, et douze cartes qu'aucune "
-         f"des deux ne publie au format natif."),
+        (f"Illustrations seules, sans bordure ni texte, 734x1024, WebP qualité "
+         f"80, {total / 1e6:.1f} Mo au total."),
         "",
         "| Extension | Cartes | Poids |",
         "|---|---|---|",

@@ -34,6 +34,9 @@ Tous décidés le 2026-08-16. À traiter **une fois toute la v1 terminée**, pas
 
 ## Stockage des cartes — tranché le 2026-08-22, sources revues le 2026-08-24
 
+Les 281 anciens PNG encadrés, gardés le temps de valider le nouveau jeu, ont
+été supprimés le 2026-08-24.
+
 Les images **ne sont pas versionnées** : `cards.json` décrit les 441 cartes
 (56,3 Mo) et les scripts les récupèrent. Illustrations nues 734×1024 en WebP
 qualité 80, prises chez **la source** (344) et **le forum** (85), catalogue chez
