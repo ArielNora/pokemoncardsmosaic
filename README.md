@@ -75,28 +75,24 @@ uv run python scripts/fetch_cards.py
 ```
 
 441 illustrations nues — sans cadre ni texte —, 734×1024, 56,4 Mo. Le dépôt ne
-contient que `cards.json`, qui décrit quelles cartes composent le jeu et où les
-prendre.
+contient que `cards.json`, qui dit quelles cartes le miroir porte.
 
 La commande passe par le **miroir**, publié en *release* d'un dépôt dédié —
 [pokemoncardsmosaic-images](https://github.com/ArielNora/pokemoncardsmosaic-images) —
 sous forme d'une archive par extension, dont l'empreinte est vérifiée, puis
-celle de chaque image. C'est
-la seule voie qui donne à tout le monde exactement les mêmes octets — un
-réencodage local dépendrait de la version de libwebp installée — et la seule qui
-rende les douze illustrations qu'aucune source publique ne publie au format
-natif récupérables ailleurs que sur la machine qui les a produites.
+celle de chaque image. C'est la seule voie qui donne à tout le monde exactement
+les mêmes octets : un réencodage local dépendrait de la version de libwebp
+installée.
 
-Pour remonter aux sources d'origine plutôt qu'au miroir — [la source]([adresse retirée])
-et [le forum]([adresse retirée]),
-qui les créditent l'un et l'autre à le serveur d'origine :
+C'est la **seule** provenance du projet : rien n'y va chercher une image sur un
+site tiers. Pour prendre le catalogue publié plutôt que le fichier local, et
+voir ainsi les cartes ajoutées depuis :
 
 ```bash
-uv run python scripts/fetch_cards.py --from source
+uv run python scripts/fetch_cards.py --online
 ```
 
-Ces douze-là y échoueront, faute de source publique. Voir
-`docs/SOURCES_SOURCE_FORUM.md`.
+Voir `docs/IMAGES.md`.
 
 Relancer la commande ne récupère que ce qui manque ou ne correspond plus à son
 empreinte : elle est reprenable après une interruption. Pour contrôler sans rien
@@ -119,14 +115,24 @@ data/pokemoncards/
 
 ### À l'arrivée d'une nouvelle extension
 
+Côté **utilisateur**, rien à faire de particulier : le bouton « Mettre à jour le
+catalogue » de l'étape 1 relit `cards.json` depuis le miroir et ne télécharge que
+les extensions incomplètes.
+
+Côté **mainteneur**, les illustrations sont déposées à la main dans
+`data/pokemoncards/<extension>/`, puis :
+
 ```bash
 uv run python scripts/build_manifest.py    # met cards.json à jour
-uv run python scripts/fetch_cards.py       # récupère les nouvelles cartes
+uv run python scripts/publish_release.py   # publie archives et catalogue
 ```
 
-Le manifeste retient les cartes dont l'illustration occupe toute la carte : les
-trois raretés étoilées, sans les rendus 3D du studio PLANETA ni les cartes
-Dresseur — sauf en Three Star, qui sont de vraies scènes.
+`build_manifest.py` ne lit que le disque. Il conserve la rareté et les noms des
+cartes déjà décrites, et **nomme** ceux qui manquent pour une carte nouvelle
+plutôt que de les deviner. Voir `docs/IMAGES.md`.
+
+Le catalogue retient les cartes dont l'illustration occupe toute la carte : les
+trois raretés étoilées.
 
 Les noms sont en français quand le catalogue les a, en anglais sinon — 440 des
 441 à ce jour. Ils ne servent qu'à nommer les fichiers : l'illustration est nue,

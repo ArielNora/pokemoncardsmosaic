@@ -1,20 +1,19 @@
 #!/usr/bin/env python
-"""Publie le miroir des illustrations en *release* GitHub, une archive par extension.
+"""Publie le miroir des illustrations en *release* GitHub.
 
-Le dépôt ne versionne aucune image : `cards.json` dit où les prendre, et
-`fetch_cards.py` les récupère. Ce miroir vient s'ajouter pour deux raisons :
-
-- **douze cartes ne sont reproductibles par aucune source distante** — toute
-  l'extension A2a plus `PROMO-A-046`, déposées à la main dans `data/local/` ;
-- les octets d'un miroir sont **identiques pour tout le monde**, là où un
-  réencodage local dépend de la version de libwebp installée.
+Une archive par extension, plus `cards.json`. Le dépôt ne versionne aucune
+image : le miroir est le seul endroit d'où le projet les sert, et le catalogue
+est publié **avec** les archives pour que l'application n'ait pas à en embarquer
+une copie — elle le télécharge, et sait du même coup ce qui a été ajouté.
 
     uv run python scripts/publish_release.py --dry-run   # prépare, ne publie pas
     uv run python scripts/publish_release.py
 
+Les octets d'un miroir sont **identiques pour tout le monde**, là où un
+réencodage local dépend de la version de libwebp installée.
+
 ⚠️ **Point de droit, rappelé.** Héberger ces illustrations est une rediffusion
-d'œuvres protégées, contrairement au montage « chacun télécharge à la source ».
-Voir `docs/SOURCES_SOURCE_FORUM.md`.
+d'œuvres protégées. Voir `docs/IMAGES.md`.
 
 ⚠️ **Ne jamais lancer `gh auth setup-git`**, et répondre *non* à « Authenticate
 Git with your GitHub credentials? ». Le compte `gh` actif est unique et global :
@@ -32,18 +31,15 @@ import zipfile
 
 sys.path.insert(0, os.path.join(os.path.dirname(__file__), "..", "src"))
 from pokemon_mosaic.artwork import MANIFEST_VERSION
+from pokemon_mosaic.mirror import MANIFEST_ASSET, MIRROR_REPO, MIRROR_TAG
 
 DEFAULT_MANIFEST = "cards.json"
 DEFAULT_IMAGES = os.path.join("data", "pokemoncards")
-# Un dépôt **dédié**, public, sans code ni historique : le miroir y est seul.
-# Le risque est ainsi cantonné — un signalement viserait ce dépôt-là, qui ne
-# contient que ce qui est litigieux et se reconstruit en trente secondes depuis
-# `data/pokemoncards/`. Le dépôt de code n'est pas atteint.
-DEFAULT_REPO = "ArielNora/pokemoncardsmosaic-images"
-# Le nom de la balise porte la version du manifeste : un changement de format
-# des entrées doit produire un miroir distinct, sinon un ancien client
-# téléchargerait des archives qu'il ne sait plus décrire.
-TAG = f"cards-v{MANIFEST_VERSION}"
+# Dépôt et balise viennent du paquet : c'est ce que l'application connaît, et
+# publier ailleurs la laisserait sans miroir. Le dépôt est **dédié**, public,
+# sans code ni historique — un signalement ne viserait que lui.
+DEFAULT_REPO = MIRROR_REPO
+TAG = MIRROR_TAG
 
 
 def digest_of(path: str) -> str:
@@ -105,12 +101,11 @@ def release_notes(manifest: dict, mirror: dict) -> str:
          f"(version {manifest['version']}), une archive par extension."),
         "",
         ("Un `git clone` ne les rapporte pas : les fichiers d'une *release* ne "
-         "sont pas dans git. `scripts/fetch_cards.py` s'en charge, vérifie "
+         "sont pas dans git. L'application les récupère elle-même, vérifie "
          "l'empreinte de chaque archive puis de chaque image, et range le tout."),
         "",
-        "```bash",
-        "uv run python scripts/fetch_cards.py",
-        "```",
+        (f"`{MANIFEST_ASSET}` publié ici décrit les cartes du miroir : c'est ce "
+         f"fichier que l'application relit pour savoir ce qui a été ajouté."),
         "",
         (f"Illustrations seules, sans bordure ni texte, 734x1024, WebP qualité "
          f"80, {total / 1e6:.1f} Mo au total."),
@@ -138,8 +133,16 @@ def gh_available() -> str | None:
     return None
 
 
-def publish(repo: str, out: str, mirror: dict, notes: str) -> int:
+def publish(repo: str, out: str, mirror: dict, notes: str,
+            manifest_path: str) -> int:
+    """Téléverse les archives **et le catalogue**.
+
+    Le catalogue part en dernier dans la liste mais dans le même appel : une
+    release qui porterait les archives sans lui laisserait l'application
+    incapable de dire ce qu'elles contiennent.
+    """
     archives = [os.path.join(out, entry["archive"]) for entry in mirror.values()]
+    archives.append(manifest_path)
     notes_path = os.path.join(out, "notes.md")
     with open(notes_path, "w", encoding="utf-8") as handle:
         handle.write(notes)
@@ -154,7 +157,8 @@ def publish(repo: str, out: str, mirror: dict, notes: str) -> int:
         commande = ["gh", "release", "create", TAG, *archives, "--repo", repo,
                     "--title", f"Illustrations — manifeste v{MANIFEST_VERSION}",
                     "--notes-file", notes_path]
-    print("  " + " ".join(commande[:4]) + f" … ({len(archives)} archives)")
+    print("  " + " ".join(commande[:4])
+          + f" … ({len(archives) - 1} archives + le catalogue)")
     return subprocess.run(commande, check=False).returncode
 
 
@@ -173,6 +177,15 @@ def main(argv=None) -> int:
     if manifest.get("version") != MANIFEST_VERSION:
         raise SystemExit(f"Manifeste en version {manifest.get('version')}, "
                          f"attendu {MANIFEST_VERSION}.")
+
+    if args.repo != MIRROR_REPO:
+        # L'application prend le **catalogue** à l'adresse codée dans le paquet,
+        # et les **archives** à celle qu'il annonce. Publier ailleurs sans
+        # reconstruire le paquet fait diverger les deux, et les clients
+        # existants ne verraient jamais ce qui vient d'être publié.
+        print(f"⚠️ Publication sur {args.repo}, alors que l'application "
+              f"interroge {MIRROR_REPO}. Les clients déjà installés ne verront "
+              f"pas ce catalogue.", file=sys.stderr)
 
     print(f"Archives dans {args.out}/ …")
     mirror = build_archives(manifest, args.images, args.out)
@@ -204,7 +217,8 @@ def main(argv=None) -> int:
         return 1
 
     print(f"\nPublication sur {args.repo}, balise {TAG} …")
-    return publish(args.repo, args.out, mirror, release_notes(manifest, mirror))
+    return publish(args.repo, args.out, mirror, release_notes(manifest, mirror),
+                   args.manifest)
 
 
 if __name__ == "__main__":

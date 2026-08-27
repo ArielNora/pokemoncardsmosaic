@@ -32,22 +32,18 @@ Tous décidés le 2026-08-16. À traiter **une fois toute la v1 terminée**, pas
   identiques semblent donc parfaitement compatibles. Piste : découper chaque bord en
   plusieurs sous-bandes avec recouvrement, et sommer les distances.
 
-## Stockage des cartes — tranché le 2026-08-22, sources revues le 2026-08-24
+## Stockage des cartes — tranché le 2026-08-22, provenance refondue le 2026-08-27
 
 Les 281 anciens PNG encadrés, gardés le temps de valider le nouveau jeu, ont
 été supprimés le 2026-08-24.
 
 Les images **ne sont pas versionnées** : `cards.json` décrit les 441 cartes
-(56,3 Mo) et les scripts les récupèrent. Illustrations nues 734×1024 en WebP
-qualité 80, prises chez **la source** (344) et **le forum** (85), catalogue chez
-le catalogue. Douze — toute l'extension A2a plus `PROMO-A-046` — ne sont publiées
-au format natif par aucune des deux : elles se déposent dans `data/local/`,
-nommées par identifiant, et priment sur les sources distantes.
-Voir `docs/SOURCES_SOURCE_FORUM.md`.
+(56,3 Mo) et le miroir les sert. Illustrations nues 734×1024 en WebP qualité 80,
+déposées à la main dans `data/pokemoncards/`.
 
-⚠️ Deux sources écartées : **l'ancienne source**, qui ne sert que des cartes **encadrées**,
-et **le serveur d'origine**, dont les images conviennent mais qui n'en sert aucune de
-façon fiable.
+Le projet ne va chercher aucune image sur un site tiers : ni catalogue distant,
+ni adresse d'origine au manifeste, ni récupération automatique. Le miroir est la
+seule provenance. Voir `docs/IMAGES.md`.
 
 ## Dettes ouvertes
 

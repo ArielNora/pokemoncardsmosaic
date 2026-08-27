@@ -239,7 +239,7 @@ def test_load_cards_reads_a_real_folder(tmp_path):
 
 
 def test_load_cards_accepts_webp(tmp_path):
-    """C'est le format servi par l'ancienne source, donc celui de tout jeu récupéré par
+    """C'est le format du miroir, donc celui de tout jeu récupéré par
     `scripts/fetch_cards.py` : sans lui, le chargement ne trouve aucune carte."""
     from PIL import Image
 

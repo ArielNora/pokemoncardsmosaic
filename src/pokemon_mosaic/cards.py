@@ -12,7 +12,7 @@ from dataclasses import dataclass, field, replace
 import numpy as np
 from PIL import Image
 
-# `.webp` est le format servi par l'ancienne source, donc celui de tout jeu récupéré par
+# `.webp` est le format du miroir, donc celui de tout jeu récupéré par
 # `scripts/fetch_cards.py` : sans lui, le chargement ne trouverait aucune carte.
 VALID_EXTENSIONS = (".jpg", ".jpeg", ".png", ".webp", ".bmp", ".tif", ".tiff")
 
