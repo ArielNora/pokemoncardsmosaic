@@ -53,11 +53,12 @@ seule provenance. Voir `docs/IMAGES.md`.
   Gatekeeper la refusera ailleurs. Une distribution propre suppose un
   **Developer ID** Apple, compte payant, et une notarisation qui imposent de
   reprendre la signature entièrement. Voir `paquet/README.md`.
-- **Pas de skill de mise à jour.** À chaque nouvelle extension, il faut lancer
-  `build_manifest.py` puis `publish_release.py` à la main, et vérifier au
-  passage que rien n'a changé de format. Un skill devrait comparer `cards.json`
-  au catalogue et n'agir que sur l'écart. la source expose un `lastModified`, qui
-  donne un signal fiable.
+- **Pas de skill de mise à jour.** À chaque nouvelle extension, il faut déposer
+  les illustrations, lancer `build_manifest.py`, compléter à la main la rareté
+  et les noms des cartes nouvelles, puis lancer `publish_release.py`. Seule la
+  troisième étape demande un jugement : un skill pourrait enchaîner les autres
+  et ne s'arrêter que sur les champs à remplir, que `build_manifest.py` nomme
+  déjà.
 
 ## Limitations connues à corriger
 
