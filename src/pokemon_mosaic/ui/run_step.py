@@ -403,28 +403,48 @@ class RunStep(QWidget):
             self.tr("Échec de l'export : %1").replace("%1", message)
         )
 
-    def shutdown(self) -> None:
-        """Arrête le calcul avant que les widgets ne disparaissent."""
+    def shutdown(self) -> bool:
+        """Arrête calcul et export. Rend faux si l'un d'eux résiste.
+
+        Le résultat compte : le `QThread` a pour parent ce widget, donc la
+        fenêtre détruite l'emporte avec elle, référence Python ou non. Fermer
+        malgré un fil actif fait abandonner le processus par Qt.
+        """
         if self._control is not None:
             self._control.stop()
         if self._export_worker is not None:
             self._export_worker.cancel()
 
-        if self._thread is not None and self._thread.isRunning():
-            self._thread.quit()
-            if not self._thread.wait(SHUTDOWN_TIMEOUT_MS):
-                print("Le calcul ne s'est pas arrêté dans le délai imparti.")
-                return
-        self._thread = self._worker = None
+        # ⚠️ Les deux fils sont traités jusqu'au bout, quoi qu'il arrive. Sortir
+        # dès le premier échec laissait le fil d'export **actif** derrière soi :
+        # la fenêtre se fermait, son parent était détruit, et Qt abandonnait le
+        # processus — précisément le crash que cette méthode existe pour éviter.
+        # Vérifié : avec un calcul qui s'obstine, le fil d'export ne recevait ni
+        # `quit()` ni `wait()`.
+        recalcitrants = []
+        for nom, fil in ((self.tr("le calcul"), self._thread),
+                         (self.tr("l'export"), self._export_thread)):
+            if fil is None or not fil.isRunning():
+                continue
+            fil.quit()
+            if not fil.wait(SHUTDOWN_TIMEOUT_MS):
+                recalcitrants.append(nom)
 
-        if self._export_thread is not None and self._export_thread.isRunning():
-            self._export_thread.quit()
-            if not self._export_thread.wait(SHUTDOWN_TIMEOUT_MS):
-                # Lâcher la référence d'un fil encore actif rouvrirait le crash
-                # que cette méthode existe pour éviter.
-                print("L'export ne s'est pas arrêté dans le délai imparti.")
-                return
-        self._export_thread = self._export_worker = None
+        # Une référence n'est lâchée que si son fil est réellement terminé :
+        # lâcher celle d'un fil encore actif rouvrirait le même crash.
+        if self._thread is None or not self._thread.isRunning():
+            self._thread = self._worker = None
+        if self._export_thread is None or not self._export_thread.isRunning():
+            self._export_thread = self._export_worker = None
+
+        if recalcitrants:
+            # `status_message` et non `print` : depuis un paquet `.app`, la
+            # sortie standard ne va nulle part que l'utilisateur puisse lire.
+            self.status_message.emit(
+                self.tr("Arrêt en cours : %1 ne répond pas encore.")
+                .replace("%1", " et ".join(recalcitrants))
+            )
+        return not recalcitrants
 
     # --- Réactions du calcul ---------------------------------------------
 

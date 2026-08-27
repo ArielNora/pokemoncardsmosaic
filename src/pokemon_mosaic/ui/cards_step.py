@@ -199,8 +199,8 @@ class CardsStep(QWidget):
             self.tr("Échec du chargement : %1").replace("%1", message)
         )
 
-    def shutdown(self) -> None:
-        """Interrompt proprement un chargement en cours.
+    def shutdown(self) -> bool:
+        """Interrompt le chargement. Rend faux s'il ne s'est pas arrêté.
 
         Appelée à la fermeture de la fenêtre : détruire un QThread encore actif
         fait abandonner le processus par Qt.
@@ -216,9 +216,14 @@ class CardsStep(QWidget):
         if not stopped:
             # Lâcher la référence d'un fil encore actif rouvrirait le crash que
             # cette méthode existe pour éviter. On la garde et on le signale.
-            print("Le chargement ne s'est pas arrêté dans le délai imparti.")
-            return
+            # `status_message` et non `print` : depuis un paquet `.app`, la
+            # sortie standard ne va nulle part que l'utilisateur puisse lire.
+            self.status_message.emit(
+                self.tr("Arrêt en cours : le chargement ne répond pas encore.")
+            )
+            return False
         self._thread = self._worker = None
+        return True
 
     # --- Dossiers et compteurs -------------------------------------------
 

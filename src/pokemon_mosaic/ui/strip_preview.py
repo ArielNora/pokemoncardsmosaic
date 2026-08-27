@@ -130,7 +130,11 @@ class StripPreview(QWidget):
             )
             optimize_grid(grid, distances, iterations=SANDBOX_ITERATIONS,
                           rng=random.Random(0))
-        except ValueError as error:
+        except Exception as error:  # noqa: BLE001 - voir ci-dessous
+            # Volontairement large : ce code tourne dans un slot de `QTimer`, où
+            # une exception non rattrapée est simplement imprimée par Qt.
+            # L'aperçu resterait alors figé sur l'ancienne image, sans que rien
+            # n'explique pourquoi. Ici, le message s'affiche.
             self._sandbox_error = str(error)
             return
 

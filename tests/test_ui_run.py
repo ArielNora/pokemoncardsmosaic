@@ -708,3 +708,109 @@ def test_a_grid_of_the_wrong_shape_is_refused_by_the_worker(session):
     worker.failed.connect(failures.append)
     worker.run()
     assert failures and "mise en page" in failures[0]
+
+
+# --- Non-régressions du /verif-code de l'interface, 2026-08-24 --------------
+
+class _FilFactice:
+    """Un QThread simulé, qui s'arrête ou s'obstine selon `tenace`."""
+
+    def __init__(self, tenace=False):
+        self.tenace = tenace
+        self.journal = []
+        self._actif = True
+
+    def isRunning(self):
+        return self._actif
+
+    def quit(self):
+        self.journal.append("quit")
+
+    def wait(self, ms):
+        self.journal.append("wait")
+        if self.tenace:
+            return False
+        self._actif = False
+        return True
+
+
+class _ExportFactice:
+    def __init__(self):
+        self.annule = False
+
+    def cancel(self):
+        self.annule = True
+
+
+def test_a_stubborn_run_does_not_leave_the_export_thread_behind(step):
+    """`shutdown()` sortait dès le premier échec : le fil d'export n'était ni
+    arrêté ni attendu, et la fenêtre se fermait dessus. Qt abandonne alors le
+    processus, précisément le crash que cette méthode existe pour éviter."""
+    widget, _ = step
+    export = _FilFactice()
+    widget._thread = _FilFactice(tenace=True)
+    widget._export_thread = export
+    widget._export_worker = _ExportFactice()
+
+    assert widget.shutdown() is False, "un fil tenace doit être signalé"
+    assert export.journal == ["quit", "wait"], export.journal
+    assert widget._export_worker is None, "l'export terminé, la référence se lâche"
+
+
+def test_shutdown_reports_success_when_every_thread_stops(step):
+    widget, _ = step
+    widget._thread = _FilFactice()
+    widget._export_thread = _FilFactice()
+    widget._export_worker = _ExportFactice()
+
+    assert widget.shutdown() is True
+    assert widget._thread is None and widget._export_thread is None
+
+
+def test_a_stubborn_thread_keeps_the_window_open(qt_app, session):
+    """Fermer sur un fil actif ferait abandonner le processus par Qt : mieux vaut
+    refuser la fermeture et laisser une chance de plus."""
+    from PySide6.QtGui import QCloseEvent
+    from PySide6.QtWidgets import QApplication
+
+    from pokemon_mosaic.ui.i18n import LanguageManager
+    from pokemon_mosaic.ui.main_window import MainWindow
+
+    fenetre = MainWindow(LanguageManager(QApplication.instance()), session)
+    fenetre._run_step._thread = _FilFactice(tenace=True)
+
+    event = QCloseEvent()
+    fenetre.closeEvent(event)
+    assert not event.isAccepted(), "la fenêtre ne doit pas se fermer"
+
+    # Le fil rend la main : la fermeture repasse.
+    fenetre._run_step._thread = None
+    event = QCloseEvent()
+    fenetre.closeEvent(event)
+    assert event.isAccepted()
+    fenetre.deleteLater()
+
+
+def test_a_thread_that_never_stops_does_not_lock_the_window_shut(qt_app, session):
+    """Refuser indéfiniment rendrait la fenêtre infermable dès qu'un fil se
+    bloque pour de bon : l'utilisateur cliquerait la croix sans effet, et il ne
+    lui resterait qu'à tuer le processus. C'est pire que le plantage évité."""
+    from PySide6.QtGui import QCloseEvent
+    from PySide6.QtWidgets import QApplication
+
+    from pokemon_mosaic.ui.i18n import LanguageManager
+    from pokemon_mosaic.ui.main_window import MainWindow
+
+    fenetre = MainWindow(LanguageManager(QApplication.instance()), session)
+    fenetre._run_step._thread = _FilFactice(tenace=True)
+
+    refus = 0
+    for _ in range(MainWindow.CLOSE_ATTEMPTS + 2):
+        event = QCloseEvent()
+        fenetre.closeEvent(event)
+        if event.isAccepted():
+            break
+        refus += 1
+    assert event.isAccepted(), "la fenêtre doit finir par se fermer"
+    assert refus == MainWindow.CLOSE_ATTEMPTS - 1, refus
+    fenetre.deleteLater()

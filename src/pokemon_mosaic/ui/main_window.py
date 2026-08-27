@@ -75,6 +75,8 @@ class MainWindow(QMainWindow):
         self._language = language
         self._session = session
         self._presets_directory = presets_directory or self.presets_directory()
+        # Tentatives de fermeture déjà refusées, bornées par `CLOSE_ATTEMPTS`.
+        self._refus_de_fermeture = 0
         self._build()
         language.language_changed.connect(self.retranslate_ui)
 
@@ -157,11 +159,37 @@ class MainWindow(QMainWindow):
             font.setBold(position == current)
             label.setFont(font)
 
+    # Nombre de tentatives de fermeture avant de passer outre un fil bloqué.
+    CLOSE_ATTEMPTS = 2
+
     def closeEvent(self, event) -> None:
-        """Laisse le chargement s'arrêter avant que les widgets ne disparaissent."""
-        self._cards_step.shutdown()
-        self._run_step.shutdown()
-        super().closeEvent(event)
+        """Ne ferme que si les fils de fond se sont arrêtés.
+
+        Le `QThread` a pour parent son widget : fermer emporterait un fil encore
+        actif, et Qt abandonne alors le processus. Les deux `shutdown()` sont
+        appelées avant tout test, pour qu'un refus de la première n'empêche pas
+        d'arrêter la seconde.
+        """
+        arrets = [self._cards_step.shutdown(), self._run_step.shutdown()]
+        if all(arrets):
+            super().closeEvent(event)
+            return
+
+        # ⚠️ Le refus est **borné**. Refuser indéfiniment rendrait la fenêtre
+        # infermable dès qu'un fil se bloque pour de bon : l'utilisateur clique
+        # la croix, rien ne se passe, et il ne lui reste qu'à tuer le processus.
+        # C'est pire que le plantage qu'on cherche à éviter. On accorde donc une
+        # seconde tentative — cinq secondes de plus par fil — puis on ferme.
+        self._refus_de_fermeture += 1
+        if self._refus_de_fermeture >= self.CLOSE_ATTEMPTS:
+            # `_show_status` et non un signal : la fenêtre reçoit les messages
+            # des écrans, elle n'en émet pas.
+            self._show_status(
+                self.tr("Fermeture forcée : un traitement de fond n'a pas répondu.")
+            )
+            super().closeEvent(event)
+            return
+        event.ignore()
 
     def retranslate_ui(self) -> None:
         self.setWindowTitle(self.tr("Pokémon Mosaic"))
