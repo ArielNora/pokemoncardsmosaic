@@ -554,7 +554,7 @@ timeline de clichés, export poster en PNG/JPEG/PDF avec découpage en panneaux.
    affiché
 
 **Outillage** — hook `pre-commit` (ruff + pytest fichier par fichier), interface bilingue FR/EN,
-489 tests.
+493 tests. Interface auditée en entier.
 
 ### Les deux derniers chantiers de la v1 — faits
 

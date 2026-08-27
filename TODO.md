@@ -49,6 +49,20 @@ Voir `docs/SOURCES_SOURCE_FORUM.md`.
 et **le serveur d'origine**, dont les images conviennent mais qui n'en sert aucune de
 façon fiable.
 
+## Dettes ouvertes
+
+- **Le paquet macOS n'est pas signé valablement.** `codesign --verify` et `spctl`
+  rendent tous deux 1 : défaut connu de PyInstaller sur macOS. L'application
+  démarre sur la machine qui l'a construite et depuis un autre emplacement, mais
+  Gatekeeper la refusera ailleurs. Une distribution propre suppose un
+  **Developer ID** Apple, compte payant, et une notarisation qui imposent de
+  reprendre la signature entièrement. Voir `paquet/README.md`.
+- **Pas de skill de mise à jour.** À chaque nouvelle extension, il faut lancer
+  `build_manifest.py` puis `publish_release.py` à la main, et vérifier au
+  passage que rien n'a changé de format. Un skill devrait comparer `cards.json`
+  au catalogue et n'agir que sur l'écart. la source expose un `lastModified`, qui
+  donne un signal fiable.
+
 ## Limitations connues à corriger
 
 - **Grille dépendante de la factorisation.** `calculate_grid_dims` cherche les deux
