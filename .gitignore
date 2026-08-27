@@ -3,6 +3,9 @@
 # Voir README.md > Données pour savoir où les placer.
 data/
 
+# Page de réchauffage, régénérée à chaque passage du manifeste.
+cartes-a-rechauffer.html
+
 # Sorties générées (mosaïques, jusqu'à ~200 Mpx par image)
 output/
 

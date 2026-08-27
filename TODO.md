@@ -13,6 +13,8 @@ Tous décidés le 2026-08-16. À traiter **une fois toute la v1 terminée**, pas
   Voir `SPEC.md` §4.
 - **Liens verticaux.** La v1 ne gère que des blocs horizontaux (une carte à gauche
   d'une autre). Permettre d'imposer qu'une carte soit au-dessus d'une autre.
+  ⭐ **Premier cas d'usage demandé** (2026-08-22) : la lignée Arcko `B3-156` en bas,
+  Massko `B3-157` au milieu, Méga-Jungko-ex `B3-194` en haut.
 - **Blocs rectangulaires.** Grouper des cartes en carré ou rectangle (ex. 2×2 pour une
   illustration qui s'étale). C'est l'extension la plus lourde de l'algorithme.
 - **Fixer une carte à des coordonnées précises.** Permettre d'imposer qu'une carte
@@ -30,15 +32,20 @@ Tous décidés le 2026-08-16. À traiter **une fois toute la v1 terminée**, pas
   identiques semblent donc parfaitement compatibles. Piste : découper chaque bord en
   plusieurs sous-bandes avec recouvrement, et sommer les distances.
 
-## Stockage des cartes — tranché le 2026-08-22
+## Stockage des cartes — tranché le 2026-08-22, sources revues le 2026-08-24
 
-Les images **ne sont pas stockées** : `cards.json` décrit les 297 cartes et
-`scripts/fetch_cards.py` les récupère chez l'ancienne source. 27 Mo, 4 secondes, rien de
-rediffusé. Voir `docs/RECUPERATION_IMAGES.md` pour l'enquête complète.
+Les images **ne sont pas versionnées** : `cards.json` décrit les 441 cartes
+(56,3 Mo) et les scripts les récupèrent. Illustrations nues 734×1024 en WebP
+qualité 80, prises chez **la source** (344) et **le forum** (85), catalogue chez
+le catalogue. Douze — toute l'extension A2a plus `PROMO-A-046` — ne sont publiées
+au format natif par aucune des deux : elles se déposent dans `data/local/`,
+nommées par identifiant, et priment sur les sources distantes.
+Voir `docs/SOURCES_SOURCE_FORUM.md`.
 
-Reste ouvert : les 16 cartes de `B2a` sans illustration chez l'ancienne source, et les 113
-cartes dont l'image n'existe qu'en anglais. Les deux se résorberont d'eux-mêmes
-en relançant `build_manifest.py`.
+⚠️ Deux sources écartées :
+- **l'ancienne source** ne sert que des cartes **encadrées** (`docs/PISTES_ILLUSTRATIONS.md`) ;
+- **le serveur d'origine** sert les bonnes images mais refuse toute image absente de son
+  cache, à n'importe quel client (`docs/RECUPERATION_IMAGES.md`).
 
 ## Limitations connues à corriger
 
@@ -46,12 +53,10 @@ en relançant `build_manifest.py`.
   facteurs les plus proches, donc 281 cartes (nombre premier) donneraient une bande
   281×1. Ne concerne plus que la **CLI sans `--grid`** : l'interface impose toujours
   une forme et répartit les cases vides excédentaires.
-- **Noms de fichiers non normalisés.** Trois cartes portent des accents
-  (`mustébouée`, `silvallié`, `guérilande`) et une garde un nom de capture d'écran
-  (`mew 13.27.50.png`). Sans conséquence aujourd'hui, mais un lien décrit par
-  fragment de chemin accentué serait sensible à la normalisation Unicode : macOS
-  stocke en NFD, une chaîne saisie ailleurs arrive en NFC, et la comparaison de
-  sous-chaîne échoue sans rien signaler.
+- ✅ **Noms de fichiers non normalisés** — réglé le 2026-08-24. Les noms sont
+  désormais produits par `artwork.slug()`, qui retire les accents : plus de
+  `mustébouée` ni de `mew 13.27.50.png`, donc plus de sensibilité à la
+  normalisation Unicode dans les liens décrits par fragment de chemin.
 
 ## Pistes d'amélioration
 

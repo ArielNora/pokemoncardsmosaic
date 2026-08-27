@@ -132,25 +132,29 @@ la feuille au DPI voulu. On part du papier, puisque la finalité est l'impressio
 
 ✅ **Résolution d'impression : 300 DPI par défaut, modifiable, avec alerte au plafond.**
 
-Les cartes sources faisant 713 px de large, il existe un DPI au-delà duquel l'app
+Les cartes sources faisant 734 px de large, il existe un DPI au-delà duquel l'app
 interpole sans ajouter de détail. L'app calcule ce plafond pour le format choisi et
 prévient l'utilisateur s'il le dépasse.
 
 | Format | Carte imprimée (grille 17×17) | DPI max utile | Image à 300 DPI |
 |---|---|---|---|
-| A3 | 17,5 mm | 1037 | 17 Mpx |
-| A2 | 24,7 mm | 733 | 35 Mpx |
-| A1 | 34,9 mm | 518 | 70 Mpx |
-| A0 | 49,5 mm | **366** | 139 Mpx |
+| A3 | 17,5 mm | 1065 | 17 Mpx |
+| A2 | 24,7 mm | 755 | 35 Mpx |
+| A1 | 34,9 mm | 534 | 70 Mpx |
+| A0 | 49,5 mm | **377** | 139 Mpx |
 
 300 DPI passe donc partout, y compris en A0, mais avec peu de marge sur ce dernier.
 
 ### Grilles compatibles avec les formats d'impression
 
-📐 Les cartes font **0,724** de rapport largeur/hauteur (713 × 984), les formats de la
+📐 Les cartes font **0,717** de rapport largeur/hauteur (734 × 1024), les formats de la
 série A font **0,707**. Une grille **carrée en nombre de cartes** a donc exactement le
-rapport d'une carte, soit **2,47 % d'écart** avec le papier — quelle que soit sa
+rapport d'une carte, soit **1,37 % d'écart** avec le papier — quelle que soit sa
 taille. Les grilles allongées essayées jusqu'ici (20×14, 31×9) en sont très loin.
+
+⚠️ Les tableaux de grilles ci-dessous raisonnent encore sur **281 cartes**, le jeu
+d'origine. Le jeu compte désormais **441 cartes**, et 21×21 = 441 les place
+exactement, sans une case vide. À reprendre.
 
 **Cas A — un seul poster, feuille portrait.** Grille carrée N×N, écart 2,47 %.
 
@@ -550,14 +554,14 @@ timeline de clichés, export poster en PNG/JPEG/PDF avec découpage en panneaux.
    affiché
 
 **Outillage** — hook `pre-commit` (ruff + pytest fichier par fichier), interface bilingue FR/EN,
-417 tests.
+423 tests.
 
 ### Reste à faire pour la v1
 
 | Sujet | État |
 |---|---|
 | **Empaquetage** | Rien de fait. PyInstaller, macOS d'abord. |
-| ~~Stockage partagé des images~~ | **Tranché le 2026-08-22.** Les images ne sont pas stockées : `cards.json` décrit les 297 cartes et `scripts/fetch_cards.py` les récupère chez l'ancienne source (MIT) en 4 s et 27 Mo. Rien n'est rediffusé. Voir `docs/RECUPERATION_IMAGES.md`. |
+| **Images des cartes** | ✅ **441/441 récupérées** (56,4 Mo), illustrations nues 734×1024 en WebP q80 : 344 chez la source, 85 chez le forum, 12 déposées dans `data/local/`. Reste : publier le miroir en *release* GitHub. Voir `docs/SOURCES_SOURCE_FORUM.md`. |
 
 ## 10. Journal des décisions
 
@@ -599,6 +603,8 @@ timeline de clichés, export poster en PNG/JPEG/PDF avec découpage en panneaux.
 | 2026-08-20 | `platformdirs` écarté : `QStandardPaths` suffit, le socle reste à trois dépendances |
 | 2026-08-20 | Les formulaires **renvoient à la session** la valeur qu'ils ont écrêtée, un préréglage étant modifiable à la main |
 | 2026-08-22 | **Images récupérées chez l'ancienne source** (MIT) par manifeste et script, jamais stockées ni rediffusées — le serveur d'origine interdit son API et ses assets et oppose deux protections anti-robot |
+| 2026-08-24 | **Sources abandonnées, l'une après l'autre.** l'ancienne source ne sert que des cartes **encadrées**, pas les illustrations nues : trois cents lignes construites sur des images validées par des comptes, jamais regardées. le serveur d'origine sert les bonnes images mais **refuse toute image absente de son cache**, à quiconque — 438 requêtes, 438 refus. Retenus : **la source** (API publique, 432 cartes) et **le forum** (2 requêtes, 441 cartes), qui se complètent exactement |
+| 2026-08-24 | **Stockage en WebP qualité 80** : 56,3 Mo contre 541 Mo pour les sources PNG. Écart médian de 0,45 niveau sur 255 sur la moyenne RGB d'un bord, sous l'erreur des vignettes à 25 % déjà acceptée. Différences montrées et validées à l'œil |
 | 2026-08-22 | Sélection reconstituée par règle : trois raretés étoilées, hors illustrateur `PLANETA*` (rendus 3D), hors Dresseur sauf en Three Star. Reproduit la sélection existante sur **12 extensions sur 12** |
 | 2026-08-22 | Français avec repli anglais ; l'image dépendant de la langue, le manifeste note celle retenue par carte pour ne retélécharger que les cartes concernées quand le français se complétera |
 | 2026-08-20 | Prolonger **poursuit la timeline** ; repartir d'un cliché **tronque** ce qui suit. Une timeline non vide passée à `optimize_grid` signifie « reprise » et reporte les compteurs |
