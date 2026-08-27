@@ -1,8 +1,9 @@
 """Fenêtre principale : assistant en trois étapes puis vue d'exécution."""
 
+import os
 from pathlib import Path
 
-from PySide6.QtCore import QStandardPaths, Qt
+from PySide6.QtCore import QSettings, QStandardPaths, Qt
 from PySide6.QtWidgets import (
     QComboBox,
     QHBoxLayout,
@@ -15,6 +16,7 @@ from PySide6.QtWidgets import (
     QWidget,
 )
 
+from ..paths import APP_NAME
 from .cards_step import CardsStep
 from .i18n import LANGUAGES, LanguageManager
 from .layout_step import LayoutStep
@@ -59,6 +61,40 @@ class MainWindow(QMainWindow):
             self.tr("Exécution"),
         )[index]
 
+    # Clé du dossier de cartes retenu d'un lancement à l'autre. Sans elle,
+    # l'application redemandait le dossier à chaque ouverture : un chemin codé en
+    # dur ne peut pas convenir à la fois au dépôt et à une application installée,
+    # où il n'existe simplement pas.
+    SETTINGS_CARDS_DIR = "cartes/dossier"
+
+    @staticmethod
+    def settings() -> QSettings:
+        """Les réglages de l'application, là où le système les range.
+
+        ⚠️ L'organisation et l'application sont nommées **ici** et non par
+        `QApplication.setOrganizationName()`. Poser un nom d'organisation sur
+        l'application déplacerait aussi `QStandardPaths.AppConfigLocation`, qui
+        vaut `<config>/<organisation>/<application>` : les préréglages déjà
+        enregistrés se retrouveraient dans un dossier que plus personne ne lit,
+        sans message ni moyen de les retrouver.
+        """
+        return QSettings(APP_NAME, APP_NAME)
+
+    @classmethod
+    def remembered_folder(cls) -> str:
+        """Dernier dossier de cartes chargé, ou chaîne vide.
+
+        Rendu vide s'il a disparu depuis : proposer un chemin mort produirait un
+        « échec du chargement » à l'ouverture, là où l'écran d'accueil dit quoi
+        faire.
+        """
+        chemin = cls.settings().value(cls.SETTINGS_CARDS_DIR, "", type=str)
+        return chemin if chemin and os.path.isdir(chemin) else ""
+
+    @classmethod
+    def remember_folder(cls, directory: str) -> None:
+        cls.settings().setValue(cls.SETTINGS_CARDS_DIR, directory)
+
     @staticmethod
     def presets_directory() -> str:
         """Où vivent les préréglages, selon les usages du système.
@@ -94,6 +130,7 @@ class MainWindow(QMainWindow):
 
         self._stack = QStackedWidget()
         self._cards_step = CardsStep(self._session)
+        self._cards_step.folder_changed.connect(self.remember_folder)
         self._cards_step.status_message.connect(self._show_status)
         self._stack.addWidget(self._cards_step)
         self._layout_step = LayoutStep(self._session)
@@ -104,6 +141,10 @@ class MainWindow(QMainWindow):
         self._run_step.status_message.connect(self._show_status)
         self._stack.addWidget(self._run_step)
         self._stack.currentChanged.connect(self._update_navigation)
+        # Sans cela, « Suivant » resterait grisé après l'arrivée des cartes :
+        # il ne se réévaluait qu'au changement d'écran, qu'on ne peut plus faire.
+        self._session.cards_added.connect(self._update_navigation)
+        self._session.cards_loaded.connect(self._update_navigation)
 
         self._back = QPushButton()
         self._next = QPushButton()
@@ -140,6 +181,14 @@ class MainWindow(QMainWindow):
         self._update_navigation()
         self.retranslate_ui()
 
+    def load_cards(self, directory: str) -> None:
+        """Charge un dossier de cartes. Point d'entrée du lancement.
+
+        Public, là où `app.py` atteignait `_cards_step` : l'écran d'accueil est
+        un détail d'organisation interne, pas un contrat.
+        """
+        self._cards_step.load(directory)
+
     def _go(self, index: int) -> None:
         if 0 <= index < self._stack.count():
             self._stack.setCurrentIndex(index)
@@ -153,7 +202,12 @@ class MainWindow(QMainWindow):
     def _update_navigation(self) -> None:
         current = self._stack.currentIndex()
         self._back.setEnabled(current > 0)
-        self._next.setEnabled(current < self._stack.count() - 1)
+        # Sans carte, les trois écrans suivants n'ont rien à afficher : la grille
+        # se dimensionne sur le nombre de cartes, les réglages projettent des
+        # chiffres à partir d'elles, et l'exécution n'a rien à assembler.
+        avancable = (current < self._stack.count() - 1
+                     and self._session.total_cards > 0)
+        self._next.setEnabled(avancable)
         for position, label in enumerate(self._step_labels):
             font = label.font()
             font.setBold(position == current)

@@ -144,8 +144,7 @@ def _ecrire(dossier, tailles):
         Image.new("RGB", taille, (10, 20, 30)).save(dossier / f"{nom}.webp")
 
 
-def test_the_common_size_is_a_real_card_size_not_two_independent_minima(tmp_path,
-                                                                       capsys):
+def test_the_common_size_is_a_real_card_size_not_two_independent_minima(tmp_path):
     """La largeur et la hauteur minimales prises séparément donnaient un couple
     que personne ne portait : 734×1024 et 717×1050 produisaient 717×1024, de
     rapport d'aspect étranger aux deux, et **toutes** les cartes étaient
@@ -155,13 +154,18 @@ def test_the_common_size_is_a_real_card_size_not_two_independent_minima(tmp_path
     _ecrire(tmp_path / "jeu", {"a": (734, 1024), "b": (717, 1050), "c": (734, 1024)})
     cards = load_cards(str(tmp_path))
     assert cards.full_size == (734, 1024)
-    assert "ne sont pas au format" in capsys.readouterr().out
+    # L'écart est **porté** et non imprimé : depuis un paquet `.app`, la sortie
+    # standard ne va nulle part que l'utilisateur puisse lire, et c'est
+    # l'étape 1 qui doit pouvoir le dire.
+    assert [(e.size, e.count) for e in cards.odd_sizes] == [((717, 1050), 1)]
+    assert cards.has_warnings
 
 
-def test_a_homogeneous_collection_reports_nothing(tmp_path, capsys):
+def test_a_homogeneous_collection_reports_nothing(tmp_path):
     from pokemon_mosaic.cards import load_cards
 
     _ecrire(tmp_path / "jeu", {"a": (60, 80), "b": (60, 80)})
     cards = load_cards(str(tmp_path))
     assert cards.full_size == (60, 80)
-    assert "ne sont pas au format" not in capsys.readouterr().out
+    assert cards.odd_sizes == []
+    assert not cards.has_warnings

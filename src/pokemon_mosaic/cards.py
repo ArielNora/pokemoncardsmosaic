@@ -69,12 +69,29 @@ class Card:
 
 
 @dataclass
+class SizeWarning:
+    """Un format rencontré qui n'est pas celui retenu, et combien de cartes."""
+
+    size: tuple[int, int]
+    count: int
+
+
+@dataclass
 class CardSet:
     """L'ensemble des cartes chargées, plus les dimensions nécessaires à l'export."""
 
     cards: list[Card]
     full_size: tuple[int, int]
     thumb_size: tuple[int, int]
+    # Ce que le chargement a trouvé d'anormal. **Porté et non imprimé** : depuis
+    # un paquet `.app`, la sortie standard ne va nulle part que l'utilisateur
+    # puisse lire, et ces écarts déforment silencieusement toutes les cartes.
+    odd_sizes: list[SizeWarning] = field(default_factory=list)
+    unreadable: list[str] = field(default_factory=list)
+
+    @property
+    def has_warnings(self) -> bool:
+        return bool(self.odd_sizes or self.unreadable)
 
     def __len__(self) -> int:
         return len(self.cards)
@@ -101,7 +118,10 @@ class CardSet:
         lues à la mauvaise ligne et la mosaïque assemblée avec les mauvaises
         cartes, sans que rien ne le signale.
 
-        Les vignettes ne sont pas recopiées : les tableaux sont partagés.
+        Les vignettes ne sont pas recopiées : les tableaux sont partagés. Les
+        avertissements non plus : ils portent sur un **chargement**, pas sur une
+        sélection, et les recopier ferait accuser des cartes qu'on vient
+        justement d'écarter.
         """
         chosen = sorted(set(indices))
         cards = [
@@ -199,6 +219,7 @@ def load_cards(
     # Passe 1 — en-têtes seulement, pour établir le format commun.
     sizes: Counter = Counter()
     readable: list[str] = []
+    unreadable: list[str] = []
     for path in paths:
         if check_cancelled is not None:
             check_cancelled()
@@ -207,13 +228,18 @@ def load_cards(
                 size = img.size
         except Exception as e:  # noqa: BLE001 - un fichier abîmé ne doit pas
             # interrompre le chargement des 280 autres cartes.
-            print(f"  Illisible, ignorée : {path} ({e})")
+            # Pillow répète le chemin absolu dans son message ; le garder
+            # produirait une ligne de 200 caractères là où le nom du fichier
+            # suffit à le retrouver.
+            raison = str(e).replace(path, os.path.basename(path))
+            unreadable.append(f"{os.path.basename(path)} — {raison}")
             continue
         readable.append(path)
         sizes[size] += 1
 
     if not readable:
-        return CardSet(cards=[], full_size=(0, 0), thumb_size=(0, 0))
+        return CardSet(cards=[], full_size=(0, 0), thumb_size=(0, 0),
+                       unreadable=unreadable)
 
     # ⚠️ Le format **le plus fréquent**, et non la largeur et la hauteur
     # minimales prises séparément. Ces deux minima donnaient un couple que
@@ -227,13 +253,8 @@ def load_cards(
     # fréquence, mieux vaut réduire que d'agrandir sans gagner de détail. Sans
     # règle explicite, l'ordre de rencontre des fichiers déciderait.
     full_size = min(sizes, key=lambda taille: (-sizes[taille], taille[0] * taille[1]))
-    majority = sizes[full_size]
-    if len(sizes) > 1:
-        autres = sum(n for taille, n in sizes.items() if taille != full_size)
-        detail = ", ".join(f"{w}×{h} ({n})" for (w, h), n in sizes.most_common()[1:6])
-        print(f"  ⚠️ {autres} carte(s) sur {len(readable)} ne sont pas au format "
-              f"{full_size[0]}×{full_size[1]} retenu pour les {majority} autres : "
-              f"{detail}. Elles seront mises à l'échelle.")
+    odd_sizes = [SizeWarning(size=taille, count=n)
+                 for taille, n in sizes.most_common() if taille != full_size]
     min_w, min_h = full_size
     thumb_size = (max(1, round(min_w * scale)), max(1, round(min_h * scale)))
 
@@ -275,7 +296,8 @@ def load_cards(
             progress(len(cards), len(readable))
 
     flush()
-    return CardSet(cards=cards, full_size=full_size, thumb_size=thumb_size)
+    return CardSet(cards=cards, full_size=full_size, thumb_size=thumb_size,
+                   odd_sizes=odd_sizes, unreadable=unreadable)
 
 
 def load_full_image(card: Card, size: tuple[int, int]) -> np.ndarray:

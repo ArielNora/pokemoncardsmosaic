@@ -1,6 +1,8 @@
 """Étape 1 — choix des cartes qui composeront la mosaïque."""
 
-from PySide6.QtCore import Qt, Signal
+import os
+
+from PySide6.QtCore import QStandardPaths, Qt, Signal
 from PySide6.QtWidgets import (
     QAbstractItemView,
     QFileDialog,
@@ -10,11 +12,15 @@ from PySide6.QtWidgets import (
     QListWidgetItem,
     QProgressBar,
     QPushButton,
+    QSizePolicy,
     QSplitter,
+    QStackedWidget,
     QVBoxLayout,
     QWidget,
 )
 
+from ..paths import APP_NAME
+from .downloader import start_download
 from .gallery import CardGallery
 from .links_panel import LinksPanel
 from .loader import start_loading
@@ -23,6 +29,21 @@ from .session import Session
 # L'annulation étant vérifiée à chaque fichier, l'arrêt prend quelques
 # millisecondes ; ce délai n'est qu'un filet.
 SHUTDOWN_TIMEOUT_MS = 5000
+# Un téléchargement s'arrête entre deux archives, pas au milieu de l'une : le
+# délai doit couvrir la fin de l'archive en cours.
+DOWNLOAD_SHUTDOWN_MS = 15000
+
+
+def proposed_cards_dir() -> str:
+    """Où proposer de déposer les cartes.
+
+    `QStandardPaths` sait localiser « Images » dans la langue et l'arborescence
+    de l'utilisateur, sur les trois systèmes — inutile d'écrire une règle par
+    plateforme. Un dossier visible et sauvegardé, plutôt qu'un recoin de données
+    applicatives que personne ne va voir.
+    """
+    base = QStandardPaths.writableLocation(QStandardPaths.PicturesLocation)
+    return os.path.join(base or os.path.expanduser("~"), APP_NAME, "cartes")
 
 
 class CardsStep(QWidget):
@@ -30,11 +51,20 @@ class CardsStep(QWidget):
 
     status_message = Signal(str)
 
+    # Émis quand le dossier de cartes change : la fenêtre le mémorise.
+    folder_changed = Signal(str)
+
     def __init__(self, session: Session, parent=None):
         super().__init__(parent)
         self._session = session
         self._thread = None
         self._worker = None
+        self._download_thread = None
+        self._download_worker = None
+        # Dossier visé par le téléchargement en cours, à charger une fois qu'il
+        # est fini. Distinct de `session.data_dir`, qui ne bascule qu'au premier
+        # lot réellement lu.
+        self._download_dir = None
         # Vrai tant qu'aucun lot n'est arrivé du chargement en cours : la session
         # ne sera vidée qu'à ce moment-là.
         self._awaiting_first_batch = False
@@ -42,6 +72,8 @@ class CardsStep(QWidget):
         session.selection_changed.connect(self._update_counts)
         session.cards_added.connect(self._refresh_folder_counts)
         session.loading_started.connect(self._fill_folders)
+        session.cards_added.connect(self._update_state)
+        self._update_state()
 
     # --- Construction -----------------------------------------------------
 
@@ -73,19 +105,73 @@ class CardsStep(QWidget):
         # plutôt qu'un partage fixe, les deux listes n'ayant pas la même longueur
         # d'un jeu de cartes à l'autre.
         self._links = LinksPanel(self._session)
-        left_panel = QSplitter(Qt.Vertical)
-        left_panel.addWidget(folders_panel)
-        left_panel.addWidget(self._links)
-        left_panel.setStretchFactor(0, 1)
-        left_panel.setSizes([420, 300])
+        self._left_panel = QSplitter(Qt.Vertical)
+        self._left_panel.addWidget(folders_panel)
+        self._left_panel.addWidget(self._links)
+        self._left_panel.setStretchFactor(0, 1)
+        self._left_panel.setSizes([420, 300])
+        left_panel = self._left_panel
 
         self._gallery = CardGallery(self._session)
         self._hint = QLabel()
         self._hint.setWordWrap(True)
 
+        # Tant qu'aucune carte n'est chargée, la galerie n'a rien à montrer et
+        # les boutons du haut n'ont rien sur quoi agir. On met à sa place les
+        # deux seules actions qui aient un sens, au centre, plutôt qu'une grande
+        # zone vide et une barre d'outils inerte.
+        self._empty_title = QLabel()
+        self._empty_title.setAlignment(Qt.AlignCenter)
+        police = self._empty_title.font()
+        police.setPointSize(police.pointSize() + 4)
+        police.setBold(True)
+        self._empty_title.setFont(police)
+        self._empty_hint = QLabel()
+        self._empty_hint.setAlignment(Qt.AlignCenter)
+        self._empty_hint.setWordWrap(True)
+        self._download = QPushButton()
+        self._download.clicked.connect(self._pick_download_folder)
+        self._locate = QPushButton()
+        self._locate.clicked.connect(self._pick_folder)
+        for bouton in (self._download, self._locate):
+            bouton.setMinimumWidth(320)
+            bouton.setSizePolicy(QSizePolicy.Fixed, QSizePolicy.Fixed)
+
+        vide = QVBoxLayout()
+        vide.addStretch(1)
+        vide.addWidget(self._empty_title)
+        vide.addWidget(self._empty_hint)
+        vide.addSpacing(24)
+        vide.addWidget(self._download, 0, Qt.AlignCenter)
+        vide.addWidget(self._locate, 0, Qt.AlignCenter)
+        vide.addStretch(1)
+        self._empty_page = QWidget()
+        self._empty_page.setLayout(vide)
+
+        self._pages = QStackedWidget()
+        self._pages.addWidget(self._empty_page)   # 0
+        self._pages.addWidget(self._gallery)      # 1
+
+        # Sous la liste des cartes, pleine largeur, et non dans une boîte de
+        # dialogue : ce n'est pas une erreur qui arrête quoi que ce soit, c'est
+        # un état du jeu de cartes qu'il faut pouvoir relire en travaillant.
+        # La colonne de gauche a été essayée d'abord : le texte y était écrasé
+        # entre deux listes et coupé en plein mot.
+        self._warnings = QLabel()
+        self._warnings.setWordWrap(True)
+        self._warnings.setTextFormat(Qt.PlainText)
+        # La couleur du texte est posée avec le fond, jamais seule : en thème
+        # sombre, le système donne un texte clair, qui sur ce fond crème serait
+        # illisible.
+        self._warnings.setStyleSheet(
+            "QLabel { background: #fff8e1; color: #5a4500;"
+            " border: 1px solid #e0c060; border-radius: 4px; padding: 6px; }")
+        self._warnings.hide()
+
         right = QVBoxLayout()
         right.addWidget(self._hint)
-        right.addWidget(self._gallery, 1)
+        right.addWidget(self._pages, 1)
+        right.addWidget(self._warnings)
         right_panel = QWidget()
         right_panel.setLayout(right)
 
@@ -97,6 +183,11 @@ class CardsStep(QWidget):
 
         self._choose_folder = QPushButton()
         self._choose_folder.clicked.connect(self._pick_folder)
+        self._update_catalogue = QPushButton()
+        self._update_catalogue.clicked.connect(self._start_update)
+        self._cancel = QPushButton()
+        self._cancel.clicked.connect(self._cancel_download)
+        self._cancel.hide()
         # Actions globales, volontairement séparées des boutons du panneau de
         # gauche qui, eux, ne portent que sur les dossiers sélectionnés.
         self._include_all = QPushButton()
@@ -109,10 +200,12 @@ class CardsStep(QWidget):
 
         top = QHBoxLayout()
         top.addWidget(self._choose_folder)
+        top.addWidget(self._update_catalogue)
         top.addWidget(self._include_all)
         top.addWidget(self._exclude_all)
         top.addWidget(self._count, 1)
         top.addWidget(self._progress, 1)
+        top.addWidget(self._cancel)
 
         layout = QVBoxLayout(self)
         layout.addLayout(top)
@@ -125,6 +218,18 @@ class CardsStep(QWidget):
         self._exclude_folder.setText(self.tr("Exclure"))
         self._show_all.setText(self.tr("Afficher tous les dossiers"))
         self._choose_folder.setText(self.tr("Choisir le dossier de cartes…"))
+        self._update_catalogue.setText(self.tr("Mettre à jour le catalogue"))
+        self._update_catalogue.setToolTip(
+            self.tr("Relit la liste des cartes publiée et récupère celles qui "
+                    "manquent au dossier."))
+        self._cancel.setText(self.tr("Annuler"))
+        self._empty_title.setText(self.tr("Aucune carte chargée"))
+        self._empty_hint.setText(
+            self.tr("Les illustrations ne sont pas fournies avec l'application. "
+                    "Téléchargez-les, ou désignez un dossier qui les contient "
+                    "déjà."))
+        self._download.setText(self.tr("Télécharger les cartes…"))
+        self._locate.setText(self.tr("J'ai déjà les cartes : choisir le dossier…"))
         self._include_all.setText(self.tr("Tout inclure"))
         self._exclude_all.setText(self.tr("Tout exclure"))
         self._hint.setText(
@@ -136,6 +241,56 @@ class CardsStep(QWidget):
         # Pas de _fill_folders() ici : les noms de dossiers sont des chemins, pas
         # des textes traduits. Le rappeler viderait la liste et détruirait la
         # sélection, donc le filtre en cours, pour rien.
+
+    # --- État de l'écran --------------------------------------------------
+
+    def _update_state(self) -> None:
+        """Montre la galerie ou l'état vide, et n'active que ce qui a un sens.
+
+        Appelée à chaque arrivée de cartes et non seulement en fin de chargement :
+        la galerie se remplit par lots, et rester sur l'écran vide jusqu'au
+        dernier donnerait l'impression que rien ne se passe.
+        """
+        garni = self._session.total_cards > 0
+        self._pages.setCurrentIndex(1 if garni else 0)
+        # Deux listes vides sur trois cents pixels ne disent rien et détournent
+        # l'œil des deux seules actions possibles. On les retire tant qu'elles
+        # n'ont rien à montrer.
+        self._left_panel.setVisible(garni)
+        for bouton in (self._include_all, self._exclude_all, self._show_all,
+                       self._include_folder, self._exclude_folder):
+            bouton.setEnabled(garni)
+        self._hint.setVisible(garni)
+        # La mise à jour vise un dossier : sans dossier connu, elle n'a pas de
+        # cible. Le bouton de l'état vide, lui, en demande un.
+        self._update_catalogue.setEnabled(bool(self._session.data_dir))
+        self._update_catalogue.setVisible(garni)
+
+    def _show_warnings(self, card_set) -> None:
+        """Dit ce que le chargement a trouvé d'anormal, et pourquoi ça compte."""
+        if not getattr(card_set, "has_warnings", False):
+            self._warnings.hide()
+            return
+        lignes = []
+        if card_set.odd_sizes:
+            attendu = f"{card_set.full_size[0]}×{card_set.full_size[1]}"
+            detail = ", ".join(f"{w}×{h} ({n})"
+                               for (w, h), n in
+                               ((e.size, e.count) for e in card_set.odd_sizes[:5]))
+            total = sum(e.count for e in card_set.odd_sizes)
+            lignes.append(
+                self.tr("%1 carte(s) ne sont pas au format %2 : %3. Elles seront "
+                        "étirées à ce format, ce qui déforme l'illustration et "
+                        "fausse les couleurs de bord dont l'assemblage se sert.")
+                .replace("%1", str(total)).replace("%2", attendu)
+                .replace("%3", detail))
+        if card_set.unreadable:
+            lignes.append(
+                self.tr("%1 fichier(s) illisibles, ignorés : %2")
+                .replace("%1", str(len(card_set.unreadable)))
+                .replace("%2", ", ".join(card_set.unreadable[:3])))
+        self._warnings.setText("⚠️ " + "\n\n⚠️ ".join(lignes))
+        self._warnings.show()
 
     # --- Chargement -------------------------------------------------------
 
@@ -163,6 +318,114 @@ class CardsStep(QWidget):
             strip_size=self._session.strip_size,
         )
 
+    # --- Téléchargement ---------------------------------------------------
+
+    def _pick_download_folder(self) -> None:
+        """Demande où déposer les cartes, puis lance la récupération.
+
+        Le dossier proposé est créé avant d'ouvrir le dialogue : celui-ci ne sait
+        pas se placer dans un dossier qui n'existe pas, et retomberait sur le
+        dernier emplacement visité — ce qui ferait perdre la proposition.
+        """
+        propose = proposed_cards_dir()
+        try:
+            os.makedirs(propose, exist_ok=True)
+        except OSError:
+            propose = os.path.expanduser("~")
+        directory = QFileDialog.getExistingDirectory(
+            self, self.tr("Où déposer les cartes"), propose)
+        if directory:
+            self._start_download(directory)
+
+    def _start_update(self) -> None:
+        """Complète le dossier déjà en place depuis le catalogue publié."""
+        if self._session.data_dir:
+            self._start_download(self._session.data_dir)
+
+    def _start_download(self, directory: str) -> None:
+        if self._download_thread is not None:
+            return
+        self._download_dir = directory
+        self._progress.show()
+        self._progress.setRange(0, 0)  # indéterminé le temps de lire le catalogue
+        self._cancel.show()
+        for bouton in (self._choose_folder, self._download, self._locate,
+                       self._update_catalogue):
+            bouton.setEnabled(False)
+        self.status_message.emit(self.tr("Lecture du catalogue…"))
+        self._download_thread, self._download_worker = start_download(
+            self, directory, self._on_download_progress, self._on_surveyed,
+            self._on_downloaded, self._on_download_failed,
+            self._on_download_cancelled)
+
+    def _cancel_download(self) -> None:
+        if self._download_worker is not None:
+            self._download_worker.cancel()
+            self._cancel.setEnabled(False)
+            self.status_message.emit(self.tr("Arrêt demandé…"))
+
+    def _on_surveyed(self, cartes: int, octets: int) -> None:
+        if not cartes:
+            self.status_message.emit(self.tr("Le dossier est déjà complet."))
+            return
+        self._progress.setRange(0, octets)
+        self._progress.setValue(0)
+        self.status_message.emit(
+            self.tr("%1 carte(s) à récupérer, %2 Mo…")
+            .replace("%1", str(cartes))
+            .replace("%2", f"{octets / 1e6:.0f}"))
+
+    def _on_download_progress(self, faits: int, total: int, jeu: str) -> None:
+        self._progress.setRange(0, total)
+        self._progress.setValue(faits)
+        self.status_message.emit(
+            self.tr("Téléchargement : %1").replace("%1", jeu))
+
+    def _end_download(self) -> None:
+        self._progress.hide()
+        self._cancel.hide()
+        self._cancel.setEnabled(True)
+        for bouton in (self._choose_folder, self._download, self._locate):
+            bouton.setEnabled(True)
+        self._download_thread = self._download_worker = None
+        self._update_state()
+
+    def _on_downloaded(self, ecrites: int, failures: list) -> None:
+        dossier = self._download_dir
+        self._end_download()
+        if failures:
+            # Les échecs sont dits, mais on charge quand même ce qui est arrivé :
+            # un dossier partiel reste utilisable, et le refuser en bloc pour une
+            # extension manquante serait disproportionné.
+            quoi, pourquoi = failures[0]
+            self.status_message.emit(
+                self.tr("%1 échec(s), dont %2 : %3")
+                .replace("%1", str(len(failures)))
+                .replace("%2", quoi).replace("%3", pourquoi))
+        elif ecrites:
+            self.status_message.emit(
+                self.tr("%n carte(s) récupérée(s).", "", ecrites))
+        if dossier:
+            self.load(dossier)
+
+    def _on_download_cancelled(self, ecrites: int) -> None:
+        dossier = self._download_dir
+        self._end_download()
+        self.status_message.emit(
+            self.tr("Téléchargement interrompu — %n carte(s) récupérée(s).",
+                    "", ecrites))
+        # Ce qui est arrivé est bon : chaque image a été vérifiée avant écriture.
+        # Le dossier est simplement incomplet, et une relance le complètera.
+        if dossier and ecrites:
+            self.load(dossier)
+
+    def _on_download_failed(self, message: str) -> None:
+        self._end_download()
+        self.status_message.emit(
+            self.tr("Téléchargement impossible : %1").replace("%1", message))
+
+    # --- Suites du chargement ---------------------------------------------
+
     def _on_progress(self, done: int, total: int) -> None:
         self._progress.setRange(0, total)
         self._progress.setValue(done)
@@ -186,6 +449,10 @@ class CardsStep(QWidget):
         # Les liens fournis d'office ne peuvent être posés qu'une fois les cartes
         # connues : ils sont décrits par chemin, pas par indice.
         self._session.apply_default_links()
+        self._show_warnings(card_set)
+        self._update_state()
+        if self._session.data_dir:
+            self.folder_changed.emit(self._session.data_dir)
         self.status_message.emit(
             self.tr("%n carte(s) chargée(s).", "", len(card_set))
         )
@@ -195,6 +462,7 @@ class CardsStep(QWidget):
         self._choose_folder.setEnabled(True)
         # Rien n'a été vidé : la sélection et les liens précédents sont intacts.
         self._awaiting_first_batch = False
+        self._update_state()
         self.status_message.emit(
             self.tr("Échec du chargement : %1").replace("%1", message)
         )
@@ -205,13 +473,19 @@ class CardsStep(QWidget):
         Appelée à la fermeture de la fenêtre : détruire un QThread encore actif
         fait abandonner le processus par Qt.
         """
-        if self._worker is not None:
-            self._worker.cancel()
+        # Les deux fils sont prévenus **avant** d'attendre l'un ou l'autre :
+        # les arrêter l'un après l'autre ferait attendre le second en entier
+        # alors qu'il aurait pu s'arrêter pendant l'attente du premier.
+        for worker in (self._worker, self._download_worker):
+            if worker is not None:
+                worker.cancel()
 
         stopped = True
-        if self._thread is not None and self._thread.isRunning():
-            self._thread.quit()
-            stopped = self._thread.wait(SHUTDOWN_TIMEOUT_MS)
+        for thread, delai in ((self._thread, SHUTDOWN_TIMEOUT_MS),
+                              (self._download_thread, DOWNLOAD_SHUTDOWN_MS)):
+            if thread is not None and thread.isRunning():
+                thread.quit()
+                stopped = thread.wait(delai) and stopped
 
         if not stopped:
             # Lâcher la référence d'un fil encore actif rouvrirait le crash que
@@ -223,6 +497,7 @@ class CardsStep(QWidget):
             )
             return False
         self._thread = self._worker = None
+        self._download_thread = self._download_worker = None
         return True
 
     # --- Dossiers et compteurs -------------------------------------------
