@@ -561,7 +561,7 @@ timeline de clichés, export poster en PNG/JPEG/PDF avec découpage en panneaux.
 | Sujet | État |
 |---|---|
 | **Empaquetage** | ✅ `.app` macOS autonome, 118 Mo, construit par `paquet/construire.sh`. ⚠️ Non signé valablement : démarre sur vos machines, refusé par Gatekeeper ailleurs. Voir `paquet/README.md`. |
-| **Images des cartes** | ✅ **441/441**, illustrations nues 734×1024 en WebP q80 (56,4 Mo). Miroir public publié dans un dépôt dédié, récupération anonyme en 3 s. Voir `docs/IMAGES.md`. |
+| **Images des cartes** | ✅ **441/441**, illustrations nues 734×1024 en WebP q80 (56,4 Mo). Miroir public dans un dépôt dédié, récupération anonyme depuis l'application elle-même. Voir `docs/IMAGES.md`. |
 
 ## 10. Journal des décisions
 
@@ -603,6 +603,8 @@ timeline de clichés, export poster en PNG/JPEG/PDF avec découpage en panneaux.
 | 2026-08-20 | `platformdirs` écarté : `QStandardPaths` suffit, le socle reste à trois dépendances |
 | 2026-08-20 | Les formulaires **renvoient à la session** la valeur qu'ils ont écrêtée, un préréglage étant modifiable à la main |
 | 2026-08-24 | **La récupération automatique est abandonnée.** Trois cents lignes ont été bâties sur des images jamais regardées, qui se sont révélées encadrées et non nues ; une autre voie refusait 438 requêtes sur 438. Les illustrations sont désormais **déposées à la main**, et le projet n'interroge plus aucun site |
+| 2026-08-27 | **L'application obtient les cartes elle-même.** L'étape 1 s'ouvre sur deux boutons — télécharger, ou désigner un dossier —, le dossier retenu est mémorisé, et « Mettre à jour le catalogue » relit `cards.json` au miroir. Une installation neuve n'avait jusque-là aucun moyen d'obtenir d'images |
+| 2026-08-27 | **Les écarts de format sont dits à l'écran** et non imprimés : depuis un `.app`, la sortie standard ne va nulle part, et une carte hors format est étirée, ce qui fausse les couleurs de bord dont l'assemblage se sert |
 | 2026-08-27 | **Le miroir est la seule provenance.** Tout ce qui désignait un site tiers — scripts d'acquisition, adresses au manifeste, notes de source — est retiré du code, du catalogue et de l'historique. `cards.json` passe en version 4 : il ne dit plus que ce que le miroir contient |
 | 2026-08-24 | **Stockage en WebP qualité 80** : 56,3 Mo contre 541 Mo pour les sources PNG. Écart médian de 0,45 niveau sur 255 sur la moyenne RGB d'un bord, sous l'erreur des vignettes à 25 % déjà acceptée. Différences montrées et validées à l'œil |
 | 2026-08-22 | Sélection reconstituée par règle : trois raretés étoilées, hors illustrateur `PLANETA*` (rendus 3D), hors Dresseur sauf en Three Star. Reproduit la sélection existante sur **12 extensions sur 12** |

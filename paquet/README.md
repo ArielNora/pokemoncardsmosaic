@@ -10,9 +10,13 @@ installer.
 ## Ce que le paquet contient
 
 Le code et les traductions. **Pas les illustrations** : 56 Mo qui changent à
-chaque extension et appartiennent à leurs ayants droit. Au premier lancement,
-l'application propose le dossier de cartes s'il existe, sinon l'utilisateur le
-désigne lui-même à l'étape 1.
+chaque extension et appartiennent à leurs ayants droit. **Pas le catalogue non
+plus** — l'application va chercher `cards.json` au miroir, ce qui évite qu'une
+copie embarquée le jour de la construction diverge de celle qui est publiée.
+
+Au premier lancement, l'étape 1 s'ouvre sur deux boutons : télécharger les
+cartes depuis le miroir, ou désigner un dossier qui les contient déjà. Le
+dossier retenu est mémorisé, l'écran d'accueil ne reparaît donc qu'une fois.
 
 Les modules PySide6 inutilisés — moteur web, QML, multimédia, base de données —
 sont exclus, ainsi qu'`opencv`, `scipy` et `scikit-learn`, qui ne servent qu'à
@@ -22,11 +26,15 @@ sont exclus, ainsi qu'`opencv`, `scipy` et `scikit-learn`, qui ne servent qu'à
 
 | | Depuis le dépôt | Une fois installée |
 |---|---|---|
-| Cartes | `data/pokemoncards/` | `~/Library/Application Support/Pokémon Mosaic/pokemoncards/` |
+| Cartes | `data/pokemoncards/` | celui que l'utilisateur désigne, proposé sous `~/Pictures/Pokémon Mosaic/cartes/` |
 | Mosaïques | `output/` | `~/Pictures/Pokémon Mosaic/` |
+| Préréglages | `~/Library/Preferences/Pokémon Mosaic/presets/` | idem |
+| Dossier retenu | réglages `Pokémon Mosaic` | idem |
 
 Écrire à côté de l'exécutable est impossible : un `.app` installé dans
-`/Applications` est en lecture seule pour l'utilisateur courant.
+`/Applications` est en lecture seule pour l'utilisateur courant. Le dossier de
+cartes est **proposé** et non imposé : `~/Pictures` est visible et sauvegardé,
+là où un recoin de données applicatives ne l'est pas.
 
 ## ⚠️ La signature
 
