@@ -11,15 +11,33 @@ Tous décidés le 2026-08-16. À traiter **une fois toute la v1 terminée**, pas
   ensuite des réglages de marge de page et d'espacement entre cartes (c'est ce qui
   motivait l'idée de rendre la taille des cartes ajustable indépendamment).
   Voir `SPEC.md` §4.
-- **Liens verticaux.** La v1 ne gère que des blocs horizontaux (une carte à gauche
-  d'une autre). Permettre d'imposer qu'une carte soit au-dessus d'une autre.
-  ⭐ **Premier cas d'usage demandé** (2026-08-22) : la lignée Arcko `B3-156` en bas,
-  Massko `B3-157` au milieu, Méga-Jungko-ex `B3-194` en haut.
-- **Blocs rectangulaires.** Grouper des cartes en carré ou rectangle (ex. 2×2 pour une
-  illustration qui s'étale). C'est l'extension la plus lourde de l'algorithme.
+- ⭐ **Les liens deviennent des rectangles pleins, 3×3 au maximum** — tranché le
+  2026-08-27, audité, pas encore écrit. Un seul concept **remplace** horizontal,
+  vertical et groupe : une ligne de 3 est un 1×3, une colonne un 3×1, et le cas
+  d'usage demandé le 2026-08-22 — Arcko `B3-156` en bas, Massko `B3-157` au
+  milieu, Méga-Jungko-ex `B3-194` en haut — tombe dedans sans cas particulier.
+
+  Formes admises : 1×2, 1×3, 2×1, 3×1, 2×2, 2×3, 3×2, 3×3. Jamais de forme
+  trouée ni de rectangle incomplet. Le lien porte sa forme et ses cartes, rien
+  de plus : ni coordonnées, ni verrou.
+
+  **Une carte liée ne peut pas être figée**, et réciproquement.
+
+  Ce qui reste à écrire : `Link` gagne une forme ; `_locate_block` balaie une
+  fenêtre 2D ; `_try_move` vise une zone 2D ; `build_initial_grid` prend le
+  premier ancrage qui tient ; `check_links_fit` doit vérifier **la hauteur**,
+  qu'il ne regarde nulle part aujourd'hui. `local_score` est déjà générique et
+  ne change pas. Le gros du travail est le dialogue de création, qui construit
+  une liste ordonnée et doit devenir un éditeur de grille.
+
+  ⚠️ `distribute_empty_cells` disperse les trous, et un 3×3 veut neuf cases
+  contiguës : dans une grille lâche le placement peut échouer là où une
+  solution existe. La parade est un message clair, pas un algorithme plus malin.
 - **Fixer une carte à des coordonnées précises.** Permettre d'imposer qu'une carte
   donnée occupe une case donnée de la grille. À rapprocher du mécanisme de cases vides
-  figées de la v1 : c'est le même verrouillage de position.
+  figées de la v1 : c'est le même verrouillage de position. Le verrouillage se fait
+  **carte par carte**, jamais par groupe — et une carte appartenant à un lien ne
+  peut pas être figée.
 - **Traitement de la marge automatique.** La v1 centre l'image et laisse une bordure
   neutre pour absorber l'écart de 2,47 % entre grille et feuille. Laisser ensuite
   l'utilisateur décider quoi en faire : couleur au choix, ou autre traitement.

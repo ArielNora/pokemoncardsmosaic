@@ -108,3 +108,19 @@ test de non-régression.
 
 - `SPEC.md` — définition du projet et journal des décisions. À tenir à jour.
 - `TODO.md` — évolutions reportées après la v1.
+
+### Toute spécification s'écrit, sur-le-champ
+
+**Ajout, modification ou suppression d'une spécification — sur n'importe quelle
+partie : technologie, interface, algorithme, format de données, règle métier —
+s'écrit immédiatement, sans attendre qu'on le demande.**
+
+Dans `SPEC.md` §10, une ligne datée au journal des décisions. Dans `TODO.md`
+quand c'est reporté. Et dans la mémoire de l'assistant, avec le **pourquoi**.
+
+Une conversation disparaît. Une spécification qui n'existe que dans l'échange
+est perdue au compactage, et sera réinventée différemment — ou pire, on codera
+contre une règle abandonnée.
+
+Écrire la **raison** autant que la règle, et noter ce que la décision **écarte** :
+c'est ce qu'il faudra rouvrir si le besoin revient.
