@@ -99,6 +99,11 @@ test de non-régression.
   signature dans `load_cards` est passée à travers 231 tests, parce que les tests
   d'interface construisent leurs `CardSet` à la main. Après toute modification de
   `cards.py`, lancer un chargement réel.
+- **Donner la commande de lancement.** Dès qu'une fonctionnalité est essayable
+  dans l'application, la donner sans attendre qu'on la demande : `uv run
+  pokemon-mosaic-ui` depuis le dépôt, `open "dist/Pokémon Mosaic.app"` seulement
+  si le paquet vient d'être reconstruit. Une capture d'écran prouve que je l'ai
+  regardée, pas que l'utilisateur peut l'essayer.
 - **Vérifier le rendu, pas seulement les tests.** Plusieurs défauts réels
   (dossiers homonymes fusionnés, cases vides alignées en colonne, formulaire
   désynchronisé) n'ont été vus qu'en regardant une capture d'écran ou les chiffres
