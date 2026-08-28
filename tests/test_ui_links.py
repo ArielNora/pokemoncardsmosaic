@@ -3,7 +3,6 @@
 import numpy as np
 import pytest
 from PySide6.QtCore import Qt
-from PySide6.QtWidgets import QDialog
 
 from pokemon_mosaic.cards import Card, CardSet
 from pokemon_mosaic.links import Link, LinkLibrary
@@ -157,8 +156,24 @@ def panel(session):
 def test_the_panel_names_the_cards_and_shows_the_direction(panel, session):
     session.add_link(Link(cards=(0, 1)))
     session.add_link(Link(cards=(3, 4), ordered=False))
-    assert panel._list.item(0).text() == "a3-207-solgaleo-ex → a3-204-lunala-ex"
-    assert panel._list.item(1).text() == "a4a-087-entei-ex ↔ a4a-088-raikou-ex"
+    assert panel._list.item(0).text() == \
+        "2 × 1  a3-207-solgaleo-ex → a3-204-lunala-ex"
+    assert panel._list.item(1).text() == \
+        "2 × 1  a4a-087-entei-ex ↔ a4a-088-raikou-ex"
+
+
+def test_the_panel_does_not_draw_a_chain_across_a_rectangle(panel, session):
+    """Sur un 2×2, « A → B → C → D » décrirait une chaîne là où les cartes
+    forment un carré. Au-delà d'une rangée, seule la forme dit la disposition."""
+    session.add_link(Link(cards=(0, 1, 2, 3), shape=(2, 2)))
+    texte = panel._list.item(0).text()
+    assert texte.startswith("2 × 2")
+    assert "→" not in texte and "↔" not in texte
+
+
+def test_the_panel_tells_a_row_from_a_column(panel, session):
+    session.add_link(Link(cards=(0, 1, 2), shape=(1, 3)))
+    assert panel._list.item(0).text().startswith("1 × 3")
 
 
 def test_unchecking_a_row_disables_the_link(panel, session):
@@ -183,7 +198,7 @@ def test_deleting_removes_the_link(panel, session):
     assert len(session.links) == 0
 
 
-# --- Dialogue -------------------------------------------------------------
+# --- Dialogue : la grille -------------------------------------------------
 
 
 @pytest.fixture
@@ -193,89 +208,178 @@ def dialog_for(session):
     return lambda link=None: LinkDialog(session, link=link)
 
 
-def pick(dialog, *names):
-    """Sélectionne des cartes par nom dans la liste de gauche, dans cet ordre.
-
-    Rapprochement par fragment : les noms de fichiers portent désormais le code
-    et le numéro de la carte (`a4a-087-entei-ex`), et non plus le seul nom.
-    """
-    for name in names:
-        for row in range(dialog._candidates.count()):
-            item = dialog._candidates.item(row)
-            if name in item.text():
-                dialog._candidates.setCurrentItem(item)
-                break
-        else:
-            raise AssertionError(f"{name} absente des cartes disponibles")
-        dialog._add_selected()
+def index_of(session, fragment):
+    """Indice de la carte dont le nom contient ce fragment."""
+    for card in session.card_set:
+        if fragment in card.name:
+            return card.index
+    raise AssertionError(f"{fragment} absente du jeu de cartes")
 
 
-def test_the_dialog_builds_a_link_in_the_order_chosen(dialog_for):
+def pose(dialog, session, *noms):
+    """Remplit la grille en ordre de lecture, comme le ferait un glisser."""
+    for position, nom in enumerate(noms):
+        row, col = divmod(position, dialog._grid.cols)
+        dialog._grid.place(row, col, index_of(session, nom))
+
+
+def palette_names(dialog):
+    return [dialog._palette.item(row).text()
+            for row in range(dialog._palette.count())]
+
+
+def test_the_grid_starts_as_a_single_empty_cell(dialog_for):
+    """Un lien commence par une case : la forme se construit ensuite, par ses
+    bords, plutôt que d'être choisie dans une liste abstraite."""
     dialog = dialog_for()
-    pick(dialog, "raikou", "entei")
-    assert dialog.link().cards == (4, 3)
+    assert dialog._grid.shape == (1, 1)
+    assert dialog._grid.cards() == [None]
 
 
-def test_a_chosen_card_leaves_the_available_list(dialog_for):
+def test_the_dialog_builds_a_link_in_reading_order(dialog_for, session):
     dialog = dialog_for()
-    before = dialog._candidates.count()
-    pick(dialog, "entei")
-    assert dialog._candidates.count() == before - 1
+    dialog._grid.add_col()
+    pose(dialog, session, "raikou", "entei")
+
+    link = dialog.link()
+    assert link.shape == (2, 1)
+    assert link.cards == (index_of(session, "raikou"), index_of(session, "entei"))
 
 
-def test_the_dialog_refuses_a_single_card(dialog_for):
+def test_a_placed_card_leaves_the_palette(dialog_for, session):
+    """Elle ne peut figurer qu'une fois dans un lien : la laisser proposée
+    inviterait à un doublon que `Link` refuserait ensuite."""
+    dialog = dialog_for()
+    dialog._grid.add_col()
+    pose(dialog, session, "raikou")
+
+    assert not any("raikou" in nom for nom in palette_names(dialog))
+    assert any("entei" in nom for nom in palette_names(dialog))
+
+
+def test_clearing_a_cell_returns_the_card_to_the_palette(dialog_for, session):
+    dialog = dialog_for()
+    dialog._grid.add_col()
+    pose(dialog, session, "raikou", "entei")
+    dialog._grid.clear_cell(0, 0)
+
+    assert any("raikou" in nom for nom in palette_names(dialog))
+    assert dialog._grid.cards()[0] is None
+
+
+def test_an_incomplete_rectangle_cannot_be_validated(dialog_for, session):
+    """Un lien est un rectangle **plein** : une case vide n'a rien à donner à
+    l'optimiseur, et `Link` refuserait le compte."""
     from PySide6.QtWidgets import QDialogButtonBox
 
     dialog = dialog_for()
-    ok = dialog._buttons.button(QDialogButtonBox.Ok)
-    assert not ok.isEnabled()
-    pick(dialog, "entei")
-    assert not ok.isEnabled()
-    pick(dialog, "raikou")
-    assert ok.isEnabled()
+    dialog._grid.add_col()
+    dialog._grid.add_row()          # 2×2, quatre cases
+    pose(dialog, session, "raikou", "entei")
+
+    assert not dialog._buttons.button(QDialogButtonBox.Ok).isEnabled()
+    assert "2" in dialog._panel.hint.text()
 
 
-def test_moving_a_card_changes_the_order(dialog_for):
+def test_a_single_cell_cannot_be_validated_even_when_filled(dialog_for, session):
+    """Une carte seule ne contraint rien."""
+    from PySide6.QtWidgets import QDialogButtonBox
+
     dialog = dialog_for()
-    pick(dialog, "entei", "raikou")
-    dialog._sequence.setCurrentRow(1)
-    dialog._move(-1)
-    assert dialog.link().cards == (4, 3)
+    dialog._grid.place(0, 0, index_of(session, "entei"))
+
+    assert dialog._grid.complete
+    assert not dialog._buttons.button(QDialogButtonBox.Ok).isEnabled()
+    assert "deux cartes" in dialog._panel.hint.text()
+
+
+def test_a_full_rectangle_can_be_validated(dialog_for, session):
+    from PySide6.QtWidgets import QDialogButtonBox
+
+    dialog = dialog_for()
+    dialog._grid.add_col()
+    pose(dialog, session, "raikou", "entei")
+
+    assert dialog._buttons.button(QDialogButtonBox.Ok).isEnabled()
+    assert "2 × 1" in dialog._panel.hint.text()
+
+
+def test_moving_a_card_to_another_cell_leaves_no_duplicate(dialog_for, session):
+    """Sans le retrait de l'ancienne case, la carte figurerait deux fois et
+    `Link` lèverait « une carte est répétée » à la validation."""
+    dialog = dialog_for()
+    dialog._grid.add_col()
+    raikou = index_of(session, "raikou")
+    dialog._grid.place(0, 0, raikou)
+    dialog._grid.place(0, 1, raikou)
+
+    assert dialog._grid.cards() == [None, raikou]
 
 
 def test_editing_an_existing_link_is_accepted(dialog_for, session):
-    """Le lien modifié ne doit pas être jugé en conflit avec lui-même."""
-    session.add_link(Link(cards=(0, 1)))
-    dialog = dialog_for(session.links.links[0])
-    dialog._ordered.setChecked(False)
+    from pokemon_mosaic.links import Link
+
+    existing = Link(cards=(3, 4))
+    session.links.add(existing)
+    dialog = dialog_for(existing)
+    dialog._name.setText("renommé")
     dialog._try_accept()
+
     assert dialog._error.text() == ""
-    assert dialog.result() == QDialog.Accepted
 
 
 def test_a_card_already_linked_elsewhere_is_refused(dialog_for, session):
-    session.add_link(Link(cards=(0, 1)))
+    from pokemon_mosaic.links import Link
+
+    session.links.add(Link(cards=(3, 4)))
     dialog = dialog_for()
-    pick(dialog, "lunala", "entei")
+    dialog._grid.add_col()
+    dialog._grid.place(0, 0, 3)
+    dialog._grid.place(0, 1, 0)
     dialog._try_accept()
+
     assert "appartiennent déjà" in dialog._error.text()
-    assert dialog.result() != QDialog.Accepted
 
 
-def test_an_existing_link_opens_with_its_cards_in_order(dialog_for, session):
-    session.add_link(Link(cards=(3, 4), ordered=False, name="duo"))
-    dialog = dialog_for(session.links.links[0])
-    assert dialog.link().cards == (3, 4)
-    assert dialog.link().name == "duo"
-    assert dialog._ordered.isChecked() is False
+def test_an_existing_link_reopens_on_its_rectangle(dialog_for, session):
+    """Sans cela, modifier le nom d'une colonne la renverrait en ligne."""
+    from pokemon_mosaic.links import Link
+
+    colonne = Link(cards=(0, 1, 2), shape=(1, 3), name="lignée")
+    dialog = dialog_for(colonne)
+
+    assert dialog._grid.shape == (1, 3)
+    assert dialog._grid.cards() == [0, 1, 2]
+    assert dialog.link().shape == (1, 3)
 
 
 def test_an_excluded_card_is_signalled_in_the_dialog(dialog_for, session):
+    """Un lien sur une carte retirée ne s'appliquera jamais : mieux vaut le voir
+    en composant qu'après une exécution entière."""
     session.set_excluded([0], True)
     dialog = dialog_for()
-    labels = [dialog._candidates.item(r).text()
-              for r in range(dialog._candidates.count())]
-    assert sum("exclue" in label for label in labels) == 1
+
+    assert any("exclue" in nom for nom in palette_names(dialog))
+
+
+# --- Le filtre de la palette ----------------------------------------------
+
+def test_the_palette_can_be_filtered_by_extension(dialog_for, session):
+    dialog = dialog_for()
+    position = dialog._folder.findData("a4a-source-secrete")
+    assert position > 0
+    dialog._folder.setCurrentIndex(position)
+
+    noms = palette_names(dialog)
+    assert noms and all("a4a-source-secrete" in nom for nom in noms)
+
+
+def test_the_palette_can_be_filtered_by_name(dialog_for, session):
+    dialog = dialog_for()
+    dialog._search.setText("entei")
+
+    assert [nom for nom in palette_names(dialog) if "entei" in nom] \
+        == palette_names(dialog)
 
 
 # --- Bout en bout ---------------------------------------------------------
@@ -327,7 +431,8 @@ def test_creating_from_the_panel_adds_the_composed_link(panel, session, monkeypa
     from pokemon_mosaic.ui import link_dialog
 
     def accept(self):
-        pick(self, "entei", "raikou")
+        self._grid.add_col()
+        pose(self, session, "entei", "raikou")
         return 1
 
     monkeypatch.setattr(link_dialog.LinkDialog, "exec", accept)
@@ -341,77 +446,3 @@ def test_cancelling_the_dialog_changes_nothing(panel, session, monkeypatch):
     monkeypatch.setattr(link_dialog.LinkDialog, "exec", lambda self: 0)
     panel._create()
     assert len(session.links) == 0
-
-
-# --- La forme du rectangle -------------------------------------------------
-
-def test_the_dialog_offers_only_the_shapes_that_fit(qt_app, session):
-    """Deux cartes font un 2×1 ou un 1×2 ; quatre ne font qu'un 2×2."""
-    from pokemon_mosaic.ui.link_dialog import LinkDialog
-
-    dialog = LinkDialog(session)
-    dialog._append_to_sequence(0)
-    dialog._append_to_sequence(1)
-    dialog._update_buttons()
-    assert [dialog._shape.itemData(i) for i in range(dialog._shape.count())] \
-        == [(2, 1), (1, 2)]
-
-    dialog._append_to_sequence(2)
-    dialog._append_to_sequence(3)
-    dialog._update_buttons()
-    assert [dialog._shape.itemData(i) for i in range(dialog._shape.count())] \
-        == [(2, 2)]
-
-
-@pytest.fixture
-def session_fournie(qt_app, tmp_path):
-    """Neuf cartes : de quoi composer jusqu'au 3×3, et les nombres impossibles."""
-    from pokemon_mosaic.ui.session import Session
-
-    s = Session()
-    s.set_cards(card_set_in(tmp_path, {"jeu": [f"c{i}" for i in range(9)]}),
-                str(tmp_path))
-    return s
-
-
-@pytest.mark.parametrize("count", [5, 7, 8])
-def test_a_count_no_rectangle_holds_blocks_validation(qt_app, session_fournie,
-                                                      count):
-    session = session_fournie
-    """Sans ce garde-fou, `Link` lèverait une exception non rattrapée au moment
-    de valider — le dialogue disparaîtrait sur une trace."""
-    from pokemon_mosaic.ui.link_dialog import LinkDialog
-
-    dialog = LinkDialog(session)
-    for index in range(count):
-        dialog._append_to_sequence(index)
-    dialog._update_buttons()
-
-    assert dialog._shape.count() == 0
-    from PySide6.QtWidgets import QDialogButtonBox
-    assert not dialog._buttons.button(QDialogButtonBox.Ok).isEnabled()
-    assert "2, 3, 4, 6" in dialog._error.text()
-
-
-def test_the_chosen_shape_reaches_the_link(qt_app, session):
-    from pokemon_mosaic.ui.link_dialog import LinkDialog
-
-    dialog = LinkDialog(session)
-    for index in range(2):
-        dialog._append_to_sequence(index)
-    dialog._update_buttons()
-    assert dialog.select_shape((1, 2))
-
-    assert dialog.link().shape == (1, 2)
-
-
-def test_editing_a_link_reopens_on_its_shape(qt_app, session):
-    """Sans cela, modifier le nom d'une colonne la renverrait en ligne."""
-    from pokemon_mosaic.links import Link
-    from pokemon_mosaic.ui.link_dialog import LinkDialog
-
-    colonne = Link(cards=(0, 1, 2), shape=(1, 3), name="lignée")
-    dialog = LinkDialog(session, colonne)
-
-    assert dialog._shape.currentData() == (1, 3)
-    assert dialog.link().shape == (1, 3)

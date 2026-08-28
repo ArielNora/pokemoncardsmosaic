@@ -87,7 +87,13 @@ class LinksPanel(QWidget):
         for index in link.cards:
             names.append(card_set[index].name if card_set else str(index))
         # La flèche dit le sens : imposé à sens unique, libre à double sens.
-        text = (" → " if link.ordered else " ↔ ").join(names)
+        # ⚠️ Elle ne convient qu'à une **barre**. Sur un 2×2, « A → B → C → D »
+        # décrirait une chaîne là où les cartes forment un carré : au-delà d'une
+        # rangée ou d'une colonne, seul le point sépare, et c'est la forme
+        # annoncée qui dit la disposition.
+        barre = link.cols == 1 or link.rows == 1
+        separateur = (" → " if link.ordered else " ↔ ") if barre else " · "
+        text = f"{link.cols} × {link.rows}  " + separateur.join(names)
         if link.name:
             text = f"{link.name} : {text}"
         return text
