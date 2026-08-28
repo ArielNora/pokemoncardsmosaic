@@ -20,6 +20,7 @@ from PySide6.QtWidgets import (
 )
 
 from ..paths import APP_NAME
+from . import theme
 from .downloader import start_download
 from .gallery import CardGallery
 from .links_panel import LinksPanel
@@ -160,12 +161,7 @@ class CardsStep(QWidget):
         self._warnings = QLabel()
         self._warnings.setWordWrap(True)
         self._warnings.setTextFormat(Qt.PlainText)
-        # La couleur du texte est posée avec le fond, jamais seule : en thème
-        # sombre, le système donne un texte clair, qui sur ce fond crème serait
-        # illisible.
-        self._warnings.setStyleSheet(
-            "QLabel { background: #fff8e1; color: #5a4500;"
-            " border: 1px solid #e0c060; border-radius: 4px; padding: 6px; }")
+        theme.mark(self._warnings, "banner")
         self._warnings.hide()
 
         right = QVBoxLayout()

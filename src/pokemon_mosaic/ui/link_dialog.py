@@ -25,6 +25,7 @@ from PySide6.QtWidgets import (
 )
 
 from ..links import MAX_SIDE, Link
+from . import theme
 from .gallery import numpy_to_pixmap
 from .link_grid import CELL_WIDTH, CardPalette, GridPanel
 from .session import Session
@@ -88,7 +89,7 @@ class LinkDialog(QDialog):
         self._ordered.setChecked(True)
         self._error = QLabel()
         self._error.setWordWrap(True)
-        self._error.setStyleSheet("color: #b00;")
+        theme.mark(self._error, "error")
 
         name_row = QHBoxLayout()
         name_row.addWidget(self._name_label)

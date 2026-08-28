@@ -24,6 +24,7 @@ from ..layout import (
     suggest_grids,
 )
 from ..optimize import check_links_fit
+from . import theme
 from .session import Session
 from .wireframe import WireframeView
 
@@ -98,7 +99,7 @@ class LayoutStep(QWidget):
         self._preview_hint = QLabel(); self._preview_hint.setWordWrap(True)
         self._summary = QLabel(); self._summary.setWordWrap(True)
         self._warnings = QLabel(); self._warnings.setWordWrap(True)
-        self._warnings.setStyleSheet("color: #a03030;")
+        theme.mark(self._warnings, "error")
 
         right = QVBoxLayout()
         right.addWidget(self._preview_hint)

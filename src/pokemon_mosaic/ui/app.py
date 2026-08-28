@@ -5,6 +5,7 @@ import sys
 from PySide6.QtWidgets import QApplication
 
 from ..paths import APP_NAME, user_data_dir
+from . import theme
 from .i18n import LanguageManager
 from .main_window import MainWindow
 from .session import Session
@@ -33,6 +34,11 @@ def main(argv=None) -> int:
     # enregistrés. Les réglages nomment leur emplacement eux-mêmes, voir
     # `MainWindow.settings()`.
     app.setApplicationName(APP_NAME)
+    # Qt suit déjà le mode clair/sombre du système pour ses propres couleurs ;
+    # ceci ajoute les nôtres — avertissement, erreur, cases de l'éditeur de
+    # lien —, que sa palette ne connaît pas.
+    theme.apply(app)
+    theme.follow_system(app)
 
     language = LanguageManager(app)
     language.set_language(LanguageManager.system_default())

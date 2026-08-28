@@ -304,3 +304,22 @@ def test_clicking_an_add_button_grows_the_grid(grille):
     QApplication.processEvents()
 
     assert grille.shape == (1, 2)
+
+
+def test_a_fresh_cell_looks_like_a_cleared_one(qt_app):
+    """Une case doit porter son texte d'attente dès sa construction. Sans cela
+    elle reste blanche jusqu'au premier `set_card`, et une case vidée paraît
+    différente d'une case qui n'a jamais rien reçu."""
+    from pokemon_mosaic.ui import theme
+    from pokemon_mosaic.ui.link_grid import CardCell
+
+    theme.apply(qt_app)
+    neuve = CardCell(0, 0)
+    videe = CardCell(0, 0)
+    videe.set_card(1, np.zeros((4, 3, 3), np.uint8))
+    videe.set_card(None, None)
+    for case in (neuve, videe):
+        case.show()
+    qt_app.processEvents()
+
+    assert neuve.grab().toImage() == videe.grab().toImage()

@@ -26,6 +26,7 @@ from PySide6.QtWidgets import (
 )
 
 from ..export import PosterSettings, panel_paths, plan_poster
+from . import theme
 from .session import Session
 
 # Extension par format, dans l'ordre d'affichage.
@@ -81,7 +82,7 @@ class ExportDialog(QDialog):
         self._plan_label.setWordWrap(True)
         self._warnings = QLabel()
         self._warnings.setWordWrap(True)
-        self._warnings.setStyleSheet("color: #a60;")
+        theme.mark(self._warnings, "warning")
         self._files = QLabel()
         self._files.setWordWrap(True)
 

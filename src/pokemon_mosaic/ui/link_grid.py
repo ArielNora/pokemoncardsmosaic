@@ -25,6 +25,7 @@ from PySide6.QtWidgets import (
 )
 
 from ..links import MAX_SIDE
+from . import theme
 from .gallery import numpy_to_pixmap
 
 # Type de contenu propre au projet plutôt que du texte brut : une chaîne venue
@@ -98,7 +99,10 @@ class CardCell(QFrame):
         self._image.setAlignment(Qt.AlignCenter)
         self._image.setGeometry(1, 1, CELL_WIDTH - 2, CELL_HEIGHT - 2)
         self._image.setWordWrap(True)
-        self._paint()
+        # Et non `_paint()` seul : une case doit porter son texte d'attente dès
+        # sa construction. Sans cela elle reste blanche jusqu'au premier
+        # `set_card`, ce qui la fait paraître différente d'une case vidée.
+        self.set_card(None, None)
 
     # --- Contenu ----------------------------------------------------------
 
@@ -121,13 +125,8 @@ class CardCell(QFrame):
     def _paint(self) -> None:
         # Une case vide se distingue d'un coup d'œil : c'est ce qui manque pour
         # pouvoir valider, et l'utilisateur doit les repérer sans les compter.
-        if self._card is None:
-            self.setStyleSheet("QFrame { border: 1px dashed #999; "
-                               "background: palette(alternate-base); }"
-                               "QLabel { color: #999; border: none; }")
-        else:
-            self.setStyleSheet("QFrame { border: 1px solid #666; }"
-                               "QLabel { border: none; }")
+        # Les couleurs viennent du thème, qui les décline en clair et en sombre.
+        theme.mark(self, "cell" if self._card is not None else "cell-empty")
 
     # --- Glisser-déposer --------------------------------------------------
 

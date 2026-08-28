@@ -17,6 +17,7 @@ from PySide6.QtWidgets import (
 )
 
 from ..links import Link
+from . import theme
 from .link_dialog import LinkDialog
 from .session import Session
 
@@ -55,7 +56,7 @@ class LinksPanel(QWidget):
 
         self._warning = QLabel()
         self._warning.setWordWrap(True)
-        self._warning.setStyleSheet("color: #a60;")
+        theme.mark(self._warning, "warning")
         self._warning.hide()
 
         layout = QVBoxLayout(self)
