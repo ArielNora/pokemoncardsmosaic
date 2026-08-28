@@ -323,3 +323,18 @@ def test_a_fresh_cell_looks_like_a_cleared_one(qt_app):
     qt_app.processEvents()
 
     assert neuve.grab().toImage() == videe.grab().toImage()
+
+
+def test_the_palette_is_a_grid_that_only_hands_cards_out(qt_app):
+    """Une grille, et non une liste : quatre cent quarante et une cartes une par
+    ligne obligent à faire défiler sans fin. `DragOnly` et `Static` parce qu'on
+    tire **vers** l'éditeur — la palette n'a pas d'ordre propre à réarranger."""
+    from PySide6.QtWidgets import QListWidget
+
+    from pokemon_mosaic.ui.link_grid import CardPalette
+
+    palette = CardPalette()
+    assert palette.viewMode() == QListWidget.IconMode
+    assert palette.dragDropMode() == QListWidget.DragOnly
+    assert palette.movement() == QListWidget.Static
+    assert palette.isWrapping()

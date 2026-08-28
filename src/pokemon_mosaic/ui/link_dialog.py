@@ -27,7 +27,7 @@ from PySide6.QtWidgets import (
 from ..links import MAX_SIDE, Link
 from . import theme
 from .gallery import numpy_to_pixmap
-from .link_grid import CELL_WIDTH, CardPalette, GridPanel
+from .link_grid import PALETTE_WIDTH, CardPalette, GridPanel
 from .session import Session
 
 # Toutes les extensions, dans le filtre. Une chaîne vide comme donnée, pour la
@@ -63,6 +63,7 @@ class LinkDialog(QDialog):
         self._grid.changed.connect(self._on_grid_changed)
 
         self._search = QLineEdit()
+        theme.mark(self._search, "search")
         self._search.textChanged.connect(self._fill_palette)
         self._folder = QComboBox()
         self._folder.currentIndexChanged.connect(self._fill_palette)
@@ -90,6 +91,9 @@ class LinkDialog(QDialog):
         self._error = QLabel()
         self._error.setWordWrap(True)
         theme.mark(self._error, "error")
+        # Caché tant qu'il n'a rien à dire : visible et vide, il réservait une
+        # ligne entre le nom et les boutons, qui se lisait comme un trou.
+        self._error.hide()
 
         name_row = QHBoxLayout()
         name_row.addWidget(self._name_label)
@@ -102,12 +106,15 @@ class LinkDialog(QDialog):
         self._buttons.rejected.connect(self.reject)
 
         layout = QVBoxLayout(self)
+        # Tout l'espace disponible va aux deux panneaux : le bas de la fenêtre
+        # ne porte que des lignes de hauteur fixe, et les laisser s'étirer
+        # creusait un vide sous le nom.
         layout.addLayout(columns, 1)
-        layout.addWidget(self._ordered)
-        layout.addLayout(name_row)
-        layout.addWidget(self._error)
-        layout.addWidget(self._buttons)
-        self.resize(820, 520)
+        layout.addWidget(self._ordered, 0)
+        layout.addLayout(name_row, 0)
+        layout.addWidget(self._error, 0)
+        layout.addWidget(self._buttons, 0)
+        self.resize(1040, 700)
         self.retranslate_ui()
 
     def retranslate_ui(self) -> None:
@@ -128,7 +135,7 @@ class LinkDialog(QDialog):
     def _icon(self, index: int):
         card = self._session.card_set[index]
         return numpy_to_pixmap(card.thumbnail).scaledToWidth(
-            CELL_WIDTH, Qt.SmoothTransformation
+            PALETTE_WIDTH, Qt.SmoothTransformation
         )
 
     def _label_for(self, index: int) -> str:
@@ -172,7 +179,11 @@ class LinkDialog(QDialog):
             label = self._label_for(card.index)
             if needle and needle not in label.lower():
                 continue
-            item = QListWidgetItem(self._icon(card.index), label)
+            item = QListWidgetItem(self._icon(card.index), "")
+            # Le nom en infobulle plutôt qu'écrit : il prendrait la place de
+            # l'illustration, qui est ce qu'on cherche à reconnaître. Il reste
+            # accessible au survol prolongé.
+            item.setToolTip(label)
             item.setData(Qt.UserRole, card.index)
             self._palette.addItem(item)
 
@@ -230,6 +241,7 @@ class LinkDialog(QDialog):
                 library.check_free(candidate)
         except ValueError as error:
             self._error.setText(str(error))
+            self._error.show()
             return
         self.accept()
 

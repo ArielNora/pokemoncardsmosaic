@@ -56,8 +56,20 @@ def card_from_mime(payload: QMimeData) -> int | None:
         return None
 
 
+# Vignettes de la palette. Plus grandes que les cases de la grille : c'est là
+# qu'on **reconnaît** une illustration, alors que dans la grille on vérifie
+# seulement une disposition déjà choisie.
+PALETTE_WIDTH = 78
+PALETTE_HEIGHT = int(PALETTE_WIDTH * 1024 / 734)
+
+
 class CardPalette(QListWidget):
     """Les cartes disponibles, d'où l'on tire pour remplir la grille.
+
+    Une **grille de vignettes**, sans nom écrit : sur quatre cent quarante et une
+    cartes, une liste d'une carte par ligne oblige à faire défiler sans fin, et
+    le nom occupe la place de ce qu'on cherche vraiment — l'illustration. Le nom
+    revient en infobulle, au survol prolongé.
 
     `QListWidget` sait déjà glisser, mais son format natif décrit une ligne de
     modèle et non une carte. On pose le nôtre pour que la case sache exactement
@@ -66,9 +78,19 @@ class CardPalette(QListWidget):
 
     def __init__(self, parent=None):
         super().__init__(parent)
+        self.setViewMode(QListWidget.IconMode)
+        self.setIconSize(QSize(PALETTE_WIDTH, PALETTE_HEIGHT))
+        # La cellule dépasse un peu la vignette : sans cette marge, Qt rogne les
+        # bords et les cartes se touchent.
+        self.setGridSize(QSize(PALETTE_WIDTH + 12, PALETTE_HEIGHT + 12))
+        self.setResizeMode(QListWidget.Adjust)   # recalcule les colonnes au redimensionnement
+        self.setWrapping(True)
+        self.setSpacing(2)
+        # `Static` et `DragOnly` : on tire **vers la grille**, jamais pour
+        # réordonner la palette, qui n'a pas d'ordre propre.
+        self.setMovement(QListWidget.Static)
+        self.setDragDropMode(QListWidget.DragOnly)
         self.setDragEnabled(True)
-        self.setIconSize(QSize(CELL_WIDTH, CELL_HEIGHT))
-        self.setTextElideMode(Qt.ElideMiddle)
         self.setHorizontalScrollBarPolicy(Qt.ScrollBarAlwaysOff)
 
     def mimeData(self, items):
@@ -356,10 +378,15 @@ class GridPanel(QWidget):
         self.title = QLabel()
         self.hint = QLabel()
         self.hint.setWordWrap(True)
+        self.hint.setAlignment(Qt.AlignCenter)
         layout = QVBoxLayout(self)
         layout.addWidget(self.title)
         layout.addStretch(1)
         layout.addWidget(self.grid, 0, Qt.AlignCenter)
-        layout.addStretch(1)
+        layout.addSpacing(12)
+        # Le rappel accompagne la grille au lieu d'être plaqué en bas : épinglé
+        # au pied du panneau, il se retrouvait à cinq cents pixels des cases
+        # qu'il commente, séparé par un vide.
         layout.addWidget(self.hint)
+        layout.addStretch(1)
         self.setSizePolicy(QSizePolicy.Preferred, QSizePolicy.Preferred)

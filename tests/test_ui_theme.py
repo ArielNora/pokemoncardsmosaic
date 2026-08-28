@@ -133,3 +133,19 @@ def test_marking_again_replaces_the_previous_role(qt_app):
     theme.mark(case, "cell-empty")
     theme.mark(case, "cell")
     assert case.property("role") == "cell"
+
+
+def test_the_search_field_gets_breathing_room():
+    """Sans calage, le champ de recherche paraît écrasé à côté de la liste
+    déroulante voisine, qui se dimensionne toute seule."""
+    feuille = theme.stylesheet(palette_pour("#efefef"))
+    assert 'QLineEdit[role="search"]' in feuille
+    assert "padding" in feuille
+
+
+def test_the_empty_cell_background_is_a_role_not_a_palette_lookup():
+    """`palette(alternate-base)` ne suit pas le mode sur toutes les plateformes :
+    les cases vides ressortaient en gris clair au milieu d'une fenêtre sombre."""
+    sombre = theme.stylesheet(palette_pour("#1e1e1e"))
+    assert "palette(alternate-base)" not in sombre
+    assert theme.DARK["empty_bg"] in sombre

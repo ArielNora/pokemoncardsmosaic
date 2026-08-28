@@ -19,6 +19,10 @@ from PySide6.QtGui import QPalette
 
 # Chaque rôle vaut dans les deux modes. Contraste vérifié par les tests : au
 # moins 4,5:1 pour tout ce qui porte du texte, le seuil de lisibilité courant.
+#
+# ⚠️ `empty_bg` est posé en dur et non pris de `palette(alternate-base)` : ce
+# rôle-là ne suit pas le mode sur toutes les plateformes, et les cases vides
+# ressortaient en gris clair au milieu d'une fenêtre sombre.
 LIGHT = {
     "warning": "#8a5a00",           # ambre foncé, sur fond clair
     "error": "#a03030",
@@ -28,6 +32,7 @@ LIGHT = {
     "cell_border": "#666666",
     "empty_border": "#828282",   # 3,2:1 — #999 n'atteignait que 2,5:1
     "empty_text": "#6e6e6e",
+    "empty_bg": "#e4e4e4",
 }
 
 DARK = {
@@ -39,6 +44,7 @@ DARK = {
     "cell_border": "#9a9a9a",
     "empty_border": "#7a7a7a",
     "empty_text": "#a8a8a8",
+    "empty_bg": "#2b2b2b",
 }
 
 # Fonds de référence pour la vérification de contraste. Ce ne sont pas des
@@ -77,10 +83,15 @@ QLabel[role="banner"] {{
 QFrame[role="cell"] {{ border: 1px solid {c["cell_border"]}; }}
 QFrame[role="cell-empty"] {{
     border: 1px dashed {c["empty_border"]};
-    background: palette(alternate-base);
+    background: {c["empty_bg"]};
 }}
 QFrame[role="cell"] QLabel {{ border: none; }}
 QFrame[role="cell-empty"] QLabel {{ border: none; color: {c["empty_text"]}; }}
+
+/* Mise en forme, pas couleur : la feuille globale reste le seul endroit d'où
+   un widget reçoit son habillage. Sans ce calage, le champ de recherche paraît
+   écrasé à côté de la liste déroulante voisine, qui se dimensionne seule. */
+QLineEdit[role="search"] {{ padding: 5px 7px; }}
 """
 
 

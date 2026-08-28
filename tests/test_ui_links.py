@@ -224,7 +224,8 @@ def pose(dialog, session, *noms):
 
 
 def palette_names(dialog):
-    return [dialog._palette.item(row).text()
+    """Les noms vivent en **infobulle** : la vignette occupe la cellule seule."""
+    return [dialog._palette.item(row).toolTip()
             for row in range(dialog._palette.count())]
 
 
@@ -446,3 +447,31 @@ def test_cancelling_the_dialog_changes_nothing(panel, session, monkeypatch):
     monkeypatch.setattr(link_dialog.LinkDialog, "exec", lambda self: 0)
     panel._create()
     assert len(session.links) == 0
+
+
+def test_the_palette_shows_only_the_artwork(dialog_for):
+    """Sur 441 cartes, un nom par ligne oblige à faire défiler sans fin et prend
+    la place de ce qu'on cherche à reconnaître. Le nom reste en infobulle."""
+    dialog = dialog_for()
+    premier = dialog._palette.item(0)
+
+    assert premier.text() == ""
+    assert premier.toolTip()
+    assert not premier.icon().isNull()
+
+
+def test_the_error_line_stays_hidden_until_there_is_an_error(dialog_for, session):
+    """Visible et vide, elle réservait une ligne entre le nom et les boutons,
+    qui se lisait comme un trou."""
+    from pokemon_mosaic.links import Link
+
+    dialog = dialog_for()
+    assert not dialog._error.isVisibleTo(dialog)
+
+    session.links.add(Link(cards=(3, 4)))
+    dialog._grid.add_col()
+    dialog._grid.place(0, 0, 3)
+    dialog._grid.place(0, 1, 0)
+    dialog._try_accept()
+
+    assert dialog._error.isVisibleTo(dialog)
