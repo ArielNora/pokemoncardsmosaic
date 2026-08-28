@@ -135,7 +135,7 @@ def test_a_preset_captures_the_whole_configuration(session):
     assert preset.excluded == (os.path.join("serie_A", "beta.png"),)
     assert preset.active_links == (
         LinkRef(cards=(os.path.join("serie_A", "gamma.png"),
-                       os.path.join("serie_A", "delta.png"))),
+                       os.path.join("serie_A", "delta.png")), shape=(2, 1)),
     )
     assert preset.layout["cols"] == 3 and preset.layout["paper"] == "A3"
     assert preset.algorithm["iterations"] == 4242
@@ -373,3 +373,53 @@ def test_migrating_never_deletes_a_neighbours_preset(tmp_path):
     save_preset(str(tmp_path), Preset(name="Essai 1"))
     save_preset(str(tmp_path), Preset(name="Essai 1 "))
     assert list_presets(str(tmp_path)) == ["Essai 1", "Essai 1 "]
+
+
+def test_a_preset_written_before_rectangles_still_loads(tmp_path):
+    """Les préréglages d'avant ne portent pas de forme. `Link` en déduit alors
+    une seule rangée, ce qui reproduit exactement l'ancien comportement — un
+    lien y tenait toujours sur une ligne."""
+    from pokemon_mosaic.presets import LinkRef
+
+    ancien = LinkRef.from_dict({"cards": ["a.png", "b.png", "c.png"],
+                                "ordered": False, "name": "trio"})
+    assert ancien.shape == ()
+
+    from pokemon_mosaic.links import Link
+    assert Link(cards=(0, 1, 2), shape=ancien.shape).shape == (3, 1)
+
+
+def test_a_preset_carries_the_shape_of_a_rectangle(tmp_path):
+    """Sans elle, un 2×2 rechargé redeviendrait une barre de quatre — une autre
+    contrainte, sans que rien ne le signale."""
+    from pokemon_mosaic.presets import LinkRef
+
+    carre = LinkRef(cards=("a.png", "b.png", "c.png", "d.png"), shape=(2, 2))
+    assert LinkRef.from_dict(carre.to_dict()) == carre
+
+
+def test_applying_a_preset_restores_the_shape_of_a_link(session):
+    """Les mêmes cartes en colonne ou en ligne ne sont pas la même contrainte.
+    Garder celle de la bibliothèque rechargeait autre chose que l'enregistré."""
+    session.add_link(Link(cards=(2, 3), shape=(1, 2)))     # une colonne
+    preset = session.to_preset("colonne")
+
+    # L'utilisateur refait le lien à l'horizontale entre-temps.
+    session.remove_link(session.links.links[0])
+    session.add_link(Link(cards=(2, 3), shape=(2, 1)))
+
+    session.apply_preset(preset)
+    assert session.links.active[0].shape == (1, 2)
+
+
+def test_applying_an_old_preset_does_not_flatten_a_rectangle(session):
+    """Un préréglage d'avant les rectangles ne porte aucune forme : la laisser
+    s'appliquer telle quelle ramènerait le lien à une seule rangée."""
+    from pokemon_mosaic.presets import LinkRef, Preset
+
+    session.add_link(Link(cards=(2, 3), shape=(1, 2)))
+    chemins = tuple(session.relative_path(i) for i in (2, 3))
+    ancien = Preset(name="avant", active_links=(LinkRef(cards=chemins),))
+
+    session.apply_preset(ancien)
+    assert session.links.active[0].shape == (1, 2)

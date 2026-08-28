@@ -91,7 +91,7 @@ def test_links_referencing_excluded_cards_are_dropped(session, tmp_path):
     session.add_link(Link(cards=(2, 3)))
     assert len(session.usable_links()) == 2
     session.set_excluded([1], True)
-    assert session.usable_links().to_groups() == [(2, 3)]
+    assert [l.cards for l in session.usable_links().active] == [(2, 3)]
 
 
 def test_thumbnail_survives_conversion_to_pixmap(qt_app):

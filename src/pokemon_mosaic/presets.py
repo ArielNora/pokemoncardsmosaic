@@ -33,16 +33,21 @@ class LinkRef:
     """Un lien actif, désigné par les chemins de ses cartes."""
 
     cards: tuple[str, ...]
+    shape: tuple[int, int] = ()
     ordered: bool = True
     name: str = ""
 
     def to_dict(self) -> dict:
-        return {"cards": list(self.cards), "ordered": self.ordered,
-                "name": self.name}
+        return {"cards": list(self.cards), "shape": list(self.shape),
+                "ordered": self.ordered, "name": self.name}
 
     @classmethod
     def from_dict(cls, payload) -> "LinkRef":
-        return cls(cards=tuple(payload["cards"]),
+        # Forme absente : le préréglage précède les rectangles, et tout lien y
+        # tenait sur une seule rangée. `Link` en déduit alors (n, 1), ce qui
+        # reproduit exactement l'ancien comportement.
+        shape = tuple(payload.get("shape") or ())
+        return cls(cards=tuple(payload["cards"]), shape=shape,
                    ordered=bool(payload.get("ordered", True)),
                    name=payload.get("name", ""))
 

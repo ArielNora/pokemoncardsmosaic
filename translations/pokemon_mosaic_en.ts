@@ -399,12 +399,12 @@
         <translation>Cards of %1×%2 px — total image %3×%4 px on %5 sheet(s) %6 of %7×%8 mm.</translation>
     </message>
     <message>
-        <location filename="../src/pokemon_mosaic/ui/layout_step.py" line="274"/>
+        <location filename="../src/pokemon_mosaic/ui/layout_step.py" line="275"/>
         <source>%1 DPI dépasse le maximum utile (%2 DPI pour ce format) : les cartes seront agrandies sans gagner en détail.</source>
         <translation>%1 DPI exceeds the useful maximum (%2 DPI for this format): cards will be enlarged without gaining detail.</translation>
     </message>
     <message>
-        <location filename="../src/pokemon_mosaic/ui/layout_step.py" line="281"/>
+        <location filename="../src/pokemon_mosaic/ui/layout_step.py" line="282"/>
         <source>Image de %1 Mpx : l&apos;export demandera beaucoup de mémoire.</source>
         <translation>Image of %1 Mpx: exporting will require a lot of memory.</translation>
     </message>
@@ -412,64 +412,86 @@
 <context>
     <name>LinkDialog</name>
     <message>
-        <location filename="../src/pokemon_mosaic/ui/link_dialog.py" line="135"/>
+        <location filename="../src/pokemon_mosaic/ui/link_dialog.py" line="150"/>
         <source>Modifier le lien</source>
         <translation>Edit link</translation>
     </message>
     <message>
-        <location filename="../src/pokemon_mosaic/ui/link_dialog.py" line="136"/>
+        <location filename="../src/pokemon_mosaic/ui/link_dialog.py" line="151"/>
         <source>Nouveau lien</source>
         <translation>New link</translation>
     </message>
     <message>
-        <location filename="../src/pokemon_mosaic/ui/link_dialog.py" line="137"/>
+        <location filename="../src/pokemon_mosaic/ui/link_dialog.py" line="152"/>
         <source>Cartes disponibles</source>
         <translation>Available cards</translation>
     </message>
     <message>
-        <location filename="../src/pokemon_mosaic/ui/link_dialog.py" line="138"/>
         <source>Séquence du lien</source>
-        <translation>Link sequence</translation>
+        <translation type="vanished">Link sequence</translation>
     </message>
     <message>
-        <location filename="../src/pokemon_mosaic/ui/link_dialog.py" line="139"/>
+        <location filename="../src/pokemon_mosaic/ui/link_dialog.py" line="153"/>
+        <source>Cartes du lien, en ordre de lecture</source>
+        <translation>Cards in the link, in reading order</translation>
+    </message>
+    <message>
+        <location filename="../src/pokemon_mosaic/ui/link_dialog.py" line="154"/>
+        <source>Forme</source>
+        <translation>Shape</translation>
+    </message>
+    <message>
+        <location filename="../src/pokemon_mosaic/ui/link_dialog.py" line="156"/>
+        <source>Colonnes × lignes. Les cartes remplissent le rectangle de gauche à droite, puis rangée suivante.</source>
+        <translation>Columns × rows. Cards fill the rectangle left to right, then the next row.</translation>
+    </message>
+    <message>
+        <location filename="../src/pokemon_mosaic/ui/link_dialog.py" line="158"/>
         <source>Filtrer par nom ou dossier…</source>
         <translation>Filter by name or folder…</translation>
     </message>
     <message>
-        <location filename="../src/pokemon_mosaic/ui/link_dialog.py" line="140"/>
+        <location filename="../src/pokemon_mosaic/ui/link_dialog.py" line="159"/>
         <source>Ajouter →</source>
         <translation>Add →</translation>
     </message>
     <message>
-        <location filename="../src/pokemon_mosaic/ui/link_dialog.py" line="141"/>
+        <location filename="../src/pokemon_mosaic/ui/link_dialog.py" line="160"/>
         <source>← Retirer</source>
         <translation>← Remove</translation>
     </message>
     <message>
-        <location filename="../src/pokemon_mosaic/ui/link_dialog.py" line="142"/>
+        <location filename="../src/pokemon_mosaic/ui/link_dialog.py" line="161"/>
         <source>Monter</source>
         <translation>Move up</translation>
     </message>
     <message>
-        <location filename="../src/pokemon_mosaic/ui/link_dialog.py" line="143"/>
+        <location filename="../src/pokemon_mosaic/ui/link_dialog.py" line="162"/>
         <source>Descendre</source>
         <translation>Move down</translation>
     </message>
     <message>
-        <location filename="../src/pokemon_mosaic/ui/link_dialog.py" line="144"/>
+        <location filename="../src/pokemon_mosaic/ui/link_dialog.py" line="163"/>
         <source>Nom (facultatif)</source>
         <translation>Name (optional)</translation>
     </message>
     <message>
-        <location filename="../src/pokemon_mosaic/ui/link_dialog.py" line="146"/>
+        <location filename="../src/pokemon_mosaic/ui/link_dialog.py" line="165"/>
         <source>Ordre imposé (sinon l&apos;optimiseur peut retourner le bloc)</source>
         <translation>Fixed order (otherwise the optimiser may flip the block)</translation>
     </message>
     <message>
-        <location filename="../src/pokemon_mosaic/ui/link_dialog.py" line="167"/>
+        <location filename="../src/pokemon_mosaic/ui/link_dialog.py" line="186"/>
         <source>(carte exclue)</source>
         <translation>(card excluded)</translation>
+    </message>
+    <message numerus="yes">
+        <location filename="../src/pokemon_mosaic/ui/link_dialog.py" line="285"/>
+        <source>%n carte(s) ne remplissent aucun rectangle d&apos;au plus 3 cases de côté. Les tailles possibles sont 2, 3, 4, 6 et 9.</source>
+        <translation>
+            <numerusform>%n card fills no rectangle of at most 3 cells a side. The possible sizes are 2, 3, 4, 6 and 9.</numerusform>
+            <numerusform>%n cards fill no rectangle of at most 3 cells a side. The possible sizes are 2, 3, 4, 6 and 9.</numerusform>
+        </translation>
     </message>
 </context>
 <context>

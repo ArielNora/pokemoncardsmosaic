@@ -99,23 +99,26 @@ class OptimizationResult:
 
 def _locate_block(
     grid: np.ndarray, row: int, col: int, card: int, link: Link
-) -> tuple[int, tuple[int, ...]] | None:
-    """Retrouve la position et l'orientation courante d'un bloc dans la grille.
+) -> tuple[Cell, tuple[int, ...]] | None:
+    """Coin haut-gauche et orientation courante d'un bloc dans la grille.
 
     Un lien sans ordre imposé peut avoir été retourné : on essaie les deux
     orientations et on renvoie celle qui correspond réellement à la grille.
     """
-    cols = grid.shape[1]
+    rows, cols = grid.shape
+    width, height = link.shape
     orientations = [link.cards]
     if not link.ordered:
         orientations.append(link.reversed_cards())
 
     for sequence in orientations:
-        head = col - sequence.index(card)
-        if head < 0 or head + len(sequence) > cols:
+        rank = sequence.index(card)
+        top, left = row - rank // width, col - rank % width
+        if top < 0 or left < 0 or top + height > rows or left + width > cols:
             continue
-        if all(grid[row, head + k] == value for k, value in enumerate(sequence)):
-            return head, sequence
+        if all(grid[top + k // width, left + k % width] == value
+               for k, value in enumerate(sequence)):
+            return (top, left), sequence
     return None
 
 
@@ -137,8 +140,9 @@ def _validate_links(grid: np.ndarray, links: dict[int, Link]) -> None:
         row, col = found[0]
         if _locate_block(grid, int(row), int(col), int(grid[row, col]), link) is None:
             raise ValueError(
-                f"Lien {link.cards} : les cartes ne sont pas contiguës dans la grille "
-                f"de départ. Utilisez build_initial_grid pour la construire."
+                f"Lien {link.cards} : les cartes ne forment pas le rectangle "
+                f"{link.cols}×{link.rows} attendu dans la grille de départ. "
+                f"Utilisez build_initial_grid pour la construire."
             )
 
 
@@ -310,8 +314,10 @@ def optimize_grid(
             located = _locate_block(grid, r1, c1, card, link)
             if located is None:
                 continue
-            head, sequence = located
-            source = [(r1, head + k) for k in range(len(sequence))]
+            (top, left), sequence = located
+            width, height = link.shape
+            source = [(top + k // width, left + k % width)
+                      for k in range(len(sequence))]
 
             # Un bloc libre de son sens peut simplement se retourner sur place.
             if not link.ordered and rng.random() < FLIP_PROBABILITY:
@@ -327,14 +333,13 @@ def optimize_grid(
         else:
             sequence = (card,)
             source = [(r1, c1)]
+            width = height = 1
 
-        width = len(sequence)
-
-        # 2. Zone cible, de même largeur, sans chevauchement avec la source.
+        # 2. Zone cible, de même forme, sans chevauchement avec la source.
         r2, c2 = rng.randrange(rows), rng.randrange(cols)
-        if c2 + width > cols:
+        if c2 + width > cols or r2 + height > rows:
             continue
-        target = [(r2, c2 + k) for k in range(width)]
+        target = [(r2 + k // width, c2 + k % width) for k in range(len(sequence))]
         if any(cell in source for cell in target):
             continue
 
@@ -461,7 +466,7 @@ def build_initial_grid(
             raise ValueError(f"Case vide hors grille : ({r}, {c})")
         reserved.add((r, c))
 
-    groups = links.to_groups() if links else []
+    groups = list(links.active) if links else []
     capacity = rows * cols - len(reserved)
     if len(cards) > capacity:
         raise ValueError(
@@ -480,8 +485,8 @@ def build_initial_grid(
                 break
             reserved.add(cell)
 
-    # 2. Blocs imposés, posés à la suite en sautant les cases réservées.
-    check_links_fit(groups, cols)
+    # 2. Blocs imposés, posés au premier emplacement libre.
+    check_links_fit(groups, cols, rows)
 
     # Un lien désignant une carte absente signale presque toujours un
     # sous-ensemble construit sans traduire les liens. Sans ce contrôle, l'indice
@@ -489,40 +494,44 @@ def build_initial_grid(
     # l'utilisateur n'a jamais liées — sans erreur, avec un score plausible.
     known = {card.index for card in cards}
     for group in groups:
-        unknown = [index for index in group if index not in known]
+        unknown = [index for index in group.cards if index not in known]
         if unknown:
             raise ValueError(
-                f"Le lien {tuple(group)} désigne des cartes absentes de la "
+                f"Le lien {group.cards} désigne des cartes absentes de la "
                 f"sélection : {unknown}. Après CardSet.subset(), traduisez les "
                 f"liens avec LinkLibrary.remapped(cards.index_mapping())."
             )
 
+    # Premier emplacement qui convient, balayé en ordre de lecture. Un placement
+    # plus malin — les plus gros blocs d'abord, par exemple — n'aurait de sens
+    # que dans une grille encombrée ; ici les blocs sont peu nombreux et petits
+    # devant la grille, et une recherche exhaustive coûterait plus qu'elle ne
+    # rapporte. L'échec, lui, est signalé plutôt que contourné.
     used = set()
-    r = c = 0
     for group in groups:
+        width, height = group.shape
         placed = False
-        while r < rows and not placed:
-            if c + len(group) > cols:
-                r, c = r + 1, 0
-                continue
-            span = [(r, c + k) for k in range(len(group))]
-            if any(cell in reserved for cell in span):
-                c += 1
-                continue
-            for k, idx in enumerate(group):
-                grid[r, c + k] = idx
-                used.add(idx)
-            c += len(group)
-            placed = True
+        for top in range(rows - height + 1):
+            for left in range(cols - width + 1):
+                span = group.cells_at(top, left)
+                if any(cell in reserved or grid[cell] != EMPTY for cell in span):
+                    continue
+                for cell, idx in zip(span, group.cards, strict=True):
+                    grid[cell] = idx
+                    used.add(idx)
+                placed = True
+                break
+            if placed:
+                break
         if not placed:
             # Sans cette erreur, le bloc serait abandonné en silence : ses cartes
             # repartiraient comme cartes libres, le lien serait rompu, et l'échec
             # ne referait surface qu'au contrôle d'intégrité — avec un message
             # conseillant d'utiliser build_initial_grid, qu'on vient d'appeler.
             raise ValueError(
-                f"Le lien {tuple(group)} ({len(group)} cartes) ne trouve pas de "
-                f"place dans une grille de {cols}×{rows} avec {len(reserved)} "
-                f"case(s) vide(s)."
+                f"Le lien {group.cards} ({width}×{height}) ne trouve pas "
+                f"{len(group.cards)} cases libres en rectangle dans une grille "
+                f"de {cols}×{rows} avec {len(reserved)} case(s) vide(s)."
             )
 
     # 3. Cartes libres dans les cases restantes, en ordre aléatoire.
@@ -561,17 +570,22 @@ def select_cards(
     return subset, translated
 
 
-def check_links_fit(groups: Sequence[Sequence[int]], cols: int) -> None:
-    """Vérifie qu'aucun lien n'est plus large que la grille.
+def check_links_fit(groups: Sequence[Link], cols: int, rows: int) -> None:
+    """Vérifie qu'aucun lien ne déborde de la grille.
 
-    Exposée séparément pour que l'interface puisse refuser une grille trop étroite
+    ⚠️ **Les deux dimensions.** Tant qu'un lien tenait sur une seule rangée, sa
+    hauteur valait toujours 1 et n'était vérifiée nulle part ; un 1×3 dans une
+    grille de deux lignes passerait ce contrôle pour échouer au placement.
+
+    Exposée séparément pour que l'interface puisse refuser une grille trop petite
     dès le choix de la mise en page, au lieu de laisser échouer le calcul.
     """
     for group in groups:
-        if len(group) > cols:
+        width, height = group.shape
+        if width > cols or height > rows:
             raise ValueError(
-                f"Le lien {tuple(group)} occupe {len(group)} cases de large, "
-                f"mais la grille n'a que {cols} colonne(s)."
+                f"Le lien {group.cards} occupe {width}×{height} cases, mais la "
+                f"grille n'en fait que {cols}×{rows}."
             )
 
 

@@ -44,7 +44,7 @@ def test_links_referencing_removed_cards_are_dropped():
     library.add(Link(cards=(1, 2)))
     library.add(Link(cards=(7, 8)))
     kept = library.for_cards({1, 2, 3, 4})
-    assert kept.to_groups() == [(1, 2)]
+    assert [link.cards for link in kept.active] == [(1, 2)]
 
 
 def test_ordered_link_keeps_its_direction():
@@ -89,7 +89,7 @@ def test_optimizer_refuses_a_grid_where_a_link_is_already_broken():
     distances = EdgeDistances(cards)
     grid = np.arange(30).reshape(5, 6)  # coupe le trio 4-5-6 entre deux lignes
     link = Link(cards=(4, 5, 6))
-    with pytest.raises(ValueError, match="ne sont pas contiguës"):
+    with pytest.raises(ValueError, match="ne forment pas le rectangle"):
         optimize_grid(grid, distances, {i: link for i in (4, 5, 6)}, 100)
 
 
@@ -196,17 +196,29 @@ def test_a_link_wider_than_the_grid_is_reported_at_construction():
     cards_set = _card_set(6)
     library = LinkLibrary()
     library.add(Link(cards=(0, 1, 2)))
-    with pytest.raises(ValueError, match="3 colonne|3 cases de large|ne trouve pas"):
+    with pytest.raises(ValueError, match="3×1|ne trouve pas"):
         build_initial_grid(cards_set, shape=(2, 3), links=library, rng=random.Random(0))
 
 
 def test_links_fit_check_can_be_called_upfront():
-    """Exposée pour que l'interface refuse une grille trop étroite en amont."""
+    """Exposée pour que l'interface refuse une grille trop petite en amont."""
     from pokemon_mosaic.optimize import check_links_fit
 
-    check_links_fit([(0, 1)], cols=2)
-    with pytest.raises(ValueError, match="colonne"):
-        check_links_fit([(0, 1, 2)], cols=2)
+    check_links_fit([Link(cards=(0, 1))], cols=2, rows=1)
+    with pytest.raises(ValueError, match="2×2"):
+        check_links_fit([Link(cards=(0, 1, 2))], cols=2, rows=2)
+
+
+def test_the_fit_check_looks_at_height_too():
+    """Tant qu'un lien tenait sur une rangée, sa hauteur valait toujours 1 et
+    n'était vérifiée nulle part. Un 1×3 dans deux lignes passait le contrôle
+    pour échouer au placement, bien plus loin."""
+    from pokemon_mosaic.optimize import check_links_fit
+
+    haut = Link(cards=(0, 1, 2), shape=(1, 3))
+    check_links_fit([haut], cols=1, rows=3)
+    with pytest.raises(ValueError, match="1×3"):
+        check_links_fit([haut], cols=5, rows=2)
 
 
 def test_a_link_that_fits_exactly_is_accepted():
@@ -234,7 +246,7 @@ def test_remapping_translates_link_indices():
     library = LinkLibrary()
     library.add(Link(cards=(2, 3)))
     remapped = library.remapped({2: 0, 3: 1, 5: 2})
-    assert remapped.to_groups() == [(0, 1)]
+    assert [link.cards for link in remapped.active] == [(0, 1)]
 
 
 def test_remapping_keeps_the_order_flag():
@@ -253,7 +265,7 @@ def test_remapping_drops_links_whose_cards_left_the_selection():
     library = LinkLibrary()
     library.add(Link(cards=(0, 1)))
     library.add(Link(cards=(7, 8)))
-    assert library.remapped({0: 0, 1: 1}).to_groups() == [(0, 1)]
+    assert [l.cards for l in library.remapped({0: 0, 1: 1}).active] == [(0, 1)]
 
 
 def test_subset_provides_the_mapping_needed_to_remap():
@@ -274,7 +286,7 @@ def test_remapped_links_stick_the_cards_the_user_actually_chose():
     translated = library.remapped(subset.index_mapping())
     grid = build_initial_grid(subset, shape=(3, 2), links=translated,
                               rng=random.Random(0))
-    (r_a, c_a), (r_b, c_b) = positions(grid, *translated.to_groups()[0])
+    (r_a, c_a), (r_b, c_b) = positions(grid, *translated.active[0].cards)
     assert r_a == r_b and c_b == c_a + 1
 
     linked = {subset[int(grid[r_a, c_a])].path, subset[int(grid[r_b, c_b])].path}
@@ -304,7 +316,7 @@ def test_select_cards_translates_links_so_the_right_pair_is_stuck():
     subset, translated = select_cards(cards_set, [2, 3, 5, 6, 7, 9], library)
     grid = build_initial_grid(subset, shape=(3, 2), links=translated,
                               rng=random.Random(0))
-    pair = translated.to_groups()[0]
+    pair = translated.active[0].cards
     (r_a, c_a), (r_b, c_b) = positions(grid, *pair)
     assert r_a == r_b and c_b == c_a + 1
     linked = {subset[int(grid[r_a, c_a])].path, subset[int(grid[r_b, c_b])].path}
@@ -318,7 +330,7 @@ def test_select_cards_drops_links_whose_cards_are_deselected():
     library.add(Link(cards=(0, 1)))
     library.add(Link(cards=(8, 9)))
     _, translated = select_cards(_named_card_set(10), [0, 1, 2, 3], library)
-    assert translated.to_groups() == [(0, 1)]
+    assert [link.cards for link in translated.active] == [(0, 1)]
 
 
 def test_select_cards_without_links_returns_an_empty_library():
@@ -326,3 +338,150 @@ def test_select_cards_without_links_returns_an_empty_library():
 
     subset, translated = select_cards(_named_card_set(6), [1, 2, 3])
     assert len(subset) == 3 and len(translated) == 0
+
+
+# --- Les rectangles --------------------------------------------------------
+
+def bloc(grid, link):
+    """Positions des cartes du lien, dans l'ordre où le lien les décrit."""
+    return positions(grid, *link.cards)
+
+
+def est_rectangle(grid, link):
+    """Le lien forme-t-il bien son rectangle, dans le bon ordre de lecture ?
+
+    Vérifie la **disposition relative**, pas l'emplacement : c'est l'optimiseur
+    qui choisit où le bloc atterrit. Un demi-tour est admis pour un lien à ordre
+    libre, et se reconnaît à ce que la séquence inversée forme le rectangle.
+    """
+    for sequence in (link.cards, link.reversed_cards()):
+        cases = positions(grid, *sequence)
+        top, left = cases[0]
+        if cases == [(top + dr, left + dc) for dr, dc in link.offsets()]:
+            return True
+        if link.ordered:
+            return False
+    return False
+
+
+@pytest.mark.parametrize("shape,count", [
+    ((2, 1), 2), ((1, 2), 2), ((3, 1), 3), ((1, 3), 3),
+    ((2, 2), 4), ((3, 2), 6), ((2, 3), 6), ((3, 3), 9),
+])
+def test_every_shape_is_built_and_preserved(shape, count):
+    """Les huit formes possibles, du placement initial jusqu'à la fin du calcul."""
+    cards_set = _card_set(25)
+    library = LinkLibrary()
+    link = Link(cards=tuple(range(count)), shape=shape)
+    library.add(link)
+
+    grid = build_initial_grid(cards_set, (5, 5), library, rng=random.Random(0))
+    assert est_rectangle(grid, link), "mal posé au départ"
+
+    distances = EdgeDistances(cards_set.cards)
+    optimize_grid(grid, distances, library.group_map(), 3000, random.Random(0))
+    assert est_rectangle(grid, link), "rompu par l'optimisation"
+
+
+def test_a_vertical_pair_stays_one_above_the_other():
+    """Le cas qui motivait tout : Arcko sous Massko sous Méga-Jungko."""
+    cards_set = _card_set(20)
+    library = LinkLibrary()
+    colonne = Link(cards=(0, 1, 2), shape=(1, 3))
+    library.add(colonne)
+
+    grid = build_initial_grid(cards_set, (5, 4), library, rng=random.Random(0))
+    distances = EdgeDistances(cards_set.cards)
+    optimize_grid(grid, distances, library.group_map(), 3000, random.Random(0))
+
+    (r0, c0), (r1, c1), (r2, c2) = bloc(grid, colonne)
+    assert c0 == c1 == c2, "les trois doivent rester dans la même colonne"
+    assert (r1, r2) == (r0 + 1, r0 + 2), "et empilées, dans cet ordre"
+
+
+def test_a_block_never_lands_on_a_frozen_empty_cell():
+    """Les cases vides sont réservées avant tout le reste : un rectangle qui
+    passerait dessus les effacerait sans que rien ne le signale."""
+    cards_set = _card_set(20)
+    library = LinkLibrary()
+    carre = Link(cards=(0, 1, 2, 3), shape=(2, 2))
+    library.add(carre)
+    vides = [(0, 0), (1, 1), (2, 2), (3, 3), (4, 4)]
+
+    grid = build_initial_grid(cards_set, (5, 5), library, vides, random.Random(0))
+    distances = EdgeDistances(cards_set.cards)
+    optimize_grid(grid, distances, library.group_map(), 3000, random.Random(0))
+
+    for cell in vides:
+        assert grid[cell] == EMPTY
+    assert est_rectangle(grid, carre)
+
+
+def test_two_blocks_do_not_overlap():
+    cards_set = _card_set(20)
+    library = LinkLibrary()
+    un = Link(cards=(0, 1, 2, 3), shape=(2, 2))
+    deux = Link(cards=(4, 5, 6, 7, 8, 9), shape=(3, 2))
+    library.add(un)
+    library.add(deux)
+
+    grid = build_initial_grid(cards_set, (5, 4), library, rng=random.Random(0))
+    distances = EdgeDistances(cards_set.cards)
+    optimize_grid(grid, distances, library.group_map(), 3000, random.Random(0))
+
+    assert est_rectangle(grid, un) and est_rectangle(grid, deux)
+    assert sorted(v for v in grid.flatten() if v != EMPTY) == list(range(20))
+
+
+def test_a_block_that_cannot_be_placed_is_reported():
+    """Abandonné en silence, ses cartes repartiraient libres et le lien serait
+    rompu sans erreur."""
+    # Cinq cartes pour les cinq cases que les trous laissent : la grille est
+    # remplissable, mais **pas** en gardant un 2×2 d'un tenant. Neuf cartes
+    # auraient buté avant, sur le contrôle de capacité.
+    cards_set = _card_set(5)
+    library = LinkLibrary()
+    library.add(Link(cards=(0, 1, 2, 3), shape=(2, 2)))
+    # Une croix de cases vides : aucun 2×2 libre ne subsiste.
+    vides = [(0, 1), (1, 0), (1, 2), (2, 1)]
+    with pytest.raises(ValueError, match="2×2"):
+        build_initial_grid(cards_set, (3, 3), library, vides, random.Random(0))
+
+
+def test_an_unordered_rectangle_may_be_turned_half_way_round():
+    """Inverser la liste **est** la rotation à 180° d'un rectangle lu en ordre de
+    lecture. La forme est préservée : un 3×2 retourné reste un 3×2."""
+    link = Link(cards=(1, 2, 3, 4, 5, 6), shape=(3, 2), ordered=False)
+    assert link.reversed_cards() == (6, 5, 4, 3, 2, 1)
+    retourne = Link(cards=link.reversed_cards(), shape=(3, 2))
+    assert retourne.shape == link.shape
+
+
+# --- La forme, à la construction ------------------------------------------
+
+def test_a_side_longer_than_three_is_refused():
+    with pytest.raises(ValueError, match="au plus 3"):
+        Link(cards=tuple(range(4)), shape=(4, 1))
+
+
+def test_an_incomplete_rectangle_is_refused():
+    """Cinq cartes ne remplissent aucun rectangle d'au plus trois de côté."""
+    with pytest.raises(ValueError, match="rectangle"):
+        Link(cards=tuple(range(5)), shape=(3, 2))
+
+
+@pytest.mark.parametrize("count", [5, 7, 8])
+def test_a_count_that_no_rectangle_holds_is_refused(count):
+    """5 et 7 sont premiers et dépassent 3 ; 8 demanderait un côté de 4.
+    L'interface doit le dire à la sélection, pas laisser construire un lien."""
+    from pokemon_mosaic.links import shapes_for
+
+    assert shapes_for(count) == ()
+    with pytest.raises(ValueError, match="au plus 3"):
+        Link(cards=tuple(range(count)))
+
+
+def test_a_link_without_a_shape_is_a_single_row():
+    """C'est ce qu'était tout lien avant les rectangles, donc ce que valent les
+    liens déjà enregistrés."""
+    assert Link(cards=(7, 8, 9)).shape == (3, 1)

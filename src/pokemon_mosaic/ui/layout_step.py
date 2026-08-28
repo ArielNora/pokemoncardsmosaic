@@ -259,10 +259,11 @@ class LayoutStep(QWidget):
         if not fit.fits_exactly:
             warnings.append(fit.message())
 
-        # Un lien plus large que la grille ne se verrait sinon qu'au lancement du
-        # calcul, bien après le choix de la mise en page.
+        # Un lien qui déborde de la grille ne se verrait sinon qu'au lancement
+        # du calcul, bien après le choix de la mise en page.
         try:
-            check_links_fit(session.usable_links().to_groups(), session.cols)
+            check_links_fit(session.usable_links().active,
+                            session.cols, session.rows)
         except ValueError as error:
             warnings.append(str(error))
 

@@ -341,3 +341,77 @@ def test_cancelling_the_dialog_changes_nothing(panel, session, monkeypatch):
     monkeypatch.setattr(link_dialog.LinkDialog, "exec", lambda self: 0)
     panel._create()
     assert len(session.links) == 0
+
+
+# --- La forme du rectangle -------------------------------------------------
+
+def test_the_dialog_offers_only_the_shapes_that_fit(qt_app, session):
+    """Deux cartes font un 2×1 ou un 1×2 ; quatre ne font qu'un 2×2."""
+    from pokemon_mosaic.ui.link_dialog import LinkDialog
+
+    dialog = LinkDialog(session)
+    dialog._append_to_sequence(0)
+    dialog._append_to_sequence(1)
+    dialog._update_buttons()
+    assert [dialog._shape.itemData(i) for i in range(dialog._shape.count())] \
+        == [(2, 1), (1, 2)]
+
+    dialog._append_to_sequence(2)
+    dialog._append_to_sequence(3)
+    dialog._update_buttons()
+    assert [dialog._shape.itemData(i) for i in range(dialog._shape.count())] \
+        == [(2, 2)]
+
+
+@pytest.fixture
+def session_fournie(qt_app, tmp_path):
+    """Neuf cartes : de quoi composer jusqu'au 3×3, et les nombres impossibles."""
+    from pokemon_mosaic.ui.session import Session
+
+    s = Session()
+    s.set_cards(card_set_in(tmp_path, {"jeu": [f"c{i}" for i in range(9)]}),
+                str(tmp_path))
+    return s
+
+
+@pytest.mark.parametrize("count", [5, 7, 8])
+def test_a_count_no_rectangle_holds_blocks_validation(qt_app, session_fournie,
+                                                      count):
+    session = session_fournie
+    """Sans ce garde-fou, `Link` lèverait une exception non rattrapée au moment
+    de valider — le dialogue disparaîtrait sur une trace."""
+    from pokemon_mosaic.ui.link_dialog import LinkDialog
+
+    dialog = LinkDialog(session)
+    for index in range(count):
+        dialog._append_to_sequence(index)
+    dialog._update_buttons()
+
+    assert dialog._shape.count() == 0
+    from PySide6.QtWidgets import QDialogButtonBox
+    assert not dialog._buttons.button(QDialogButtonBox.Ok).isEnabled()
+    assert "2, 3, 4, 6" in dialog._error.text()
+
+
+def test_the_chosen_shape_reaches_the_link(qt_app, session):
+    from pokemon_mosaic.ui.link_dialog import LinkDialog
+
+    dialog = LinkDialog(session)
+    for index in range(2):
+        dialog._append_to_sequence(index)
+    dialog._update_buttons()
+    assert dialog.select_shape((1, 2))
+
+    assert dialog.link().shape == (1, 2)
+
+
+def test_editing_a_link_reopens_on_its_shape(qt_app, session):
+    """Sans cela, modifier le nom d'une colonne la renverrait en ligne."""
+    from pokemon_mosaic.links import Link
+    from pokemon_mosaic.ui.link_dialog import LinkDialog
+
+    colonne = Link(cards=(0, 1, 2), shape=(1, 3), name="lignée")
+    dialog = LinkDialog(session, colonne)
+
+    assert dialog._shape.currentData() == (1, 3)
+    assert dialog.link().shape == (1, 3)

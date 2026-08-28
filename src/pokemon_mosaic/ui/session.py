@@ -379,7 +379,7 @@ class Session(QObject):
             active_links=tuple(
                 LinkRef(cards=tuple(self.relative_path(index)
                                     for index in link.cards),
-                        ordered=link.ordered, name=link.name)
+                        shape=link.shape, ordered=link.ordered, name=link.name)
                 for link in self.links.active
             ),
             layout={
@@ -478,10 +478,19 @@ class Session(QObject):
                 # Recréé à l'identique : hériter des valeurs par défaut ferait
                 # revenir un lien à ordre libre en lien imposé, changeant la
                 # contrainte donnée à l'optimiseur sans que rien ne le dise.
-                self.links.add(Link(cards=cards, ordered=reference.ordered,
+                self.links.add(Link(cards=cards, shape=reference.shape,
+                                    ordered=reference.ordered,
                                     name=reference.name))
             else:
-                self.links.replace(link, dataclass_replace(link, enabled=True))
+                # La **forme** du préréglage l'emporte : les mêmes cartes en
+                # colonne ou en ligne ne sont pas la même contrainte, et garder
+                # celle de la bibliothèque rechargerait autre chose que ce qui a
+                # été enregistré, sans rien dire.
+                # `or link.shape` : un préréglage d'avant les rectangles n'en
+                # porte aucune, et la laisser vide aplatirait le lien en une
+                # rangée à la première relecture.
+                self.links.replace(link, dataclass_replace(
+                    link, enabled=True, shape=reference.shape or link.shape))
         self.links_changed.emit()
         return missing
 

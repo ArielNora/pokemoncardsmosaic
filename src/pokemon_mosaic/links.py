@@ -1,9 +1,13 @@
-"""Liens entre cartes : des blocs qui doivent rester côte à côte.
+"""Liens entre cartes : des blocs qui doivent rester groupés.
 
-Un lien regroupe deux cartes ou plus, maintenues adjacentes horizontalement. Son
-**ordre est optionnel** : imposé, la séquence saisie est respectée à la lettre (utile
-quand le sens a une signification, comme Solgaleo puis Lunala) ; libre, l'optimiseur
-peut retourner le bloc et dispose donc de deux fois plus de placements possibles.
+Un lien est un **rectangle plein**, de trois cases de côté au maximum. Une ligne
+de trois cartes est un 3×1, une colonne un 1×3, un carré un 2×2 : un seul concept
+remplace « horizontal », « vertical » et « groupe ». Voir SPEC.md §10, 2026-08-27.
+
+Son **ordre est optionnel** : imposé, la disposition saisie est respectée à la
+lettre (utile quand le sens a une signification, comme Solgaleo puis Lunala) ;
+libre, l'optimiseur peut retourner le bloc et dispose donc de deux fois plus de
+placements possibles.
 
 Les liens vivent dans une bibliothèque indépendante des préréglages : un lien est un
 travail durable, un préréglage est un essai de mise en page. Voir SPEC.md §3.
@@ -11,6 +15,33 @@ travail durable, un préréglage est un essai de mise en page. Voir SPEC.md §3.
 
 from collections.abc import Iterable, Sequence
 from dataclasses import dataclass, field
+
+# Côté maximal d'un lien. Au-delà, le bloc devient trop gros devant la grille :
+# mesuré sur 21×21, un 3×3 garde 361 ancrages possibles contre 399 pour une barre
+# de trois — l'optimiseur ne voit pas la différence —, là où un 9×9 tombe à 169
+# pour 18 % du poster figé d'un coup.
+MAX_SIDE = 3
+
+# Les huit formes possibles, en **(colonnes, lignes)** — la convention de
+# `build_initial_grid`, pour qu'il n'y en ait qu'une dans tout le code. Le 1×1 est
+# exclu : un lien qui ne regroupe qu'une carte ne contraint rien.
+SHAPES = tuple(
+    (cols, rows)
+    for rows in range(1, MAX_SIDE + 1)
+    for cols in range(1, MAX_SIDE + 1)
+    if cols * rows >= 2
+)
+
+
+def shapes_for(count: int) -> tuple[tuple[int, int], ...]:
+    """Formes accueillant exactement `count` cartes, en (colonnes, lignes).
+
+    ⚠️ **Vide pour 5, 7 et 8.** Ces nombres ne se factorisent pas en un rectangle
+    d'au plus 3 de côté : 5 et 7 sont premiers et dépassent 3, 8 demanderait un
+    côté de 4. L'interface doit le dire au moment de la sélection, plutôt que de
+    proposer une liste de formes vide.
+    """
+    return tuple(shape for shape in SHAPES if shape[0] * shape[1] == count)
 
 # Liens fournis d'office : ces cartes vont par paires dans un sens qui a un sens.
 # Décrits par fragments de chemin, parce que les indices dépendent du dossier chargé.
@@ -24,14 +55,17 @@ DEFAULT_PAIRS = (
 
 @dataclass(frozen=True)
 class Link:
-    """Un groupe de cartes à garder côte à côte.
+    """Un rectangle plein de cartes à garder groupées.
 
-    `cards` contient des indices de cartes, dans l'ordre souhaité.
-    `ordered` : si faux, l'optimiseur peut inverser le bloc.
+    `cards` contient des indices de cartes **dans l'ordre de lecture** du
+    rectangle : de gauche à droite, puis rangée suivante.
+    `shape` est (colonnes, lignes). Omise, elle vaut une seule rangée.
+    `ordered` : si faux, l'optimiseur peut retourner le bloc.
     `enabled` : un lien désactivé est ignoré sans être supprimé.
     """
 
     cards: tuple[int, ...]
+    shape: tuple[int, int] = ()
     ordered: bool = True
     enabled: bool = True
     name: str = ""
@@ -41,11 +75,51 @@ class Link:
             raise ValueError("Un lien doit regrouper au moins deux cartes.")
         if len(set(self.cards)) != len(self.cards):
             raise ValueError(f"Une carte est répétée dans le lien : {self.cards}")
+        if not self.shape:
+            # Une seule rangée : c'est ce qu'était tout lien avant les
+            # rectangles, donc ce que valent les liens déjà enregistrés.
+            object.__setattr__(self, "shape", (len(self.cards), 1))
+        cols, rows = self.shape
+        if not (1 <= cols <= MAX_SIDE and 1 <= rows <= MAX_SIDE):
+            raise ValueError(
+                f"Forme {cols}×{rows} : un lien fait au plus {MAX_SIDE} cases "
+                f"de côté."
+            )
+        if cols * rows != len(self.cards):
+            raise ValueError(
+                f"Forme {cols}×{rows} = {cols * rows} cases pour "
+                f"{len(self.cards)} carte(s) : un lien est un rectangle "
+                f"**plein**, jamais entamé."
+            )
 
     def __len__(self) -> int:
         return len(self.cards)
 
+    @property
+    def cols(self) -> int:
+        return self.shape[0]
+
+    @property
+    def rows(self) -> int:
+        return self.shape[1]
+
+    def offsets(self) -> tuple[tuple[int, int], ...]:
+        """Décalages (ligne, colonne) de chaque carte, dans l'ordre de `cards`."""
+        cols = self.shape[0]
+        return tuple((k // cols, k % cols) for k in range(len(self.cards)))
+
+    def cells_at(self, top: int, left: int) -> list[tuple[int, int]]:
+        """Cases occupées si le coin haut-gauche du bloc est en (top, left)."""
+        return [(top + dr, left + dc) for dr, dc in self.offsets()]
+
     def reversed_cards(self) -> tuple[int, ...]:
+        """Le bloc tourné d'un demi-tour.
+
+        Inverser la liste **est** la rotation à 180° d'un rectangle lu en ordre
+        de lecture : la dernière carte passe en haut à gauche et la première en
+        bas à droite. Rien de particulier à écrire pour la 2D, et la forme est
+        préservée — un 3×2 retourné reste un 3×2.
+        """
         return tuple(reversed(self.cards))
 
 
@@ -147,13 +221,10 @@ class LinkLibrary:
                 continue
             translated.append(
                 Link(cards=tuple(mapping[index] for index in link.cards),
-                     ordered=link.ordered, enabled=link.enabled, name=link.name)
+                     shape=link.shape, ordered=link.ordered,
+                     enabled=link.enabled, name=link.name)
             )
         return LinkLibrary(translated)
-
-    def to_groups(self) -> list[tuple[int, ...]]:
-        """Les blocs actifs, sous la forme attendue par l'optimiseur."""
-        return [link.cards for link in self.active]
 
     def group_map(self) -> dict[int, Link]:
         """Table carte -> lien, pour retrouver le bloc d'une carte en O(1)."""

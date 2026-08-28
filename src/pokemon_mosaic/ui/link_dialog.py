@@ -3,11 +3,17 @@
 Le lien se compose en deux temps : on choisit les cartes à gauche, on ordonne la
 séquence à droite. Deux listes plutôt qu'une seule à cocher, parce que l'ordre
 compte : une case cochée n'a pas de rang, une ligne dans une liste en a un.
+
+Un lien étant un **rectangle plein** d'au plus trois cases de côté, le nombre de
+cartes ne suffit plus à le décrire : deux cartes font un 2×1 ou un 1×2, six font
+un 3×2 ou un 2×3. D'où le choix de forme, limité aux seules formes que le nombre
+de cartes retenues peut remplir.
 """
 
 from PySide6.QtCore import QSize, Qt
 from PySide6.QtWidgets import (
     QCheckBox,
+    QComboBox,
     QDialog,
     QDialogButtonBox,
     QHBoxLayout,
@@ -20,7 +26,7 @@ from PySide6.QtWidgets import (
     QWidget,
 )
 
-from ..links import Link
+from ..links import Link, shapes_for
 from .gallery import numpy_to_pixmap
 from .session import Session
 
@@ -42,6 +48,9 @@ class LinkDialog(QDialog):
             self._ordered.setChecked(link.ordered)
             for index in link.cards:
                 self._append_to_sequence(index)
+            # Après le remplissage, sinon la liste de formes est encore vide.
+            self._refresh_shapes(len(link.cards))
+            self.select_shape(link.shape)
         self._fill_candidates()
         self._update_buttons()
 
@@ -78,6 +87,8 @@ class LinkDialog(QDialog):
         self._sequence_label = QLabel()
         self._name_label = QLabel()
         self._name = QLineEdit()
+        self._shape_label = QLabel()
+        self._shape = QComboBox()
         self._ordered = QCheckBox()
         self._ordered.setChecked(True)
         self._error = QLabel()
@@ -104,6 +115,10 @@ class LinkDialog(QDialog):
         order_buttons.addWidget(self._up)
         order_buttons.addWidget(self._down)
         right.addLayout(order_buttons)
+        shape_row = QHBoxLayout()
+        shape_row.addWidget(self._shape_label)
+        shape_row.addWidget(self._shape, 1)
+        right.addLayout(shape_row)
         right_panel = QWidget()
         right_panel.setLayout(right)
 
@@ -135,7 +150,11 @@ class LinkDialog(QDialog):
         self.setWindowTitle(self.tr("Modifier le lien") if self._editing
                             else self.tr("Nouveau lien"))
         self._candidates_label.setText(self.tr("Cartes disponibles"))
-        self._sequence_label.setText(self.tr("Séquence du lien"))
+        self._sequence_label.setText(self.tr("Cartes du lien, en ordre de lecture"))
+        self._shape_label.setText(self.tr("Forme"))
+        self._shape.setToolTip(
+            self.tr("Colonnes × lignes. Les cartes remplissent le rectangle de "
+                    "gauche à droite, puis rangée suivante."))
         self._search.setPlaceholderText(self.tr("Filtrer par nom ou dossier…"))
         self._add.setText(self.tr("Ajouter →"))
         self._remove.setText(self.tr("← Retirer"))
@@ -231,12 +250,62 @@ class LinkDialog(QDialog):
         self._remove.setEnabled(row >= 0)
         self._up.setEnabled(row > 0)
         self._down.setEnabled(0 <= row < count - 1)
-        self._buttons.button(QDialogButtonBox.Ok).setEnabled(count >= 2)
+        self._refresh_shapes(count)
+        self._buttons.button(QDialogButtonBox.Ok).setEnabled(
+            count >= 2 and self._shape.count() > 0)
+
+    def _refresh_shapes(self, count: int) -> None:
+        """N'offre que les formes que ce nombre de cartes remplit exactement.
+
+        Cinq, sept et huit cartes n'en remplissent aucune : la liste est alors
+        vide et le dialogue le dit, plutôt que de laisser valider un lien que
+        `Link` refuserait par une exception.
+        """
+        possibles = shapes_for(count)
+        offertes = tuple(tuple(self._shape.itemData(i))
+                         for i in range(self._shape.count()))
+        # La liste n'est reconstruite que si elle change : la vider ferait
+        # perdre le choix de l'utilisateur à chaque frappe dans le nom.
+        # ⚠️ Le message, lui, est posé dans tous les cas — le sauter avec la
+        # reconstruction laissait « 5 cartes » sans explication, la liste étant
+        # déjà vide au départ.
+        if offertes != possibles:
+            courante = self._shape.currentData()
+            courante = tuple(courante) if courante else None
+            self._shape.clear()
+            for cols, rows in possibles:
+                self._shape.addItem(f"{cols} × {rows}", (cols, rows))
+            if courante in possibles:
+                self._shape.setCurrentIndex(possibles.index(courante))
+            elif possibles:
+                self._shape.setCurrentIndex(0)
+        self._shape.setEnabled(bool(possibles))
+        if count >= 2 and not possibles:
+            self._error.setText(
+                self.tr("%n carte(s) ne remplissent aucun rectangle d'au plus "
+                        "3 cases de côté. Les tailles possibles sont 2, 3, 4, 6 "
+                        "et 9.", "", count))
+        elif self._error.text():
+            self._error.clear()
+
+    def select_shape(self, shape: tuple[int, int]) -> bool:
+        """Choisit cette forme si elle est offerte. Rend vrai si c'est fait.
+
+        ⚠️ Pas `QComboBox.findData` : il compare des `QVariant` et ne retrouve
+        pas un tuple Python, si bien qu'un lien vertical rouvert repartait en
+        ligne — sans erreur, la forme changeant en silence.
+        """
+        for position in range(self._shape.count()):
+            if tuple(self._shape.itemData(position)) == tuple(shape):
+                self._shape.setCurrentIndex(position)
+                return True
+        return False
 
     # --- Validation -------------------------------------------------------
 
     def link(self) -> Link:
         return Link(cards=tuple(self._chosen()),
+                    shape=self._shape.currentData() or (),
                     ordered=self._ordered.isChecked(),
                     enabled=self._editing.enabled if self._editing else True,
                     name=self._name.text().strip())

@@ -168,7 +168,19 @@ def test_a_link_wider_than_the_grid_is_flagged_at_step_two(qt_app, session):
     session.add_link(Link(cards=(0, 1, 2)))
     step = LayoutStep(session)
     session.set_layout(cols=2, rows=10)
-    assert "colonne" in step._warnings.text()
+    assert "3×1" in step._warnings.text()
+
+
+def test_a_link_taller_than_the_grid_is_flagged_too(qt_app, session):
+    """La hauteur n'était vérifiée nulle part tant qu'un lien tenait sur une
+    seule rangée."""
+    from pokemon_mosaic.links import Link
+    from pokemon_mosaic.ui.layout_step import LayoutStep
+
+    session.add_link(Link(cards=(0, 1, 2), shape=(1, 3)))
+    step = LayoutStep(session)
+    session.set_layout(cols=10, rows=2)
+    assert "1×3" in step._warnings.text()
 
 
 def test_no_warning_when_the_link_fits(qt_app, session):
