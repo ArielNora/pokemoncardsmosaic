@@ -378,3 +378,58 @@ def test_the_bulk_buttons_clear_the_scrollbar(step, tmp_path):
 def test_the_bulk_buttons_hide_while_no_card_is_loaded(step):
     ecran, _ = step
     assert not ecran._bulk.isVisibleTo(ecran._gallery)
+
+
+def maintenir(liste, vers_le_bas: int, duree: float = 0.6):
+    """Clique le bas de la liste et garde le bouton enfoncé, curseur immobile.
+
+    Le petit mouvement est indispensable : c'est lui qui met la vue en sélection
+    glissée et arme la minuterie de défilement automatique. Sans lui, on ne
+    reproduit rien — ce qui m'avait fait conclure à tort que le défaut n'existait
+    pas.
+    """
+    import time
+
+    from PySide6.QtCore import QPoint, Qt
+    from PySide6.QtTest import QTest
+    from PySide6.QtWidgets import QApplication
+
+    vue = liste.viewport()
+    bas = vue.rect().bottom()
+    cible = QPoint(6, bas + vers_le_bas)
+    QTest.mousePress(vue, Qt.LeftButton, Qt.NoModifier, QPoint(5, bas - 2))
+    QTest.mouseMove(vue, cible)
+    debut = time.time()
+    while time.time() - debut < duree:
+        QApplication.processEvents()
+        time.sleep(0.01)
+    QTest.mouseRelease(vue, Qt.LeftButton, Qt.NoModifier, cible)
+    return liste.verticalScrollBar()
+
+
+def test_holding_the_click_on_the_last_row_does_not_run_to_the_bottom(step,
+                                                                      tmp_path):
+    """Le défaut signalé : cliquer l'extension à demi coupée du bas et laisser
+    le curseur là faisait dévaler la liste jusqu'au bout. Mesuré avant le
+    correctif : 210 crans sur 242."""
+    ecran, session = step
+    charge(ecran, session, tmp_path,
+           {f"jeu{i:02d}": ["x"] for i in range(30)})
+    ecran._folders.setFixedHeight(120)
+    ecran.show()
+
+    barre = maintenir(ecran._folders, vers_le_bas=-1)
+    assert barre.value() <= barre.maximum() // 10
+
+
+def test_dragging_below_the_list_still_scrolls(step, tmp_path):
+    """Le geste volontaire reste : couper le défilement automatique aurait
+    supprimé les deux d'un coup."""
+    ecran, session = step
+    charge(ecran, session, tmp_path,
+           {f"jeu{i:02d}": ["x"] for i in range(30)})
+    ecran._folders.setFixedHeight(120)
+    ecran.show()
+
+    barre = maintenir(ecran._folders, vers_le_bas=20)
+    assert barre.value() > 0

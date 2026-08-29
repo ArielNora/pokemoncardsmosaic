@@ -82,10 +82,17 @@ class CardsStep(QWidget):
         self._folder_label = QLabel()
         self._folders = QListWidget()
         self._folders.setSelectionMode(QAbstractItemView.ExtendedSelection)
-        # ⚠️ Au pixel et non à l'élément. Par défaut Qt fait défiler par lignes
-        # entières : cliquer une extension à demi coupée en bas de la liste la
-        # faisait sauter tout en bas, au lieu de la découvrir juste assez.
+        # Au pixel et non par ligne entière : au trackpad, le mode par élément
+        # saute une extension au moindre geste au lieu de la découvrir.
         self._folders.setVerticalScrollMode(QAbstractItemView.ScrollPerPixel)
+        # ⚠️ **Marge de défilement automatique nulle.** Qt en réserve seize
+        # pixels *à l'intérieur* de la vue : cliquer l'extension à demi coupée du
+        # bas tombe forcément dedans, et tant que le bouton reste enfoncé la
+        # liste dévale jusqu'en bas — mesuré, 210 crans sur 242. À zéro, la bande
+        # sensible passe hors de la vue : le clic ne déclenche plus rien, et
+        # glisser *sous* la liste pour prolonger une sélection continue de faire
+        # défiler. Couper `setAutoScroll` supprimerait aussi ce second geste.
+        self._folders.setAutoScrollMargin(0)
         self._folders.itemSelectionChanged.connect(self._apply_filter)
         self._folders.itemSelectionChanged.connect(self._update_folder_buttons)
         self._include_folder = QPushButton()
