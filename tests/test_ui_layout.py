@@ -637,3 +637,74 @@ def test_the_right_button_paints_nothing(session, grille):
     app.sendEvent(grille, QMouseEvent(QEvent.MouseButtonRelease, p, p,
                                       Qt.RightButton, Qt.NoButton, Qt.NoModifier))
     assert session.empty_cells() == []
+
+
+# --- Ce que la ligne d'état et la grille montrent --------------------------
+
+def test_the_suggestions_are_named(ecran):
+    grille = ecran._tabs[0]
+    assert grille._suggestions_title.text() == "Recommandations de grilles"
+    assert grille._suggestions_title.font().bold()
+
+
+def test_the_status_line_is_larger_than_the_interface(qt_app, ecran):
+    """C'est le verdict de l'onglet : il se lit d'un coup d'œil depuis l'autre
+    bout de l'écran, et non en se penchant sur le bas du panneau."""
+    grille = ecran._tabs[0]
+    assert grille._status.font().pointSize() > qt_app.font().pointSize()
+
+
+def test_the_count_is_bold_in_every_state(session, ecran):
+    """Sans texte enrichi, les balises s'afficheraient telles quelles."""
+    from PySide6.QtCore import Qt
+
+    grille = ecran._tabs[0]
+    assert grille._status.textFormat() == Qt.RichText
+
+    for cols, rows in ((2, 2), (5, 5)):          # trop petit, puis à combler
+        session.set_layout(cols=cols, rows=rows)
+        assert "<b>" in grille._status.text(), (cols, rows)
+
+    session.auto_place_empty_cells()
+    assert "<b>" in grille._status.text()
+
+
+def test_an_empty_cell_is_filled_red_not_merely_outlined(qt_app, session):
+    """Un contour rouge sur fond blanc se perdait au milieu des cartes dès que
+    la grille passait la centaine de cases."""
+    from PySide6.QtGui import QColor
+
+    from pokemon_mosaic.ui.wireframe import CARD_FILL, EMPTY_FILL, WireframeView
+
+    vide = QColor(EMPTY_FILL)
+    assert vide.red() > vide.green() + 60 and vide.red() > vide.blue() + 60, \
+        "la case vide doit être franchement rouge"
+    assert vide != QColor(CARD_FILL)
+
+    session.set_layout(cols=4, rows=6)
+    session.toggle_empty_cell(0, 0)
+    vue = WireframeView(session, show_paper=False)
+    vue.resize(400, 500)
+    image = vue.grab().toImage()
+
+    scale, _, _, (card_w, card_h) = vue._geometry
+    gx, gy = vue._grid_origin(vue._geometry)
+    centre = QColor(image.pixel(int(gx + card_w * scale * 0.5),
+                                int(gy + card_h * scale * 0.5)))
+    assert centre.red() > centre.green() + 40, \
+        f"le centre de la case vide n'est pas rouge : {centre.name()}"
+
+
+def test_the_cut_line_is_not_the_colour_of_a_hole(qt_app):
+    """⚠️ Le trait de coupe valait #c85a5a et le remplissage des trous #d05a5a :
+    huit d'écart sur 765, là où une case vide et une carte en ont 315. La coupe
+    passait pour une colonne de trous."""
+    from pokemon_mosaic.ui.wireframe import CARD_FILL, CUT_LINE, EMPTY_FILL
+
+    def ecart(a, b):
+        return (abs(a.red() - b.red()) + abs(a.green() - b.green())
+                + abs(a.blue() - b.blue()))
+
+    reference = ecart(EMPTY_FILL, CARD_FILL)
+    assert ecart(EMPTY_FILL, CUT_LINE) > reference / 2, \
+        "la coupe se confond avec les cases vides"

@@ -16,9 +16,16 @@ PAPER = QColor(252, 252, 252)
 PAPER_EDGE = QColor(120, 120, 120)
 CARD_EDGE = QColor(150, 165, 190)
 CARD_FILL = QColor(225, 233, 245)
-EMPTY_FILL = QColor(255, 255, 255)
-EMPTY_EDGE = QColor(210, 120, 120)
-CUT_LINE = QColor(200, 90, 90)
+# Pleines et non plus seulement cernées : un contour rouge sur fond blanc se
+# perdait au milieu des cartes dès que la grille passait la centaine de cases,
+# et il fallait chercher les trous au lieu de les voir.
+EMPTY_FILL = QColor(208, 90, 90)
+EMPTY_EDGE = QColor(150, 45, 45)
+# ⚠️ **Plus rouge depuis que les cases vides le sont.** Le trait valait #c85a5a
+# et le remplissage des trous #d05a5a : huit d'écart sur 765, là où une case
+# vide et une carte en ont 315. La coupe passait pour une colonne de trous. Un
+# gris sombre tiré, convention des traits de coupe, ne se confond avec rien.
+CUT_LINE = QColor(55, 55, 55)
 MARGIN_FILL = QColor(240, 240, 240)
 
 

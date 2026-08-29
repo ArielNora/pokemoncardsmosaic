@@ -45,6 +45,9 @@ SUGGESTION_COUNT = 5
 # mérite d'être dite, même si elle reste parfaitement valide.
 MIN_SHEET_COVERAGE = 0.75
 
+# Ce que la ligne d'état gagne sur la police de l'interface.
+STATUS_BOOST = 3
+
 # Rapport d'une carte, faute de cartes chargées pour le mesurer.
 FALLBACK_ASPECT = 713 / 984
 
@@ -189,16 +192,26 @@ class GridTab(LayoutTab):
         ligne = self._suggestions.fontMetrics().height() + 6
         self._suggestions.setFixedHeight(ligne * SUGGESTION_COUNT + 8)
         self._suggestions.itemDoubleClicked.connect(self._apply_suggestion)
+        # Le titre et le mode d'emploi sur **une seule ligne** : sans cadre ni
+        # marges, ils tiennent la largeur que la boîte de groupe gaspillait, et
+        # la liste garde toute sa hauteur.
+        self._suggestions_title = QLabel()
+        titre = self._suggestions_title.font()
+        titre.setBold(True)
+        self._suggestions_title.setFont(titre)
         self._suggestions_hint = QLabel()
-        # Sans cadre ni titre : la boîte de groupe ajoutait un intitulé, une
-        # bordure et douze pixels de marge pour héberger cinq lignes qui se
-        # lisent toutes seules. La place gagnée va en largeur, où les
-        # propositions en ont besoin.
+        entete = QHBoxLayout()
+        entete.setContentsMargins(0, 0, 0, 0)
+        entete.addWidget(self._suggestions_title)
+        entete.addSpacing(12)
+        entete.addWidget(self._suggestions_hint)
+        entete.addStretch(1)
+
         self._suggestions_box = QWidget()
         propositions = QVBoxLayout(self._suggestions_box)
         propositions.setContentsMargins(0, 0, 0, 0)
         propositions.setSpacing(2)
-        propositions.addWidget(self._suggestions_hint)
+        propositions.addLayout(entete)
         propositions.addWidget(self._suggestions)
 
         haut = QHBoxLayout()
@@ -219,6 +232,14 @@ class GridTab(LayoutTab):
 
         self._status = QLabel()
         self._status.setWordWrap(True)
+        # C'est le verdict de l'onglet : il se lit d'un coup d'œil depuis
+        # l'autre bout de l'écran, et non en se penchant sur le bas du panneau.
+        etat = self._status.font()
+        etat.setPointSize(etat.pointSize() + STATUS_BOOST)
+        self._status.setFont(etat)
+        # Le décompte est écrit en gras dans les messages : sans texte enrichi,
+        # les balises s'afficheraient telles quelles.
+        self._status.setTextFormat(Qt.RichText)
         self._auto_place = QPushButton()
         self._auto_place.clicked.connect(self._session.auto_place_empty_cells)
         self._clear_place = QPushButton()
@@ -239,6 +260,7 @@ class GridTab(LayoutTab):
     def retranslate_ui(self) -> None:
         self._cols.setTitle(self.tr("Colonnes"))
         self._rows.setTitle(self.tr("Lignes"))
+        self._suggestions_title.setText(self.tr("Recommandations de grilles"))
         self._suggestions_hint.setText(self.tr("Double-cliquez pour appliquer"))
         self._auto_place.setText(self.tr("Placer les vides automatiquement"))
         self._auto_place.setToolTip(
@@ -308,15 +330,15 @@ class GridTab(LayoutTab):
         reste = session.missing_empty_cells()
         if fit.surplus:
             role, texte = "error", self.tr(
-                "%n carte(s) ne tiennent pas dans la grille : agrandissez-la, ou "
-                "retirez-les à l'étape précédente.", "", fit.surplus)
+                "<b>%n</b> carte(s) ne tiennent pas dans la grille : agrandissez-la, "
+                "ou retirez-les à l'étape précédente.", "", fit.surplus)
         elif reste:
             role, texte = "warning", self.tr(
-                "Il reste %n case(s) vide(s) à placer : cliquez dans la grille "
-                "pour choisir où.", "", reste)
+                "Il reste <b>%n</b> case(s) vide(s) à placer : cliquez dans la "
+                "grille pour choisir où.", "", reste)
         elif fit.empty_cells:
             role, texte = "ok", self.tr(
-                "Les %n case(s) vide(s) sont placées.", "", fit.empty_cells)
+                "Les <b>%n</b> case(s) vide(s) sont placées.", "", fit.empty_cells)
         else:
             role, texte = "ok", self.tr(
                 "La grille a exactement autant de cases que de cartes retenues.")
