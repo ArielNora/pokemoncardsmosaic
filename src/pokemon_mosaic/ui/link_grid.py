@@ -35,7 +35,11 @@ CARD_MIME = "application/x-pokemon-mosaic-card"
 
 # Assez grand pour reconnaître une illustration, assez petit pour qu'un 3×3
 # tienne à côté de la palette sans forcer le dialogue à occuper l'écran.
-CELL_WIDTH = 58
+#
+# **Une seule taille pour les deux côtés** : une carte glissée depuis la palette
+# doit avoir exactement l'aspect qu'elle aura dans le rectangle, sans quoi on la
+# voit rapetisser en la déposant et l'on doute d'avoir pris la bonne.
+CELL_WIDTH = 78
 CELL_HEIGHT = int(CELL_WIDTH * 1024 / 734)
 
 
@@ -56,13 +60,6 @@ def card_from_mime(payload: QMimeData) -> int | None:
         return None
 
 
-# Vignettes de la palette. Plus grandes que les cases de la grille : c'est là
-# qu'on **reconnaît** une illustration, alors que dans la grille on vérifie
-# seulement une disposition déjà choisie.
-PALETTE_WIDTH = 78
-PALETTE_HEIGHT = int(PALETTE_WIDTH * 1024 / 734)
-
-
 class CardPalette(QListWidget):
     """Les cartes disponibles, d'où l'on tire pour remplir la grille.
 
@@ -79,10 +76,10 @@ class CardPalette(QListWidget):
     def __init__(self, parent=None):
         super().__init__(parent)
         self.setViewMode(QListWidget.IconMode)
-        self.setIconSize(QSize(PALETTE_WIDTH, PALETTE_HEIGHT))
+        self.setIconSize(QSize(CELL_WIDTH, CELL_HEIGHT))
         # La cellule dépasse un peu la vignette : sans cette marge, Qt rogne les
         # bords et les cartes se touchent.
-        self.setGridSize(QSize(PALETTE_WIDTH + 12, PALETTE_HEIGHT + 12))
+        self.setGridSize(QSize(CELL_WIDTH + 12, CELL_HEIGHT + 12))
         self.setResizeMode(QListWidget.Adjust)   # recalcule les colonnes au redimensionnement
         self.setWrapping(True)
         self.setSpacing(2)

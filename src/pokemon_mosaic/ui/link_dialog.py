@@ -27,7 +27,7 @@ from PySide6.QtWidgets import (
 from ..links import MAX_SIDE, Link
 from . import theme
 from .gallery import numpy_to_pixmap
-from .link_grid import PALETTE_WIDTH, CardPalette, GridPanel
+from .link_grid import CELL_WIDTH, CardPalette, GridPanel
 from .session import Session
 
 # Toutes les extensions, dans le filtre. Une chaîne vide comme donnée, pour la
@@ -135,7 +135,7 @@ class LinkDialog(QDialog):
     def _icon(self, index: int):
         card = self._session.card_set[index]
         return numpy_to_pixmap(card.thumbnail).scaledToWidth(
-            PALETTE_WIDTH, Qt.SmoothTransformation
+            CELL_WIDTH, Qt.SmoothTransformation
         )
 
     def _label_for(self, index: int) -> str:

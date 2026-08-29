@@ -338,3 +338,16 @@ def test_the_palette_is_a_grid_that_only_hands_cards_out(qt_app):
     assert palette.dragDropMode() == QListWidget.DragOnly
     assert palette.movement() == QListWidget.Static
     assert palette.isWrapping()
+
+
+def test_a_card_keeps_its_size_from_the_palette_to_the_grid(qt_app):
+    """Une carte glissée doit avoir dans le rectangle exactement l'aspect
+    qu'elle avait dans la palette : la voir rapetisser en la déposant fait
+    douter d'avoir pris la bonne."""
+    from pokemon_mosaic.ui.link_grid import CELL_HEIGHT, CELL_WIDTH, CardCell, CardPalette
+
+    case = CardCell(0, 0)
+    palette = CardPalette()
+
+    assert case.size().toTuple() == (CELL_WIDTH, CELL_HEIGHT)
+    assert palette.iconSize().toTuple() == (CELL_WIDTH, CELL_HEIGHT)
