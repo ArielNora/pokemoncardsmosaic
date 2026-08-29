@@ -46,13 +46,21 @@ def user_data_dir() -> Path:
     return Path.home() / ".local" / "share" / APP_NAME
 
 
-def output_dir() -> Path:
-    """Où la **ligne de commande** dépose les mosaïques produites.
+def output_dir() -> Path | None:
+    """Où la **ligne de commande** dépose les mosaïques, ou `None` s'il faut le
+    demander.
+
+    Depuis le dépôt, `output/` : un chemin du projet, sans ambiguïté.
+
+    ⚠️ **Aucune valeur une fois empaquetée**, là où l'ancienne version proposait
+    `~/Pictures`. Ce nom n'existe qu'en anglais : un Windows ou un Linux en
+    français range dans « Images », et le dossier aurait été créé à côté du bon,
+    sans que rien ne le signale. Mieux vaut réclamer `--output-dir` que deviner
+    de travers.
 
     L'interface graphique ne passe pas par ici : son dialogue d'export propose
     `QStandardPaths.PicturesLocation`, que le système sait localiser dans la
-    langue et l'arborescence de l'utilisateur.
+    langue et l'arborescence de l'utilisateur — c'est justement ce qu'un chemin
+    écrit à la main ne sait pas faire.
     """
-    if not frozen():
-        return resource_dir() / "output"
-    return Path.home() / "Pictures" / APP_NAME
+    return None if frozen() else resource_dir() / "output"

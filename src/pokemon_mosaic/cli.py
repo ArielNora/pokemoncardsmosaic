@@ -30,6 +30,7 @@ def parse_args(argv=None) -> argparse.Namespace:
     parser.add_argument("--data-dir", type=Path, default=DEFAULT_DATA_DIR,
                         help="Dossier racine des cartes (défaut : %(default)s)")
     parser.add_argument("--output-dir", type=Path, default=DEFAULT_OUTPUT_DIR,
+                        required=DEFAULT_OUTPUT_DIR is None,
                         help="Dossier de sortie (défaut : %(default)s)")
     parser.add_argument("--iterations", type=int, default=DEFAULT_ITERATIONS,
                         help="Itérations d'optimisation (défaut : %(default)s)")

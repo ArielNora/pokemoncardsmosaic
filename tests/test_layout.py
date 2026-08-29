@@ -355,6 +355,18 @@ def test_frozen_data_never_lands_next_to_the_executable(monkeypatch):
 
     monkeypatch.setattr(paths.sys, "frozen", True, raising=False)
     monkeypatch.setattr(paths.sys, "_MEIPASS", "/tmp/deplie", raising=False)
-    for dossier in (paths.user_data_dir(), paths.output_dir()):
-        assert Path.home() in dossier.parents, dossier
-        assert "/tmp/deplie" not in str(dossier)
+    dossier = paths.user_data_dir()
+    assert Path.home() in dossier.parents, dossier
+    assert "/tmp/deplie" not in str(dossier)
+
+
+def test_the_output_folder_is_not_guessed_once_packaged(monkeypatch):
+    """`~/Pictures` n'existe qu'en anglais : un Windows ou un Linux en français
+    range dans « Images », et le dossier aurait été créé à côté du bon, sans que
+    rien ne le signale. On réclame le chemin plutôt que de deviner."""
+    from pokemon_mosaic import paths
+
+    assert paths.output_dir() is not None          # depuis le dépôt : `output/`
+    monkeypatch.setattr(paths.sys, "frozen", True, raising=False)
+    monkeypatch.setattr(paths.sys, "_MEIPASS", "/tmp/deplie", raising=False)
+    assert paths.output_dir() is None
