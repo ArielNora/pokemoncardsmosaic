@@ -40,15 +40,26 @@ déjà un moyennage. L'erreur introduite est inférieure à **0,3 niveau de coul
 
 ### Liens entre cartes
 
-Certaines cartes doivent rester côte à côte (Solgaleo–Lunala, Entei–Raikou). Elles
-sont traitées comme des **blocs indivisibles** : un bloc ne se déplace que d'un seul
-tenant, et uniquement vers une zone composée exclusivement de cartes libres. La
-contrainte est donc satisfaite par construction, sans pénalité de score et sans
-ralentir l'optimisation.
+Certaines cartes doivent rester groupées. Un lien est un **rectangle plein**, de
+trois cases de côté au plus : une ligne de trois est un 3×1, une colonne un 1×3,
+un carré un 2×2. Un seul concept remplace horizontal, vertical et groupe.
 
-Un lien peut regrouper plus de deux cartes, et son **ordre est optionnel** : imposé,
-la séquence est respectée à la lettre (utile quand le sens a une signification) ;
-libre, l'optimiseur peut retourner le bloc et dispose de deux fois plus de placements.
+Les tailles possibles sont donc 2, 3, 4, 6 et 9 — **5, 7 et 8 cartes ne remplissent
+aucun rectangle** d'au plus trois de côté.
+
+Un bloc est **indivisible** : il ne se déplace que d'un seul tenant, et uniquement
+vers une zone composée exclusivement de cartes libres. La contrainte est satisfaite
+par construction, sans pénalité de score et sans ralentir l'optimisation — mesuré
+sur les 441 cartes, un 3×3 laisse le taux d'acceptation à 0,55 % contre 0,60 % sans
+aucun lien.
+
+Son **ordre est optionnel** : imposé, la disposition est respectée à la lettre ;
+libre, l'optimiseur peut pivoter le bloc d'un demi-tour et dispose de deux fois plus
+de placements. ⚠️ Un demi-tour, pas un miroir : sur un carré, une carte va dans le
+coin **opposé**.
+
+Trois liens sont fournis d'office : Solgaleo–Lunala, Entei–Raikou, et la lignée
+Méga-Jungko-ex / Massko / Arcko en colonne, la plus évoluée en haut.
 
 ## Installation
 
@@ -65,6 +76,30 @@ scikit-learn :
 ```bash
 uv sync --extra experiments
 ```
+
+### Ouvrir l'application distribuée
+
+L'application n'est **pas signée** : un certificat coûte un abonnement annuel, pour
+un outil personnel partagé à quelques personnes. Les systèmes protestent donc au
+premier lancement, une fois par machine.
+
+| | Ce qui s'affiche | Comment passer outre |
+|---|---|---|
+| **Linux** | rien | — |
+| **Windows** | « Windows a protégé votre ordinateur », éditeur **Inconnu** | Cliquer **Informations complémentaires**, puis **Exécuter quand même** |
+| **macOS** | « développeur non identifié » | **Clic droit** sur l'application → **Ouvrir**, puis confirmer |
+
+⚠️ Sur Windows, **le seul bouton visible est « Ne pas exécuter »**. Le bouton qui
+lance l'application n'apparaît qu'après avoir cliqué « Informations
+complémentaires » — c'est là que les gens abandonnent, faute de voir qu'il y a une
+issue.
+
+⚠️ Sur macOS, un double-clic ordinaire ne propose **aucune** issue : il faut passer
+par le clic droit.
+
+Un antivirus peut par ailleurs signaler l'exécutable à tort. Les paquets produits
+par PyInstaller déplient du code avant de le lancer, un schéma que les heuristiques
+partagent avec les logiciels malveillants. C'est indépendant de la signature.
 
 ## Données
 

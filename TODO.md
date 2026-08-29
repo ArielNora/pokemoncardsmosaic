@@ -66,6 +66,32 @@ seule provenance. Voir `docs/IMAGES.md`.
 
 ## Dettes ouvertes
 
+- **Empaqueter pour Linux et Windows.** Tranché le 2026-08-29 : l'application
+  vise les trois systèmes. Le plus gros obstacle est levé — Fusion et nos deux
+  palettes lui donnent déjà la même apparence partout, et son mode sombre ne
+  dépend plus du thème de la plateforme.
+
+  ⚠️ **PyInstaller ne sait pas produire pour un autre système que celui où il
+  tourne.** Il faut donc une machine ou un exécuteur d'intégration continue de
+  chaque système — pour construire, et surtout pour **essayer** : aucun rendu
+  hors écran ne remplace l'ouverture réelle d'une fenêtre.
+
+  - **Linux**, le plus simple : une recette sans `BUNDLE`, et un AppImage ou une
+    archive. Aucune signature, aucun avertissement. ⚠️ Qt a besoin de
+    bibliothèques du système — OpenGL, xkbcommon, xcb — qu'une distribution
+    minimale n'a pas ; un AppImage les emporte.
+  - **Windows** : la même recette, produisant un `.exe`. Le but est qu'elle
+    tourne, pas qu'elle s'installe proprement. Pas de certificat : la marche à
+    suivre est expliquée dans le README.
+  - `paquet/construire.sh` et le hook `pre-commit` sont des scripts `sh` : sous
+    Windows ils demandent Git Bash ou WSL.
+
+  ⚠️ **La détection du mode sombre sur Linux.** Certains bureaux ne répondent
+  pas à `colorScheme()`. Le repli lit la clarté du fond posé par le système, ce
+  qui est juste **au démarrage** — mais une bascule en cours d'exécution
+  passerait inaperçue, la palette lue étant devenue la nôtre. L'application
+  resterait dans le mode où elle a démarré.
+
 - **Le paquet macOS n'est pas signé valablement.** `codesign --verify` et `spctl`
   rendent tous deux 1 : défaut connu de PyInstaller sur macOS. L'application
   démarre sur la machine qui l'a construite et depuis un autre emplacement, mais
