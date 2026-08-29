@@ -8,6 +8,7 @@ from PySide6.QtWidgets import (
     QFileDialog,
     QHBoxLayout,
     QLabel,
+    QLineEdit,
     QListWidget,
     QListWidgetItem,
     QProgressBar,
@@ -73,7 +74,11 @@ class CardsStep(QWidget):
         session.selection_changed.connect(self._update_counts)
         session.cards_added.connect(self._refresh_folder_counts)
         session.loading_started.connect(self._fill_folders)
+        # Un nouveau jeu de cartes s'ouvre en entier : garder la recherche
+        # précédente montrerait une galerie presque vide sans dire pourquoi.
+        session.loading_started.connect(self._search.clear)
         session.cards_added.connect(self._update_state)
+        session.cards_added.connect(self._update_bulk_labels)
         self._update_state()
 
     # --- Construction -----------------------------------------------------
@@ -129,6 +134,14 @@ class CardsStep(QWidget):
         self._hint = QLabel()
         self._hint.setWordWrap(True)
 
+        # La recherche vit au-dessus de la galerie, et non dans la barre du haut :
+        # elle ne commande qu'elle. Le bouton d'effacement intégré évite d'avoir
+        # à sélectionner le texte pour revenir à la galerie entière.
+        self._search = QLineEdit()
+        self._search.setClearButtonEnabled(True)
+        theme.mark(self._search, "search")
+        self._search.textChanged.connect(self._apply_filter)
+
         # Tant qu'aucune carte n'est chargée, la galerie n'a rien à montrer et
         # les boutons du haut n'ont rien sur quoi agir. On met à sa place les
         # deux seules actions qui aient un sens, au centre, plutôt qu'une grande
@@ -161,8 +174,10 @@ class CardsStep(QWidget):
         self._empty_page = QWidget()
         self._empty_page.setLayout(vide)
 
-        # Actions globales, volontairement séparées des boutons du panneau de
-        # gauche qui, eux, ne portent que sur les dossiers sélectionnés.
+        # Ils portent sur **ce que la galerie montre**, filtres compris : c'est
+        # ce que leur position dessus laisse entendre, et le seul geste de masse
+        # à portée quand une recherche a réduit l'affichage. Le libellé le dit
+        # dès qu'un filtre est actif, pour qu'on ne les lise pas comme globaux.
         self._include_all = QPushButton()
         self._exclude_all = QPushButton()
         self._include_all.clicked.connect(lambda: self._set_all(False))
@@ -197,6 +212,7 @@ class CardsStep(QWidget):
 
         right = QVBoxLayout()
         right.addWidget(self._hint)
+        right.addWidget(self._search)
         right.addWidget(self._pages, 1)
         right.addWidget(self._warnings)
         right_panel = QWidget()
@@ -249,12 +265,12 @@ class CardsStep(QWidget):
                     "déjà."))
         self._download.setText(self.tr("Télécharger les cartes…"))
         self._locate.setText(self.tr("J'ai déjà les cartes : choisir le dossier…"))
-        self._include_all.setText(self.tr("Tout inclure"))
-        self._exclude_all.setText(self.tr("Tout exclure"))
+        self._update_bulk_labels()
         self._hint.setText(
             self.tr("Cliquez une carte pour l'inclure ou l'exclure. "
                     "Sélectionnez un dossier pour n'afficher que ses cartes.")
         )
+        self._search.setPlaceholderText(self.tr("Rechercher une carte par nom…"))
         self._links.retranslate_ui()
         self._update_counts()
         # Pas de _fill_folders() ici : les noms de dossiers sont des chemins, pas
@@ -308,6 +324,7 @@ class CardsStep(QWidget):
         self._bulk.setVisible(garni)
         self._update_folder_buttons()
         self._hint.setVisible(garni)
+        self._search.setVisible(garni)
         # La mise à jour vise un dossier : sans dossier connu, elle n'a pas de
         # cible. Le bouton de l'état vide, lui, en demande un.
         self._update_catalogue.setEnabled(bool(self._session.data_dir))
@@ -582,11 +599,16 @@ class CardsStep(QWidget):
             self._folders.addItem(item)
 
     def _set_all(self, excluded: bool) -> None:
-        """Agit sur toutes les cartes chargées, indépendamment du filtre affiché."""
-        if self._session.card_set:
-            self._session.set_excluded(
-                [card.index for card in self._session.card_set], excluded
-            )
+        """Agit sur les cartes affichées — filtre par extension et recherche compris.
+
+        Elles portaient auparavant sur tout le jeu chargé. Sans recherche c'était
+        sans danger : les boutons « Inclure l'extension » couvraient le besoin
+        ciblé. Avec elle, chercher « dracaufeu » puis cliquer « Tout exclure »
+        effaçait la sélection entière — mesuré, 40 cartes exclues au lieu de 10.
+        """
+        cartes = self._gallery.visible_cards()
+        if cartes:
+            self._session.set_excluded(cartes, excluded)
 
     def _update_folder_buttons(self) -> None:
         """« Inclure l'extension » n'a de cible que si l'on en a désigné une.
@@ -600,8 +622,33 @@ class CardsStep(QWidget):
     def _selected_folders(self):
         return {item.data(Qt.UserRole) for item in self._folders.selectedItems()}
 
+    def _filtering(self) -> bool:
+        return bool(self._selected_folders() or self._search.text().strip())
+
+    def _update_bulk_labels(self) -> None:
+        """Nomme la cible des boutons de masse quand elle n'est plus tout le jeu.
+
+        « Tout exclure » au-dessus de dix résultats de recherche se lit comme
+        « ces dix-là ». Le libellé chiffré retire l'ambiguïté dans les deux sens.
+        """
+        if self._filtering():
+            combien = self._gallery.visible_count()
+            self._include_all.setText(
+                self.tr("Inclure les %n affichée(s)", "", combien))
+            self._exclude_all.setText(
+                self.tr("Exclure les %n affichée(s)", "", combien))
+        else:
+            self._include_all.setText(self.tr("Tout inclure"))
+            self._exclude_all.setText(self.tr("Tout exclure"))
+        # Le libellé change de longueur : la barre flottante doit se replacer,
+        # sinon elle déborde du bord droit de la galerie ou s'en décolle.
+        self._bulk.adjustSize()
+        self._place_bulk_buttons()
+
     def _apply_filter(self) -> None:
         self._gallery.set_folder_filter(self._selected_folders())
+        self._gallery.set_name_filter(self._search.text().strip())
+        self._update_bulk_labels()
         self._update_counts()
 
     def _set_folders(self, excluded: bool) -> None:
@@ -625,4 +672,9 @@ class CardsStep(QWidget):
             text += "  —  " + self.tr("filtré sur %1").replace("%1", next(iter(folders)))
         elif folders:
             text += "  —  " + self.tr("filtré sur %n dossiers", "", len(folders))
+        # Une recherche qui ne rend rien doit se lire dans le compteur : une
+        # galerie vide sans explication passe pour un chargement raté.
+        if self._search.text().strip():
+            text += "  —  " + self.tr("%n carte(s) trouvée(s)", "",
+                                      self._gallery.visible_count())
         self._count.setText(text)

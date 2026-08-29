@@ -463,3 +463,161 @@ def test_a_short_list_of_odd_sizes_says_nothing_more(step, tmp_path):
     ecran._show_warnings(jeu)
 
     assert "autre" not in ecran._warnings.text()
+
+
+# --- La recherche par nom --------------------------------------------------
+
+def test_the_search_field_is_hidden_until_cards_arrive(step, tmp_path):
+    """Un champ de recherche au-dessus d'un écran d'accueil ne cherche rien."""
+    ecran, session = step
+    assert not ecran._search.isVisibleTo(ecran)
+
+    charge(ecran, session, tmp_path, {"a1": ["pikachu"]})
+    ecran._update_state()
+    assert ecran._search.isVisibleTo(ecran)
+
+
+def test_typing_a_name_narrows_the_gallery(step, tmp_path):
+    ecran, session = step
+    charge(ecran, session, tmp_path,
+           {"a1": ["a1-004-dracaufeu", "a1-007-carapuce"],
+            "a2": ["a2-011-dracofeu-ex", "a2-030-pikachu"]})
+
+    assert ecran._gallery.visible_count() == 4
+    ecran._search.setText("draca")
+    assert ecran._gallery.visible_count() == 1
+    ecran._search.setText("")
+    assert ecran._gallery.visible_count() == 4
+
+
+def test_the_search_ignores_case_and_accents(step, tmp_path):
+    """Les noms de fichiers sont normalisés par `artwork.slug()`, pas ce qu'on
+    tape : chercher « Mustébouée » au clavier doit trouver `mustebouee`."""
+    ecran, session = step
+    charge(ecran, session, tmp_path, {"a1": ["a1-055-mustebouee", "a1-056-mew"]})
+
+    ecran._search.setText("Mustébouée")
+    assert ecran._gallery.visible_count() == 1
+
+
+def test_the_search_and_the_folder_filter_add_up(step, tmp_path):
+    """Chercher un nom **dans** une extension est le geste attendu ; se
+    remplacer l'un l'autre obligerait à défaire la sélection avant de chercher."""
+    ecran, session = step
+    charge(ecran, session, tmp_path,
+           {"a1": ["a1-004-pikachu", "a1-007-carapuce"],
+            "a2": ["a2-030-pikachu"]})
+
+    ecran._search.setText("pikachu")
+    assert ecran._gallery.visible_count() == 2
+
+    ecran._folders.setCurrentRow(0)          # a1 seul
+    assert ecran._gallery.visible_count() == 1
+
+
+def test_a_fruitless_search_says_so_in_the_counter(step, tmp_path):
+    """Une galerie vide sans explication passe pour un chargement raté."""
+    ecran, session = step
+    charge(ecran, session, tmp_path, {"a1": ["a1-004-pikachu"]})
+
+    ecran._search.setText("zzz")
+    assert ecran._gallery.visible_count() == 0
+    assert "0" in ecran._count.text()
+
+
+def test_loading_another_folder_clears_the_search(step, tmp_path):
+    """Un nouveau jeu s'ouvre en entier : garder la recherche précédente
+    montrerait une galerie presque vide sans dire pourquoi."""
+    ecran, session = step
+    charge(ecran, session, tmp_path, {"a1": ["a1-004-pikachu", "a1-007-carapuce"]})
+    ecran._search.setText("pikachu")
+    assert ecran._gallery.visible_count() == 1
+
+    charge(ecran, session, tmp_path / "autre", {"b1": ["b1-001-salameche"]})
+    assert ecran._search.text() == ""
+    assert ecran._gallery.visible_count() == 1
+
+
+def test_cards_arriving_during_a_search_respect_it(step, tmp_path):
+    """Le chargement se fait par lots : un dossier qui arrive après la frappe
+    ne doit pas s'ajouter en bloc sous le filtre en cours."""
+    ecran, session = step
+    charge(ecran, session, tmp_path, {"a1": ["a1-004-pikachu"]})
+    ecran._search.setText("pikachu")
+
+    jeu = card_set_in(tmp_path / "a2", {"a2": ["a2-030-pikachu", "a2-031-mew"]})
+    # `append_cards` conserve les indices reçus : le vrai chargeur numérote à la
+    # suite d'un dossier à l'autre, on fait de même.
+    for rang, carte in enumerate(jeu.cards, start=session.total_cards):
+        carte.index = rang
+    session.append_cards(jeu.cards)
+    assert ecran._gallery.visible_count() == 2
+
+
+# --- Les boutons de masse portent sur ce qui est affiché -------------------
+
+def test_the_bulk_buttons_act_on_what_the_gallery_shows(step, tmp_path):
+    """Chercher « dracaufeu » puis cliquer « Tout exclure » effaçait la
+    sélection entière : 40 cartes exclues au lieu des 10 affichées."""
+    ecran, session = step
+    charge(ecran, session, tmp_path,
+           {"a1": ["a1-004-dracaufeu", "a1-007-carapuce", "a1-025-pikachu"]})
+
+    ecran._search.setText("dracaufeu")
+    assert ecran._gallery.visible_count() == 1
+    ecran._exclude_all.click()
+
+    assert session.selected_count == 2
+    assert session.is_excluded(0)
+
+
+def test_without_a_filter_the_bulk_buttons_still_take_everything(step, tmp_path):
+    ecran, session = step
+    charge(ecran, session, tmp_path, {"a1": ["x", "y"], "a2": ["z"]})
+
+    ecran._exclude_all.click()
+    assert session.selected_count == 0
+    ecran._include_all.click()
+    assert session.selected_count == 3
+
+
+def test_the_bulk_labels_name_their_target_once_filtered(step, tmp_path):
+    """« Tout exclure » au-dessus de deux résultats se lit « ces deux-là » :
+    le libellé chiffré retire l'ambiguïté dans les deux sens."""
+    ecran, session = step
+    charge(ecran, session, tmp_path,
+           {"a1": ["a1-004-pikachu", "a1-030-pikachu-ex", "a1-007-carapuce"]})
+
+    assert ecran._exclude_all.text() == "Tout exclure"
+
+    ecran._search.setText("pikachu")
+    assert "2" in ecran._exclude_all.text()
+    assert "Tout" not in ecran._exclude_all.text()
+
+    ecran._search.setText("")
+    assert ecran._exclude_all.text() == "Tout exclure"
+
+
+def test_selecting_a_folder_also_narrows_the_bulk_buttons(step, tmp_path):
+    ecran, session = step
+    charge(ecran, session, tmp_path, {"a1": ["x", "y"], "a2": ["z"]})
+
+    ecran._folders.setCurrentRow(0)
+    assert "2" in ecran._include_all.text()
+
+    ecran._include_all.click()          # a1 seul
+    ecran._exclude_all.click()
+    assert session.selected_count == 1  # la carte de a2 reste retenue
+
+
+def test_the_bulk_buttons_stay_inside_the_gallery_once_relabelled(step, tmp_path):
+    """Le libellé chiffré est plus long : sans replacement, la barre flottante
+    déborde du bord droit."""
+    ecran, session = step
+    charge(ecran, session, tmp_path, {"a1": ["a1-004-pikachu", "a1-007-carapuce"]})
+    ecran._gallery.resize(400, 300)
+    ecran._place_bulk_buttons()
+
+    ecran._search.setText("pikachu")
+    droite = ecran._bulk.geometry().right()
+    assert droite < ecran._gallery.width()

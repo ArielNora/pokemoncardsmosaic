@@ -1,5 +1,6 @@
 """Modèle et vue de la galerie de cartes."""
 
+import unicodedata
 
 import numpy as np
 from PySide6.QtCore import QAbstractListModel, QModelIndex, QSize, Qt
@@ -10,6 +11,12 @@ from .session import Session
 
 THUMB_WIDTH = 84
 EXCLUDED_OPACITY = 0.25
+
+
+def _fold(text: str) -> str:
+    """Minuscules sans accents, pour comparer ce qu'on tape à un nom de fichier."""
+    decompose = unicodedata.normalize("NFD", text.casefold())
+    return "".join(c for c in decompose if not unicodedata.combining(c))
 
 
 def numpy_to_pixmap(array: np.ndarray) -> QPixmap:
@@ -25,10 +32,14 @@ def numpy_to_pixmap(array: np.ndarray) -> QPixmap:
 
 
 class CardGalleryModel(QAbstractListModel):
-    """Expose les cartes de la session, filtrées par dossier.
+    """Expose les cartes de la session, filtrées par dossier et par nom.
 
     `_visible` fait le lien entre les lignes affichées et les indices de cartes :
     filtrer ne change jamais l'indice d'une carte, seulement ce qu'on en montre.
+
+    Les deux filtres se cumulent : chercher un nom à l'intérieur d'une extension
+    est le geste attendu, et les remplacer l'un par l'autre obligerait à défaire
+    la sélection de dossier avant chaque recherche.
     """
 
     def __init__(self, session: Session):
@@ -36,6 +47,7 @@ class CardGalleryModel(QAbstractListModel):
         self._session = session
         self._pixmaps = {}
         self._folders = None          # None = tous les dossiers
+        self._needle = ""             # vide = tous les noms
         self._visible: list[int] = []
         session.loading_started.connect(self._reset)
         session.cards_added.connect(self._on_cards_added)
@@ -51,10 +63,23 @@ class CardGalleryModel(QAbstractListModel):
         self._folders = folders or None
         self._rebuild()
 
+    def set_name_filter(self, needle: str) -> None:
+        """Restreint l'affichage aux cartes dont le nom contient `needle`.
+
+        Sans casse ni accents : les noms de fichiers sont déjà normalisés par
+        `artwork.slug()`, mais ce qu'on tape ne l'est pas — chercher « Mustébouée »
+        au clavier ne doit pas rendre une galerie vide.
+        """
+        self._needle = _fold(needle)
+        self._rebuild()
+
     def _passes(self, card_index: int) -> bool:
-        if self._folders is None:
-            return True
-        return self._session.folder_of(card_index) in self._folders
+        if (self._folders is not None
+                and self._session.folder_of(card_index) not in self._folders):
+            return False
+        if self._needle:
+            return self._needle in _fold(self._session.card_set[card_index].name)
+        return True
 
     def _rebuild(self) -> None:
         self.beginResetModel()
@@ -89,6 +114,10 @@ class CardGalleryModel(QAbstractListModel):
             self.dataChanged.emit(top, bottom, [Qt.DecorationRole, Qt.ToolTipRole])
 
     # --- Données ----------------------------------------------------------
+
+    def visible_cards(self) -> list[int]:
+        """Les indices affichés, dans l'ordre. Copie : la liste est notre état."""
+        return list(self._visible)
 
     def card_index_at(self, row: int) -> int | None:
         return self._visible[row] if 0 <= row < len(self._visible) else None
@@ -174,6 +203,17 @@ class CardGallery(QListView):
 
     def set_folder_filter(self, folders) -> None:
         self.model().set_folder_filter(folders)
+
+    def set_name_filter(self, needle: str) -> None:
+        self.model().set_name_filter(needle)
+
+    def visible_cards(self) -> list[int]:
+        """Indices des cartes réellement affichées, filtres appliqués."""
+        return list(self.model().visible_cards())
+
+    def visible_count(self) -> int:
+        """Nombre de cartes réellement affichées, filtres appliqués."""
+        return self.model().rowCount()
 
     def _on_clicked(self, index: QModelIndex) -> None:
         model = self.model()
