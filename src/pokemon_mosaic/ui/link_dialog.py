@@ -20,6 +20,7 @@ from PySide6.QtWidgets import (
     QLabel,
     QLineEdit,
     QListWidgetItem,
+    QToolButton,
     QVBoxLayout,
     QWidget,
 )
@@ -28,6 +29,7 @@ from ..links import MAX_SIDE, Link
 from . import theme
 from .gallery import numpy_to_pixmap
 from .link_grid import CELL_WIDTH, CardPalette, GridPanel
+from .rotation_help import RotationHelp
 from .session import Session
 
 # Toutes les extensions, dans le filtre. Une chaîne vide comme donnée, pour la
@@ -88,6 +90,13 @@ class LinkDialog(QDialog):
         self._name = QLineEdit()
         self._ordered = QCheckBox()
         self._ordered.setChecked(True)
+        # Un demi-tour se décrit mal en une ligne, et le libellé se lit
+        # volontiers comme un effet miroir. Le schéma lève le doute.
+        self._explain = QToolButton()
+        self._explain.setText("?")
+        self._explain.setAutoRaise(True)
+        self._explain.setFixedSize(22, 22)
+        self._explain.clicked.connect(self._show_rotation_help)
         self._error = QLabel()
         self._error.setWordWrap(True)
         theme.mark(self._error, "error")
@@ -110,7 +119,11 @@ class LinkDialog(QDialog):
         # ne porte que des lignes de hauteur fixe, et les laisser s'étirer
         # creusait un vide sous le nom.
         layout.addLayout(columns, 1)
-        layout.addWidget(self._ordered, 0)
+        ordered_row = QHBoxLayout()
+        ordered_row.addWidget(self._ordered)
+        ordered_row.addWidget(self._explain)
+        ordered_row.addStretch(1)
+        layout.addLayout(ordered_row, 0)
         layout.addLayout(name_row, 0)
         layout.addWidget(self._error, 0)
         layout.addWidget(self._buttons, 0)
@@ -125,8 +138,10 @@ class LinkDialog(QDialog):
         self._search.setPlaceholderText(self.tr("Filtrer par nom…"))
         self._name_label.setText(self.tr("Nom (facultatif)"))
         self._ordered.setText(
-            self.tr("Ordre imposé (sinon l'optimiseur peut retourner le bloc)")
+            self.tr("Ordre imposé (sinon l'optimiseur peut le pivoter d'un "
+                    "demi-tour)")
         )
+        self._explain.setToolTip(self.tr("Montrer ce qu'est ce demi-tour"))
         self._fill_folders()
         self._update_buttons()
 
@@ -213,6 +228,9 @@ class LinkDialog(QDialog):
                 "colonne.")
         return self.tr("Rectangle %1 × %2, complet.").replace(
             "%1", str(cols)).replace("%2", str(rows))
+
+    def _show_rotation_help(self) -> None:
+        RotationHelp(self).exec()
 
     # --- Validation -------------------------------------------------------
 
