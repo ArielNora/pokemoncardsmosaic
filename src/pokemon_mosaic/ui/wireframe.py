@@ -26,6 +26,8 @@ class WireframeView(QWidget):
     """Dessine la mise en page à l'échelle et convertit les clics en cases."""
 
     cell_clicked = Signal(int, int)
+    # Tout le trajet parcouru depuis le début du geste, et l'état à y poser.
+    cells_painted = Signal(list, bool)
 
     def __init__(self, session, parent=None, show_paper: bool = True):
         super().__init__(parent)
@@ -35,6 +37,10 @@ class WireframeView(QWidget):
         # l'onglet des dimensions, où le format d'impression n'a pas encore été
         # choisi et n'aurait donc rien à dire.
         self._show_paper = show_paper
+        # Cases parcourues par le geste en cours, dans l'ordre, et l'état qu'il
+        # pose. `None` quand aucun bouton n'est enfoncé.
+        self._painted: list[tuple[int, int]] = []
+        self._paint_mode: bool | None = None
         self.setMinimumSize(320, 380)
         self.setCursor(Qt.PointingHandCursor)
 
@@ -162,9 +168,49 @@ class WireframeView(QWidget):
     # --- Interaction ------------------------------------------------------
 
     def mousePressEvent(self, event) -> None:
+        """Ouvre un geste. Ce qu'il pose est décidé par sa **première** case.
+
+        Basculer case par case ferait clignoter tout ce sur quoi on repasse :
+        un aller-retour du curseur défaisait ce que l'aller venait de poser.
+
+        ⚠️ **Le bouton gauche seul.** Sans ce filtre, un clic droit — le réflexe
+        pour chercher un menu contextuel — basculait une case, et le moindre
+        mouvement en posait toute une rangée. Mesuré : six cases vides posées
+        par un glissement au bouton droit que personne n'avait voulu.
+        """
+        self._painted = []
+        self._paint_mode = None
+        if event.button() != Qt.LeftButton:
+            return
         cell = self.cell_at(event.position().x(), event.position().y())
-        if cell is not None:
-            self.cell_clicked.emit(*cell)
+        if cell is None:
+            return
+        self._paint_mode = cell not in set(self._session.empty_cells())
+        self._painted = [cell]
+
+    def mouseMoveEvent(self, event) -> None:
+        if self._paint_mode is None or not (event.buttons() & Qt.LeftButton):
+            return
+        cell = self.cell_at(event.position().x(), event.position().y())
+        if cell is None or cell in self._painted:
+            return
+        self._painted.append(cell)
+        # ⚠️ Le trajet **entier** est renvoyé, pas la seule case atteinte : la
+        # session applique alors un lot idempotent, et la vue n'a pas à tenir
+        # l'état d'avant le geste pour rester juste si un lot se perd.
+        self.cells_painted.emit(list(self._painted), self._paint_mode)
+
+    def mouseReleaseEvent(self, event) -> None:
+        """Un geste d'une seule case reste un clic, avec sa bascule.
+
+        C'est ce qui permet de **déplacer** un trou sur une grille déjà
+        complète : le clic évince le plus ancien, là où un glissement s'arrête
+        au quota. Les deux gestes n'ont pas la même intention.
+        """
+        if self._paint_mode is not None and len(self._painted) == 1:
+            self.cell_clicked.emit(*self._painted[0])
+        self._painted = []
+        self._paint_mode = None
 
     def cell_at(self, x: float, y: float):
         """Case de la grille sous ce point de l'écran, ou None en dehors."""

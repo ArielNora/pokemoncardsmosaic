@@ -318,6 +318,40 @@ class Session(QObject):
         self._empty_cells = placed
         self.layout_changed.emit()
 
+    def paint_empty_cells(self, cells, empty: bool) -> None:
+        """Applique un geste de glissement : pose ou retire ce lot de cases.
+
+        Reçoit **tout le trajet** parcouru depuis le début du geste, et non la
+        seule case qui vient d'être atteinte : la pose est alors idempotente, et
+        la vue n'a rien à mémoriser de l'état d'avant.
+
+        ⚠️ **Le quota borne la pose, il ne chasse rien.** Poser au-delà en
+        évinçant les plus anciennes ferait courir les trous derrière le curseur
+        au lieu d'en poser : on ignore la suite du trajet. Un clic isolé, lui,
+        passe toujours par `toggle_empty_cell` et garde son éviction — c'est
+        ainsi qu'on déplace un trou quand la grille est déjà complète.
+        """
+        placed = self._placed()
+        avant = list(placed)
+        if empty:
+            libre = self.grid_fit().empty_cells - len(placed)
+            for row, col in cells:
+                if libre <= 0:
+                    break
+                cell = (row, col)
+                if cell in placed or not (0 <= row < self.rows
+                                          and 0 <= col < self.cols):
+                    continue
+                placed.append(cell)
+                libre -= 1
+        else:
+            efface = {(row, col) for row, col in cells}
+            placed = [cell for cell in placed if cell not in efface]
+        if placed == avant:
+            return
+        self._empty_cells = placed
+        self.layout_changed.emit()
+
     def reset_empty_cells(self) -> None:
         """Retire toutes les cases vides posées. Il n'en reste aucune."""
         if not self._empty_cells:

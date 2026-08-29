@@ -33,6 +33,7 @@ from ..layout import (
 )
 from ..optimize import check_links_fit
 from . import theme
+from .big_spin import BigSpin
 from .page_preview import PagePreview
 from .session import Session
 from .wireframe import WireframeView
@@ -167,21 +168,20 @@ class GridTab(LayoutTab):
     # --- Construction -----------------------------------------------------
 
     def _build(self) -> None:
-        self._cols = QSpinBox(); self._cols.setRange(1, 200)
-        self._rows = QSpinBox(); self._rows.setRange(1, 200)
+        # Les deux dimensions sont la décision de cet onglet : elles se posent
+        # en grand, côte à côte, chacune sous son intitulé.
+        self._cols = BigSpin(1, 200)
+        self._rows = BigSpin(1, 200)
         for champ in (self._cols, self._rows):
-            champ.setValue(1)
-            champ.setMinimumWidth(90)
-            champ.valueChanged.connect(self._on_form_changed)
+            champ.setFixedWidth(140)
+            champ.value_changed.connect(self._on_form_changed)
 
-        self._dimensions_box = QGroupBox()
-        form = QFormLayout(self._dimensions_box)
-        self._cols_label = QLabel()
-        self._rows_label = QLabel()
-        form.addRow(self._cols_label, self._cols)
-        form.addRow(self._rows_label, self._rows)
+        dimensions = QHBoxLayout()
+        dimensions.setSpacing(14)
+        dimensions.addWidget(self._cols)
+        dimensions.addWidget(self._rows)
+        dimensions.addStretch(1)
 
-        self._suggestions_box = QGroupBox()
         self._suggestions = QListWidget()
         # Exactement la hauteur de ses cinq lignes : laissée libre, la liste
         # s'étirait sur la moitié du panneau pour n'y montrer que du vide, en
@@ -190,14 +190,20 @@ class GridTab(LayoutTab):
         self._suggestions.setFixedHeight(ligne * SUGGESTION_COUNT + 8)
         self._suggestions.itemDoubleClicked.connect(self._apply_suggestion)
         self._suggestions_hint = QLabel()
-        self._suggestions_hint.setWordWrap(True)
+        # Sans cadre ni titre : la boîte de groupe ajoutait un intitulé, une
+        # bordure et douze pixels de marge pour héberger cinq lignes qui se
+        # lisent toutes seules. La place gagnée va en largeur, où les
+        # propositions en ont besoin.
+        self._suggestions_box = QWidget()
         propositions = QVBoxLayout(self._suggestions_box)
+        propositions.setContentsMargins(0, 0, 0, 0)
+        propositions.setSpacing(2)
         propositions.addWidget(self._suggestions_hint)
         propositions.addWidget(self._suggestions)
 
-        self._dimensions_box.setFixedWidth(220)
         haut = QHBoxLayout()
-        haut.addWidget(self._dimensions_box)
+        haut.setSpacing(16)
+        haut.addLayout(dimensions)
         haut.addWidget(self._suggestions_box, 1)
         bandeau = QWidget()
         bandeau.setLayout(haut)
@@ -206,9 +212,10 @@ class GridTab(LayoutTab):
         bandeau.setSizePolicy(QSizePolicy.Preferred, QSizePolicy.Fixed)
 
         # La grille prend tout ce qui reste : c'est elle qu'on regarde, et c'est
-        # dedans qu'on clique pour poser les cases vides.
+        # dedans qu'on clique — ou qu'on glisse — pour poser les cases vides.
         self._wireframe = WireframeView(self._session, show_paper=False)
         self._wireframe.cell_clicked.connect(self._session.toggle_empty_cell)
+        self._wireframe.cells_painted.connect(self._session.paint_empty_cells)
 
         self._status = QLabel()
         self._status.setWordWrap(True)
@@ -223,20 +230,16 @@ class GridTab(LayoutTab):
         bas.addWidget(self._clear_place)
 
         layout = QVBoxLayout(self)
+        layout.setContentsMargins(8, 6, 8, 6)
         layout.addWidget(bandeau)
         layout.addWidget(self._wireframe, 1)
         layout.addLayout(bas)
         self.retranslate_ui()
 
     def retranslate_ui(self) -> None:
-        self._dimensions_box.setTitle(self.tr("Dimensions"))
-        self._cols_label.setText(self.tr("Colonnes"))
-        self._rows_label.setText(self.tr("Lignes"))
-        self._suggestions_box.setTitle(self.tr("Grilles proposées"))
-        self._suggestions_hint.setText(
-            self.tr("Double-cliquez pour appliquer. Classées par écart au nombre "
-                    "de cartes retenues.")
-        )
+        self._cols.setTitle(self.tr("Colonnes"))
+        self._rows.setTitle(self.tr("Lignes"))
+        self._suggestions_hint.setText(self.tr("Double-cliquez pour appliquer"))
         self._auto_place.setText(self.tr("Placer les vides automatiquement"))
         self._auto_place.setToolTip(
             self.tr("Répartit régulièrement les cases vides qui manquent, sans "
@@ -420,6 +423,7 @@ class PrintingTab(LayoutTab):
         self._preview_hint = QLabel(); self._preview_hint.setWordWrap(True)
         self._wireframe = WireframeView(self._session)
         self._wireframe.cell_clicked.connect(self._session.toggle_empty_cell)
+        self._wireframe.cells_painted.connect(self._session.paint_empty_cells)
         self._summary = QLabel(); self._summary.setWordWrap(True)
         self._warnings = QLabel(); self._warnings.setWordWrap(True)
         theme.mark(self._warnings, "error")

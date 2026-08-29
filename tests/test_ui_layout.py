@@ -482,3 +482,158 @@ def test_the_preset_records_only_the_cells_in_force(session):
     session.auto_place_empty_cells()
     session.set_layout(cols=4, rows=5)       # 20 cases pour 20 cartes
     assert session.to_preset("essai").layout["empty_cells"] is None
+
+
+# --- Les deux compteurs en grand --------------------------------------------
+
+def test_the_big_counter_steps_and_clamps(qt_app):
+    from pokemon_mosaic.ui.big_spin import BigSpin
+
+    champ = BigSpin(1, 5)
+    vus = []
+    champ.value_changed.connect(vus.append)
+
+    champ._up.click()
+    assert champ.value() == 2 and vus == [2]
+    champ.setValue(99)
+    assert champ.value() == 5, "la borne haute doit écrêter"
+    champ._up.click()
+    assert champ.value() == 5, "on n'émet pas pour une valeur inchangée"
+    assert vus == [2, 5]
+    assert not champ._up.isEnabled()
+
+
+def test_the_big_counter_accepts_a_typed_number(qt_app):
+    """Passer de 4 à 21 à la flèche demanderait dix-sept clics."""
+    from pokemon_mosaic.ui.big_spin import BigSpin
+
+    champ = BigSpin(1, 200)
+    champ._field.setText("21")
+    champ._field.editingFinished.emit()
+    assert champ.value() == 21
+
+
+def test_an_emptied_field_keeps_the_previous_value(qt_app):
+    """Retomber sur la borne basse donnerait une valeur que personne n'a
+    demandée."""
+    from pokemon_mosaic.ui.big_spin import BigSpin
+
+    champ = BigSpin(1, 200)
+    champ.setValue(12)
+    champ._field.setText("")
+    champ._field.editingFinished.emit()
+    assert champ.value() == 12
+    assert champ._field.text() == "12"
+
+
+def test_the_grid_tab_drives_the_session_from_the_big_counters(session, ecran):
+    grille = ecran._tabs[0]
+    grille._cols.setValue(7)
+    grille._rows.setValue(4)
+    assert (session.cols, session.rows) == (7, 4)
+
+
+# --- Poser plusieurs cases vides d'un glissement ----------------------------
+
+def geste(vue, cases):
+    """Un vrai enfoncé-déplacé-relâché, et non l'appel des slots."""
+    from PySide6.QtCore import QEvent, QPointF, Qt
+    from PySide6.QtGui import QMouseEvent
+    from PySide6.QtWidgets import QApplication
+
+    def point(row, col):
+        scale, _, _, (cw, ch) = vue._geometry
+        gx, gy = vue._grid_origin(vue._geometry)
+        return QPointF(gx + cw * scale * (col + 0.5), gy + ch * scale * (row + 0.5))
+
+    app = QApplication.instance()
+    p = point(*cases[0])
+    app.sendEvent(vue, QMouseEvent(QEvent.MouseButtonPress, p, p, Qt.LeftButton,
+                                   Qt.LeftButton, Qt.NoModifier))
+    for case in cases[1:]:
+        p = point(*case)
+        app.sendEvent(vue, QMouseEvent(QEvent.MouseMove, p, p, Qt.NoButton,
+                                       Qt.LeftButton, Qt.NoModifier))
+    app.sendEvent(vue, QMouseEvent(QEvent.MouseButtonRelease, p, p, Qt.LeftButton,
+                                   Qt.NoButton, Qt.NoModifier))
+
+
+@pytest.fixture
+def grille(session, ecran):
+    session.set_layout(cols=6, rows=6)       # 36 cases pour 20 cartes
+    vue = ecran._tabs[0]._wireframe
+    vue.resize(400, 500)
+    vue.grab()                               # force le calcul de géométrie
+    return vue
+
+
+def test_dragging_places_several_cells_at_once(session, grille):
+    geste(grille, [(0, col) for col in range(6)])
+    assert session.empty_cells() == [(0, col) for col in range(6)]
+
+
+def test_a_drag_started_on_a_hole_erases_along_its_path(session, grille):
+    """⚠️ Le mode est décidé par la **première** case. Basculer case par case
+    ferait clignoter tout ce sur quoi on repasse : un aller-retour du curseur
+    défaisait ce que l'aller venait de poser."""
+    geste(grille, [(0, col) for col in range(6)])
+    geste(grille, [(0, 1), (0, 2), (0, 3)])
+    assert session.empty_cells() == [(0, 0), (0, 4), (0, 5)]
+
+
+def test_a_single_cell_gesture_stays_a_click(session, grille):
+    geste(grille, [(2, 2)])
+    assert session.empty_cells() == [(2, 2)]
+    geste(grille, [(2, 2)])
+    assert session.empty_cells() == [], "un second clic doit retirer le trou"
+
+
+def test_a_drag_stops_at_the_quota_instead_of_chasing(session, ecran):
+    """Poser au-delà en évinçant les plus anciennes ferait courir les trous
+    derrière le curseur au lieu d'en poser."""
+    session.set_layout(cols=5, rows=5)       # 25 cases, 20 cartes -> 5 trous
+    vue = ecran._tabs[0]._wireframe
+    vue.resize(400, 500)
+    vue.grab()
+
+    geste(vue, [(4, col) for col in range(5)] + [(3, col) for col in range(5)])
+    assert session.empty_cells() == [(4, col) for col in range(5)]
+
+
+def test_a_gesture_that_starts_outside_the_grid_does_nothing(session, grille):
+    from PySide6.QtCore import QEvent, QPointF, Qt
+    from PySide6.QtGui import QMouseEvent
+    from PySide6.QtWidgets import QApplication
+
+    dehors = QPointF(2, 2)
+    QApplication.instance().sendEvent(
+        grille, QMouseEvent(QEvent.MouseButtonPress, dehors, dehors,
+                            Qt.LeftButton, Qt.LeftButton, Qt.NoModifier))
+    geste(grille, [(1, 1), (1, 2)])
+    assert session.empty_cells() == [(1, 1), (1, 2)]
+
+
+def test_the_right_button_paints_nothing(session, grille):
+    """⚠️ Un clic droit — le réflexe pour chercher un menu contextuel — basculait
+    une case, et le moindre mouvement en posait toute une rangée. Mesuré : six
+    cases vides posées par un glissement que personne n'avait voulu."""
+    from PySide6.QtCore import QEvent, QPointF, Qt
+    from PySide6.QtGui import QMouseEvent
+    from PySide6.QtWidgets import QApplication
+
+    def point(row, col):
+        scale, _, _, (cw, ch) = grille._geometry
+        gx, gy = grille._grid_origin(grille._geometry)
+        return QPointF(gx + cw * scale * (col + 0.5), gy + ch * scale * (row + 0.5))
+
+    app = QApplication.instance()
+    p = point(0, 0)
+    app.sendEvent(grille, QMouseEvent(QEvent.MouseButtonPress, p, p,
+                                      Qt.RightButton, Qt.RightButton, Qt.NoModifier))
+    for col in range(1, 6):
+        p = point(0, col)
+        app.sendEvent(grille, QMouseEvent(QEvent.MouseMove, p, p, Qt.NoButton,
+                                          Qt.RightButton, Qt.NoModifier))
+    app.sendEvent(grille, QMouseEvent(QEvent.MouseButtonRelease, p, p,
+                                      Qt.RightButton, Qt.NoButton, Qt.NoModifier))
+    assert session.empty_cells() == []
