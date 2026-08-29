@@ -26,6 +26,7 @@ from PySide6.QtGui import QPalette
 LIGHT = {
     "warning": "#8a5a00",           # ambre foncé, sur fond clair
     "error": "#a03030",
+    "ok": "#1b6b2a",                # 5,7:1 — #2e7d32 n'atteignait que 4,5:1
     "banner_bg": "#fff8e1",
     "banner_fg": "#5a4500",
     "banner_border": "#e0c060",
@@ -47,6 +48,7 @@ LIGHT = {
 DARK = {
     "warning": "#f0b429",           # ambre vif, sur fond sombre
     "error": "#ff7a7a",
+    "ok": "#6ecb85",
     "banner_bg": "#3a3220",
     "banner_fg": "#f2dda0",
     "banner_border": "#6b5a2a",
@@ -185,6 +187,7 @@ def stylesheet(palette: QPalette) -> str:
     return f"""
 QLabel[role="warning"] {{ color: {c["warning"]}; }}
 QLabel[role="error"] {{ color: {c["error"]}; }}
+QLabel[role="ok"] {{ color: {c["ok"]}; }}
 QLabel[role="banner"] {{
     background: {c["banner_bg"]};
     color: {c["banner_fg"]};

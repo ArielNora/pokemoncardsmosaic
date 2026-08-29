@@ -244,16 +244,18 @@ def test_pinned_empty_cells_are_restored(session):
     assert session.empty_cells() == pinned
 
 
-def test_an_automatic_distribution_stays_automatic(session):
-    """Figer la répartition automatique l'empêcherait de suivre un changement
-    de grille ou de sélection."""
+def test_a_preset_without_holes_clears_the_ones_placed(session):
+    """Les cases vides ne se posent plus d'office : un préréglage qui n'en
+    mémorise aucune décrit une grille où il n'y en a aucune, et le rejouer doit
+    retirer celles qui avaient été posées depuis."""
     session.set_layout(cols=4, rows=2)
     preset = session.to_preset("essai")
     assert preset.layout["empty_cells"] is None
 
     session.toggle_empty_cell(1, 1)
+    assert session.empty_cells() == [(1, 1)]
     session.apply_preset(preset)
-    assert not session._empty_pinned
+    assert session.empty_cells() == []
 
 
 def test_a_recreated_link_keeps_its_free_order(session):

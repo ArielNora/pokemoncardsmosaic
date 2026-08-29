@@ -27,14 +27,46 @@ class WireframeView(QWidget):
 
     cell_clicked = Signal(int, int)
 
-    def __init__(self, session, parent=None):
+    def __init__(self, session, parent=None, show_paper: bool = True):
         super().__init__(parent)
         self._session = session
         self._geometry: tuple[float, float, float, float] | None = None
+        # Sans feuille, la grille occupe tout le cadre : c'est la vue de
+        # l'onglet des dimensions, où le format d'impression n'a pas encore été
+        # choisi et n'aurait donc rien à dire.
+        self._show_paper = show_paper
         self.setMinimumSize(320, 380)
         self.setCursor(Qt.PointingHandCursor)
 
     # --- Géométrie --------------------------------------------------------
+
+    def _card_aspect(self) -> float:
+        session = self._session
+        if session.card_set and session.card_set.full_size[1]:
+            width, height = session.card_set.full_size
+            return width / height
+        return 713 / 984
+
+    def _grid_only_layout(self):
+        """Géométrie quand il n'y a pas de feuille : la grille remplit le cadre.
+
+        On garde la même structure de quadruplet que l'autre cas — feuille et
+        grille confondues — pour que le dessin, le clic et le calcul d'origine
+        n'aient pas à savoir dans quel mode ils tournent.
+        """
+        session = self._session
+        aspect = self._card_aspect()
+        margin = 12
+        # Une carte fait 1 de large et 1/aspect de haut : la grille entière tient
+        # dans ce rapport, qu'on ajuste au cadre.
+        grid_w, grid_h = session.cols * 1.0, session.rows / aspect
+        scale = min((self.width() - 2 * margin) / grid_w,
+                    (self.height() - 2 * margin) / grid_h)
+        if scale <= 0:
+            return None
+        origin_x = (self.width() - grid_w * scale) / 2
+        origin_y = (self.height() - grid_h * scale) / 2
+        return scale, (origin_x, origin_y), (grid_w, grid_h), (1.0, 1.0 / aspect)
 
     def _layout(self):
         """Renvoie (échelle, origine feuille, taille feuille, taille carte) en pixels
@@ -42,14 +74,14 @@ class WireframeView(QWidget):
         session = self._session
         if session.cols <= 0 or session.rows <= 0:
             return None
+        if not self._show_paper:
+            # Le découpage en panneaux ne concerne que la feuille : sans elle, une
+            # grille non divisible reste parfaitement dessinable.
+            return self._grid_only_layout()
         if session.cols % session.panels:
             return None
 
-        card_aspect = 713 / 984
-        if session.card_set and session.card_set.full_size[1]:
-            width, height = session.card_set.full_size
-            card_aspect = width / height
-
+        card_aspect = self._card_aspect()
         paper_w, paper_h = _paper_mm(session)
         total_w = paper_w * session.panels
         card_w_px, card_h_px = card_pixel_size(
@@ -94,9 +126,10 @@ class WireframeView(QWidget):
         session = self._session
 
         # La feuille, marges comprises.
-        painter.setBrush(QBrush(MARGIN_FILL))
-        painter.setPen(QPen(PAPER_EDGE, 1))
-        painter.drawRect(QRectF(ox, oy, total_w * scale, paper_h * scale))
+        if self._show_paper:
+            painter.setBrush(QBrush(MARGIN_FILL))
+            painter.setPen(QPen(PAPER_EDGE, 1))
+            painter.drawRect(QRectF(ox, oy, total_w * scale, paper_h * scale))
 
         gx, gy = self._grid_origin(geometry)
         painter.setBrush(QBrush(PAPER))
@@ -119,7 +152,7 @@ class WireframeView(QWidget):
                 painter.drawRect(rect)
 
         # Coupes entre panneaux : elles tombent toujours sur un bord de carte.
-        if session.panels > 1:
+        if self._show_paper and session.panels > 1:
             painter.setPen(QPen(CUT_LINE, 2, Qt.DashLine))
             for panel in range(1, session.panels):
                 x = ox + (total_w / session.panels) * panel * scale

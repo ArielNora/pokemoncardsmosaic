@@ -51,7 +51,7 @@ def test_no_role_shares_its_colour_between_the_two_schemes():
 
 # --- Lisibilité ------------------------------------------------------------
 
-TEXTES = ("warning", "error")
+TEXTES = ("warning", "error", "ok")
 
 
 @pytest.mark.parametrize("role", TEXTES)
@@ -112,7 +112,7 @@ def test_every_role_used_by_a_widget_appears_in_the_stylesheet():
     """Un rôle posé par `mark()` mais absent de la feuille ne colorerait rien,
     en silence."""
     feuille = theme.stylesheet(palette_pour("#efefef"))
-    for role in ("warning", "error", "banner", "cell", "cell-empty"):
+    for role in ("warning", "error", "ok", "banner", "cell", "cell-empty"):
         assert f'[role="{role}"]' in feuille
 
 

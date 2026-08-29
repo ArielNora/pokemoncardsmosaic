@@ -60,7 +60,6 @@ class Session(QObject):
         # sa place quand l'utilisateur en pose un nouveau alors que le quota est
         # atteint. Le plus ancien s'efface, façon file d'attente.
         self._empty_cells: list[tuple[int, int]] = []
-        self._empty_pinned = False
 
         # Réglages d'algorithme (étape 3), séparés en « de base » et « avancés ».
         # De base : ce qui se décide par intention.
@@ -233,8 +232,8 @@ class Session(QObject):
 
         if grid_changed:
             # Les positions choisies à la main n'ont plus de sens sur une autre
-            # grille : on repart d'une répartition automatique.
-            self._empty_pinned = False
+            # grille : elles tomberaient à des endroits qui ne veulent plus rien
+            # dire, quand elles ne sortiraient pas carrément du cadre.
             self._empty_cells = []
         self.layout_changed.emit()
 
@@ -243,47 +242,86 @@ class Session(QObject):
                        card_count=self.selected_count)
 
     def empty_cells(self) -> list[tuple[int, int]]:
-        """Cases vides à figer : celles posées à la main, sinon la répartition
-        automatique. Le nombre suit toujours la grille et la sélection."""
-        needed = self.grid_fit().empty_cells
-        if not self._empty_pinned:
-            return distribute_empty_cells((self.rows, self.cols), needed)
+        """Les cases vides posées, et rien de plus.
 
-        # On garde les plus récents : ce sont les choix explicites de l'utilisateur.
-        pinned = list(self._empty_cells[-needed:]) if needed else []
-        if len(pinned) < needed:
-            # La sélection a changé et il faut plus de trous : on complète avec la
-            # répartition automatique, sans défaire ce qui a été posé à la main.
-            for cell in distribute_empty_cells((self.rows, self.cols), needed):
-                if len(pinned) >= needed:
-                    break
-                if cell not in pinned:
-                    pinned.append(cell)
-        return sorted(pinned)
+        ⚠️ **Aucune répartition automatique.** L'application en plaçait une
+        d'office, quitte à la remplacer ensuite : la grille s'ouvrait donc déjà
+        trouée, à des endroits que personne n'avait choisis, et rien ne disait
+        qu'on pouvait les déplacer. C'est désormais un geste de l'utilisateur,
+        que l'étape 2 compte et réclame avant de laisser passer — la répartition
+        régulière reste offerte, mais sur un bouton.
+
+        Le résultat est écrêté au quota courant : la sélection a pu changer
+        depuis, et on garde les plus récemment posées.
+        """
+        return sorted(self._placed())
+
+    def _placed(self) -> list[tuple[int, int]]:
+        """Les cases en vigueur, **dans l'ordre où elles ont été posées**.
+
+        ⚠️ C'est la seule liste qui compte, et tout doit passer par elle. Écrêter
+        au seul affichage laissait des cases hors quota stockées mais jamais
+        dessinées : cliquer l'une d'elles la retirait d'une liste invisible au
+        lieu de poser un trou, et le clic était avalé sans le moindre retour.
+        Mesuré — cinq trous posés puis quatre cartes réintégrées, un seul trou
+        affiché, et un clic sur une case apparemment pleine sans aucun effet.
+
+        L'ordre est conservé : c'est lui qui désigne le trou qui cède sa place
+        quand on en pose un de plus alors que le quota est atteint.
+        """
+        needed = self.grid_fit().empty_cells
+        inside = [cell for cell in self._empty_cells
+                  if 0 <= cell[0] < self.rows and 0 <= cell[1] < self.cols]
+        # On garde les plus récentes : ce sont les choix explicites de l'utilisateur.
+        return inside[-needed:] if needed else []
+
+    def missing_empty_cells(self) -> int:
+        """Combien de cases vides restent à poser pour que la grille soit prête."""
+        return max(0, self.grid_fit().empty_cells - len(self.empty_cells()))
+
+    def auto_place_empty_cells(self) -> None:
+        """Complète les cases vides manquantes par la répartition régulière.
+
+        Ce qui a déjà été posé à la main n'est pas défait : le bouton achève un
+        placement commencé aussi bien qu'il en fait un de bout en bout.
+        """
+        needed = self.grid_fit().empty_cells
+        placed = self._placed()
+        if len(placed) >= needed:
+            return
+        for cell in distribute_empty_cells((self.rows, self.cols), needed):
+            if len(placed) >= needed:
+                break
+            if cell not in placed:
+                placed.append(cell)
+        self._empty_cells = placed
+        self.layout_changed.emit()
 
     def toggle_empty_cell(self, row: int, col: int) -> None:
         """Pose ou retire une case vide à cet emplacement."""
         if not (0 <= row < self.rows and 0 <= col < self.cols):
             return
-        if not self._empty_pinned:
-            # Premier clic : on fige la répartition automatique avant de la modifier.
-            self._empty_cells = list(self.empty_cells())
-            self._empty_pinned = True
-
         cell = (row, col)
-        if cell in self._empty_cells:
-            self._empty_cells.remove(cell)
+        # On repart de ce qui est **réellement en vigueur**, et non de la liste
+        # brute : elle peut porter des cases hors quota, invisibles, dont le
+        # retrait passerait pour un clic sans effet.
+        placed = self._placed()
+        if cell in placed:
+            placed.remove(cell)
         else:
-            self._empty_cells.append(cell)
+            placed.append(cell)
             # Quota atteint : le trou posé il y a le plus longtemps cède sa place,
             # sinon le clic n'aurait aucun effet visible.
-            excess = len(self._empty_cells) - self.grid_fit().empty_cells
+            excess = len(placed) - self.grid_fit().empty_cells
             if excess > 0:
-                del self._empty_cells[:excess]
+                del placed[:excess]
+        self._empty_cells = placed
         self.layout_changed.emit()
 
     def reset_empty_cells(self) -> None:
-        self._empty_pinned = False
+        """Retire toutes les cases vides posées. Il n'en reste aucune."""
+        if not self._empty_cells:
+            return
         self._empty_cells = []
         self.layout_changed.emit()
 
@@ -411,11 +449,12 @@ class Session(QObject):
                 "paper": self.paper, "landscape": self.landscape,
                 "dpi": self.dpi, "panels": self.panels,
                 "cols": self.cols, "rows": self.rows,
-                # Seules les cases posées à la main sont mémorisées : la
-                # répartition automatique se recalcule, et la figer empêcherait
-                # de suivre un changement de grille ou de sélection.
-                "empty_cells": ([list(cell) for cell in self._empty_cells]
-                                if self._empty_pinned else None),
+                # Toutes les cases vides sont posées à la main désormais : il
+                # n'y a plus de répartition d'office à distinguer d'un choix.
+                # `None` reste écrit quand il n'y en a aucune, pour qu'un
+                # préréglage ancien se relise sans traitement de faveur.
+                "empty_cells": ([list(cell) for cell in self._placed()]
+                                or None),
             },
             algorithm={name: getattr(self, name)
                        for name in sorted(self.ALGORITHM_SETTINGS)},
@@ -466,12 +505,13 @@ class Session(QObject):
             self.set_layout(**known)
         # Après `set_layout` : changer la grille efface les cases posées à la
         # main, ce qui annulerait celles du préréglage si on les posait avant.
-        if cells is None:
-            self.reset_empty_cells()
-        else:
-            self._empty_cells = [tuple(cell) for cell in cells]
-            self._empty_pinned = True
-            self.layout_changed.emit()
+        self._empty_cells = [tuple(cell) for cell in (cells or ())]
+        # ⚠️ **On prévient toujours**, même quand rien n'a bougé. Un préréglage
+        # est une mise en page affirmée : c'est ce signal qui dit à l'étape 2 que
+        # la grille a été choisie, et qu'elle n'a donc plus à la proposer. Un
+        # préréglage décrivant la grille déjà en place se taisait, et l'écran
+        # l'écrasait au premier passage.
+        self.layout_changed.emit()
 
     def _apply_links(self, active_links) -> list[str]:
         """Active les liens du préréglage, désactive les autres.

@@ -1,4 +1,4 @@
-"""Tests de l'étape 2 : réglages de mise en page et cases vides."""
+"""Tests de l'étape 2 : les cases vides, et les trois onglets de mise en page."""
 
 import pytest
 from test_ui_session import card_set_in
@@ -13,207 +13,165 @@ def session(qt_app, tmp_path):
     return s
 
 
-def test_empty_cells_match_the_shortfall(session):
+# --- Les cases vides ne se posent plus toutes seules -----------------------
+
+def test_no_empty_cell_is_placed_by_default(session):
+    """⚠️ L'application en répartissait d'office, quitte à les remplacer : la
+    grille s'ouvrait déjà trouée, à des endroits que personne n'avait choisis,
+    et rien ne disait qu'on pouvait les déplacer."""
     session.set_layout(cols=5, rows=5)      # 25 cases pour 20 cartes
-    assert len(session.empty_cells()) == 5
-    session.set_layout(cols=4, rows=5)      # 20 cases, pile poil
     assert session.empty_cells() == []
+    assert session.missing_empty_cells() == 5
 
 
-def test_empty_cells_follow_the_selection(session):
+def test_the_counter_falls_as_the_cells_are_placed(session):
     session.set_layout(cols=5, rows=5)
-    assert len(session.empty_cells()) == 5
-    session.set_excluded([0, 1], True)      # 18 cartes -> 7 vides
-    assert len(session.empty_cells()) == 7
+    session.toggle_empty_cell(0, 0)
+    session.toggle_empty_cell(2, 3)
+    assert session.missing_empty_cells() == 3
+    assert session.empty_cells() == [(0, 0), (2, 3)]
 
 
-def test_clicking_pins_the_empty_cells(session):
-    """Le premier clic fige la répartition automatique avant de la modifier,
-    sinon le reste des trous sauterait à chaque clic."""
+def test_the_counter_follows_the_selection(session):
     session.set_layout(cols=5, rows=5)
-    automatic = session.empty_cells()
-    target = next((r, c) for r in range(5) for c in range(5)
-                  if (r, c) not in automatic)
-
-    session.toggle_empty_cell(*target)
-    pinned = session.empty_cells()
-    assert target in pinned, "le clic doit poser un trou là où on a cliqué"
-    assert len(pinned) == 5, "le nombre de trous est fixé par la grille"
-    # Un seul trou a cédé sa place : le reste du placement est conservé.
-    assert len(set(automatic) & set(pinned)) == 4
+    assert session.missing_empty_cells() == 5
+    session.set_excluded([0, 1], True)      # 18 cartes -> 7 trous demandés
+    assert session.missing_empty_cells() == 7
 
 
 def test_toggling_twice_removes_the_cell(session):
     session.set_layout(cols=5, rows=5)
-    session.toggle_empty_cell(2, 2)
-    assert (2, 2) in session.empty_cells()
-    session.toggle_empty_cell(2, 2)
-    assert (2, 2) not in session.empty_cells()
+    session.toggle_empty_cell(1, 1)
+    session.toggle_empty_cell(1, 1)
+    assert session.empty_cells() == []
 
 
 def test_clicks_outside_the_grid_are_ignored(session):
+    session.set_layout(cols=4, rows=4)
+    session.toggle_empty_cell(9, 9)
+    session.toggle_empty_cell(-1, 0)
+    assert session.empty_cells() == []
+
+
+def test_changing_the_grid_drops_the_placement(session):
+    """Les positions choisies n'ont plus de sens sur une autre grille : elles
+    tomberaient à des endroits qui ne veulent plus rien dire."""
     session.set_layout(cols=5, rows=5)
-    session.toggle_empty_cell(99, 0)
-    session.toggle_empty_cell(0, -1)
+    session.toggle_empty_cell(2, 2)
+    session.set_layout(cols=4, rows=6)
+    assert session.empty_cells() == []
+
+
+@pytest.mark.parametrize("change", [
+    {"dpi": 150}, {"panels": 2}, {"landscape": True}, {"paper": "A3"},
+])
+def test_manual_empty_cells_survive_unrelated_settings(session, change):
+    """Seule la grille les invalide : changer le papier ou la finesse ne déplace
+    aucune case."""
+    session.set_layout(cols=4, rows=6)
+    session.toggle_empty_cell(1, 1)
+    session.set_layout(**change)
+    assert session.empty_cells() == [(1, 1)]
+
+
+def test_removing_them_all_leaves_nothing(session):
+    session.set_layout(cols=5, rows=5)
+    session.auto_place_empty_cells()
+    assert len(session.empty_cells()) == 5
+    session.reset_empty_cells()
+    assert session.empty_cells() == []
+
+
+# --- Le placement automatique, sur bouton ----------------------------------
+
+def test_auto_placing_fills_exactly_what_is_missing(session):
+    session.set_layout(cols=5, rows=5)
+    session.auto_place_empty_cells()
+    assert len(session.empty_cells()) == 5
+    assert session.missing_empty_cells() == 0
+
+
+def test_auto_placing_keeps_what_was_placed_by_hand(session):
+    """Le bouton achève un placement commencé aussi bien qu'il en fait un de
+    bout en bout."""
+    session.set_layout(cols=5, rows=5)
+    session.toggle_empty_cell(4, 4)
+    session.auto_place_empty_cells()
+    assert (4, 4) in session.empty_cells()
     assert len(session.empty_cells()) == 5
 
 
-def test_changing_the_grid_drops_manual_placement(session):
-    """Les positions choisies à la main n'ont plus de sens sur une autre grille."""
+def test_auto_placing_spreads_the_holes(session):
     session.set_layout(cols=5, rows=5)
-    session.toggle_empty_cell(4, 4)
-    assert (4, 4) in session.empty_cells()
-    session.set_layout(cols=7, rows=4)
-    assert session.empty_cells() == sorted(session.empty_cells())
-    assert len(session.empty_cells()) == 8
+    session.auto_place_empty_cells()
+    lignes = {row for row, _ in session.empty_cells()}
+    assert len(lignes) >= 4, f"les trous s'agglutinent : {session.empty_cells()}"
 
 
-def test_reset_returns_to_the_automatic_placement(session):
-    session.set_layout(cols=5, rows=5)
-    automatic = session.empty_cells()
-    session.toggle_empty_cell(0, 0)
-    session.reset_empty_cells()
-    assert session.empty_cells() == automatic
-
+# --- Les signaux ------------------------------------------------------------
 
 def test_layout_change_emits_once_per_call(session):
-    calls = []
-    session.layout_changed.connect(lambda: calls.append(1))
-    session.set_layout(paper="A3", panels=2, cols=24, rows=12)
-    assert len(calls) == 1
+    seen = []
+    session.layout_changed.connect(lambda: seen.append(1))
+    session.set_layout(cols=6, rows=4, dpi=150)
+    assert len(seen) == 1
 
 
 def test_setting_the_same_values_emits_nothing(session):
-    session.set_layout(cols=5, rows=5)
-    calls = []
-    session.layout_changed.connect(lambda: calls.append(1))
-    session.set_layout(cols=5, rows=5)
-    assert calls == []
+    session.set_layout(cols=6, rows=4)
+    seen = []
+    session.layout_changed.connect(lambda: seen.append(1))
+    session.set_layout(cols=6, rows=4)
+    assert seen == []
 
 
-def test_form_follows_a_layout_changed_elsewhere(qt_app, session):
-    """Un préréglage chargé doit se voir dans les champs, pas seulement l'aperçu."""
-    from pokemon_mosaic.ui.layout_step import LayoutStep
-
-    step = LayoutStep(session)
-    session.set_layout(paper="A3", landscape=True, dpi=150, panels=2, cols=24, rows=12)
-    assert step._paper.currentText() == "A3"
-    assert step._landscape.isChecked()
-    assert (step._dpi.value(), step._panels.value()) == (150, 2)
-    assert (step._cols.value(), step._rows.value()) == (24, 12)
-
+# --- Le fil de fer ----------------------------------------------------------
 
 def test_wireframe_maps_clicks_to_cells(qt_app, session):
     from pokemon_mosaic.ui.wireframe import WireframeView
 
-    session.set_layout(cols=4, rows=4)
-    view = WireframeView(session)
-    view.resize(400, 500)
-    view.grab()  # force un rendu pour que la géométrie soit connue
+    session.set_layout(cols=4, rows=5)
+    vue = WireframeView(session)
+    vue.resize(400, 500)
+    vue.grab()                               # force le calcul de géométrie
 
-    geometry = view._geometry
-    assert geometry is not None
-    scale, _, _, (card_w, card_h) = geometry
-    gx, gy = view._grid_origin(geometry)
-    # Centre de la case (2, 1)
-    x = gx + (1 + 0.5) * card_w * scale
-    y = gy + (2 + 0.5) * card_h * scale
-    assert view.cell_at(x, y) == (2, 1)
-    assert view.cell_at(gx - 50, gy - 50) is None
+    scale, _, _, (card_w, card_h) = vue._geometry
+    gx, gy = vue._grid_origin(vue._geometry)
+    assert vue.cell_at(gx + card_w * scale * 1.5,
+                       gy + card_h * scale * 2.5) == (2, 1)
+    assert vue.cell_at(gx - 10, gy - 10) is None
 
 
 def test_wireframe_refuses_a_grid_that_cannot_be_split(qt_app, session):
-    session.set_layout(cols=5, rows=4, panels=2)
     from pokemon_mosaic.ui.wireframe import WireframeView
 
-    view = WireframeView(session)
-    view.resize(400, 500)
-    assert view._layout() is None
+    session.set_layout(cols=5, rows=4, panels=2)
+    vue = WireframeView(session)
+    vue.resize(400, 500)
+    vue.grab()
+    assert vue._geometry is None
 
 
-@pytest.mark.parametrize("change", [
-    {"dpi": 600}, {"paper": "A1"}, {"landscape": True}, {"panels": 2},
-])
-def test_manual_empty_cells_survive_unrelated_settings(session, change):
-    """Le formulaire renvoie les six réglages d'un bloc : tester la présence de
-    « cols » au lieu de sa valeur effaçait le placement manuel dès qu'on touchait
-    au DPI, au format, à l'orientation ou au nombre de panneaux."""
-    session.set_layout(cols=6, rows=4)
-    automatic = set(session.empty_cells())
-    chosen = [cell for cell in ((r, c) for r in range(4) for c in range(6))
-              if cell not in automatic][:3]
-    for cell in chosen:
-        session.toggle_empty_cell(*cell)
-    placed = session.empty_cells()
-    assert all(cell in placed for cell in chosen)
+def test_the_paperless_wireframe_ignores_the_panels(qt_app, session):
+    """Le découpage ne concerne que la feuille : sans elle, une grille non
+    divisible reste parfaitement dessinable."""
+    from pokemon_mosaic.ui.wireframe import WireframeView
 
-    session.set_layout(cols=6, rows=4, **change)   # comme le fait le formulaire
-    assert session.empty_cells() == placed
-    assert session._empty_pinned
+    session.set_layout(cols=5, rows=4, panels=2)
+    vue = WireframeView(session, show_paper=False)
+    vue.resize(400, 500)
+    vue.grab()
+    assert vue._geometry is not None
+    assert vue.cell_at(*_centre_de_case(vue, 0, 0)) == (0, 0)
 
 
-def test_changing_the_grid_still_resets_the_placement(session):
-    session.set_layout(cols=6, rows=4)
-    session.toggle_empty_cell(0, 0)
-    session.set_layout(cols=5, rows=5)
-    assert not session._empty_pinned
+def _centre_de_case(vue, row, col):
+    scale, _, _, (card_w, card_h) = vue._geometry
+    gx, gy = vue._grid_origin(vue._geometry)
+    return (gx + card_w * scale * (col + 0.5), gy + card_h * scale * (row + 0.5))
 
 
-def test_a_link_wider_than_the_grid_is_flagged_at_step_two(qt_app, session):
-    """La vérification existait mais n'était appelée nulle part : un lien trop
-    large ne serait apparu qu'au lancement du calcul, bien après le réglage."""
-    from pokemon_mosaic.links import Link
-    from pokemon_mosaic.ui.layout_step import LayoutStep
-
-    session.add_link(Link(cards=(0, 1, 2)))
-    step = LayoutStep(session)
-    session.set_layout(cols=2, rows=10)
-    assert "3×1" in step._warnings.text()
-
-
-def test_a_link_taller_than_the_grid_is_flagged_too(qt_app, session):
-    """La hauteur n'était vérifiée nulle part tant qu'un lien tenait sur une
-    seule rangée."""
-    from pokemon_mosaic.links import Link
-    from pokemon_mosaic.ui.layout_step import LayoutStep
-
-    session.add_link(Link(cards=(0, 1, 2), shape=(1, 3)))
-    step = LayoutStep(session)
-    session.set_layout(cols=10, rows=2)
-    assert "1×3" in step._warnings.text()
-
-
-def test_no_warning_when_the_link_fits(qt_app, session):
-    from pokemon_mosaic.links import Link
-    from pokemon_mosaic.ui.layout_step import LayoutStep
-
-    session.add_link(Link(cards=(0, 1, 2)))
-    step = LayoutStep(session)
-    session.set_layout(cols=5, rows=4)
-    assert "colonne" not in step._warnings.text()
-
-
-def test_an_unknown_paper_falls_back_instead_of_lying(session):
-    """Une liste déroulante ignore une valeur qu'elle ne propose pas. Sans retour
-    vers la session, le formulaire décrirait un poster que l'export refuserait de
-    produire, `paper_size_mm` ne connaissant pas ce format."""
-    from pokemon_mosaic.ui.layout_step import LayoutStep
-
-    step = LayoutStep(session)
-    before = session.paper
-    session.set_layout(paper="A9")
-    assert session.paper == step._paper.currentText() == before
-
-
-def test_a_dpi_outside_the_field_bounds_comes_back_corrected(session):
-    from pokemon_mosaic.ui.layout_step import LayoutStep
-
-    step = LayoutStep(session)
-    session.set_layout(dpi=5000)
-    assert step._dpi.value() == session.dpi == 1200
-
-
-# --- La grille proposée au premier passage ---------------------------------
+# --- Les onglets ------------------------------------------------------------
 
 @pytest.fixture
 def ecran(session):
@@ -222,48 +180,149 @@ def ecran(session):
     return LayoutStep(session)
 
 
-def test_the_first_visit_fits_the_grid_to_the_selection(session, ecran):
-    """20 cartes retenues : l'écran s'ouvre sur la grille la mieux ajustée, et
-    non sur la valeur par défaut de la session."""
-    session.set_layout(cols=17, rows=17)
-    ecran._auto_fit_pending = True          # le préréglage a désarmé
+def test_the_three_parts_are_listed(ecran):
+    titres = [ecran._list.item(i).text() for i in range(ecran._list.count())]
+    assert len(titres) == 3
+    assert all(titres), "un onglet sans titre"
 
+
+def test_nothing_is_ready_before_the_user_says_so(session, ecran):
+    """Une partie n'est prête qu'une fois validée : au premier passage, elles
+    portent toutes l'avertissement."""
+    ecran.show()
+    session.auto_place_empty_cells()
+    assert ecran._tabs[0].is_valid(), "la grille est pourtant en état"
+    assert not ecran._ready(0)
+    assert not ecran.all_ready()
+
+
+def test_advancing_marks_the_part_ready_and_moves_on(session, ecran):
+    ecran.show()
+    session.auto_place_empty_cells()
+
+    assert ecran.advance() is True, "il reste des parties : le clic est consommé"
+    assert ecran._ready(0)
+    assert ecran._list.currentRow() == 1
+
+
+def test_the_last_part_hands_the_click_back(session, ecran):
+    ecran.show()
+    session.auto_place_empty_cells()
+    for _ in range(2):
+        ecran.advance()
+
+    assert ecran.advance() is False, "la fenêtre doit changer d'étape"
+    assert ecran.all_ready()
+
+
+def test_a_validated_part_that_breaks_loses_its_tick(session, ecran):
+    """Revenir en arrière ne défait rien, mais rendre la grille invalide
+    rallume l'avertissement : la coche promettrait sinon un état qui n'est plus."""
+    ecran.show()
+    session.auto_place_empty_cells()
+    ecran.advance()
+    assert ecran._ready(0)
+
+    session.set_layout(cols=2, rows=2)       # 4 cases pour 20 cartes
+    assert not ecran._ready(0)
+
+
+def test_an_incomplete_grid_blocks_the_way(session, ecran):
+    ecran.show()
+    ecran._list.setCurrentRow(0)
+    session.set_layout(cols=5, rows=5)        # 25 cases pour 20 cartes
+    assert session.missing_empty_cells() > 0
+    assert not ecran.can_advance()
+
+    session.auto_place_empty_cells()
+    assert ecran.can_advance()
+
+
+def test_the_other_parts_never_block(session, ecran):
+    """Format, orientation et finesse ont toujours une valeur acceptable : rien
+    n'y est à compléter."""
+    ecran.show()
+    for position in (1, 2):
+        ecran._list.setCurrentRow(position)
+        assert ecran.can_advance()
+
+
+# --- L'onglet des dimensions ------------------------------------------------
+
+def test_the_status_line_says_red_when_cards_are_left_out(session, ecran):
+    grille = ecran._tabs[0]
+    session.set_layout(cols=2, rows=2)
+    assert grille._status.property("role") == "error"
+    assert "16" in grille._status.text()      # 20 cartes moins 4 cases
+
+
+def test_the_status_line_says_amber_while_holes_remain(session, ecran):
+    grille = ecran._tabs[0]
+    session.set_layout(cols=5, rows=5)
+    assert grille._status.property("role") == "warning"
+    assert "5" in grille._status.text()
+
+
+def test_the_status_line_turns_green_at_zero(session, ecran):
+    grille = ecran._tabs[0]
+    session.set_layout(cols=5, rows=5)
+    session.auto_place_empty_cells()
+    assert grille._status.property("role") == "ok"
+
+
+def test_an_exact_grid_is_green_without_any_hole(session, ecran):
+    grille = ecran._tabs[0]
+    session.set_layout(cols=4, rows=5)        # 20 cases pour 20 cartes
+    assert grille._status.property("role") == "ok"
+    assert session.empty_cells() == []
+
+
+def test_five_suggestions_are_offered(session, ecran):
+    assert ecran._tabs[0]._suggestions.count() == 5
+
+
+def test_the_grid_tab_says_nothing_of_the_paper(ecran):
+    """Le format se décide à l'onglet suivant : le mêler ici obligeait à tout
+    arbitrer d'un coup."""
+    grille = ecran._tabs[0]
+    assert not hasattr(grille, "_paper")
+    assert not hasattr(grille, "_dpi")
+    assert not grille._wireframe._show_paper
+
+
+# --- La grille proposée au premier passage ---------------------------------
+
+def test_the_first_visit_fits_the_grid_to_the_selection(session, ecran):
+    session.set_layout(cols=17, rows=17)
+    ecran._tabs[0]._auto_fit_pending = True   # le préréglage a désarmé
     ecran.show()
     assert (session.cols, session.rows) == (4, 5)   # 20 cases pour 20 cartes
 
 
 def test_the_grid_is_only_fitted_once(session, ecran):
     ecran.show()
-    ajustee = (session.cols, session.rows)
-
     session.set_layout(cols=10, rows=10)
     ecran.hide()
     ecran.show()
     assert (session.cols, session.rows) == (10, 10)
-    assert (session.cols, session.rows) != ajustee
 
 
 def test_a_hand_picked_grid_survives_the_first_visit(session, ecran):
-    """L'utilisateur peut régler la grille depuis l'étape 2 avant même que
-    l'écran ne soit affiché dans un test ; son choix prime."""
-    ecran._cols.setValue(4)
-    ecran._rows.setValue(5)
+    ecran._tabs[0]._cols.setValue(4)
+    ecran._tabs[0]._rows.setValue(6)
     ecran.show()
-    assert (session.cols, session.rows) == (4, 5)
+    assert (session.cols, session.rows) == (4, 6)
 
 
 def test_a_preset_grid_survives_the_first_visit(session, ecran):
-    """Un préréglage décrit une grille voulue : l'ajustement automatique n'a
-    pas à l'écraser au premier passage sur l'écran."""
-    session.set_layout(cols=2, rows=10)     # venu d'ailleurs, pas des champs
+    session.set_layout(cols=2, rows=10)       # venu d'ailleurs, pas des champs
     ecran.show()
     assert (session.cols, session.rows) == (2, 10)
 
 
 def test_a_preset_that_repeats_the_current_grid_survives_too(session, ecran):
     """⚠️ Comparer les champs à la session ne suffisait pas : un préréglage qui
-    rétablit la grille déjà en place ne fait bouger ni l'un ni l'autre. Mesuré —
-    préréglage à 17×17, session par défaut à 17×17, grille ramenée à 5×5."""
+    rétablit la grille déjà en place ne fait bouger ni l'un ni l'autre."""
     from pokemon_mosaic.presets import Preset
 
     voulue = (session.cols, session.rows)
@@ -277,21 +336,9 @@ def test_a_preset_that_repeats_the_current_grid_survives_too(session, ecran):
     assert (session.cols, session.rows) == voulue
 
 
-def test_a_clamped_field_is_not_a_choice(session, ecran):
-    """Le retour d'un champ qui a écrêté une valeur de préréglage ne doit pas
-    passer pour un choix de grille : sinon un DPI hors bornes désarmerait
-    l'ajustement automatique au passage."""
-    session.set_algorithm()                 # sans effet, juste pour le décor
-    ecran._sync_form()                      # déclenche _push_back_clamped
-    assert ecran._auto_fit_pending
-
-
 def test_a_new_card_set_reopens_the_question(session, ecran, tmp_path):
-    """La grille calculée pour les cartes précédentes n'a plus de raison de
-    convenir aux nouvelles."""
     ecran.show()
     ecran.hide()
-
     jeu = card_set_in(tmp_path / "autre", {"s/b": [str(i) for i in range(12)]})
     session.set_cards(jeu, str(tmp_path / "autre"))
     ecran.show()
@@ -299,7 +346,6 @@ def test_a_new_card_set_reopens_the_question(session, ecran, tmp_path):
 
 
 def test_nothing_moves_without_a_card(qt_app):
-    """Sans carte retenue, il n'y a pas de grille à déduire."""
     from pokemon_mosaic.ui.layout_step import LayoutStep
     from pokemon_mosaic.ui.session import Session
 
@@ -312,35 +358,127 @@ def test_nothing_moves_without_a_card(qt_app):
 
 def test_the_fitted_grid_never_drops_a_card(session, ecran):
     """Le classement brut peut placer en tête une grille trop petite : 17 cartes
-    ont pour meilleure proposition 4×4, qui en abandonne une juste après l'écran
-    où l'utilisateur vient de les choisir une par une."""
+    ont pour meilleure proposition 4×4, qui en abandonne une."""
     from pokemon_mosaic.layout import paper_size_mm, suggest_grids
 
-    session.set_excluded([0, 1, 2], True)          # 17 cartes retenues
+    session.set_excluded([0, 1, 2], True)     # 17 cartes retenues
     paper = paper_size_mm(session.paper, session.landscape)
     classement = suggest_grids(17, 713 / 984, paper[0] / paper[1])
     assert classement[0].card_delta < 0, "le classement brut perd bien des cartes"
 
     ecran.show()
-    assert session.cols * session.rows >= session.selected_count
     assert session.grid_fit().surplus == 0
 
 
-# --- La part de feuille réellement couverte --------------------------------
+# --- L'onglet du format -----------------------------------------------------
+
+def test_the_paper_tab_follows_the_session(session, ecran):
+    papier = ecran._tabs[1]
+    session.set_layout(paper="A3")
+    assert papier._paper.currentText() == "A3"
+
+
+def test_an_unknown_paper_falls_back_instead_of_lying(session, ecran):
+    """Un préréglage écrit à la main peut porter un format inconnu : la liste
+    l'ignore, et sans retour la session garderait une valeur qui ferait échouer
+    l'export."""
+    session.set_layout(paper="B3")
+    ecran._tabs[1].refresh()
+    assert session.paper in ("A4", ecran._tabs[1]._paper.currentText())
+    assert session.paper != "B3"
+
+
+def test_the_page_preview_scales_the_sheet_and_the_card(qt_app, session):
+    """L'étalon entre dans le calcul d'échelle : sur un A6 il fait plus de la
+    moitié de la largeur de la feuille, et l'oublier le ferait sortir du cadre."""
+    from pokemon_mosaic.layout import REAL_CARD_MM
+    from pokemon_mosaic.ui.page_preview import GAP, GUTTER, PagePreview
+
+    session.set_layout(paper="A6")
+    vue = PagePreview(session)
+    vue.resize(420, 320)
+    feuille = vue._sheet_mm()
+    scale = vue._scale(feuille)
+    largeur = (feuille[0] + GAP / 2 + REAL_CARD_MM[0]) * scale
+    assert largeur <= vue.width() - 2 * GUTTER
+
+
+# --- L'onglet d'impression --------------------------------------------------
+
+def test_a_link_wider_than_the_grid_is_flagged(qt_app, session):
+    from pokemon_mosaic.links import Link
+
+    session.links.add(Link(cards=(0, 1, 2), shape=(3, 1)))
+    session.set_layout(cols=2, rows=10)
+    from pokemon_mosaic.ui.layout_step import LayoutStep
+
+    ecran = LayoutStep(session)
+    assert "3×1" in ecran._tabs[2]._warnings.text()
+
+
+def test_a_link_taller_than_the_grid_is_flagged_too(qt_app, session):
+    from pokemon_mosaic.links import Link
+    from pokemon_mosaic.ui.layout_step import LayoutStep
+
+    session.links.add(Link(cards=(0, 1, 2), shape=(1, 3)))
+    session.set_layout(cols=10, rows=2)
+    ecran = LayoutStep(session)
+    assert "1×3" in ecran._tabs[2]._warnings.text()
+
+
+def test_no_warning_when_the_link_fits(qt_app, session):
+    from pokemon_mosaic.links import Link
+    from pokemon_mosaic.ui.layout_step import LayoutStep
+
+    session.links.add(Link(cards=(0, 1, 2), shape=(3, 1)))
+    session.set_layout(cols=5, rows=4)
+    ecran = LayoutStep(session)
+    assert "occupe" not in ecran._tabs[2]._warnings.text()
+
+
+def test_a_dpi_outside_the_field_bounds_comes_back_corrected(session, ecran):
+    session.set_layout(dpi=5000)
+    ecran._tabs[2].refresh()
+    assert session.dpi == 1200
+
 
 def test_a_mostly_empty_sheet_is_reported(session, ecran):
-    """Depuis que la forme des grilles est bornée à trois cases d'écart, une
-    mise en page sur plusieurs panneaux ne peut plus s'allonger pour suivre la
-    feuille. Mesuré : 441 cartes en 20×23 sur deux A4 ne couvrent que 43,9 % du
-    papier, contre 96,9 % pour le 30×15 qu'on ne propose plus."""
+    """441 cartes en 20×23 sur deux A4 ne couvrent que 43,9 % du papier."""
     session.set_layout(panels=2, cols=20, rows=23)
-    assert "44 %" in ecran._warnings.text()
-    assert "marge vide" in ecran._warnings.text()
+    assert "44 %" in ecran._tabs[2]._warnings.text()
+    assert "marge vide" in ecran._tabs[2]._warnings.text()
 
 
 def test_a_grid_that_follows_the_sheet_says_nothing(session, ecran):
     session.set_layout(panels=2, cols=30, rows=15)
-    assert "marge vide" not in ecran._warnings.text()
+    assert "marge vide" not in ecran._tabs[2]._warnings.text()
 
-    session.set_layout(panels=1, cols=21, rows=21)
-    assert "marge vide" not in ecran._warnings.text()
+
+def test_a_click_on_a_cell_hidden_by_the_quota_still_lands(session, tmp_path):
+    """⚠️ Les cases hors quota restaient stockées sans être dessinées : cliquer
+    l'une d'elles la retirait d'une liste invisible au lieu de poser un trou, et
+    le clic était avalé sans le moindre retour. Mesuré — cinq trous posés puis
+    quatre cartes réintégrées, un seul trou affiché, clic sans aucun effet."""
+    session.set_layout(cols=5, rows=5)
+    session.auto_place_empty_cells()
+    assert len(session.empty_cells()) == 5
+
+    jeu = card_set_in(tmp_path / "encore", {"s/b": [str(i) for i in range(4)]})
+    for rang, carte in enumerate(jeu.cards, start=session.total_cards):
+        carte.index = rang
+    session.append_cards(jeu.cards)          # 24 cartes -> un seul trou demandé
+    assert len(session.empty_cells()) == 1
+
+    pleine = next((r, c) for r in range(5) for c in range(5)
+                  if (r, c) not in session.empty_cells())
+    session.toggle_empty_cell(*pleine)
+    assert session.empty_cells() == [pleine], "le clic a été avalé"
+
+
+def test_the_preset_records_only_the_cells_in_force(session):
+    """Les cases hors quota ne sont plus en vigueur : les mémoriser ferait
+    revenir des trous que l'écran n'affiche plus."""
+    session.set_layout(cols=5, rows=5)
+    session.auto_place_empty_cells()
+    session.set_layout(cols=4, rows=5)       # 20 cases pour 20 cartes
+    assert session.to_preset("essai").layout["empty_cells"] is None

@@ -134,6 +134,10 @@ class MainWindow(QMainWindow):
         self._cards_step.status_message.connect(self._show_status)
         self._stack.addWidget(self._cards_step)
         self._layout_step = LayoutStep(self._session)
+        # L'étape 2 se parcourt par parties : « Suivant » les déroule avant de
+        # changer d'écran, et se grise tant que la partie affichée n'est pas en
+        # état. Sans ce signal, il resterait figé sur son dernier état connu.
+        self._layout_step.advance_state_changed.connect(self._update_navigation)
         self._stack.addWidget(self._layout_step)
         self._settings_step = SettingsStep(self._session)
         self._stack.addWidget(self._settings_step)
@@ -149,7 +153,7 @@ class MainWindow(QMainWindow):
         self._back = QPushButton()
         self._next = QPushButton()
         self._back.clicked.connect(lambda: self._go(self._stack.currentIndex() - 1))
-        self._next.clicked.connect(lambda: self._go(self._stack.currentIndex() + 1))
+        self._next.clicked.connect(self._on_next)
 
         self._language_label = QLabel()
         self._language_box = QComboBox()
@@ -193,6 +197,20 @@ class MainWindow(QMainWindow):
         if 0 <= index < self._stack.count():
             self._stack.setCurrentIndex(index)
 
+    def _on_next(self) -> None:
+        """Un seul bouton pour avancer, y compris **dans** un écran.
+
+        Un écran qui se parcourt par parties consomme le clic tant qu'il lui en
+        reste une. Lui donner son propre « Suivant » aurait mis deux boutons du
+        même nom à l'écran, sans qu'on sache lequel quitte l'étape.
+        """
+        courant = self._stack.currentWidget()
+        avance = getattr(courant, "advance", None)
+        if avance is not None and avance():
+            self._update_navigation()
+            return
+        self._go(self._stack.currentIndex() + 1)
+
     def _on_language_picked(self, index: int) -> None:
         self._language.set_language(self._language_box.itemData(index))
 
@@ -207,6 +225,11 @@ class MainWindow(QMainWindow):
         # chiffres à partir d'elles, et l'exécution n'a rien à assembler.
         avancable = (current < self._stack.count() - 1
                      and self._session.total_cards > 0)
+        # Un écran peut refuser de laisser passer : l'étape 2 exige que la partie
+        # affichée soit complète — toutes ses cases vides placées, par exemple.
+        peut = getattr(self._stack.currentWidget(), "can_advance", None)
+        if avancable and peut is not None:
+            avancable = peut()
         self._next.setEnabled(avancable)
         for position, label in enumerate(self._step_labels):
             font = label.font()

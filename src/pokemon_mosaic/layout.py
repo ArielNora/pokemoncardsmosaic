@@ -21,6 +21,11 @@ PAPER_FORMATS_MM = {
 DEFAULT_DPI = 300
 MM_PER_INCH = 25.4
 
+# Dimensions d'une carte Pokémon que l'on tient en main, en millimètres. Elle ne
+# sert à rien au calcul : c'est un étalon, posé à côté de la feuille pour que
+# « A2 » veuille dire quelque chose sans avoir à sortir un mètre.
+REAL_CARD_MM = (63.0, 88.0)
+
 
 def paper_size_mm(name: str, landscape: bool = False) -> tuple[float, float]:
     """Dimensions d'un format, en millimètres."""
