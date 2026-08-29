@@ -43,6 +43,8 @@ LIGHT = {
     "button_off_border": "#d6d6d6",
     "bar_bg": "#f4f4f4",
     "bar_border": "#c8c8c8",
+    "tab_on_bg": "#dce8f6",
+    "tab_on_border": "#3573b9",
 }
 
 DARK = {
@@ -65,6 +67,8 @@ DARK = {
     "button_off_border": "#464646",
     "bar_bg": "#323232",
     "bar_border": "#4d4d4d",
+    "tab_on_bg": "#33465c",
+    "tab_on_border": "#5f9ada",
 }
 
 # Les rôles que Qt, lui, connaît. On les pose nous-mêmes plutôt que de laisser
@@ -230,6 +234,32 @@ QPushButton:pressed, QToolButton:pressed {{
 QPushButton:disabled, QToolButton:disabled {{
     background: {c["button_off_bg"]};
     border-color: {c["button_off_border"]};
+}}
+
+/* Les parties d'une étape, à gauche. Des lignes de liste ordinaires ne se
+   lisaient pas comme des onglets : hautes de dix-huit pixels et collées les
+   unes aux autres, elles ressemblaient à un contenu à faire défiler. On leur
+   donne la taille d'un bouton, un fond, et de l'air entre elles. */
+QListWidget[role="tabs"] {{
+    background: transparent;
+    border: none;
+    outline: none;
+}}
+QListWidget[role="tabs"]::item {{
+    background: {c["button_bg"]};
+    border: 1px solid {c["button_border"]};
+    border-radius: 7px;
+    padding: 14px 12px;
+    margin: 0px 2px 8px 2px;
+}}
+QListWidget[role="tabs"]::item:hover {{
+    background: {c["button_hover_bg"]};
+    border-color: {c["button_hover_border"]};
+}}
+QListWidget[role="tabs"]::item:selected {{
+    background: {c["tab_on_bg"]};
+    border: 2px solid {c["tab_on_border"]};
+    color: palette(text);
 }}
 
 /* La barre d'actions posée sur la galerie. Opaque et bordée : par-dessus des

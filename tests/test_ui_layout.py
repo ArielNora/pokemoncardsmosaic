@@ -708,3 +708,137 @@ def test_the_cut_line_is_not_the_colour_of_a_hole(qt_app):
     reference = ecart(EMPTY_FILL, CARD_FILL)
     assert ecart(EMPTY_FILL, CUT_LINE) > reference / 2, \
         "la coupe se confond avec les cases vides"
+
+
+# --- L'onglet du format : la mosaïque posée dessus --------------------------
+
+def test_the_standard_is_never_covered_by_the_sheet(qt_app, session):
+    """⚠️ L'étiquette était centrée sur la seule carte : dès que celle-ci se
+    réduisait — un A1, un A0 —, le texte débordait des deux côtés et passait
+    sous la feuille."""
+    from pokemon_mosaic.layout import PAPER_FORMATS_MM
+    from pokemon_mosaic.ui.page_preview import GAP, PagePreview
+
+    vue = PagePreview(session)
+    vue.resize(820, 560)
+    for nom in PAPER_FORMATS_MM:
+        for panneaux in (1, 2):
+            session.set_layout(paper=nom, panels=panneaux, cols=4, rows=5)
+            vue.grab()
+            feuille, carte, etiquette = vue.rects()
+            assert carte.left() >= feuille.right() + GAP - 0.5, (nom, panneaux)
+            assert etiquette.left() >= feuille.right() + GAP - 0.5, (nom, panneaux)
+            assert etiquette.right() <= vue.width() + 0.5, (nom, panneaux)
+            assert carte.right() <= vue.width() + 0.5, (nom, panneaux)
+            assert etiquette.top() >= 0, (nom, panneaux)
+
+
+def test_a_narrow_frame_still_keeps_everything_inside(qt_app, session):
+    """Le cadre n'a pas toujours huit cents pixels : la fenêtre se réduit."""
+    from pokemon_mosaic.ui.page_preview import GAP, PagePreview
+
+    vue = PagePreview(session)
+    vue.resize(420, 300)
+    session.set_layout(paper="A0", panels=2)
+    vue.grab()
+    feuille, _, etiquette = vue.rects()
+    assert etiquette.left() >= feuille.right() + GAP - 0.5
+    assert etiquette.right() <= vue.width() + 0.5
+
+
+def test_the_mosaic_is_drawn_on_the_sheet_when_asked(qt_app, session):
+    """Le fond du papier est presque blanc, celui d'une carte franchement
+    bleuté : un pixel au centre de la feuille dit lequel est dessiné."""
+    from PySide6.QtGui import QColor
+
+    from pokemon_mosaic.ui.page_preview import PagePreview
+
+    session.set_layout(paper="A4", cols=4, rows=5)
+    vue = PagePreview(session)
+    vue.resize(820, 560)
+
+    vue.set_show_grid(False)
+    feuille, _, _ = vue.rects()
+    milieu = (int(feuille.center().x()), int(feuille.center().y()))
+    nu = QColor(vue.grab().toImage().pixel(*milieu))
+
+    vue.set_show_grid(True)
+    garni = QColor(vue.grab().toImage().pixel(*milieu))
+    assert garni != nu
+    assert garni.blue() > garni.red(), f"la case ne paraît pas une carte : {garni.name()}"
+
+
+def test_the_toggle_hides_and_shows_its_warning(session, ecran):
+    """L'ajustement montré dépend de réglages qui ne sont pas encore pris :
+    le dire n'a de sens que si la mosaïque est là."""
+    papier = ecran._tabs[1]
+    papier.show()
+    assert papier._show_grid.isChecked()
+    assert papier._grid_warning.isVisibleTo(papier)
+
+    papier._show_grid.setChecked(False)
+    assert not papier._grid_warning.isVisibleTo(papier)
+    assert not papier._preview._show_grid
+
+    papier._show_grid.setChecked(True)
+    assert papier._grid_warning.isVisibleTo(papier)
+
+
+# --- De gros onglets --------------------------------------------------------
+
+def test_the_tabs_are_big_enough_to_be_aimed_at(ecran):
+    from pokemon_mosaic.ui.layout_step import TAB_HEIGHT
+
+    assert ecran._list.property("role") == "tabs"
+    for position in range(ecran._list.count()):
+        assert ecran._list.item(position).sizeHint().height() >= TAB_HEIGHT
+
+
+def test_no_tab_label_is_cut_off(qt_app, ecran):
+    """Un intitulé tronqué en « Orientation, finesse et … » ne dit plus ce que
+    la partie contient."""
+    from pokemon_mosaic.ui.layout_step import BADGE, TAB_WIDTH
+
+    metrics = ecran._list.fontMetrics()
+    dispo = TAB_WIDTH - 8 - 24 - BADGE - 12       # marges, icône, respiration
+    for position in range(ecran._list.count()):
+        texte = ecran._list.item(position).text()
+        assert metrics.horizontalAdvance(texte) <= dispo, texte
+
+
+def test_the_width_dimension_always_has_room_below_the_sheet(qt_app, session):
+    """⚠️ La feuille était centrée dans le cadre entier : la moitié de la
+    réserve partait vers le haut, où elle ne sert à rien. Mesuré — 37 px laissés
+    sous la feuille pour une cote qui en réclame 42, et le « 42 cm » coupé."""
+    from pokemon_mosaic.layout import PAPER_FORMATS_MM
+    from pokemon_mosaic.ui.page_preview import BOTTOM_ROOM, PagePreview
+
+    vue = PagePreview(session)
+    for largeur, hauteur in ((820, 560), (420, 300), (1000, 300), (700, 280)):
+        vue.resize(largeur, hauteur)
+        for nom in PAPER_FORMATS_MM:
+            for panneaux in (1, 3):
+                session.set_layout(paper=nom, panels=panneaux, cols=6, rows=5)
+                vue.grab()
+                geometrie = vue.rects()
+                if geometrie is None:
+                    continue
+                feuille, _, etiquette = geometrie
+                assert vue.height() - feuille.bottom() >= BOTTOM_ROOM - 0.5, \
+                    (nom, panneaux, largeur, hauteur)
+                assert etiquette.top() >= 0, (nom, panneaux, largeur, hauteur)
+
+
+def test_the_selected_tab_label_stays_legible(qt_app):
+    """Le libellé de l'onglet actif se lit sur un fond que nous posons : il ne
+    suit plus la palette de sélection de Qt, donc il se vérifie."""
+    from test_ui_theme import contraste
+
+    from pokemon_mosaic.ui import theme
+
+    assert contraste(theme.PALETTE_LIGHT["text"], theme.LIGHT["tab_on_bg"]) >= 4.5
+    assert contraste(theme.PALETTE_DARK["text"], theme.DARK["tab_on_bg"]) >= 4.5
+    assert contraste(theme.LIGHT["tab_on_border"],
+                     theme.PALETTE_LIGHT["window"]) >= 3.0
+    assert contraste(theme.DARK["tab_on_border"],
+                     theme.PALETTE_DARK["window"]) >= 3.0

@@ -357,6 +357,9 @@ class PaperTab(LayoutTab):
         self._updating = False
         self._build()
         session.layout_changed.connect(self.refresh)
+        # La mosaïque dessinée dessus dépend de la grille et du nombre de cartes.
+        session.selection_changed.connect(self._preview.update)
+        session.cards_loaded.connect(self._preview.update)
 
     def title(self) -> str:
         return self.tr("Format de la feuille")
@@ -369,27 +372,51 @@ class PaperTab(LayoutTab):
         self._paper.currentTextChanged.connect(self._on_form_changed)
 
         self._paper_label = QLabel()
+        self._show_grid = QCheckBox()
+        self._show_grid.setChecked(True)
+        self._show_grid.toggled.connect(self._on_grid_toggled)
+
         haut = QHBoxLayout()
         haut.addWidget(self._paper_label)
         haut.addWidget(self._paper)
+        haut.addSpacing(24)
+        haut.addWidget(self._show_grid)
         haut.addStretch(1)
 
         self._hint = QLabel()
         self._hint.setWordWrap(True)
+        # Dit à quelles conditions l'ajustement montré tient. Caché quand la
+        # mosaïque ne l'est pas : sans elle, il n'y a rien à nuancer.
+        self._grid_warning = QLabel()
+        self._grid_warning.setWordWrap(True)
+        theme.mark(self._grid_warning, "warning")
         self._preview = PagePreview(self._session)
 
         layout = QVBoxLayout(self)
         layout.addLayout(haut)
         layout.addWidget(self._hint)
+        layout.addWidget(self._grid_warning)
         layout.addWidget(self._preview, 1)
         self.retranslate_ui()
 
+    def _on_grid_toggled(self, montrer: bool) -> None:
+        self._preview.set_show_grid(montrer)
+        self._grid_warning.setVisible(montrer)
+
     def retranslate_ui(self) -> None:
         self._paper_label.setText(self.tr("Format d'impression"))
+        self._show_grid.setText(self.tr("Montrer la mosaïque sur la feuille"))
         self._hint.setText(
             self.tr("La carte posée à droite est à ses dimensions réelles, à la "
                     "même échelle que la feuille : c'est elle qui donne la taille.")
         )
+        self._grid_warning.setText(
+            self.tr("Cet ajustement n'est pas définitif : l'orientation et le "
+                    "nombre de posters côte à côte se règlent à l'onglet suivant, "
+                    "et les dimensions de la grille restent modifiables au "
+                    "premier — de quoi remplir mieux la feuille.")
+        )
+        self._on_grid_toggled(self._show_grid.isChecked())
         self.refresh()
 
     def _on_form_changed(self, *_) -> None:
@@ -422,7 +449,7 @@ class PrintingTab(LayoutTab):
         session.cards_loaded.connect(self.refresh)
 
     def title(self) -> str:
-        return self.tr("Orientation, finesse et panneaux")
+        return self.tr("Orientation et impression")
 
     def _build(self) -> None:
         self._landscape = QCheckBox()

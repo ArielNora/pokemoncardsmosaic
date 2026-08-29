@@ -5,14 +5,17 @@ mieux, mais un rectangle seul n'a pas d'échelle : sur un écran, un A6 et un A0
 sont le même dessin. D'où l'étalon — une carte Pokémon à ses dimensions
 réelles, dans le même rapport que la feuille. C'est elle qui donne la taille,
 parce que c'est le seul objet des deux que l'on ait déjà tenu en main.
+
+La mosaïque peut se poser dessus, pour voir ce qu'elle laisse de marge.
 """
 
 from PySide6.QtCore import QPointF, QRectF, Qt
-from PySide6.QtGui import QColor, QPainter, QPen
+from PySide6.QtGui import QBrush, QColor, QPainter, QPen
 from PySide6.QtWidgets import QWidget
 
-from ..layout import REAL_CARD_MM, paper_size_mm
+from ..layout import MM_PER_INCH, REAL_CARD_MM, card_pixel_size, paper_size_mm
 from . import theme
+from .wireframe import CARD_EDGE, CARD_FILL
 
 # Place réservée aux cotes, en pixels écran : la flèche, sa tête, et le nombre
 # sous elle. Trop juste, la largeur se retrouvait coupée par le bas du cadre.
@@ -23,6 +26,14 @@ COTE = 0.45
 ARROW = 5
 # Écart entre la feuille et la carte étalon.
 GAP = 26
+# Hauteur réservée à l'étiquette de l'étalon, au-dessus de lui.
+LABEL_HEIGHT = 34
+# Place que la cote de largeur réclame sous la feuille : la ligne, sa tête de
+# flèche, et le nombre en dessous.
+BOTTOM_ROOM = 42
+# Le contour des cartes s'efface au-delà, faute de quoi la mosaïque devient un
+# aplat de traits où l'on ne distingue plus rien.
+FINE_PEN_ABOVE = 900
 
 
 class PagePreview(QWidget):
@@ -31,7 +42,12 @@ class PagePreview(QWidget):
     def __init__(self, session, parent=None):
         super().__init__(parent)
         self._session = session
+        self._show_grid = True
         self.setMinimumHeight(260)
+
+    def set_show_grid(self, montrer: bool) -> None:
+        self._show_grid = bool(montrer)
+        self.update()
 
     # --- Géométrie --------------------------------------------------------
 
@@ -41,20 +57,70 @@ class PagePreview(QWidget):
         width, height = paper_size_mm(session.paper, session.landscape)
         return width * session.panels, height
 
-    def _scale(self, sheet: tuple[float, float]) -> float:
-        """Pixels par millimètre, de façon que tout tienne — étalon compris.
+    def _label_width(self) -> float:
+        """Largeur du texte de l'étalon, qui ne doit jamais être rogné."""
+        metrics = self.fontMetrics()
+        return max(metrics.horizontalAdvance(ligne)
+                   for ligne in self._label_text().split("\n"))
 
-        La carte étalon entre dans le calcul : sur un A6, elle fait plus de la
-        moitié de la largeur de la feuille, et l'oublier la ferait sortir du
-        cadre au lieu de dire ce qu'elle est venue dire.
+    def _column_width(self, scale: float) -> float:
+        """Place que prend l'étalon : sa carte, ou son texte s'il est plus large.
+
+        Sur un A0 la carte ne fait plus que quelques pixels de large, et son
+        étiquette débordait alors sur la feuille — le texte se lisait par-dessus
+        le papier, ou disparaissait sous lui.
         """
-        largeur = sheet[0] + GAP / 2 + REAL_CARD_MM[0]
-        hauteur = max(sheet[1], REAL_CARD_MM[1])
-        libre_x = self.width() - 2 * GUTTER - GAP
-        libre_y = self.height() - 2 * GUTTER
-        if largeur <= 0 or hauteur <= 0 or libre_x <= 0 or libre_y <= 0:
+        return max(self._label_width(), REAL_CARD_MM[0] * scale)
+
+    def _scale(self, sheet: tuple[float, float]) -> float:
+        """Pixels par millimètre, de façon que **tout** tienne côte à côte.
+
+        ⚠️ La colonne de droite n'a pas une largeur connue d'avance : c'est la
+        carte quand elle est grande, son étiquette quand la carte se réduit. On
+        résout donc les deux cas et on garde le plus petit facteur — celui-là
+        tient dans les deux, où le calcul en un seul passage débordait dès que
+        l'étalon devenait plus étroit que son texte.
+        """
+        libre_x = self.width() - GUTTER - GAP - 4
+        libre_y = self.height() - BOTTOM_ROOM - LABEL_HEIGHT
+        if sheet[0] <= 0 or sheet[1] <= 0 or libre_x <= 0 or libre_y <= 0:
             return 0.0
-        return min(libre_x / largeur, libre_y / hauteur)
+        etiquette = self._label_width()
+        # Cas 1 : la colonne vaut l'étiquette. Cas 2 : elle vaut la carte.
+        par_etiquette = (libre_x - etiquette) / sheet[0]
+        par_carte = libre_x / (sheet[0] + REAL_CARD_MM[0])
+        return max(0.0, min(par_etiquette, par_carte, libre_y / sheet[1]))
+
+    def rects(self) -> tuple[QRectF, QRectF, QRectF] | None:
+        """Feuille, étalon et étiquette, en pixels écran. `None` si rien ne tient.
+
+        Calculée à part pour que le dessin et sa vérification lisent la même
+        géométrie : l'étalon caché par la feuille était un défaut de placement,
+        pas de tracé, et il ne se voyait qu'à l'œil.
+        """
+        sheet = self._sheet_mm()
+        scale = self._scale(sheet)
+        if scale <= 0:
+            return None
+        colonne = self._column_width(scale)
+        largeur_totale = sheet[0] * scale + GAP + colonne
+        gauche = max(GUTTER, (self.width() - largeur_totale) / 2)
+        # ⚠️ **La feuille n'est pas centrée dans le cadre entier**, mais dans ce
+        # qui reste une fois l'étiquette réservée en haut et la cote en bas.
+        # Centrée sur tout, la moitié de la réserve partait vers le haut où elle
+        # ne sert à rien : mesuré, 37 px laissés sous la feuille pour une cote
+        # qui en réclame 42, et le « 42 cm » coupé par le bord.
+        libre_y = self.height() - BOTTOM_ROOM - LABEL_HEIGHT
+        haut = LABEL_HEIGHT + max(0.0, (libre_y - sheet[1] * scale) / 2)
+
+        feuille = QRectF(gauche, haut, sheet[0] * scale, sheet[1] * scale)
+        centre_x = feuille.right() + GAP + colonne / 2
+        carte = QRectF(centre_x - REAL_CARD_MM[0] * scale / 2,
+                       feuille.bottom() - REAL_CARD_MM[1] * scale,
+                       REAL_CARD_MM[0] * scale, REAL_CARD_MM[1] * scale)
+        etiquette = QRectF(centre_x - colonne / 2, carte.top() - LABEL_HEIGHT,
+                           colonne, LABEL_HEIGHT - 4)
+        return feuille, carte, etiquette
 
     # --- Dessin -----------------------------------------------------------
 
@@ -63,23 +129,20 @@ class PagePreview(QWidget):
         painter.setRenderHint(QPainter.Antialiasing)
         painter.fillRect(self.rect(), self.palette().window())
 
-        sheet = self._sheet_mm()
-        scale = self._scale(sheet)
-        if scale <= 0:
+        geometrie = self.rects()
+        if geometrie is None:
             painter.end()
             return
+        feuille, carte, etiquette = geometrie
 
         colours = theme.colours(self.palette())
         encre = self.palette().windowText().color()
-
-        largeur_totale = (sheet[0] + GAP / 2 + REAL_CARD_MM[0]) * scale + GAP
-        gauche = max(GUTTER, (self.width() - largeur_totale) / 2)
-        haut = (self.height() - sheet[1] * scale) / 2
-
-        feuille = QRectF(gauche, haut, sheet[0] * scale, sheet[1] * scale)
         painter.setBrush(self.palette().base())
         painter.setPen(QPen(encre, 1.4))
         painter.drawRect(feuille)
+
+        if self._show_grid:
+            self._draw_grid(painter, feuille)
 
         # Les coupes entre panneaux : la feuille dessinée est leur somme.
         if self._session.panels > 1:
@@ -89,27 +152,63 @@ class PagePreview(QWidget):
                 painter.drawLine(QPointF(x, feuille.top()),
                                  QPointF(x, feuille.bottom()))
 
+        sheet = self._sheet_mm()
+        painter.setBrush(Qt.NoBrush)
         painter.setPen(QPen(encre, 1))
         self._cote_horizontale(painter, feuille, sheet[0])
         self._cote_verticale(painter, feuille, sheet[1])
+        self._draw_standard(painter, carte, etiquette, encre, colours)
+        painter.end()
 
-        # L'étalon, à droite, aligné sur le bas de la feuille : posés sur la même
-        # ligne, les deux objets se comparent d'un coup d'œil.
-        carte = QRectF(feuille.right() + GAP,
-                       feuille.bottom() - REAL_CARD_MM[1] * scale,
-                       REAL_CARD_MM[0] * scale, REAL_CARD_MM[1] * scale)
+    def _draw_grid(self, painter, feuille: QRectF) -> None:
+        """La mosaïque posée sur la feuille, pour voir ce qu'elle en remplit.
+
+        Les cartes sont dessinées toutes pareilles : ce panneau répond à la
+        seule question « combien de papier reste autour », et y marquer les
+        cases vides le ferait empiéter sur l'onglet des dimensions.
+        """
+        session = self._session
+        if session.cols <= 0 or session.rows <= 0 or session.cols % session.panels:
+            return
+        paper = paper_size_mm(session.paper, session.landscape)
+        aspect = _card_aspect(session)
+        card_w_px, card_h_px = card_pixel_size(
+            paper, session.cols // session.panels, session.rows, aspect, dpi=72)
+        # `card_pixel_size` raisonne en pixels d'impression ; on revient au
+        # millimètre, seule unité que partage tout ce dessin.
+        card_w = card_w_px / 72 * MM_PER_INCH * feuille.width() / self._sheet_mm()[0]
+        card_h = card_h_px / 72 * MM_PER_INCH * feuille.height() / self._sheet_mm()[1]
+
+        gx = feuille.left() + (feuille.width() - card_w * session.cols) / 2
+        gy = feuille.top() + (feuille.height() - card_h * session.rows) / 2
+        painter.setBrush(QBrush(CARD_FILL))
+        trait = 0 if session.cols * session.rows > FINE_PEN_ABOVE else 0.8
+        painter.setPen(QPen(CARD_EDGE, trait))
+        for row in range(session.rows):
+            for col in range(session.cols):
+                painter.drawRect(QRectF(gx + col * card_w, gy + row * card_h,
+                                        card_w, card_h))
+
+    def _label_text(self) -> str:
+        return (self.tr("carte réelle\n%1 × %2 cm")
+                .replace("%1", _cm(REAL_CARD_MM[0]))
+                .replace("%2", _cm(REAL_CARD_MM[1])))
+
+    def _draw_standard(self, painter, carte: QRectF, etiquette: QRectF,
+                       encre, colours) -> None:
+        """L'étalon et son étiquette, dans leur colonne, à droite de la feuille.
+
+        ⚠️ **La colonne est large du plus large des deux.** L'étiquette était
+        centrée sur la seule carte : dès que celle-ci se réduisait — un A1, un
+        A0 —, le texte débordait des deux côtés et passait sous la feuille.
+        """
         painter.setBrush(self.palette().alternateBase())
         painter.setPen(QPen(encre, 1.2))
         painter.drawRoundedRect(carte, 2.5, 2.5)
 
         painter.setPen(QPen(QColor(colours["empty_text"]), 1))
-        etiquette = QRectF(carte.left() - GAP / 2, carte.top() - 34,
-                           carte.width() + GAP, 30)
         painter.drawText(etiquette, Qt.AlignHCenter | Qt.AlignBottom,
-                         self.tr("carte réelle\n%1 × %2 cm")
-                         .replace("%1", _cm(REAL_CARD_MM[0]))
-                         .replace("%2", _cm(REAL_CARD_MM[1])))
-        painter.end()
+                         self._label_text())
 
     def _cote_horizontale(self, painter, feuille: QRectF, mm: float) -> None:
         """La largeur, sous la feuille."""
@@ -136,6 +235,13 @@ class PagePreview(QWidget):
         painter.drawText(QRectF(-feuille.height() / 2, -20, feuille.height(), 18),
                          Qt.AlignCenter, self.tr("%1 cm").replace("%1", _cm(mm)))
         painter.restore()
+
+
+def _card_aspect(session) -> float:
+    card_set = session.card_set
+    if card_set and card_set.full_size[1]:
+        return card_set.full_size[0] / card_set.full_size[1]
+    return 713 / 984
 
 
 def _cm(mm: float) -> str:

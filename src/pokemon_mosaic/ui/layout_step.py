@@ -27,10 +27,15 @@ from .layout_tabs import GridTab, PaperTab, PrintingTab
 from .session import Session
 
 # Taille de la pastille d'état posée devant chaque onglet.
-BADGE = 18
+BADGE = 22
 # Largeur de la colonne d'onglets. Assez pour « Orientation, finesse et
-# panneaux » sans rogner la partie utile de l'écran.
-TAB_WIDTH = 230
+# panneaux » sur deux lignes sans rogner la partie utile de l'écran.
+TAB_WIDTH = 248
+# Hauteur d'un onglet. Il n'y en aura jamais plus de cinq ou six : autant leur
+# donner la taille d'un bouton qu'on vise sans réfléchir.
+TAB_HEIGHT = 62
+# Ce que leur libellé gagne sur la police de l'interface.
+TAB_BOOST = 2
 
 
 def state_icon(ready: bool, palette) -> QIcon:
@@ -80,6 +85,11 @@ class LayoutStep(QWidget):
         self._list.setFixedWidth(TAB_WIDTH)
         self._list.setIconSize(QSize(BADGE, BADGE))
         self._list.setWordWrap(True)
+        theme.mark(self._list, "tabs")
+        police = self._list.font()
+        police.setPointSize(police.pointSize() + TAB_BOOST)
+        self._list.setFont(police)
+        self._list.setSpacing(0)      # l'air vient des marges de la feuille
         # Une seule partie à la fois : la liste est une navigation, pas une
         # sélection.
         self._list.setSelectionMode(QAbstractItemView.SingleSelection)
@@ -87,7 +97,9 @@ class LayoutStep(QWidget):
 
         self._pages = QStackedWidget()
         for tab in self._tabs:
-            self._list.addItem(QListWidgetItem(""))
+            item = QListWidgetItem("")
+            item.setSizeHint(QSize(TAB_WIDTH - 8, TAB_HEIGHT))
+            self._list.addItem(item)
             self._pages.addWidget(tab)
             tab.state_changed.connect(self._refresh_badges)
 
