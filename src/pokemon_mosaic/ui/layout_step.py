@@ -20,6 +20,7 @@ from ..layout import (
     PAPER_FORMATS_MM,
     card_pixel_size,
     max_useful_dpi,
+    mm_to_pixels,
     paper_size_mm,
     suggest_grids,
 )
@@ -27,6 +28,10 @@ from ..optimize import check_links_fit
 from . import theme
 from .session import Session
 from .wireframe import WireframeView
+
+# En deçà, la marge vide occupe plus de place que les cartes : la mise en page
+# mérite d'être dite, même si elle reste parfaitement valide.
+MIN_SHEET_COVERAGE = 0.75
 
 
 class LayoutStep(QWidget):
@@ -131,10 +136,11 @@ class LayoutStep(QWidget):
         self._labels["panels"].setText(self.tr("Posters côte à côte"))
         self._labels["cols"].setText(self.tr("Colonnes"))
         self._labels["rows"].setText(self.tr("Lignes"))
-        self._suggestions_box.setTitle(self.tr("Grilles adaptées à ce format"))
+        self._suggestions_box.setTitle(self.tr("Grilles proposées"))
         self._suggestions_hint.setText(
-            self.tr("Double-cliquez pour appliquer. L'écart indique de combien la "
-                    "grille s'éloigne des proportions de la feuille.")
+            self.tr("Double-cliquez pour appliquer. Classées par écart au nombre "
+                    "de cartes retenues ; le pourcentage dit de combien la grille "
+                    "s'éloigne des proportions de la feuille.")
         )
         self._reset_empty.setText(self.tr("Replacer les cases vides automatiquement"))
         self._preview_hint.setText(
@@ -360,6 +366,23 @@ class LayoutStep(QWidget):
                 self.tr("%1 DPI dépasse le maximum utile (%2 DPI pour ce format) : "
                         "les cartes seront agrandies sans gagner en détail.")
                 .replace("%1", str(session.dpi)).replace("%2", f"{ceiling:.0f}")
+            )
+        # ⚠️ **La part de feuille réellement couverte.** Depuis que la forme des
+        # grilles est bornée à trois cases d'écart, une mise en page sur
+        # plusieurs panneaux côte à côte ne peut plus s'allonger pour suivre la
+        # feuille : mesuré, 441 cartes en 20×23 sur deux A4 ne couvrent que
+        # 43,9 % du papier, contre 96,9 % pour le 30×15 qu'on ne propose plus.
+        # Les chiffres étaient là, mais il fallait faire la division soi-même.
+        sheet_px = (mm_to_pixels(paper[0], session.dpi) * session.panels
+                    * mm_to_pixels(paper[1], session.dpi))
+        couverture = total_w * total_h / sheet_px if sheet_px else 1.0
+        if couverture < MIN_SHEET_COVERAGE:
+            warnings.append(
+                self.tr("La mosaïque ne couvre que %1 % de la feuille : le reste "
+                        "sera une marge vide. Une grille plus allongée — plus de "
+                        "colonnes que de lignes — suivrait mieux %n feuille(s) "
+                        "côte à côte.", "", session.panels)
+                .replace("%1", f"{couverture * 100:.0f}")
             )
         megapixels = total_w * total_h / 1e6
         if megapixels > 100:

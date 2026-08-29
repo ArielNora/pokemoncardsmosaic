@@ -56,6 +56,50 @@ def test_square_grids_are_suggested_for_portrait_sheets():
     assert best.aspect_error == pytest.approx(0.0247, abs=1e-3)
 
 
+def test_rectangular_grids_are_suggested_too():
+    """⚠️ Le format en filtre ne laissait passer que des carrés : une carte fait
+    0,725 de rapport, une feuille A 0,707, donc la grille idéale a toujours
+    autant de lignes que de colonnes à 2,5 % près. Vingt cartes n'avaient alors
+    aucune grille de vingt cases."""
+    found = suggest_grids(20, CARD_ASPECT, A_SERIES_PORTRAIT)
+    assert (found[0].cols, found[0].rows) == (4, 5)
+    assert found[0].card_delta == 0
+    assert any(s.cols != s.rows for s in found)
+
+
+def test_no_suggestion_stretches_into_a_strip():
+    """Au-delà de trois cases d'écart la mosaïque devient une bande, et l'image
+    n'occupe plus qu'un ruban de la feuille."""
+    for count in (20, 133, 281, 441):
+        found = suggest_grids(count, CARD_ASPECT, A_SERIES_PORTRAIT)
+        assert found, f"aucune grille proposée pour {count} cartes"
+        assert all(abs(s.cols - s.rows) <= 3 for s in found), count
+
+
+def test_ten_suggestions_are_offered():
+    assert len(suggest_grids(441, CARD_ASPECT, A_SERIES_PORTRAIT)) == 10
+
+
+def test_the_side_difference_is_adjustable():
+    """Le seuil est un paramètre : le durcir doit réellement resserrer la liste."""
+    carres = suggest_grids(281, CARD_ASPECT, A_SERIES_PORTRAIT, max_difference=0)
+    assert all(s.cols == s.rows for s in carres)
+
+
+def test_no_suggestion_is_offered_twice():
+    found = suggest_grids(441, CARD_ASPECT, A_SERIES_PORTRAIT)
+    shapes = [(s.cols, s.rows) for s in found]
+    assert len(shapes) == len(set(shapes))
+
+
+def test_the_aspect_error_breaks_ties_between_equal_grids():
+    """20×22 et 22×20 logent le même nombre de cartes ; sur une feuille en
+    portrait, c'est celle qui a le plus de lignes qui doit passer devant."""
+    found = suggest_grids(441, CARD_ASPECT, A_SERIES_PORTRAIT)
+    rang = {(s.cols, s.rows): i for i, s in enumerate(found)}
+    assert rang[(20, 22)] < rang[(22, 20)]
+
+
 def test_panel_split_forces_even_columns():
     """Avec 2 panneaux, la coupe doit tomber sur un bord de carte."""
     found = suggest_grids(281, CARD_ASPECT, 2**0.5, panels=2)

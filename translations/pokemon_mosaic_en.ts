@@ -381,67 +381,75 @@
 <context>
     <name>LayoutStep</name>
     <message>
-        <location filename="../src/pokemon_mosaic/ui/layout_step.py" line="127"/>
+        <location filename="../src/pokemon_mosaic/ui/layout_step.py" line="132"/>
         <source>Format et grille</source>
         <translation>Format and grid</translation>
     </message>
     <message>
-        <location filename="../src/pokemon_mosaic/ui/layout_step.py" line="128"/>
+        <location filename="../src/pokemon_mosaic/ui/layout_step.py" line="133"/>
         <source>Format d&apos;impression</source>
         <translation>Print format</translation>
     </message>
     <message>
-        <location filename="../src/pokemon_mosaic/ui/layout_step.py" line="129"/>
+        <location filename="../src/pokemon_mosaic/ui/layout_step.py" line="134"/>
         <source>Paysage</source>
         <translation>Landscape</translation>
     </message>
     <message>
-        <location filename="../src/pokemon_mosaic/ui/layout_step.py" line="130"/>
+        <location filename="../src/pokemon_mosaic/ui/layout_step.py" line="135"/>
         <source>Résolution (DPI)</source>
         <translation>Resolution (DPI)</translation>
     </message>
     <message>
-        <location filename="../src/pokemon_mosaic/ui/layout_step.py" line="131"/>
+        <location filename="../src/pokemon_mosaic/ui/layout_step.py" line="136"/>
         <source>Posters côte à côte</source>
         <translation>Posters side by side</translation>
     </message>
     <message>
-        <location filename="../src/pokemon_mosaic/ui/layout_step.py" line="132"/>
+        <location filename="../src/pokemon_mosaic/ui/layout_step.py" line="137"/>
         <source>Colonnes</source>
         <translation>Columns</translation>
     </message>
     <message>
-        <location filename="../src/pokemon_mosaic/ui/layout_step.py" line="133"/>
+        <location filename="../src/pokemon_mosaic/ui/layout_step.py" line="138"/>
         <source>Lignes</source>
         <translation>Rows</translation>
     </message>
     <message>
-        <location filename="../src/pokemon_mosaic/ui/layout_step.py" line="134"/>
         <source>Grilles adaptées à ce format</source>
-        <translation>Grids suited to this format</translation>
+        <translation type="vanished">Grids suited to this format</translation>
     </message>
     <message>
-        <location filename="../src/pokemon_mosaic/ui/layout_step.py" line="136"/>
         <source>Double-cliquez pour appliquer. L&apos;écart indique de combien la grille s&apos;éloigne des proportions de la feuille.</source>
-        <translation>Double-click to apply. The gap shows how far the grid strays from the sheet&apos;s proportions.</translation>
+        <translation type="vanished">Double-click to apply. The gap shows how far the grid strays from the sheet&apos;s proportions.</translation>
     </message>
     <message>
         <location filename="../src/pokemon_mosaic/ui/layout_step.py" line="139"/>
+        <source>Grilles proposées</source>
+        <translation>Suggested grids</translation>
+    </message>
+    <message>
+        <location filename="../src/pokemon_mosaic/ui/layout_step.py" line="141"/>
+        <source>Double-cliquez pour appliquer. Classées par écart au nombre de cartes retenues ; le pourcentage dit de combien la grille s&apos;éloigne des proportions de la feuille.</source>
+        <translation>Double-click to apply. Ranked by how close the cell count is to the number of selected cards; the percentage says how far the grid strays from the sheet&apos;s proportions.</translation>
+    </message>
+    <message>
+        <location filename="../src/pokemon_mosaic/ui/layout_step.py" line="145"/>
         <source>Replacer les cases vides automatiquement</source>
         <translation>Redistribute empty cells automatically</translation>
     </message>
     <message>
-        <location filename="../src/pokemon_mosaic/ui/layout_step.py" line="141"/>
+        <location filename="../src/pokemon_mosaic/ui/layout_step.py" line="147"/>
         <source>Aperçu de la mise en page, sans les images. Cliquez une case pour y placer ou retirer un vide.</source>
         <translation>Layout preview, without the images. Click a cell to place or remove a gap.</translation>
     </message>
     <message>
-        <location filename="../src/pokemon_mosaic/ui/layout_step.py" line="302"/>
+        <location filename="../src/pokemon_mosaic/ui/layout_step.py" line="308"/>
         <source>pile poil</source>
         <translation>exact fit</translation>
     </message>
     <message numerus="yes">
-        <location filename="../src/pokemon_mosaic/ui/layout_step.py" line="304"/>
+        <location filename="../src/pokemon_mosaic/ui/layout_step.py" line="310"/>
         <source>+%n carte(s) à ajouter</source>
         <translation>
             <numerusform>+%n card to add</numerusform>
@@ -449,7 +457,7 @@
         </translation>
     </message>
     <message numerus="yes">
-        <location filename="../src/pokemon_mosaic/ui/layout_step.py" line="306"/>
+        <location filename="../src/pokemon_mosaic/ui/layout_step.py" line="312"/>
         <source>%n carte(s) en trop</source>
         <translation>
             <numerusform>%n card too many</numerusform>
@@ -457,22 +465,30 @@
         </translation>
     </message>
     <message>
-        <location filename="../src/pokemon_mosaic/ui/layout_step.py" line="321"/>
+        <location filename="../src/pokemon_mosaic/ui/layout_step.py" line="327"/>
         <source>%1 colonnes ne se divisent pas en %2 panneaux : la coupe tomberait au milieu d&apos;une carte.</source>
         <translation>%1 columns do not divide into %2 panels: the cut would fall in the middle of a card.</translation>
     </message>
     <message>
-        <location filename="../src/pokemon_mosaic/ui/layout_step.py" line="335"/>
+        <location filename="../src/pokemon_mosaic/ui/layout_step.py" line="341"/>
         <source>Cartes de %1×%2 px — image totale %3×%4 px sur %5 feuille(s) %6 de %7×%8 mm.</source>
         <translation>Cards of %1×%2 px — total image %3×%4 px on %5 sheet(s) %6 of %7×%8 mm.</translation>
     </message>
     <message>
-        <location filename="../src/pokemon_mosaic/ui/layout_step.py" line="360"/>
+        <location filename="../src/pokemon_mosaic/ui/layout_step.py" line="366"/>
         <source>%1 DPI dépasse le maximum utile (%2 DPI pour ce format) : les cartes seront agrandies sans gagner en détail.</source>
         <translation>%1 DPI exceeds the useful maximum (%2 DPI for this format): cards will be enlarged without gaining detail.</translation>
     </message>
+    <message numerus="yes">
+        <location filename="../src/pokemon_mosaic/ui/layout_step.py" line="381"/>
+        <source>La mosaïque ne couvre que %1 % de la feuille : le reste sera une marge vide. Une grille plus allongée — plus de colonnes que de lignes — suivrait mieux %n feuille(s) côte à côte.</source>
+        <translation>
+            <numerusform>The mosaic covers only %1 % of the sheet: the rest will be blank margin. A longer grid — more columns than rows — would follow %n sheet side by side better.</numerusform>
+            <numerusform>The mosaic covers only %1 % of the sheet: the rest will be blank margin. A longer grid — more columns than rows — would follow %n sheets side by side better.</numerusform>
+        </translation>
+    </message>
     <message>
-        <location filename="../src/pokemon_mosaic/ui/layout_step.py" line="367"/>
+        <location filename="../src/pokemon_mosaic/ui/layout_step.py" line="390"/>
         <source>Image de %1 Mpx : l&apos;export demandera beaucoup de mémoire.</source>
         <translation>Image of %1 Mpx: exporting will require a lot of memory.</translation>
     </message>

@@ -229,7 +229,7 @@ def test_the_first_visit_fits_the_grid_to_the_selection(session, ecran):
     ecran._auto_fit_pending = True          # le préréglage a désarmé
 
     ecran.show()
-    assert (session.cols, session.rows) == (5, 5)   # 25 cases pour 20 cartes
+    assert (session.cols, session.rows) == (4, 5)   # 20 cases pour 20 cartes
 
 
 def test_the_grid_is_only_fitted_once(session, ecran):
@@ -295,7 +295,7 @@ def test_a_new_card_set_reopens_the_question(session, ecran, tmp_path):
     jeu = card_set_in(tmp_path / "autre", {"s/b": [str(i) for i in range(12)]})
     session.set_cards(jeu, str(tmp_path / "autre"))
     ecran.show()
-    assert (session.cols, session.rows) == (4, 4)   # 16 cases pour 12 cartes
+    assert (session.cols, session.rows) == (3, 4)   # 12 cases pour 12 cartes
 
 
 def test_nothing_moves_without_a_card(qt_app):
@@ -311,16 +311,36 @@ def test_nothing_moves_without_a_card(qt_app):
 
 
 def test_the_fitted_grid_never_drops_a_card(session, ecran):
-    """Sur A4 seules des grilles presque carrées passent : la plus proche de
-    20 cartes est 4×4, qui en abandonne quatre juste après l'écran où
-    l'utilisateur vient de les choisir une par une."""
+    """Le classement brut peut placer en tête une grille trop petite : 17 cartes
+    ont pour meilleure proposition 4×4, qui en abandonne une juste après l'écran
+    où l'utilisateur vient de les choisir une par une."""
     from pokemon_mosaic.layout import paper_size_mm, suggest_grids
 
+    session.set_excluded([0, 1, 2], True)          # 17 cartes retenues
     paper = paper_size_mm(session.paper, session.landscape)
-    classement = suggest_grids(20, 713 / 984, paper[0] / paper[1])
-    assert (classement[0].cols, classement[0].rows) == (4, 4), \
-        "le classement brut perd bien des cartes"
+    classement = suggest_grids(17, 713 / 984, paper[0] / paper[1])
+    assert classement[0].card_delta < 0, "le classement brut perd bien des cartes"
 
     ecran.show()
     assert session.cols * session.rows >= session.selected_count
     assert session.grid_fit().surplus == 0
+
+
+# --- La part de feuille réellement couverte --------------------------------
+
+def test_a_mostly_empty_sheet_is_reported(session, ecran):
+    """Depuis que la forme des grilles est bornée à trois cases d'écart, une
+    mise en page sur plusieurs panneaux ne peut plus s'allonger pour suivre la
+    feuille. Mesuré : 441 cartes en 20×23 sur deux A4 ne couvrent que 43,9 % du
+    papier, contre 96,9 % pour le 30×15 qu'on ne propose plus."""
+    session.set_layout(panels=2, cols=20, rows=23)
+    assert "44 %" in ecran._warnings.text()
+    assert "marge vide" in ecran._warnings.text()
+
+
+def test_a_grid_that_follows_the_sheet_says_nothing(session, ecran):
+    session.set_layout(panels=2, cols=30, rows=15)
+    assert "marge vide" not in ecran._warnings.text()
+
+    session.set_layout(panels=1, cols=21, rows=21)
+    assert "marge vide" not in ecran._warnings.text()

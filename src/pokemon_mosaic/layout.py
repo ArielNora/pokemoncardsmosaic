@@ -99,15 +99,21 @@ class GridSuggestion:
         return self.cols * self.rows
 
 
+# Écart maximal admis entre les deux côtés d'une grille proposée. Au-delà, la
+# mosaïque devient une bande : le poster perd sa forme et l'image occupe une
+# fraction dérisoire de la feuille.
+MAX_SIDE_DIFFERENCE = 3
+
+
 def suggest_grids(
     card_count: int,
     card_aspect: float,
     paper_aspect: float,
     panels: int = 1,
-    tolerance: float = 0.05,
-    limit: int = 8,
+    max_difference: int = MAX_SIDE_DIFFERENCE,
+    limit: int = 10,
 ) -> list[GridSuggestion]:
-    """Propose des grilles proches du format visé, classées par pertinence.
+    """Propose des grilles pour ce nombre de cartes, classées par pertinence.
 
     `paper_aspect` est le rapport largeur/hauteur de la **feuille entière** ; avec
     `panels > 1`, la grille est répartie sur plusieurs feuilles côte à côte et le
@@ -116,32 +122,39 @@ def suggest_grids(
 
     Classement : d'abord les grilles dont le nombre de cases est proche du nombre de
     cartes, puis celles qui ajustent le mieux le format.
+
+    ⚠️ **Le format n'est plus un filtre, seulement un départage.** Il l'était, à
+    5 % près, et cela ne laissait passer que des grilles **carrées** : une carte
+    fait 0,725 de rapport, une feuille A 0,707, si bien que la grille idéale a
+    toujours autant de lignes que de colonnes à 2,5 % près. Vingt cartes n'ont
+    alors aucune grille de vingt cases — 4×5 s'écarte de 18 % du format et
+    tombait —, et l'on proposait 4×4 en abandonnant quatre cartes, ou 5×5 en
+    laissant cinq trous. Même chose sur 133 cartes : 11×12 en loge 132, contre
+    144 pour le meilleur carré.
+
+    Ce qui borne la forme est désormais `max_difference`, l'écart entre les deux
+    côtés : au-delà la mosaïque devient une bande et l'image n'occupe plus
+    qu'un ruban de la feuille, en deçà elle reste un poster. L'écart au format
+    reste calculé, affiché, et sert à trancher entre deux grilles d'égal intérêt.
     """
     if card_count <= 0 or card_aspect <= 0 or paper_aspect <= 0:
         return []
 
+    # Assez de lignes pour dépasser la grille carrée, l'écart maximal en plus :
+    # au-delà, toute grille est plus grande que le jeu de cartes et s'en éloigne.
+    ceiling = math.isqrt(card_count) + max_difference + 1
     found: list[GridSuggestion] = []
-    for rows in range(1, card_count * 2):
-        # cols tel que (cols * card_aspect) / rows ~= paper_aspect
-        ideal = paper_aspect * rows / card_aspect
-        for cols in {math.floor(ideal), math.ceil(ideal)}:
-            if cols < panels or cols % panels:
+    for rows in range(1, ceiling + 1):
+        for cols in range(max(1, rows - max_difference), rows + max_difference + 1):
+            if cols % panels:
                 continue
             error = abs((cols * card_aspect / rows) - paper_aspect) / paper_aspect
-            if error > tolerance:
-                continue
             found.append(
                 GridSuggestion(cols, rows, error, cols * rows - card_count)
             )
 
     found.sort(key=lambda s: (abs(s.card_delta), s.aspect_error))
-    seen, unique = set(), []
-    for suggestion in found:
-        key = (suggestion.cols, suggestion.rows)
-        if key not in seen:
-            seen.add(key)
-            unique.append(suggestion)
-    return unique[:limit]
+    return found[:limit]
 
 
 # Nombre d'or. Ses multiples fractionnaires ne retombent jamais sur un motif
