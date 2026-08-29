@@ -34,7 +34,10 @@ def session(qt_app, tmp_path):
                                ["a3-207-solgaleo-ex", "a3-204-lunala-ex",
                                 "a3-206-necrozma-ex"],
                                "a4a-source-secrete":
-                               ["a4a-087-entei-ex", "a4a-088-raikou-ex"]}),
+                               ["a4a-087-entei-ex", "a4a-088-raikou-ex"],
+                               "b3-aura-palpitante":
+                               ["b3-194-mega-jungko-ex", "b3-157-massko",
+                                "b3-156-arcko"]}),
         str(tmp_path),
     )
     return session
@@ -103,8 +106,22 @@ def test_removing_a_link_absent_from_the_library_is_refused():
 def test_default_links_resolve_against_the_loaded_folder(session):
     missing = session.apply_default_links()
     assert missing == []
-    # solgaleo=0, lunala=1, necrozma=2, entei=3, raikou=4 — l'ordre de chargement.
-    assert [link.cards for link in session.links] == [(0, 1), (3, 4)]
+    # solgaleo=0, lunala=1, necrozma=2, entei=3, raikou=4, puis la lignée
+    # jungko=5, massko=6, arcko=7 — l'ordre de chargement.
+    assert [link.cards for link in session.links] == [(0, 1), (3, 4), (5, 6, 7)]
+
+
+def test_the_default_lineage_is_a_column_read_from_the_top(session):
+    """Arcko en bas, Massko au milieu, Méga-Jungko-ex en haut : la plus évoluée
+    domine, comme sur un arbre généalogique. L'ordre de lecture d'une colonne
+    allant de haut en bas, c'est Jungko qui vient en premier."""
+    session.apply_default_links()
+    lignee = session.links.links[2]
+
+    assert lignee.shape == (1, 3)
+    noms = [session.card_set[index].name for index in lignee.cards]
+    assert noms == ["b3-194-mega-jungko-ex", "b3-157-massko", "b3-156-arcko"]
+    assert lignee.ordered, "le sens porte quelque chose : pas de demi-tour"
 
 
 def test_default_links_are_skipped_when_the_cards_are_absent(qt_app, tmp_path):
@@ -114,14 +131,15 @@ def test_default_links_are_skipped_when_the_cards_are_absent(qt_app, tmp_path):
     session.set_cards(card_set_in(tmp_path, {"autre": ["pikachu", "raichu"]}),
                       str(tmp_path))
     missing = session.apply_default_links()
-    assert len(session.links) == 0 and len(missing) == 4
+    assert len(session.links) == 0 and len(missing) == 7
 
 
 def test_default_links_leave_an_existing_link_alone(session):
     """Rejouer les liens par défaut ne doit pas échouer sur une carte déjà prise."""
     session.add_link(Link(cards=(0, 3)))   # solgaleo + entei, à contre-emploi
     missing = session.apply_default_links()
-    assert [link.cards for link in session.links] == [(0, 3)]
+    # Les deux paires butent sur une carte prise ; la lignée, libre, se pose.
+    assert [link.cards for link in session.links] == [(0, 3), (5, 6, 7)]
     # Seules les cartes déjà engagées sont signalées introuvables ; leurs
     # partenaires restent libres, mais le lien par défaut n'est pas posé.
     assert missing == ["a3-gardiens-celestes/a3-207-solgaleo-ex.webp",

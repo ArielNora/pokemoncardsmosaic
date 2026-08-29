@@ -12,10 +12,11 @@ Tous décidés le 2026-08-16. À traiter **une fois toute la v1 terminée**, pas
   motivait l'idée de rendre la taille des cartes ajustable indépendamment).
   Voir `SPEC.md` §4.
 - ⭐ **Les liens deviennent des rectangles pleins, 3×3 au maximum** — tranché le
-  2026-08-27, audité, pas encore écrit. Un seul concept **remplace** horizontal,
-  vertical et groupe : une ligne de 3 est un 1×3, une colonne un 3×1, et le cas
-  d'usage demandé le 2026-08-22 — Arcko `B3-156` en bas, Massko `B3-157` au
-  milieu, Méga-Jungko-ex `B3-194` en haut — tombe dedans sans cas particulier.
+  2026-08-27, **fait**. Un seul concept **remplace** horizontal, vertical et
+  groupe : une ligne de 3 est un 1×3, une colonne un 3×1. Le cas d'usage demandé
+  le 2026-08-22 — Arcko `B3-156` en bas, Massko `B3-157` au milieu,
+  Méga-Jungko-ex `B3-194` en haut — est **fourni d'office**, comme les deux
+  paires Solgaleo/Lunala et Entei/Raikou.
 
   Formes admises : 1×2, 1×3, 2×1, 3×1, 2×2, 2×3, 3×2, 3×3. Jamais de forme
   trouée ni de rectangle incomplet. Le lien porte sa forme et ses cartes, rien

@@ -10,7 +10,7 @@ from .export import PosterSettings, export_poster
 from .grid import save_grid_image
 from .imaging import print_image_properties, resize_and_save
 from .layout import GridFit, distribute_empty_cells
-from .links import DEFAULT_PAIRS, LinkLibrary, resolve_links
+from .links import DEFAULT_LINKS, LinkLibrary, resolve_links
 from .optimize import StopConditions, generate_grid
 from .paths import output_dir, user_data_dir
 from .timeline import Timeline
@@ -104,7 +104,7 @@ def main(argv=None) -> int:
 
     # Un lien n'est retenu que si toutes ses cartes ont été trouvées.
     links = LinkLibrary()
-    missing = resolve_links(links, cards.find, DEFAULT_PAIRS, ordered=not args.free_order)
+    missing = resolve_links(links, cards.find, DEFAULT_LINKS, ordered=not args.free_order)
     if missing:
         print(f"Lien ignoré, carte(s) introuvable(s) : {', '.join(missing)}")
     print(f"{len(links)} lien(s) actif(s)"

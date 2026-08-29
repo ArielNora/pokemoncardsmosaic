@@ -43,13 +43,32 @@ def shapes_for(count: int) -> tuple[tuple[int, int], ...]:
     """
     return tuple(shape for shape in SHAPES if shape[0] * shape[1] == count)
 
-# Liens fournis d'office : ces cartes vont par paires dans un sens qui a un sens.
-# Décrits par fragments de chemin, parce que les indices dépendent du dossier chargé.
-DEFAULT_PAIRS = (
-    ("a3-gardiens-celestes/a3-207-solgaleo-ex.webp",
-     "a3-gardiens-celestes/a3-204-lunala-ex.webp"),
-    ("a4a-source-secrete/a4a-087-entei-ex.webp",
-     "a4a-source-secrete/a4a-088-raikou-ex.webp"),
+@dataclass(frozen=True)
+class DefaultLink:
+    """Un lien fourni d'office, décrit par **fragments de chemin**.
+
+    Par chemin et non par indice : celui-ci dépend du dossier chargé et du tri,
+    et changerait à la première extension ajoutée.
+    """
+
+    cards: tuple[str, ...]
+    shape: tuple[int, int]
+
+
+# Ces cartes vont ensemble dans un sens qui a un sens. Les fragments sont donnés
+# en **ordre de lecture** du rectangle : de gauche à droite, puis rangée
+# suivante — donc de haut en bas pour une colonne.
+DEFAULT_LINKS = (
+    DefaultLink(("a3-gardiens-celestes/a3-207-solgaleo-ex.webp",
+                 "a3-gardiens-celestes/a3-204-lunala-ex.webp"), (2, 1)),
+    DefaultLink(("a4a-source-secrete/a4a-087-entei-ex.webp",
+                 "a4a-source-secrete/a4a-088-raikou-ex.webp"), (2, 1)),
+    # La lignée d'Arcko, dressée : la plus évoluée en haut, comme sur un arbre
+    # généalogique. C'est le premier cas d'usage vertical demandé, et ce qui a
+    # motivé le passage des liens en rectangles.
+    DefaultLink(("b3-aura-palpitante/b3-194-mega-jungko-ex.webp",
+                 "b3-aura-palpitante/b3-157-massko.webp",
+                 "b3-aura-palpitante/b3-156-arcko.webp"), (1, 3)),
 )
 
 
@@ -234,19 +253,24 @@ class LinkLibrary:
 def resolve_links(
     library: LinkLibrary,
     finder,
-    pairs: Sequence[Sequence[str]],
+    defaults: Sequence[DefaultLink],
     ordered: bool = True,
 ) -> list[str]:
     """Ajoute des liens décrits par fragments de chemin, en signalant les manquants.
 
     `finder` prend un fragment et renvoie un indice de carte ou None.
     Renvoie la liste des fragments introuvables, pour information.
+
+    Un lien dont **une seule** carte manque est écarté en entier : la forme est
+    un rectangle plein, et il n'y a pas de version amputée qui ait un sens.
     """
     missing: list[str] = []
-    for pair in pairs:
-        indices = [finder(fragment) for fragment in pair]
+    for default in defaults:
+        indices = [finder(fragment) for fragment in default.cards]
         if all(idx is not None for idx in indices):
-            library.add(Link(cards=tuple(indices), ordered=ordered))
+            library.add(Link(cards=tuple(indices), shape=default.shape,
+                             ordered=ordered))
         else:
-            missing.extend(f for f, idx in zip(pair, indices, strict=True) if idx is None)
+            missing.extend(f for f, idx in zip(default.cards, indices, strict=True)
+                           if idx is None)
     return missing

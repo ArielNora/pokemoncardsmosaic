@@ -12,7 +12,7 @@ from PySide6.QtCore import QObject, Signal
 from ..annealing import Annealing
 from ..cards import DEFAULT_STRIP_SIZE, CardSet
 from ..layout import DEFAULT_DPI, GridFit, distribute_empty_cells
-from ..links import DEFAULT_PAIRS, Link, LinkLibrary, resolve_links
+from ..links import DEFAULT_LINKS, Link, LinkLibrary, resolve_links
 from ..optimize import StopConditions
 from ..presets import LinkRef, Preset
 
@@ -364,7 +364,7 @@ class Session(QObject):
                 return None
             return index
 
-        missing = resolve_links(self.links, find, DEFAULT_PAIRS)
+        missing = resolve_links(self.links, find, DEFAULT_LINKS)
         self.links_changed.emit()
         return missing
 

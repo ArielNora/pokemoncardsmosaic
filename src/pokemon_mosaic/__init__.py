@@ -13,7 +13,7 @@ from .layout import (
     paper_size_mm,
     suggest_grids,
 )
-from .links import DEFAULT_PAIRS, Link, LinkLibrary, resolve_links
+from .links import DEFAULT_LINKS, Link, LinkLibrary, resolve_links
 from .optimize import (
     OptimizationResult,
     StopConditions,
@@ -30,7 +30,7 @@ from .timeline import Snapshot, Timeline
 __version__ = "0.1.0"
 
 __all__ = [
-    "DEFAULT_PAIRS",
+    "DEFAULT_LINKS",
     "EMPTY",
     "Annealing",
     "Card",
