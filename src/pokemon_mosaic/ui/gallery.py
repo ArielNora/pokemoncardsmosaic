@@ -227,3 +227,11 @@ class CardGallery(QListView):
         if clicked is None:
             return
         self._session.set_excluded(cards, not self._session.is_excluded(clicked))
+        # ⚠️ **La sélection est un outil de passage, pas un état à montrer.**
+        # Elle ne sert qu'à désigner un lot avant de le basculer ; la laisser
+        # posée surlignait la carte en bleu comme du texte attrapé à la souris,
+        # par-dessus le seul signal qui compte vraiment ici — l'inclusion, dite
+        # par l'opacité. Le rectangle de sélection, lui, garde son surlignage :
+        # il ne passe pas par ce slot, `clicked` ne partant pas sur un glissé.
+        self.clearSelection()
+        self.selectionModel().clearCurrentIndex()

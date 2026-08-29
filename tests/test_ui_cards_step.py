@@ -621,3 +621,95 @@ def test_the_bulk_buttons_stay_inside_the_gallery_once_relabelled(step, tmp_path
     ecran._search.setText("pikachu")
     droite = ecran._bulk.geometry().right()
     assert droite < ecran._gallery.width()
+
+
+# --- Le surlignage de sélection --------------------------------------------
+
+def test_clicking_a_card_leaves_no_highlight_behind(step, tmp_path):
+    """La sélection ne sert qu'à désigner un lot avant de le basculer. Posée,
+    elle surlignait la carte en bleu comme du texte attrapé à la souris,
+    par-dessus le seul signal qui compte — l'inclusion, dite par l'opacité.
+
+    ⚠️ Un vrai clic, et non l'appel du slot : c'est `mousePressEvent` qui pose
+    la sélection, et `clicked` ne part qu'au relâché. Appeler le slot à la main
+    ne prouverait rien de ce qui se passe entre les deux.
+    """
+    from PySide6.QtCore import Qt
+    from PySide6.QtTest import QTest
+
+    ecran, session = step
+    charge(ecran, session, tmp_path, {"a1": ["x", "y", "z"]})
+    galerie = ecran._gallery
+    galerie.resize(400, 300)
+    galerie.show()
+    centre = galerie.visualRect(galerie.model().index(1)).center()
+
+    QTest.mousePress(galerie.viewport(), Qt.LeftButton, Qt.NoModifier, centre)
+    QTest.mouseRelease(galerie.viewport(), Qt.LeftButton, Qt.NoModifier, centre)
+
+    assert galerie.selectionModel().selectedIndexes() == []
+    assert not galerie.selectionModel().currentIndex().isValid()
+    assert session.is_excluded(1), "le clic doit tout de même basculer la carte"
+
+
+def test_a_rubber_band_selection_still_toggles_the_whole_lot(step, tmp_path):
+    """Le rectangle de sélection garde son surlignage : il ne passe pas par ce
+    slot, `clicked` ne partant pas sur un glissé. Le clic qui suit bascule tout."""
+    from PySide6.QtCore import QItemSelection, QItemSelectionModel
+
+    ecran, session = step
+    charge(ecran, session, tmp_path, {"a1": ["x", "y", "z", "w"]})
+    galerie = ecran._gallery
+    modele = galerie.model()
+
+    lot = QItemSelection(modele.index(0), modele.index(2))
+    galerie.selectionModel().select(lot, QItemSelectionModel.Select)
+    assert len(galerie.selectionModel().selectedIndexes()) == 3
+
+    galerie._on_clicked(modele.index(1))
+    assert [session.is_excluded(i) for i in range(4)] == [True, True, True, False]
+    assert galerie.selectionModel().selectedIndexes() == []
+
+
+# --- Inverser la sélection --------------------------------------------------
+
+def test_inverting_swaps_every_card(step, tmp_path):
+    ecran, session = step
+    charge(ecran, session, tmp_path, {"a1": ["x", "y", "z", "w"]})
+    session.set_excluded([0, 1], True)
+
+    ecran._invert.click()
+    assert [session.is_excluded(i) for i in range(4)] == [False, False, True, True]
+
+
+def test_inverting_respects_the_filter(step, tmp_path):
+    """Même portée que ses deux voisins : ce que la galerie montre."""
+    ecran, session = step
+    charge(ecran, session, tmp_path,
+           {"a1": ["a1-004-pikachu", "a1-007-carapuce"], "a2": ["a2-030-pikachu"]})
+    session.set_excluded([0], True)
+
+    ecran._search.setText("carapuce")          # la carte 1 seule
+    ecran._invert.click()
+    assert [session.is_excluded(i) for i in range(3)] == [True, True, False]
+
+
+def test_inverting_repaints_even_when_the_count_is_unchanged(step, tmp_path):
+    """Deux `set_excluded`, un par sens, ne préviendraient pas : le signal ne
+    part que si le **nombre** d'exclues a changé, et une inversion peut le
+    laisser identique — deux cartes dedans, deux dehors."""
+    ecran, session = step
+    charge(ecran, session, tmp_path, {"a1": ["x", "y", "z", "w"]})
+    session.set_excluded([0, 1], True)
+
+    vus = []
+    session.selection_changed.connect(lambda: vus.append(session.selected_count))
+    ecran._invert.click()
+
+    assert session.selected_count == 2, "le décompte est bien resté le même"
+    assert vus, "l'écran n'a pas été prévenu du changement"
+
+
+def test_the_invert_button_hides_while_no_card_is_loaded(step):
+    ecran, _ = step
+    assert not ecran._invert.isEnabled()

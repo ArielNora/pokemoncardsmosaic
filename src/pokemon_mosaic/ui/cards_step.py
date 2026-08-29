@@ -180,8 +180,10 @@ class CardsStep(QWidget):
         # dès qu'un filtre est actif, pour qu'on ne les lise pas comme globaux.
         self._include_all = QPushButton()
         self._exclude_all = QPushButton()
+        self._invert = QPushButton()
         self._include_all.clicked.connect(lambda: self._set_all(False))
         self._exclude_all.clicked.connect(lambda: self._set_all(True))
+        self._invert.clicked.connect(self._invert_selection)
 
         # Ils agissent sur la galerie : ils se posent **dessus**, en bas à
         # droite, plutôt que dans la barre du haut d'où ils commandaient de loin
@@ -193,6 +195,7 @@ class CardsStep(QWidget):
         bulk_row.setSpacing(6)
         bulk_row.addWidget(self._include_all)
         bulk_row.addWidget(self._exclude_all)
+        bulk_row.addWidget(self._invert)
         self._gallery.installEventFilter(self)
 
         self._pages = QStackedWidget()
@@ -319,7 +322,8 @@ class CardsStep(QWidget):
         # l'œil des deux seules actions possibles. On les retire tant qu'elles
         # n'ont rien à montrer.
         self._left_panel.setVisible(garni)
-        for bouton in (self._include_all, self._exclude_all, self._show_all):
+        for bouton in (self._include_all, self._exclude_all, self._invert,
+                       self._show_all):
             bouton.setEnabled(garni)
         self._bulk.setVisible(garni)
         self._update_folder_buttons()
@@ -598,6 +602,12 @@ class CardsStep(QWidget):
             item.setData(Qt.UserRole, folder)
             self._folders.addItem(item)
 
+    def _invert_selection(self) -> None:
+        """Les cartes affichées changent de camp, chacune la sienne."""
+        cartes = self._gallery.visible_cards()
+        if cartes:
+            self._session.invert_excluded(cartes)
+
     def _set_all(self, excluded: bool) -> None:
         """Agit sur les cartes affichées — filtre par extension et recherche compris.
 
@@ -640,6 +650,17 @@ class CardsStep(QWidget):
         else:
             self._include_all.setText(self.tr("Tout inclure"))
             self._exclude_all.setText(self.tr("Tout exclure"))
+        # « Inverser » garde un libellé court : il partage la portée de ses deux
+        # voisins, que leur propre libellé annonce déjà, et trois intitulés
+        # chiffrés feraient déborder la barre du cadre de la galerie.
+        self._invert.setText(self.tr("Inverser"))
+        self._invert.setToolTip(
+            self.tr("Les cartes affichées changent de camp : les incluses "
+                    "sortent, les exclues rentrent.")
+            if self._filtering() else
+            self.tr("Toutes les cartes changent de camp : les incluses "
+                    "sortent, les exclues rentrent.")
+        )
         # Le libellé change de longueur : la barre flottante doit se replacer,
         # sinon elle déborde du bord droit de la galerie ou s'en décolle.
         self._bulk.adjustSize()

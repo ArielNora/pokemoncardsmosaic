@@ -36,10 +36,20 @@ class LayoutStep(QWidget):
         super().__init__(parent)
         self._session = session
         self._updating = False
+        # Vrai tant que la grille n'a pas été choisie — ni à la main, ni par une
+        # suggestion, ni par un préréglage. Le premier passage sur cet écran
+        # l'ajuste alors au nombre de cartes retenues, puis se désarme.
+        self._auto_fit_pending = True
+        # Vrai le temps d'une écriture que **nous** faisons dans la session :
+        # le retour de signal qui s'ensuit n'est pas un choix venu d'ailleurs.
+        self._pushing = False
         self._build()
-        session.layout_changed.connect(self._refresh)
+        session.layout_changed.connect(self._on_layout_changed)
         session.selection_changed.connect(self._refresh)
         session.cards_loaded.connect(self._refresh)
+        # Un nouveau jeu de cartes rouvre la question : la grille calculée pour
+        # les précédentes n'a plus de raison de convenir.
+        session.cards_loaded.connect(self._arm_auto_fit)
 
     # --- Construction -----------------------------------------------------
 
@@ -138,7 +148,12 @@ class LayoutStep(QWidget):
     def _on_form_changed(self, *_) -> None:
         if self._updating:
             return
-        self._session.set_layout(
+        if (self._cols.value(), self._rows.value()) != (self._session.cols,
+                                                        self._session.rows):
+            # La grille vient d'être choisie : l'ajustement automatique n'a plus
+            # à s'en mêler, sous peine d'écraser ce choix au prochain passage.
+            self._auto_fit_pending = False
+        self._push(
             paper=self._paper.currentData(), landscape=self._landscape.isChecked(),
             dpi=self._dpi.value(), panels=self._panels.value(),
             cols=self._cols.value(), rows=self._rows.value(),
@@ -190,7 +205,76 @@ class LayoutStep(QWidget):
         drifted = {name: value for name, value in accepted.items()
                    if getattr(session, name) != value}
         if drifted:
-            session.set_layout(**drifted)
+            # Un écrêtage n'est pas un choix : il ne doit pas désarmer.
+            self._push(**drifted)
+
+    def _arm_auto_fit(self) -> None:
+        self._auto_fit_pending = True
+
+    def _on_layout_changed(self) -> None:
+        """Une mise en page posée ailleurs qu'ici vaut choix explicite.
+
+        ⚠️ **Comparer les champs à la session ne suffisait pas.** Un préréglage
+        qui rétablit la grille déjà en place ne fait bouger ni l'un ni l'autre :
+        rien ne désarmait, et le premier passage sur l'écran écrasait la grille
+        voulue. Mesuré — préréglage enregistré à 17×17, valeur par défaut de la
+        session elle aussi à 17×17, grille ramenée à 5×5 sans un mot.
+        """
+        if not self._pushing:
+            self._auto_fit_pending = False
+        self._refresh()
+
+    def _push(self, **changes) -> None:
+        """Écrit dans la session en signalant que le changement vient d'ici."""
+        self._pushing = True
+        try:
+            self._session.set_layout(**changes)
+        finally:
+            self._pushing = False
+
+    def showEvent(self, event) -> None:
+        """Le premier passage sur cet écran propose la grille la mieux ajustée.
+
+        Elle se calcule ici et non au chargement des cartes : le nombre retenu
+        n'est arrêté qu'une fois l'étape 1 quittée, et la lancer plus tôt
+        donnerait une grille pour une sélection encore en train de bouger.
+        """
+        super().showEvent(event)
+        self._auto_fit()
+
+    def _auto_fit(self) -> None:
+        """Adopte la grille dont le nombre de cases colle au mieux à la sélection.
+
+        `suggest_grids` classe déjà par écart au nombre de cartes, puis par
+        ajustement au format. Aucune ne convenant — le format ne tolère pas
+        d'écart supérieur à 5 % —, on ne touche à rien plutôt que d'imposer une
+        grille que l'écran ne recommande pas.
+
+        ⚠️ **On écarte celles qui perdent des cartes**, même mieux classées.
+        Le format contraint plus que le décompte : sur A4, seules des grilles
+        presque carrées passent, et 20 cartes retenues n'ont pas de grille de
+        20 cases admissible. La plus proche est alors 4×4 — seize cases, quatre
+        cartes abandonnées en silence, juste après l'écran où l'utilisateur
+        vient de les choisir une par une. On préfère 5×5 : cinq cases vides,
+        qu'il voit et peut déplacer, et aucune carte perdue.
+        """
+        if not self._auto_fit_pending or not self._session.selected_count:
+            return
+        self._auto_fit_pending = False
+        session = self._session
+        paper_w, paper_h = paper_size_mm(session.paper, session.landscape)
+        found = suggest_grids(
+            session.selected_count, self._card_aspect(),
+            paper_w * session.panels / paper_h, panels=session.panels,
+        )
+        if not found:
+            return
+        tiennent = [s for s in found if s.cells >= session.selected_count]
+        # Aucune ne contient tout le monde : on reprend la mieux classée plutôt
+        # que de ne rien proposer, l'écran signalant déjà les cartes en trop.
+        meilleure = tiennent[0] if tiennent else found[0]
+        if (meilleure.cols, meilleure.rows) != (session.cols, session.rows):
+            self._push(cols=meilleure.cols, rows=meilleure.rows)
 
     def _refresh(self) -> None:
         self._sync_form()

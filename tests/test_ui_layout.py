@@ -211,3 +211,116 @@ def test_a_dpi_outside_the_field_bounds_comes_back_corrected(session):
     step = LayoutStep(session)
     session.set_layout(dpi=5000)
     assert step._dpi.value() == session.dpi == 1200
+
+
+# --- La grille proposée au premier passage ---------------------------------
+
+@pytest.fixture
+def ecran(session):
+    from pokemon_mosaic.ui.layout_step import LayoutStep
+
+    return LayoutStep(session)
+
+
+def test_the_first_visit_fits_the_grid_to_the_selection(session, ecran):
+    """20 cartes retenues : l'écran s'ouvre sur la grille la mieux ajustée, et
+    non sur la valeur par défaut de la session."""
+    session.set_layout(cols=17, rows=17)
+    ecran._auto_fit_pending = True          # le préréglage a désarmé
+
+    ecran.show()
+    assert (session.cols, session.rows) == (5, 5)   # 25 cases pour 20 cartes
+
+
+def test_the_grid_is_only_fitted_once(session, ecran):
+    ecran.show()
+    ajustee = (session.cols, session.rows)
+
+    session.set_layout(cols=10, rows=10)
+    ecran.hide()
+    ecran.show()
+    assert (session.cols, session.rows) == (10, 10)
+    assert (session.cols, session.rows) != ajustee
+
+
+def test_a_hand_picked_grid_survives_the_first_visit(session, ecran):
+    """L'utilisateur peut régler la grille depuis l'étape 2 avant même que
+    l'écran ne soit affiché dans un test ; son choix prime."""
+    ecran._cols.setValue(4)
+    ecran._rows.setValue(5)
+    ecran.show()
+    assert (session.cols, session.rows) == (4, 5)
+
+
+def test_a_preset_grid_survives_the_first_visit(session, ecran):
+    """Un préréglage décrit une grille voulue : l'ajustement automatique n'a
+    pas à l'écraser au premier passage sur l'écran."""
+    session.set_layout(cols=2, rows=10)     # venu d'ailleurs, pas des champs
+    ecran.show()
+    assert (session.cols, session.rows) == (2, 10)
+
+
+def test_a_preset_that_repeats_the_current_grid_survives_too(session, ecran):
+    """⚠️ Comparer les champs à la session ne suffisait pas : un préréglage qui
+    rétablit la grille déjà en place ne fait bouger ni l'un ni l'autre. Mesuré —
+    préréglage à 17×17, session par défaut à 17×17, grille ramenée à 5×5."""
+    from pokemon_mosaic.presets import Preset
+
+    voulue = (session.cols, session.rows)
+    session.apply_preset(Preset(
+        name="essai", excluded=[], active_links=[], algorithm={},
+        layout={"cols": voulue[0], "rows": voulue[1], "paper": session.paper,
+                "landscape": session.landscape, "dpi": session.dpi,
+                "panels": session.panels},
+    ))
+    ecran.show()
+    assert (session.cols, session.rows) == voulue
+
+
+def test_a_clamped_field_is_not_a_choice(session, ecran):
+    """Le retour d'un champ qui a écrêté une valeur de préréglage ne doit pas
+    passer pour un choix de grille : sinon un DPI hors bornes désarmerait
+    l'ajustement automatique au passage."""
+    session.set_algorithm()                 # sans effet, juste pour le décor
+    ecran._sync_form()                      # déclenche _push_back_clamped
+    assert ecran._auto_fit_pending
+
+
+def test_a_new_card_set_reopens_the_question(session, ecran, tmp_path):
+    """La grille calculée pour les cartes précédentes n'a plus de raison de
+    convenir aux nouvelles."""
+    ecran.show()
+    ecran.hide()
+
+    jeu = card_set_in(tmp_path / "autre", {"s/b": [str(i) for i in range(12)]})
+    session.set_cards(jeu, str(tmp_path / "autre"))
+    ecran.show()
+    assert (session.cols, session.rows) == (4, 4)   # 16 cases pour 12 cartes
+
+
+def test_nothing_moves_without_a_card(qt_app):
+    """Sans carte retenue, il n'y a pas de grille à déduire."""
+    from pokemon_mosaic.ui.layout_step import LayoutStep
+    from pokemon_mosaic.ui.session import Session
+
+    vide = Session()
+    ecran = LayoutStep(vide)
+    avant = (vide.cols, vide.rows)
+    ecran.show()
+    assert (vide.cols, vide.rows) == avant
+
+
+def test_the_fitted_grid_never_drops_a_card(session, ecran):
+    """Sur A4 seules des grilles presque carrées passent : la plus proche de
+    20 cartes est 4×4, qui en abandonne quatre juste après l'écran où
+    l'utilisateur vient de les choisir une par une."""
+    from pokemon_mosaic.layout import paper_size_mm, suggest_grids
+
+    paper = paper_size_mm(session.paper, session.landscape)
+    classement = suggest_grids(20, 713 / 984, paper[0] / paper[1])
+    assert (classement[0].cols, classement[0].rows) == (4, 4), \
+        "le classement brut perd bien des cartes"
+
+    ecran.show()
+    assert session.cols * session.rows >= session.selected_count
+    assert session.grid_fit().surplus == 0

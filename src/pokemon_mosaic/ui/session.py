@@ -158,6 +158,23 @@ class Session(QObject):
         if len(self._excluded) != before:
             self.selection_changed.emit()
 
+    def invert_excluded(self, indices) -> None:
+        """Bascule chaque carte : les incluses sortent, les exclues rentrent.
+
+        ⚠️ Deux appels à `set_excluded`, un par sens, ne conviendraient pas : il
+        ne prévient que si le **nombre** d'exclues a changé, et une inversion
+        peut le laisser identique — dix cartes dedans, dix dehors. L'écran ne se
+        repeindrait pas alors que tout a changé de camp.
+        """
+        avant = set(self._excluded)
+        for index in indices:
+            if index in self._excluded:
+                self._excluded.discard(index)
+            else:
+                self._excluded.add(index)
+        if self._excluded != avant:
+            self.selection_changed.emit()
+
     def toggle(self, index: int) -> None:
         self.set_excluded([index], index not in self._excluded)
 
