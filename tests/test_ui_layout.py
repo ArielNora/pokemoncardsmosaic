@@ -142,14 +142,17 @@ def test_wireframe_maps_clicks_to_cells(qt_app, session):
     assert vue.cell_at(gx - 10, gy - 10) is None
 
 
-def test_wireframe_refuses_a_grid_that_cannot_be_split(qt_app, session):
+def test_the_wireframe_draws_an_undivisible_grid_all_the_same(qt_app, session):
+    """⚠️ Il refusait de dessiner quand les colonnes ne se divisaient pas en
+    feuilles. Plusieurs feuilles ne sont qu'une façon d'avoir plus de place :
+    la coupe tombe où elle tombe."""
     from pokemon_mosaic.ui.wireframe import WireframeView
 
     session.set_layout(cols=5, rows=4, panels=2)
     vue = WireframeView(session)
     vue.resize(400, 500)
     vue.grab()
-    assert vue._geometry is None
+    assert vue._geometry is not None
 
 
 def test_the_paperless_wireframe_ignores_the_panels(qt_app, session):
@@ -442,16 +445,20 @@ def test_a_dpi_outside_the_field_bounds_comes_back_corrected(session, ecran):
     assert session.dpi == 1200
 
 
-def test_a_mostly_empty_sheet_is_reported(session, ecran):
-    """441 cartes en 20×23 sur deux A4 ne couvrent que 43,9 % du papier."""
-    session.set_layout(panels=2, cols=20, rows=23)
-    assert "44 %" in ecran._tabs[2]._warnings.text()
-    assert "marge vide" in ecran._tabs[2]._warnings.text()
+def test_a_mostly_empty_sheet_is_reported_without_being_judged(session, ecran):
+    """⚠️ Le message conseillait d'allonger la grille pour mieux remplir. Depuis
+    qu'ajouter une feuille veut dire « avoir plus de place », ce blanc est
+    l'état normal, et l'onglet précédent l'annonce comme tel : deux écrans
+    disaient le contraire du même blanc."""
+    session.set_layout(panels=3, cols=6, rows=5)
+    texte = ecran._tabs[2]._warnings.text()
+    assert "%" in texte and "blanc" in texte
+    assert "normal si vous avez ajouté des feuilles" in texte
 
 
 def test_a_grid_that_follows_the_sheet_says_nothing(session, ecran):
     session.set_layout(panels=2, cols=30, rows=15)
-    assert "marge vide" not in ecran._tabs[2]._warnings.text()
+    assert "sortira blanc" not in ecran._tabs[2]._warnings.text()
 
 
 def test_a_click_on_a_cell_hidden_by_the_quota_still_lands(session, tmp_path):
@@ -928,25 +935,33 @@ def test_one_arrow_spans_every_sheet(session, papier):
     assert feuille.width() > 0
 
 
-def test_an_indivisible_grid_is_named_and_blocks_the_way(session, papier, ecran):
-    """Ajouter une feuille depuis l'aperçu peut rendre la grille indivisible :
-    la mosaïque cesse alors d'être dessinée, et la feuille se vidait sans
-    qu'aucun mot ne dise pourquoi."""
+def test_an_extra_sheet_only_adds_room(session, papier):
+    """⚠️ Ajouter une feuille refusait de laisser passer quand les colonnes ne
+    s'y divisaient pas, et la mosaïque cessait d'être dessinée. Une feuille de
+    plus ne veut plus dire qu'une chose : de la place en plus."""
     session.set_layout(cols=21, rows=21, panels=1)
     assert papier.is_valid()
-    assert not papier._split_error.isVisibleTo(papier)
 
     papier._preview._plus.click()
-    assert not papier.is_valid()
-    assert papier._split_error.isVisibleTo(papier)
-    assert "21" in papier._split_error.text()
+    assert session.panels == 2
+    assert papier.is_valid(), "21 colonnes sur 2 feuilles reste une mise en page"
 
-    ecran._list.setCurrentRow(1)
-    assert not ecran.can_advance()
 
-    papier._preview._plus.click()             # trois feuilles : 21 = 3 × 7
-    assert papier.is_valid()
-    assert not papier._split_error.isVisibleTo(papier)
+def test_the_mosaic_hugs_the_left_edge(session, papier):
+    """La place en trop est ce qu'apporte la feuille suivante : elle doit se
+    voir d'un bloc, du côté où l'on ajoutera la prochaine."""
+    from PySide6.QtGui import QColor
+
+    session.set_layout(cols=4, rows=5, panels=2)
+    papier._preview.set_show_grid(True)
+    feuille, _, _ = papier._preview.rects()
+    image = papier._preview.grab().toImage()
+
+    milieu_y = int(feuille.center().y())
+    gauche = QColor(image.pixel(int(feuille.left()) + 3, milieu_y))
+    droite = QColor(image.pixel(int(feuille.right()) - 3, milieu_y))
+    assert gauche.blue() > gauche.red(), "le bord gauche doit porter des cartes"
+    assert droite.red() >= droite.blue(), "le bord droit doit rester du papier nu"
 
 
 def test_the_hint_says_where_the_card_actually_is(session, papier):
@@ -958,15 +973,12 @@ def test_the_hint_says_where_the_card_actually_is(session, papier):
     assert "posée à droite" not in papier._hint.text()
 
 
-def test_both_tabs_refuse_an_indivisible_split(session, ecran):
-    """⚠️ La même faute passait ou bloquait selon l'onglet où elle était
-    commise : 21 colonnes portées à 2 feuilles depuis l'onglet d'impression
-    laissaient « Suivant » actif."""
+def test_no_tab_blocks_on_the_sheet_count_any_more(session, ecran):
+    """Cet onglet ne décide que de la taille du papier et du nombre de feuilles :
+    aucune combinaison n'y est fautive."""
     session.set_layout(cols=21, rows=21, panels=1)
-    assert ecran._tabs[1].is_valid() and ecran._tabs[2].is_valid()
-
     ecran._list.setCurrentRow(2)
     ecran._tabs[2]._panels.setValue(2)
-    assert not ecran._tabs[1].is_valid()
-    assert not ecran._tabs[2].is_valid()
-    assert not ecran.can_advance()
+    assert ecran._tabs[1].is_valid()
+    assert ecran._tabs[2].is_valid()
+    assert ecran.can_advance()

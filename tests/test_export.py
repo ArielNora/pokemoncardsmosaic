@@ -34,11 +34,33 @@ def small_grid(cols=4, rows=4):
 
 # --- Mise en page ---------------------------------------------------------
 
-def test_columns_must_divide_into_panels():
-    """La coupe ne doit jamais traverser une carte."""
+def test_columns_need_not_divide_into_panels():
+    """⚠️ Plusieurs feuilles, c'est **une seule surface**. Le calcul découpait la
+    grille par feuille et exigeait que les colonnes s'y divisent, pour que la
+    coupe tombe sur un bord de carte. Des feuilles côte à côte ne sont qu'une
+    façon d'avoir plus de place : la coupe tombe où elle tombe."""
     settings = PosterSettings(paper="A4", panels=2, dpi=72)
-    with pytest.raises(ValueError, match="ne se divisent pas"):
-        plan_poster(small_grid(5, 4), card_set(20), settings)
+    plan = plan_poster(small_grid(5, 4), card_set(20), settings)
+    assert plan.cols == 5
+
+
+def test_the_card_is_sized_on_the_whole_surface():
+    """Deux feuilles côte à côte donnent deux fois plus de largeur : la carte
+    grandit d'autant, au lieu de se calculer sur une seule feuille."""
+    seule = plan_poster(small_grid(4, 4), card_set(16),
+                        PosterSettings(paper="A4", panels=1, dpi=72))
+    deux = plan_poster(small_grid(4, 4), card_set(16),
+                       PosterSettings(paper="A4", panels=2, dpi=72))
+    assert deux.card_px[0] > seule.card_px[0]
+
+
+def test_the_grid_is_flush_with_the_left_edge():
+    """La place en trop est ce qu'apporte la feuille suivante : elle doit se
+    voir d'un bloc, du côté où l'on ajoutera la prochaine."""
+    plan = plan_poster(small_grid(4, 4), card_set(16),
+                       PosterSettings(paper="A4", panels=2, dpi=72))
+    assert plan.margin_px[0] == 0
+    assert plan.margin_px[1] >= 0, "la marge verticale, elle, reste centrée"
 
 
 def test_cards_keep_their_aspect_ratio():
@@ -171,11 +193,19 @@ def test_pdf_carries_the_physical_page_size(tmp_path, paper, dpi):
     assert height_pt / 72 * 25.4 == pytest.approx(expected_h, abs=0.5)
 
 
-def test_export_refuses_a_grid_that_cannot_be_split(tmp_path):
+def test_a_card_straddling_the_cut_is_written_on_both_panels(tmp_path):
+    """La coupe peut désormais traverser une carte : chaque panneau doit en
+    porter sa part, sans trou ni doublon."""
     settings = PosterSettings(paper="A6", panels=3, dpi=72)
-    with pytest.raises(ValueError, match="ne se divisent pas"):
-        export_poster(small_grid(4, 4), card_set(16), settings,
-                      str(tmp_path / "poster.png"), full_resolution=False)
+    ecrits = export_poster(small_grid(4, 4), card_set(16), settings,
+                           str(tmp_path / "poster.png"), full_resolution=False)
+    assert len(ecrits) == 3
+
+    from PIL import Image
+
+    plan = plan_poster(small_grid(4, 4), card_set(16), settings)
+    largeurs = [Image.open(chemin).width for chemin in ecrits]
+    assert sum(largeurs) == plan.total_px[0], "les panneaux doivent recouvrir tout"
 
 
 # --- Progression, annulation, écriture panneau par panneau -----------------

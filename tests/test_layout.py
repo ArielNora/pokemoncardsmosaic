@@ -100,11 +100,16 @@ def test_the_aspect_error_breaks_ties_between_equal_grids():
     assert rang[(20, 22)] < rang[(22, 20)]
 
 
-def test_panel_split_forces_even_columns():
-    """Avec 2 panneaux, la coupe doit tomber sur un bord de carte."""
-    found = suggest_grids(281, CARD_ASPECT, 2**0.5, panels=2)
+def test_the_panel_count_no_longer_constrains_the_columns():
+    """⚠️ `panels` obligeait les colonnes à être divisibles, pour que la coupe
+    tombe sur un bord de carte. Plusieurs feuilles ne sont qu'une façon d'avoir
+    plus de place : le rapport de la surface entière suffit à les décrire."""
+    import inspect
+
+    assert "panels" not in inspect.signature(suggest_grids).parameters
+    found = suggest_grids(281, CARD_ASPECT, 2**0.5)
     assert found, "aucune grille proposée"
-    assert all(s.cols % 2 == 0 for s in found)
+    assert any(s.cols % 2 for s in found), "des largeurs impaires doivent passer"
 
 
 def test_suggestions_prefer_matching_the_card_count():

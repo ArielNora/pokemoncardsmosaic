@@ -258,25 +258,28 @@ class PagePreview(QWidget):
         painter.end()
 
     def _draw_grid(self, painter, feuille: QRectF) -> None:
-        """La mosaïque posée sur la feuille, pour voir ce qu'elle en remplit.
+        """La mosaïque posée sur la surface, pour voir ce qu'elle en remplit.
 
         Les cartes sont dessinées toutes pareilles : ce panneau répond à la
         seule question « combien de papier reste autour », et y marquer les
         cases vides le ferait empiéter sur l'onglet des dimensions.
         """
         session = self._session
-        if session.cols <= 0 or session.rows <= 0 or session.cols % session.panels:
+        if session.cols <= 0 or session.rows <= 0:
             return
-        paper = paper_size_mm(session.paper, session.landscape)
+        surface = self._sheet_mm()
         aspect = _card_aspect(session)
         card_w_px, card_h_px = card_pixel_size(
-            paper, session.cols // session.panels, session.rows, aspect, dpi=72)
+            surface, session.cols, session.rows, aspect, dpi=72)
         # `card_pixel_size` raisonne en pixels d'impression ; on revient au
         # millimètre, seule unité que partage tout ce dessin.
-        card_w = card_w_px / 72 * MM_PER_INCH * feuille.width() / self._sheet_mm()[0]
-        card_h = card_h_px / 72 * MM_PER_INCH * feuille.height() / self._sheet_mm()[1]
+        card_w = card_w_px / 72 * MM_PER_INCH * feuille.width() / surface[0]
+        card_h = card_h_px / 72 * MM_PER_INCH * feuille.height() / surface[1]
 
-        gx = feuille.left() + (feuille.width() - card_w * session.cols) / 2
+        # ⚠️ **Calée à gauche.** La place en trop est ce qu'apporte la feuille
+        # suivante : elle doit se voir d'un bloc, du côté où l'on ajoutera la
+        # prochaine, et non coupée en deux demi-marges.
+        gx = feuille.left()
         gy = feuille.top() + (feuille.height() - card_h * session.rows) / 2
         painter.setBrush(QBrush(CARD_FILL))
         trait = 0 if session.cols * session.rows > FINE_PEN_ABOVE else 0.8

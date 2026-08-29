@@ -159,7 +159,7 @@ class GridTab(LayoutTab):
         paper_w, paper_h = paper_size_mm(session.paper, session.landscape)
         found = suggest_grids(
             session.selected_count, card_aspect(session),
-            paper_w * session.panels / paper_h, panels=session.panels,
+            paper_w * session.panels / paper_h,
         )
         if not found:
             return
@@ -301,8 +301,7 @@ class GridTab(LayoutTab):
         paper_w, paper_h = paper_size_mm(session.paper, session.landscape)
         for suggestion in suggest_grids(
             max(session.selected_count, 1), card_aspect(session),
-            paper_w * session.panels / paper_h, panels=session.panels,
-            limit=SUGGESTION_COUNT,
+            paper_w * session.panels / paper_h, limit=SUGGESTION_COUNT,
         ):
             delta = suggestion.card_delta
             if delta == 0:
@@ -390,12 +389,6 @@ class PaperTab(LayoutTab):
         self._grid_warning = QLabel()
         self._grid_warning.setWordWrap(True)
         theme.mark(self._grid_warning, "warning")
-        # ⚠️ Ajouter une feuille depuis l'aperçu peut rendre la grille
-        # indivisible : la mosaïque cesse alors d'être dessinée. Sans ce
-        # message, la feuille se vidait sans qu'aucun mot ne dise pourquoi.
-        self._split_error = QLabel()
-        self._split_error.setWordWrap(True)
-        theme.mark(self._split_error, "error")
         self._preview = PagePreview(self._session)
         # Les feuilles s'ajoutent et se retirent depuis le dessin lui-même : on
         # y voit tout de suite ce que cela change à la place occupée.
@@ -405,7 +398,6 @@ class PaperTab(LayoutTab):
         layout.addLayout(haut)
         layout.addWidget(self._hint)
         layout.addWidget(self._grid_warning)
-        layout.addWidget(self._split_error)
         layout.addWidget(self._preview, 1)
         self.retranslate_ui()
 
@@ -423,13 +415,14 @@ class PaperTab(LayoutTab):
         self._hint.setText(
             self.tr("La carte posée à gauche est à ses dimensions réelles, à la "
                     "même échelle que la feuille : c'est elle qui donne la taille. "
-                    "Le « + » à droite ajoute une feuille côte à côte.")
+                    "Le « + » à droite ajoute une feuille, donc de la place.")
         )
         self._grid_warning.setText(
-            self.tr("Cet ajustement n'est pas définitif : l'orientation et le "
-                    "nombre de posters côte à côte se règlent à l'onglet suivant, "
-                    "et les dimensions de la grille restent modifiables au "
-                    "premier — de quoi remplir mieux la feuille.")
+            self.tr("La mosaïque est posée contre le bord gauche, et le blanc "
+                    "qui reste est la place encore libre : cet onglet ne décide "
+                    "que de la taille du papier et du nombre de feuilles. La "
+                    "façon dont la grille s'y installe — marges, centrage — "
+                    "viendra à l'onglet suivant.")
         )
         self._on_grid_toggled(self._show_grid.isChecked())
         self.refresh()
@@ -439,23 +432,6 @@ class PaperTab(LayoutTab):
             return
         self._session.set_layout(paper=self._paper.currentData())
 
-    def is_valid(self) -> bool:
-        """Une coupe ne doit jamais tomber au milieu d'une carte."""
-        return not self._session.cols % self._session.panels
-
-    def _update_split(self) -> None:
-        session = self._session
-        reste = session.cols % session.panels
-        self._split_error.setVisible(bool(reste))
-        if reste:
-            self._split_error.setText(
-                self.tr("%1 colonnes ne se divisent pas en %2 feuilles : la coupe "
-                        "tomberait au milieu d'une carte. La mosaïque n'est pas "
-                        "dessinée tant que ce n'est pas réglé — retirez une "
-                        "feuille, ou changez les colonnes au premier onglet.")
-                .replace("%1", str(session.cols))
-                .replace("%2", str(session.panels)))
-
     def refresh(self) -> None:
         self._updating = True
         self._paper.setCurrentText(self._session.paper)
@@ -464,7 +440,6 @@ class PaperTab(LayoutTab):
         # la main : on renvoie à la session ce qu'il a réellement accepté.
         if self._paper.currentText() != self._session.paper:
             self._session.set_layout(paper=self._paper.currentText())
-        self._update_split()
         self._preview.refresh()
         self.state_changed.emit()
 
@@ -483,15 +458,6 @@ class PrintingTab(LayoutTab):
 
     def title(self) -> str:
         return self.tr("Orientation et impression")
-
-    def is_valid(self) -> bool:
-        """Même refus qu'à l'onglet du format, qui règle le même nombre.
-
-        ⚠️ Sans cela, la faute passait ou bloquait selon l'onglet où elle était
-        commise : 21 colonnes portées à 2 feuilles **ici** laissaient « Suivant »
-        actif, et l'on quittait l'étape avec une coupe en pleine carte.
-        """
-        return not self._session.cols % self._session.panels
 
     def _build(self) -> None:
         self._landscape = QCheckBox()
@@ -517,7 +483,9 @@ class PrintingTab(LayoutTab):
         self._wireframe.cells_painted.connect(self._session.paint_empty_cells)
         self._summary = QLabel(); self._summary.setWordWrap(True)
         self._warnings = QLabel(); self._warnings.setWordWrap(True)
-        theme.mark(self._warnings, "error")
+        # Ambre et non rouge : ce sont des mises en page valides dont on signale
+        # le coût, pas des configurations que l'application refuse.
+        theme.mark(self._warnings, "warning")
 
         gauche = QVBoxLayout()
         gauche.addWidget(self._form_box)
@@ -585,18 +553,12 @@ class PrintingTab(LayoutTab):
         paper = paper_size_mm(session.paper, session.landscape)
         warnings = []
 
-        if session.cols % session.panels:
-            self._summary.setText("")
-            self._warnings.setText(
-                self.tr("%1 colonnes ne se divisent pas en %2 panneaux : la coupe "
-                        "tomberait au milieu d'une carte.")
-                .replace("%1", str(session.cols)).replace("%2", str(session.panels))
-            )
-            return
-
-        per_panel = session.cols // session.panels
+        # ⚠️ **La surface entière, et toutes les colonnes.** La carte se
+        # dimensionnait feuille par feuille, ce qui obligeait les colonnes à s'y
+        # diviser ; plusieurs feuilles ne sont qu'une façon d'avoir plus de place.
+        surface = (paper[0] * session.panels, paper[1])
         aspect = card_aspect(session)
-        card_w, card_h = card_pixel_size(paper, per_panel, session.rows,
+        card_w, card_h = card_pixel_size(surface, session.cols, session.rows,
                                          aspect, session.dpi)
         total_w = card_w * session.cols
         total_h = card_h * session.rows
@@ -619,7 +581,7 @@ class PrintingTab(LayoutTab):
 
         source_width = (session.card_set.full_size[0]
                         if session.card_set and session.card_set.full_size[0] else 713)
-        ceiling = max_useful_dpi(paper, per_panel, source_width)
+        ceiling = max_useful_dpi(surface, session.cols, source_width)
         if session.dpi > ceiling:
             warnings.append(
                 self.tr("%1 DPI dépasse le maximum utile (%2 DPI pour ce format) : "
@@ -627,21 +589,22 @@ class PrintingTab(LayoutTab):
                 .replace("%1", str(session.dpi)).replace("%2", f"{ceiling:.0f}")
             )
 
-        # ⚠️ **La part de feuille réellement couverte.** La forme des grilles est
-        # bornée à trois cases d'écart : une mise en page sur plusieurs panneaux
-        # côte à côte ne peut plus s'allonger pour suivre la feuille — mesuré,
-        # 441 cartes en 20×23 sur deux A4 ne couvrent que 43,9 % du papier,
-        # contre 96,9 % pour un 30×15. Les chiffres étaient là, mais il fallait
-        # faire la division soi-même.
+        # ⚠️ **La part de papier réellement couverte, dite sans la juger.** Le
+        # message conseillait d'allonger la grille pour mieux remplir : depuis
+        # qu'ajouter une feuille veut dire « avoir plus de place », ce blanc est
+        # l'état normal, et l'onglet précédent l'annonce comme tel. Deux écrans
+        # disaient le contraire du même blanc, et le conseil poussait à défaire
+        # ce que le « + » venait de faire. On donne le chiffre, et ce qu'il
+        # coûte à l'impression — la décision reste à l'utilisateur.
         sheet_px = (mm_to_pixels(paper[0], session.dpi) * session.panels
                     * mm_to_pixels(paper[1], session.dpi))
         coverage = total_w * total_h / sheet_px if sheet_px else 1.0
         if coverage < MIN_SHEET_COVERAGE:
             warnings.append(
-                self.tr("La mosaïque ne couvre que %1 % de la feuille : le reste "
-                        "sera une marge vide. Une grille plus allongée — plus de "
-                        "colonnes que de lignes — suivrait mieux %n feuille(s) "
-                        "côte à côte.", "", session.panels)
+                self.tr("La mosaïque couvre %1 % du papier : le reste sortira "
+                        "blanc de l'imprimante. C'est normal si vous avez ajouté "
+                        "des feuilles pour avoir de la place ; sinon, une grille "
+                        "plus large ou moins de feuilles la rempliraient mieux.")
                 .replace("%1", f"{coverage * 100:.0f}")
             )
 

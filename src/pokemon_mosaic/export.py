@@ -79,10 +79,6 @@ class PosterPlan:
     warnings: list[str] = field(default_factory=list)
 
     @property
-    def cols_per_panel(self) -> int:
-        return self.cols // self.settings.panels
-
-    @property
     def total_px(self) -> tuple[int, int]:
         paper_w, paper_h = self.settings.paper_px
         return paper_w * self.settings.panels, paper_h
@@ -99,26 +95,34 @@ class PosterPlan:
 def plan_poster(
     grid: np.ndarray, cards: CardSet, settings: PosterSettings
 ) -> PosterPlan:
-    """Calcule la mise en page et rassemble les avertissements à montrer."""
-    rows, cols = grid.shape
-    if cols % settings.panels:
-        raise ValueError(
-            f"{cols} colonnes ne se divisent pas en {settings.panels} panneaux : la "
-            f"coupe tomberait au milieu d'une carte."
-        )
+    """Calcule la mise en page et rassemble les avertissements à montrer.
 
+    ⚠️ **Plusieurs feuilles, c'est une seule surface.** Le calcul découpait
+    auparavant la grille par feuille et exigeait que les colonnes s'y divisent,
+    pour que la coupe tombe toujours sur un bord de carte. Cette contrainte est
+    abandonnée : des feuilles côte à côte ne sont qu'une façon d'avoir **plus de
+    place**, la carte se dimensionne sur la surface entière, et la coupe tombe
+    où elle tombe — c'est du papier qu'on raboute, pas une mosaïque qu'on
+    partage. Le chevauchement et les repères de coupe existent précisément pour
+    ça.
+    """
+    rows, cols = grid.shape
     card_aspect = cards.full_size[0] / cards.full_size[1]
-    cols_per_panel = cols // settings.panels
-    card_px = card_pixel_size(
-        settings.paper_mm, cols_per_panel, rows, card_aspect, settings.dpi
-    )
+    paper_w_mm, paper_h_mm = settings.paper_mm
+    surface_mm = (paper_w_mm * settings.panels, paper_h_mm)
+    card_px = card_pixel_size(surface_mm, cols, rows, card_aspect, settings.dpi)
 
     paper_w, paper_h = settings.paper_px
-    margin_x = (paper_w * settings.panels - cols * card_px[0]) // 2
+    # ⚠️ **La grille est calée à gauche**, non centrée : la place en trop est ce
+    # qu'apporte la feuille suivante, et elle doit se voir d'un bloc, du côté où
+    # l'on ajoutera la prochaine. Répartie de part et d'autre, elle donnait deux
+    # demi-marges qui ne disaient rien. La marge verticale, elle, ne dépend
+    # d'aucune feuille et reste centrée.
+    margin_x = 0
     margin_y = (paper_h - rows * card_px[1]) // 2
 
     warnings: list[str] = []
-    ceiling = max_useful_dpi(settings.paper_mm, cols_per_panel, cards.full_size[0])
+    ceiling = max_useful_dpi(surface_mm, cols, cards.full_size[0])
     if settings.dpi > ceiling:
         warnings.append(
             f"{settings.dpi} DPI dépasse le maximum utile ({ceiling:.0f} DPI pour ce "

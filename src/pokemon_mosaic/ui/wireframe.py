@@ -88,18 +88,16 @@ class WireframeView(QWidget):
         if session.cols <= 0 or session.rows <= 0:
             return None
         if not self._show_paper:
-            # Le découpage en panneaux ne concerne que la feuille : sans elle, une
-            # grille non divisible reste parfaitement dessinable.
             return self._grid_only_layout()
-        if session.cols % session.panels:
-            return None
 
         card_aspect = self._card_aspect()
         paper_w, paper_h = _paper_mm(session)
         total_w = paper_w * session.panels
+        # ⚠️ **La surface entière, et toutes les colonnes.** On dimensionnait la
+        # carte feuille par feuille, ce qui obligeait les colonnes à s'y diviser.
+        # Plusieurs feuilles ne sont qu'une façon d'avoir plus de place.
         card_w_px, card_h_px = card_pixel_size(
-            (paper_w, paper_h), session.cols // session.panels, session.rows,
-            card_aspect, dpi=72,
+            (total_w, paper_h), session.cols, session.rows, card_aspect, dpi=72,
         )
         # Tout est ramené en millimètres pour le dessin, puis mis à l'échelle.
         card_w = card_w_px / 72 * 25.4
@@ -116,12 +114,17 @@ class WireframeView(QWidget):
         return scale, (origin_x, origin_y), (total_w, paper_h), (card_w, card_h)
 
     def _grid_origin(self, geometry):
-        """Coin haut-gauche de la grille : l'image est centrée sur la feuille."""
-        scale, (ox, oy), (total_w, paper_h), (card_w, card_h) = geometry
-        session = self._session
-        grid_w = card_w * session.cols
-        grid_h = card_h * session.rows
-        return ox + (total_w - grid_w) * scale / 2, oy + (paper_h - grid_h) * scale / 2
+        """Coin haut-gauche de la grille.
+
+        ⚠️ **Calée à gauche**, non centrée : la place en trop est ce qu'apporte
+        la feuille suivante, et elle doit se voir d'un bloc, du côté où l'on
+        ajoutera la prochaine. Répartie de part et d'autre, elle donnait deux
+        demi-marges qui ne disaient rien. La marge verticale, elle, ne dépend
+        d'aucune feuille et reste centrée.
+        """
+        scale, (ox, oy), (_, paper_h), (_card_w, card_h) = geometry
+        grid_h = card_h * self._session.rows
+        return ox, oy + (paper_h - grid_h) * scale / 2
 
     # --- Dessin -----------------------------------------------------------
 

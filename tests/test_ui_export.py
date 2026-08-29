@@ -118,28 +118,42 @@ def test_the_dialog_warns_about_an_existing_file(dialog, tmp_path):
     assert "écrasé" in dialog._files.text()
 
 
-def test_an_impossible_cut_is_explained_instead_of_crashing(dialog, session):
-    """5 colonnes ne se coupent pas en 2 panneaux sans traverser une carte."""
+def test_an_odd_column_count_across_panels_is_planned_normally(dialog, session):
+    """5 colonnes sur 2 feuilles : la coupe traverse une carte, et c'est admis
+    depuis que plusieurs feuilles ne veulent dire que « plus de place »."""
     session.set_layout(cols=5, rows=4, panels=2)
     dialog._update_plan()
-    assert "ne se divisent pas" in dialog._plan_label.text()
+    assert "ne se divisent pas" not in dialog._plan_label.text()
+    assert dialog._plan is not None
 
 
-def test_an_impossible_plan_cannot_be_validated(dialog, session, tmp_path):
+def test_an_impossible_plan_cannot_be_validated(dialog, session, tmp_path,
+                                                monkeypatch):
     """Accepter lancerait un fil de fond pour qu'il échoue aussitôt sur l'erreur
-    déjà affichée, et l'utilisateur n'en verrait qu'un message fugace."""
+    déjà affichée, et l'utilisateur n'en verrait qu'un message fugace.
+
+    Plus aucun réglage de l'écran ne rend le plan impossible depuis que la coupe
+    n'est plus contrainte : on fait échouer `plan_poster` à la main pour que le
+    garde reste couvert."""
     from PySide6.QtWidgets import QDialog, QDialogButtonBox
+
+    from pokemon_mosaic.ui import export_dialog as module
 
     dialog._path.setText(str(tmp_path / "poster.png"))
     assert dialog._buttons.button(QDialogButtonBox.Ok).isEnabled()
 
-    session.set_layout(panels=2)        # la grille en a 5 colonnes
+    def refuse(*_a, **_k):
+        raise ValueError("plan impossible")
+
+    monkeypatch.setattr(module, "plan_poster", refuse)
     dialog._update_plan()
+    assert "plan impossible" in dialog._plan_label.text()
     assert not dialog._buttons.button(QDialogButtonBox.Ok).isEnabled()
     dialog._try_accept()
     assert dialog.result() != QDialog.Accepted
 
-    session.set_layout(panels=1)
+    # Le plan redevenu calculable rouvre la validation.
+    monkeypatch.undo()
     dialog._update_plan()
     assert dialog._buttons.button(QDialogButtonBox.Ok).isEnabled()
 

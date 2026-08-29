@@ -114,16 +114,18 @@ def suggest_grids(
     card_count: int,
     card_aspect: float,
     paper_aspect: float,
-    panels: int = 1,
     max_difference: int = MAX_SIDE_DIFFERENCE,
     limit: int = 10,
 ) -> list[GridSuggestion]:
     """Propose des grilles pour ce nombre de cartes, classées par pertinence.
 
-    `paper_aspect` est le rapport largeur/hauteur de la **feuille entière** ; avec
-    `panels > 1`, la grille est répartie sur plusieurs feuilles côte à côte et le
-    nombre de colonnes est contraint à être divisible par `panels`, pour que la coupe
-    tombe toujours sur un bord de carte.
+    `paper_aspect` est le rapport largeur/hauteur de la **surface entière**, feuilles
+    côte à côte comprises.
+
+    ⚠️ `panels` ne contraint plus le nombre de colonnes. Il l'obligeait à être
+    divisible, pour que la coupe tombe sur un bord de carte ; plusieurs feuilles
+    ne sont désormais qu'une façon d'avoir plus de place, et la coupe tombe où
+    elle tombe — c'est du papier qu'on raboute.
 
     Classement : d'abord les grilles dont le nombre de cases est proche du nombre de
     cartes, puis celles qui ajustent le mieux le format.
@@ -151,8 +153,6 @@ def suggest_grids(
     found: list[GridSuggestion] = []
     for rows in range(1, ceiling + 1):
         for cols in range(max(1, rows - max_difference), rows + max_difference + 1):
-            if cols % panels:
-                continue
             error = abs((cols * card_aspect / rows) - paper_aspect) / paper_aspect
             found.append(
                 GridSuggestion(cols, rows, error, cols * rows - card_count)
