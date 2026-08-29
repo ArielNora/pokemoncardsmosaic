@@ -294,3 +294,87 @@ def test_a_remembered_folder_that_vanished_is_not_proposed(fenetre, tmp_path):
     disparu.rmdir()
 
     assert MainWindow.remembered_folder() == ""
+
+
+# --- Les extensions et la sélection ---------------------------------------
+
+def charge(ecran, session, tmp_path, layout):
+    """Rejoue le vrai enchaînement de chargement, celui qui remplit la liste
+    des dossiers — `set_cards` seul ne l'émet pas."""
+    jeu = card_set_in(tmp_path, layout)
+    session.start_loading(str(tmp_path))
+    session.append_cards(jeu.cards)
+    session.finish_loading(jeu)
+    return jeu
+
+
+def test_the_extension_buttons_say_what_they_act_on(step):
+    """« Inclure » seul ne disait pas sur quoi : la galerie ou l'extension."""
+    ecran, _ = step
+    assert "extension" in ecran._include_folder.text()
+    assert "extension" in ecran._exclude_folder.text()
+
+
+def test_the_extension_buttons_need_an_extension_selected(step, tmp_path):
+    """Actifs sans sélection, ils ne faisaient rien : le clic partait dans le
+    vide et l'utilisateur croyait à une panne."""
+    ecran, session = step
+    charge(ecran, session, tmp_path, {"a1": ["x", "y"], "a2": ["z"]})
+
+    assert not ecran._include_folder.isEnabled()
+    assert not ecran._exclude_folder.isEnabled()
+
+    ecran._folders.setCurrentRow(0)
+    assert ecran._include_folder.isEnabled()
+    assert ecran._exclude_folder.isEnabled()
+
+    ecran._folders.clearSelection()
+    assert not ecran._include_folder.isEnabled()
+
+
+def test_the_folder_list_scrolls_by_pixel(step):
+    """Par élément, la liste avance d'une ligne entière à chaque cran : le
+    moindre geste au trackpad saute une extension au lieu de la découvrir."""
+    from PySide6.QtWidgets import QAbstractItemView
+
+    ecran, _ = step
+    assert ecran._folders.verticalScrollMode() == \
+        QAbstractItemView.ScrollPerPixel
+
+
+# --- Les actions globales, posées sur la galerie --------------------------
+
+def test_the_bulk_buttons_sit_on_the_gallery(step, tmp_path):
+    """Ils agissent sur la galerie : les laisser dans la barre du haut les
+    faisait commander de loin une zone qu'ils ne touchaient pas."""
+    ecran, session = step
+    charge(ecran, session, tmp_path, {"a1": ["x", "y"]})
+    ecran._gallery.resize(400, 300)
+    ecran._place_bulk_buttons()
+
+    cadre = ecran._bulk.geometry()
+    assert ecran._bulk.parent() is ecran._gallery
+    # En bas à droite : les deux bords doivent être proches de ceux de la vue.
+    assert cadre.right() <= ecran._gallery.width()
+    assert cadre.bottom() <= ecran._gallery.height()
+    assert ecran._gallery.height() - cadre.bottom() <= 2 * ecran.BULK_MARGIN
+
+
+def test_the_bulk_buttons_clear_the_scrollbar(step, tmp_path):
+    """Sans contourner sa largeur, ils passent dessous dès que la galerie
+    déborde — et le bouton du bas devient inatteignable."""
+    ecran, session = step
+    charge(ecran, session, tmp_path, {"a1": [str(i) for i in range(60)]})
+    ecran._gallery.resize(300, 200)
+    ecran._gallery.show()
+    ecran._place_bulk_buttons()
+
+    barre = ecran._gallery.verticalScrollBar()
+    if barre.isVisible():
+        assert ecran._bulk.geometry().right() <= (ecran._gallery.width()
+                                                  - barre.width())
+
+
+def test_the_bulk_buttons_hide_while_no_card_is_loaded(step):
+    ecran, _ = step
+    assert not ecran._bulk.isVisibleTo(ecran._gallery)

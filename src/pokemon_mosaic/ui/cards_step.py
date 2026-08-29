@@ -2,7 +2,7 @@
 
 import os
 
-from PySide6.QtCore import QStandardPaths, Qt, Signal
+from PySide6.QtCore import QEvent, QStandardPaths, Qt, Signal
 from PySide6.QtWidgets import (
     QAbstractItemView,
     QFileDialog,
@@ -82,7 +82,12 @@ class CardsStep(QWidget):
         self._folder_label = QLabel()
         self._folders = QListWidget()
         self._folders.setSelectionMode(QAbstractItemView.ExtendedSelection)
+        # ⚠️ Au pixel et non à l'élément. Par défaut Qt fait défiler par lignes
+        # entières : cliquer une extension à demi coupée en bas de la liste la
+        # faisait sauter tout en bas, au lieu de la découvrir juste assez.
+        self._folders.setVerticalScrollMode(QAbstractItemView.ScrollPerPixel)
         self._folders.itemSelectionChanged.connect(self._apply_filter)
+        self._folders.itemSelectionChanged.connect(self._update_folder_buttons)
         self._include_folder = QPushButton()
         self._exclude_folder = QPushButton()
         self._show_all = QPushButton()
@@ -149,6 +154,24 @@ class CardsStep(QWidget):
         self._empty_page = QWidget()
         self._empty_page.setLayout(vide)
 
+        # Actions globales, volontairement séparées des boutons du panneau de
+        # gauche qui, eux, ne portent que sur les dossiers sélectionnés.
+        self._include_all = QPushButton()
+        self._exclude_all = QPushButton()
+        self._include_all.clicked.connect(lambda: self._set_all(False))
+        self._exclude_all.clicked.connect(lambda: self._set_all(True))
+
+        # Ils agissent sur la galerie : ils se posent **dessus**, en bas à
+        # droite, plutôt que dans la barre du haut d'où ils commandaient de loin
+        # une zone qu'ils ne touchaient pas.
+        self._bulk = QWidget(self._gallery)
+        bulk_row = QHBoxLayout(self._bulk)
+        bulk_row.setContentsMargins(0, 0, 0, 0)
+        bulk_row.setSpacing(6)
+        bulk_row.addWidget(self._include_all)
+        bulk_row.addWidget(self._exclude_all)
+        self._gallery.installEventFilter(self)
+
         self._pages = QStackedWidget()
         self._pages.addWidget(self._empty_page)   # 0
         self._pages.addWidget(self._gallery)      # 1
@@ -184,12 +207,6 @@ class CardsStep(QWidget):
         self._cancel = QPushButton()
         self._cancel.clicked.connect(self._cancel_download)
         self._cancel.hide()
-        # Actions globales, volontairement séparées des boutons du panneau de
-        # gauche qui, eux, ne portent que sur les dossiers sélectionnés.
-        self._include_all = QPushButton()
-        self._exclude_all = QPushButton()
-        self._include_all.clicked.connect(lambda: self._set_all(False))
-        self._exclude_all.clicked.connect(lambda: self._set_all(True))
         self._count = QLabel()
         self._progress = QProgressBar()
         self._progress.hide()
@@ -197,8 +214,6 @@ class CardsStep(QWidget):
         top = QHBoxLayout()
         top.addWidget(self._choose_folder)
         top.addWidget(self._update_catalogue)
-        top.addWidget(self._include_all)
-        top.addWidget(self._exclude_all)
         top.addWidget(self._count, 1)
         top.addWidget(self._progress, 1)
         top.addWidget(self._cancel)
@@ -210,8 +225,8 @@ class CardsStep(QWidget):
 
     def retranslate_ui(self) -> None:
         self._folder_label.setText(self.tr("Dossiers"))
-        self._include_folder.setText(self.tr("Inclure"))
-        self._exclude_folder.setText(self.tr("Exclure"))
+        self._include_folder.setText(self.tr("Inclure l'extension"))
+        self._exclude_folder.setText(self.tr("Exclure l'extension"))
         self._show_all.setText(self.tr("Afficher tous les dossiers"))
         self._choose_folder.setText(self.tr("Choisir le dossier de cartes…"))
         self._update_catalogue.setText(self.tr("Mettre à jour le catalogue"))
@@ -238,6 +253,33 @@ class CardsStep(QWidget):
         # des textes traduits. Le rappeler viderait la liste et détruirait la
         # sélection, donc le filtre en cours, pour rien.
 
+    # Marge entre les boutons posés sur la galerie et ses bords. La barre de
+    # défilement est contournée par sa largeur réelle : la supposer absente les
+    # ferait passer dessous dès que la galerie déborde.
+    BULK_MARGIN = 8
+
+    def eventFilter(self, watched, event):
+        """Replace les boutons posés sur la galerie à chaque redimensionnement.
+
+        Un widget enfant ne suit aucune disposition : sans cela, il resterait au
+        coin haut-gauche et sortirait du cadre à la première fenêtre agrandie.
+        """
+        if watched is self._gallery and event.type() in (
+                QEvent.Resize, QEvent.Show):
+            self._place_bulk_buttons()
+        return super().eventFilter(watched, event)
+
+    def _place_bulk_buttons(self) -> None:
+        barre = self._gallery.verticalScrollBar()
+        largeur_barre = barre.width() if barre.isVisible() else 0
+        taille = self._bulk.sizeHint()
+        self._bulk.setGeometry(
+            self._gallery.width() - taille.width() - largeur_barre
+            - self.BULK_MARGIN,
+            self._gallery.height() - taille.height() - self.BULK_MARGIN,
+            taille.width(), taille.height())
+        self._bulk.raise_()
+
     # --- État de l'écran --------------------------------------------------
 
     def _update_state(self) -> None:
@@ -253,9 +295,10 @@ class CardsStep(QWidget):
         # l'œil des deux seules actions possibles. On les retire tant qu'elles
         # n'ont rien à montrer.
         self._left_panel.setVisible(garni)
-        for bouton in (self._include_all, self._exclude_all, self._show_all,
-                       self._include_folder, self._exclude_folder):
+        for bouton in (self._include_all, self._exclude_all, self._show_all):
             bouton.setEnabled(garni)
+        self._bulk.setVisible(garni)
+        self._update_folder_buttons()
         self._hint.setVisible(garni)
         # La mise à jour vise un dossier : sans dossier connu, elle n'a pas de
         # cible. Le bouton de l'état vide, lui, en demande un.
@@ -529,6 +572,15 @@ class CardsStep(QWidget):
             self._session.set_excluded(
                 [card.index for card in self._session.card_set], excluded
             )
+
+    def _update_folder_buttons(self) -> None:
+        """« Inclure l'extension » n'a de cible que si l'on en a désigné une.
+
+        Actifs sans sélection, ils ne faisaient rien : le clic partait dans le
+        vide et l'utilisateur croyait à une panne."""
+        vise = bool(self._session.total_cards and self._folders.selectedItems())
+        self._include_folder.setEnabled(vise)
+        self._exclude_folder.setEnabled(vise)
 
     def _selected_folders(self):
         return {item.data(Qt.UserRole) for item in self._folders.selectedItems()}
