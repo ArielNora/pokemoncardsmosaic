@@ -814,3 +814,182 @@ def test_a_thread_that_never_stops_does_not_lock_the_window_shut(qt_app, session
     assert event.isAccepted(), "la fenêtre doit finir par se fermer"
     assert refus == MainWindow.CLOSE_ATTEMPTS - 1, refus
     fenetre.deleteLater()
+
+
+# --- Ce que la reprise doit refuser -----------------------------------------
+
+def prete(step_widget, session):
+    """Un écran en état de reprise : une timeline d'un cliché, signature figée."""
+    from pokemon_mosaic.optimize import build_initial_grid, select_cards
+    from pokemon_mosaic.timeline import Timeline
+
+    sub, links = select_cards(session.card_set, session.selected_indices(),
+                              session.usable_links())
+    grid = build_initial_grid(sub, shape=(session.cols, session.rows),
+                              links=links, empty_cells=session.empty_cells())
+    timeline = Timeline(every=1)
+    step_widget._on_started(sub, timeline)
+    step_widget._run_signature = step_widget._signature()
+    timeline.record(grid, 0, 0, 1.0, 0.0)
+    step_widget._on_snapshot(timeline.snapshots[-1])
+    # C'est la fin du calcul qui ouvre les boutons de reprise ; on ne rejoue
+    # que cette partie-là, `_on_finished` demandant un résultat complet.
+    step_widget._update_resume_buttons()
+    assert step_widget._extend.isEnabled()
+    return grid
+
+
+def test_moving_an_empty_cell_disables_resuming(step):
+    """Reprendre saute `build_initial_grid` : les trous resteraient là où ils
+    étaient. Mesuré avant correction — trous demandés en (1,2) et (2,3), grille
+    reprise gardant (0,0) et (1,2), sans le moindre signe."""
+    widget, session = step
+    session.set_layout(cols=4, rows=3)          # 12 cases pour 20 cartes… non
+    session.set_excluded(range(10, 20), True)   # 10 retenues, 2 trous
+    prete(widget, session)
+
+    # Une case qui n'est pas déjà un trou : retirer l'un des deux trous
+    # automatiques serait sans effet, `empty_cells()` complétant aussitôt le
+    # quota au même endroit.
+    assert (2, 3) not in session.empty_cells()
+    session.toggle_empty_cell(2, 3)
+    assert (2, 3) in session.empty_cells()
+
+    assert not widget._extend.isEnabled()
+    assert not widget.can_resume()
+
+
+def test_reshaping_a_link_disables_resuming(step):
+    """Mêmes cartes, autre forme : la signature ne bougeait pas, le bouton
+    restait actif, et le calcul échouait au lancement sur un message interne."""
+    widget, session = step
+    horizontal = Link(cards=(0, 1, 2), shape=(3, 1))
+    session.links.add(horizontal)
+    prete(widget, session)
+
+    session.links.replace(horizontal, Link(cards=(0, 1, 2), shape=(1, 3)))
+    session.links_changed.emit()
+    assert not widget._extend.isEnabled()
+
+
+def test_flipping_the_imposed_order_disables_resuming(step):
+    """`_locate_block` n'essaie le bloc retourné que si l'ordre est libre : le
+    rendre imposé après coup rend la grille de départ irrecevable."""
+    widget, session = step
+    libre = Link(cards=(0, 1, 2), shape=(3, 1), ordered=False)
+    session.links.add(libre)
+    prete(widget, session)
+
+    session.links.replace(libre, Link(cards=(0, 1, 2), shape=(3, 1), ordered=True))
+    session.links_changed.emit()
+    assert not widget._extend.isEnabled()
+
+
+def test_a_grid_untouched_still_resumes(step):
+    """Le garde ne doit pas éteindre la reprise pour rien : sans modification,
+    prolonger reste possible."""
+    widget, session = step
+    prete(widget, session)
+    assert widget.can_resume()
+
+
+# --- L'élagage de la timeline ------------------------------------------------
+
+def test_thinning_does_not_drag_the_user_back_to_the_live_view(step):
+    """L'élagage divise la timeline par deux dès 70 clichés : le maximum baisse,
+    Qt écrête la position et émet `valueChanged`. On en déduisait que
+    l'utilisateur était revenu en butée — mesuré, curseur 45 ramené à 44 et
+    l'image se remettant à défiler pendant qu'il examinait un état antérieur."""
+    import numpy as np
+
+    from pokemon_mosaic.timeline import Timeline
+
+    widget, session = step
+    timeline = Timeline(every=1, max_snapshots=70)
+    widget._on_started(session.card_set, timeline)
+    grille = np.zeros((session.rows, session.cols), np.int16)
+
+    def pousse(k):
+        timeline.record(grille, k, k, 1.0, 0.0)
+        widget._on_snapshot(timeline.snapshots[-1])
+
+    for k in range(60):
+        pousse(k)
+    widget._slider.setValue(45)
+    assert not widget._following
+
+    for k in range(60, 80):             # franchit le seuil d'élagage
+        pousse(k)
+
+    assert len(timeline) < 60, "l'élagage ne s'est pas déclenché"
+    assert not widget._following, "l'utilisateur a été ramené au direct"
+
+
+def test_reaching_the_last_snapshot_by_hand_still_follows(step):
+    """Le garde ne vaut que pour les réglages que nous provoquons : revenir en
+    butée soi-même doit toujours remettre en suivi du direct."""
+    widget, session = step
+    timeline = feed(widget, session)
+    widget._slider.setValue(0)
+    assert not widget._following
+
+    widget._slider.setValue(len(timeline) - 1)
+    assert widget._following
+
+
+def test_thinning_refreshes_the_image_under_the_cursor(step):
+    """L'élagage renumérote : la case du curseur désigne un autre cliché. Sans
+    rendu, l'écran gardait l'image précédente sous une étiquette qui a changé —
+    et l'export aurait écrit la grille du nouveau cliché. Mesuré : index 20
+    passé de l'itération 20 à l'itération 40, image inchangée."""
+    import numpy as np
+
+    from pokemon_mosaic.timeline import Timeline
+
+    widget, session = step
+    timeline = Timeline(every=1, max_snapshots=70)
+    widget._on_started(session.card_set, timeline)
+
+    def pousse(k):
+        grille = np.roll(np.arange(20, dtype=np.int16), k).reshape(
+            session.rows, session.cols)
+        timeline.record(grille, k, k, 1.0, 0.0)
+        widget._on_snapshot(timeline.snapshots[-1])
+
+    for k in range(60):
+        pousse(k)
+    widget._slider.setValue(20)
+    widget._flush_render()
+    assert widget._pending_index is None
+
+    avant = timeline[20].iteration
+    for k in range(60, 80):
+        pousse(k)
+
+    assert timeline[widget._slider.value()].iteration != avant, \
+        "l'élagage n'a pas renuméroté"
+    assert widget._pending_index == widget._slider.value(), \
+        "l'image sous le curseur n'a pas été redemandée"
+
+
+def test_a_growing_timeline_does_not_re_render_for_nothing(step):
+    """Le rendu ne se redemande qu'à un rétrécissement : le déclencher à chaque
+    cliché coûterait 56 ms de fil principal pour une image identique."""
+    import numpy as np
+
+    from pokemon_mosaic.timeline import Timeline
+
+    widget, session = step
+    timeline = Timeline(every=1, max_snapshots=None)
+    widget._on_started(session.card_set, timeline)
+    grille = np.arange(20, dtype=np.int16).reshape(session.rows, session.cols)
+
+    for k in range(10):
+        timeline.record(grille, k, k, 1.0, 0.0)
+        widget._on_snapshot(timeline.snapshots[-1])
+    widget._slider.setValue(3)
+    widget._flush_render()
+
+    timeline.record(grille, 10, 10, 1.0, 0.0)
+    widget._on_snapshot(timeline.snapshots[-1])
+    assert widget._pending_index is None

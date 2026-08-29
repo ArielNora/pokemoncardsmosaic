@@ -30,6 +30,13 @@ class PresetsBar(QWidget):
         self._session = session
         self._directory = directory
         self._build()
+        # ⚠️ Sans cela « Enregistrer… » reste grisé après le chargement : il ne
+        # se réévaluait qu'au changement de préréglage dans la liste, geste
+        # impossible tant qu'on n'en a aucun — le tout premier préréglage était
+        # donc définitivement impossible à créer. Même défaut que « Suivant »,
+        # corrigé au même endroit dans `main_window`.
+        session.cards_loaded.connect(self._update_buttons)
+        session.cards_added.connect(self._update_buttons)
         self.refresh()
 
     def _build(self) -> None:

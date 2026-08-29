@@ -78,6 +78,13 @@ class RunStep(QWidget):
         self._cards = None
         self._timeline = None
         self._following = True      # suit le dernier cliché tant qu'on ne touche pas
+        # Vrai le temps d'un réglage de curseur que nous provoquons : ce n'est
+        # pas un geste de l'utilisateur et il ne doit rien conclure de la
+        # position qui en résulte.
+        self._adjusting = False
+        # Longueur de la timeline au dernier cliché reçu, pour repérer un
+        # élagage — le seul événement qui la fasse diminuer.
+        self._last_count = 0
         self._pending_index: int | None = None
         # Point de l'image à ramener au centre après le prochain rendu, posé par
         # le zoom : la taille de l'image n'est connue qu'une fois celui-ci fait.
@@ -267,12 +274,25 @@ class RunStep(QWidget):
         552,0 avec 0,30, soit 11 % d'écart. Prolonger sans le prendre en compte
         mêlait deux métriques dans une seule timeline, et la courbe montrait une
         chute soudaine alors qu'aucune carte n'avait bougé.
+
+        ⚠️ **Les cartes d'un lien ne suffisent pas : sa forme et son ordre
+        comptent aussi.** L'optimiseur exige que chaque bloc soit déjà intact
+        *dans sa forme courante*. Un 3×1 rouvert en 1×3 garde les mêmes cartes,
+        donc gardait la même signature : le bouton restait actif et le calcul
+        échouait au lancement sur un message citant `build_initial_grid`.
+
+        ⚠️ **La position des cases vides en fait partie.** Reprendre saute
+        `build_initial_grid`, donc les trous restent là où ils étaient. Mesuré :
+        trous demandés en (1,2) et (2,3), grille reprise gardant (0,0) et (1,2),
+        sans le moindre signe.
         """
         session = self._session
         return (
             tuple(session.selected_indices()),
-            tuple(sorted(link.cards for link in session.usable_links().active)),
+            tuple(sorted((link.cards, link.shape, link.ordered)
+                         for link in session.usable_links().active)),
             (session.rows, session.cols),
+            tuple(sorted(session.empty_cells())),
             session.strip_size,
         )
 
@@ -460,12 +480,31 @@ class RunStep(QWidget):
 
     def _on_snapshot(self, snapshot) -> None:
         count = len(self._timeline)
-        self._slider.setMaximum(max(0, count - 1))
+        # ⚠️ **L'élagage fait baisser le maximum.** La timeline se divise par
+        # deux dès 70 clichés : Qt écrête alors la position courante et émet
+        # `valueChanged`. Sans ce garde, `_on_slider_moved` en déduisait que
+        # l'utilisateur était revenu en butée et rebasculait en suivi du direct
+        # — mesuré, curseur 45 ramené à 44 et l'image se remettant à défiler
+        # sous ses yeux, précisément ce que la ligne suivante veut éviter.
+        self._adjusting = True
+        try:
+            self._slider.setMaximum(max(0, count - 1))
+        finally:
+            self._adjusting = False
         # On ne déplace le curseur que si l'utilisateur suit le direct : sinon il
         # verrait l'image lui échapper pendant qu'il examine un état antérieur.
         if self._following:
             self._slider.setValue(count - 1)
             self._show(count - 1)
+        elif count < self._last_count:
+            # ⚠️ L'élagage **renumérote** : la case du curseur ne désigne plus
+            # le même cliché. Sans ce rendu, l'écran garderait l'image
+            # précédente sous une étiquette qui a changé — et l'export, qui lit
+            # `current_grid()`, écrirait la grille du nouveau cliché, différente
+            # de ce que l'utilisateur regarde. Mesuré : index 20 passé de
+            # l'itération 20 à l'itération 40, image inchangée.
+            self._show(self._slider.value())
+        self._last_count = count
         self._update_position()
 
     def _stop_reason(self, reason: str) -> str:
@@ -506,8 +545,10 @@ class RunStep(QWidget):
     def _on_slider_moved(self, value: int) -> None:
         if self._timeline is None:
             return
-        # Revenir sur le dernier cliché remet en mode « suivre le direct ».
-        self._following = value >= len(self._timeline) - 1
+        # Revenir sur le dernier cliché remet en mode « suivre le direct » —
+        # mais seulement si c'est bien l'utilisateur qui l'y a mis.
+        if not self._adjusting:
+            self._following = value >= len(self._timeline) - 1
         self._show(value)
         self._update_position()
         self._update_resume_buttons()

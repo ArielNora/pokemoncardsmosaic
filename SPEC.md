@@ -535,7 +535,7 @@ beaucoup plus d'itérations que la descente stricte.
 
 ## 9. Avancement
 
-État au 2026-08-24. À tenir à jour : c'est ce document qui fait foi si la
+État au 2026-08-29. À tenir à jour : c'est ce document qui fait foi si la
 conversation est perdue.
 
 ### Fait
@@ -554,7 +554,8 @@ timeline de clichés, export poster en PNG/JPEG/PDF avec découpage en panneaux.
    affiché
 
 **Outillage** — hook `pre-commit` (ruff + pytest fichier par fichier), interface bilingue FR/EN,
-493 tests. Interface auditée en entier.
+632 tests. Interface auditée en entier, en deux lots — `ui/` d'abord, puis la vue
+d'exécution, la mise en page, les réglages et l'export.
 
 ### Les deux derniers chantiers de la v1 — faits
 

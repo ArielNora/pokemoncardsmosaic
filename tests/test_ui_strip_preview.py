@@ -198,3 +198,15 @@ def test_widget_paints_with_cards(preview):
     widget.refresh()
     pixmap = widget.grab()
     assert not pixmap.isNull()
+
+
+def test_the_shortage_message_goes_through_the_catalogue(qt_app):
+    """Écrite en dur, elle s'affichait en français dans une interface anglaise :
+    `lupdate` n'extrait que les `tr()` portant une chaîne littérale."""
+    from pathlib import Path
+
+    source = Path("src/pokemon_mosaic/ui/strip_preview.py").read_text()
+    assert 'self.tr("pas assez de cartes")' in source
+
+    catalogue = Path("translations/pokemon_mosaic_en.ts").read_text()
+    assert "pas assez de cartes" in catalogue

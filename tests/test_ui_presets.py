@@ -148,3 +148,33 @@ def test_the_window_offers_the_bar_and_a_directory(qt_app, tmp_path, session):
     window._presets.save_current("depuis la fenêtre")
     assert list_presets(str(tmp_path / "presets")) == ["depuis la fenêtre"]
     assert MainWindow.presets_directory().endswith("presets")
+
+
+def test_saving_unlocks_as_soon_as_cards_arrive(qt_app, tmp_path):
+    """« Enregistrer… » ne se réévaluait qu'au changement de préréglage dans la
+    liste — geste impossible tant qu'on n'en a aucun. Le tout premier préréglage
+    était donc définitivement impossible à créer."""
+    from pokemon_mosaic.ui.presets_bar import PresetsBar
+    from pokemon_mosaic.ui.session import Session
+
+    session = Session()
+    barre = PresetsBar(session, str(tmp_path / "presets"))
+    assert not barre._save.isEnabled()
+
+    session.set_cards(card_set_in(tmp_path / "cartes", {"a": ["un", "deux"]}),
+                      str(tmp_path / "cartes"))
+    assert barre._save.isEnabled()
+
+
+def test_saving_unlocks_on_the_very_first_batch(qt_app, tmp_path):
+    """Le chargement se fait par lots : on n'attend pas le dernier."""
+    from pokemon_mosaic.ui.presets_bar import PresetsBar
+    from pokemon_mosaic.ui.session import Session
+
+    session = Session()
+    barre = PresetsBar(session, str(tmp_path / "presets"))
+    jeu = card_set_in(tmp_path / "cartes", {"a": ["un", "deux"]})
+
+    session.start_loading(str(tmp_path / "cartes"))
+    session.append_cards(jeu.cards)
+    assert barre._save.isEnabled()

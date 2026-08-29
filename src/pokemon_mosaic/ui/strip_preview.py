@@ -111,7 +111,7 @@ class StripPreview(QWidget):
         # des cartes que l'utilisateur vient d'exclure serait trompeur.
         available = self._session.selected_indices()
         if not cards or len(available) < needed:
-            self._sandbox_error = "pas assez de cartes"
+            self._sandbox_error = self.tr("pas assez de cartes")
             return
 
         # Un échantillon régulier plutôt que les premières : les cartes d'un même
