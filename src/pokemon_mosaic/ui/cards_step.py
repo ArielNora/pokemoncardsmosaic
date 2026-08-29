@@ -321,9 +321,16 @@ class CardsStep(QWidget):
         lignes = []
         if card_set.odd_sizes:
             attendu = f"{card_set.full_size[0]}×{card_set.full_size[1]}"
+            montres = card_set.odd_sizes[:5]
             detail = ", ".join(f"{w}×{h} ({n})"
                                for (w, h), n in
-                               ((e.size, e.count) for e in card_set.odd_sizes[:5]))
+                               ((e.size, e.count) for e in montres))
+            # La liste est tronquée mais le total les compte tous : sans cette
+            # mention, les chiffres se contredisent et l'utilisateur ne peut pas
+            # savoir s'il manque des lignes ou si le total est faux.
+            reste = len(card_set.odd_sizes) - len(montres)
+            if reste:
+                detail += self.tr(", et %n autre(s) format(s)", "", reste)
             total = sum(e.count for e in card_set.odd_sizes)
             lignes.append(
                 self.tr("%1 carte(s) ne sont pas au format %2 : %3. Elles seront "

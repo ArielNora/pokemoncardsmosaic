@@ -308,3 +308,22 @@ def test_shutdown_is_safe_without_any_load(qt_app):
     from pokemon_mosaic.ui.session import Session
 
     CardsStep(Session()).shutdown()   # ne doit pas lever
+
+
+def test_the_warnings_reach_the_session_card_set(qt_app, tmp_path):
+    """La session tient un `CardSet` à elle, rempli lot par lot, et non celui
+    que le chargeur a produit. Sans report, `has_warnings` y serait toujours
+    faux alors que le chargement en a relevé."""
+    from pokemon_mosaic.cards import SizeWarning
+    from pokemon_mosaic.ui.session import Session
+
+    charge = card_set_in(tmp_path, {"s": ["a", "b"]})
+    charge.odd_sizes = [SizeWarning(size=(717, 1000), count=1)]
+    charge.unreadable = ["casse.webp — illisible"]
+
+    session = Session()
+    session.set_cards(charge, str(tmp_path))
+
+    assert session.card_set.has_warnings
+    assert session.card_set.odd_sizes[0].size == (717, 1000)
+    assert session.card_set.unreadable == ["casse.webp — illisible"]

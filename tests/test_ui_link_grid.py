@@ -351,3 +351,119 @@ def test_a_card_keeps_its_size_from_the_palette_to_the_grid(qt_app):
 
     assert case.size().toTuple() == (CELL_WIDTH, CELL_HEIGHT)
     assert palette.iconSize().toTuple() == (CELL_WIDTH, CELL_HEIGHT)
+
+
+# --- Le seuil de glissement ------------------------------------------------
+
+def gestes(case, depart, arrivee, qt_app):
+    """Presse, bouge, et dit si un glissement a démarré.
+
+    `QDrag.exec` ouvre une boucle imbriquée : on l'observe sans le jouer.
+    """
+    from PySide6.QtCore import Qt
+    from PySide6.QtTest import QTest
+
+    from pokemon_mosaic.ui import link_grid
+
+    lances = []
+
+    class FauxDrag:
+        def __init__(self, source):
+            pass
+
+        def setMimeData(self, data):
+            pass
+
+        def setPixmap(self, pixmap):
+            pass
+
+        def exec(self, action):
+            lances.append(action)
+
+    vrai = link_grid.QDrag
+    link_grid.QDrag = FauxDrag
+    try:
+        QTest.mousePress(case, Qt.LeftButton, Qt.NoModifier, depart)
+        QTest.mouseMove(case, arrivee)
+        qt_app.processEvents()
+    finally:
+        link_grid.QDrag = vrai
+    return bool(lances)
+
+
+def test_a_trembling_hand_does_not_start_a_drag(qt_app):
+    """`drag.exec` ouvre une boucle imbriquée qui avale la suite du geste : le
+    double-clic n'arrivait jamais, et la case ne se vidait pas. Comme c'est le
+    seul moyen de la vider, le geste échouait une fois sur deux."""
+    from PySide6.QtCore import QPoint
+    from PySide6.QtWidgets import QApplication
+
+    from pokemon_mosaic.ui.link_grid import CardCell
+
+    case = CardCell(0, 0)
+    case.set_card(3, np.zeros((4, 3, 3), np.uint8))
+    case.show()
+
+    seuil = QApplication.startDragDistance()
+    assert seuil >= 4, "seuil trop bas pour que le test ait un sens"
+    assert not gestes(case, QPoint(39, 54), QPoint(41, 55), qt_app)
+
+
+def test_a_real_drag_still_starts(qt_app):
+    """Le seuil ne doit pas empêcher le geste volontaire."""
+    from PySide6.QtCore import QPoint
+    from PySide6.QtWidgets import QApplication
+
+    from pokemon_mosaic.ui.link_grid import CardCell
+
+    case = CardCell(0, 0)
+    case.set_card(3, np.zeros((4, 3, 3), np.uint8))
+    case.show()
+
+    loin = QApplication.startDragDistance() + 20
+    assert gestes(case, QPoint(10, 10), QPoint(10 + loin, 10 + loin), qt_app)
+
+
+def test_an_empty_cell_never_starts_a_drag(qt_app):
+    from PySide6.QtCore import QPoint
+
+    from pokemon_mosaic.ui.link_grid import CardCell
+
+    case = CardCell(0, 0)
+    case.show()
+    assert not gestes(case, QPoint(10, 10), QPoint(90, 90), qt_app)
+
+
+def test_a_filled_cell_captures_the_mouse(qt_app):
+    """`QWidget::mousePressEvent` ignore l'événement par défaut : la case ne
+    capturerait pas la souris et les mouvements suivants iraient au parent, si
+    bien que le glissement d'une case à l'autre ne partirait jamais d'une vraie
+    souris. `QTest.mouseMove` ne le montre pas — il livre l'événement au widget
+    visé, en court-circuitant la capture."""
+    from PySide6.QtCore import QPointF, Qt
+    from PySide6.QtGui import QMouseEvent
+
+    from pokemon_mosaic.ui.link_grid import CardCell
+
+    case = CardCell(0, 0)
+    case.set_card(1, np.zeros((4, 3, 3), np.uint8))
+    presse = QMouseEvent(QMouseEvent.MouseButtonPress, QPointF(10, 10),
+                         QPointF(10, 10), Qt.LeftButton, Qt.LeftButton,
+                         Qt.NoModifier)
+    case.mousePressEvent(presse)
+    assert presse.isAccepted()
+
+
+def test_an_empty_cell_lets_the_click_through(qt_app):
+    """Rien à faire glisser : la case n'a aucune raison de retenir la souris."""
+    from PySide6.QtCore import QPointF, Qt
+    from PySide6.QtGui import QMouseEvent
+
+    from pokemon_mosaic.ui.link_grid import CardCell
+
+    case = CardCell(0, 0)
+    presse = QMouseEvent(QMouseEvent.MouseButtonPress, QPointF(10, 10),
+                         QPointF(10, 10), Qt.LeftButton, Qt.LeftButton,
+                         Qt.NoModifier)
+    case.mousePressEvent(presse)
+    assert not presse.isAccepted()

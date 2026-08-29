@@ -433,3 +433,33 @@ def test_dragging_below_the_list_still_scrolls(step, tmp_path):
 
     barre = maintenir(ecran._folders, vers_le_bas=20)
     assert barre.value() > 0
+
+
+def test_the_odd_size_total_matches_what_is_listed(step, tmp_path):
+    """Le détail est tronqué à cinq formats mais le total les compte tous :
+    sans mention de la troncature, les chiffres se contredisent et on ne peut
+    pas savoir s'il manque des lignes ou si le total est faux."""
+    from pokemon_mosaic.cards import SizeWarning
+
+    ecran, _ = step
+    jeu = card_set_in(tmp_path, {"s": ["a"]})
+    jeu.full_size = (734, 1024)
+    jeu.odd_sizes = [SizeWarning(size=(700 + i, 1000), count=i + 1)
+                     for i in range(7)]
+    ecran._show_warnings(jeu)
+
+    texte = ecran._warnings.text()
+    assert "28" in texte              # le total, sur les sept formats
+    assert "2 autre" in texte         # les deux formats non montrés
+
+
+def test_a_short_list_of_odd_sizes_says_nothing_more(step, tmp_path):
+    from pokemon_mosaic.cards import SizeWarning
+
+    ecran, _ = step
+    jeu = card_set_in(tmp_path, {"s": ["a"]})
+    jeu.full_size = (734, 1024)
+    jeu.odd_sizes = [SizeWarning(size=(717, 1000), count=3)]
+    ecran._show_warnings(jeu)
+
+    assert "autre" not in ecran._warnings.text()

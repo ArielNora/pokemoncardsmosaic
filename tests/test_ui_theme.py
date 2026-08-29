@@ -243,3 +243,46 @@ def test_the_stylesheet_gives_buttons_a_hover_state():
     assert "QPushButton:hover" in feuille
     assert theme.DARK["button_hover_bg"] in feuille
     assert theme.DARK["button_hover_border"] in feuille
+
+
+def test_a_scheme_change_is_still_detectable_after_our_palette_is_installed(qt_app):
+    """Sans mémoriser la palette du système, le repli relit la nôtre et confirme
+    toujours le mode courant : sur un bureau où `colorScheme()` rend `Unknown`,
+    une bascule ne pouvait plus être vue et l'application restait définitivement
+    dans le mode où elle avait démarré."""
+    from PySide6.QtGui import QColor, QPalette
+
+    original = qt_app.palette()
+    theme.forget_system()
+    try:
+        clair = QPalette()
+        clair.setColor(QPalette.Window, QColor("#efefef"))
+        qt_app.setPalette(clair)
+        theme.remember_system(qt_app)
+
+        # Notre palette sombre s'installe : le repli ne doit pas la relire.
+        qt_app.setPalette(theme.qt_palette(dark=True))
+        assert not theme.system_is_dark(qt_app), \
+            "le repli a relu notre propre palette"
+    finally:
+        theme.forget_system()
+        qt_app.setPalette(original)
+
+
+def test_the_remembered_palette_is_the_first_one_seen(qt_app):
+    """Retenue une fois : la rafraîchir à chaque `apply` reviendrait au défaut."""
+    from PySide6.QtGui import QColor, QPalette
+
+    original = qt_app.palette()
+    theme.forget_system()
+    try:
+        clair = QPalette()
+        clair.setColor(QPalette.Window, QColor("#efefef"))
+        qt_app.setPalette(clair)
+        theme.remember_system(qt_app)
+        qt_app.setPalette(theme.qt_palette(dark=True))
+        theme.remember_system(qt_app)          # second appel : sans effet
+        assert not theme.system_is_dark(qt_app)
+    finally:
+        theme.forget_system()
+        qt_app.setPalette(original)

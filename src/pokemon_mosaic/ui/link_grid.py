@@ -14,6 +14,7 @@ import numpy as np
 from PySide6.QtCore import QMimeData, QSize, Qt, Signal
 from PySide6.QtGui import QDrag, QPixmap
 from PySide6.QtWidgets import (
+    QApplication,
     QFrame,
     QGridLayout,
     QLabel,
@@ -111,6 +112,8 @@ class CardCell(QFrame):
         super().__init__(parent)
         self._row, self._col = row, col
         self._card: int | None = None
+        # Origine du geste en cours, pour distinguer un clic d'un glissement.
+        self._press = None
         self.setAcceptDrops(True)
         self.setFrameShape(QFrame.StyledPanel)
         self.setFixedSize(CELL_WIDTH, CELL_HEIGHT)
@@ -169,13 +172,41 @@ class CardCell(QFrame):
         if self._card is not None:
             self.cleared.emit(self._row, self._col)
 
+    def mousePressEvent(self, event):
+        """Retient d'où part le geste, pour mesurer s'il devient un glissement.
+
+        ⚠️ **L'événement est accepté**, et non laissé filer vers le parent.
+        `QWidget::mousePressEvent` l'ignore par défaut : la case ne capturerait
+        alors pas la souris, et les mouvements suivants iraient au parent — le
+        glissement d'une case vers une autre ne partirait jamais depuis une vraie
+        souris. Les tests ne le voyaient pas : `QTest.mouseMove` livre
+        l'événement au widget visé, court-circuitant la capture.
+        """
+        if event.button() == Qt.LeftButton and self._card is not None:
+            self._press = event.position().toPoint()
+            event.accept()
+            return
+        super().mousePressEvent(event)
+
     def mouseMoveEvent(self, event):
         """Une carte déjà posée se déplace vers une autre case.
 
         Sans cela, corriger une inversion demanderait de vider les deux cases
         puis de retourner chercher les cartes dans la palette.
+
+        ⚠️ **Au-delà du seuil de Qt seulement.** Démarrer à tout mouvement
+        arrachait la carte dès deux pixels de tremblement, et `drag.exec()`
+        ouvre une boucle imbriquée qui avale la suite du geste : le double-clic
+        n'arrivait jamais, et la case ne se vidait pas. Comme c'est le seul
+        moyen de la vider, le geste échouait une fois sur deux sans raison
+        visible.
         """
         if self._card is None or not (event.buttons() & Qt.LeftButton):
+            return
+        if self._press is None:
+            return
+        parcouru = (event.position().toPoint() - self._press).manhattanLength()
+        if parcouru < QApplication.startDragDistance():
             return
         drag = QDrag(self)
         drag.setMimeData(card_mime(self._card))

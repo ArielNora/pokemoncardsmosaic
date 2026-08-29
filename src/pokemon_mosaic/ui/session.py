@@ -117,9 +117,17 @@ class Session(QObject):
         self.selection_changed.emit()
 
     def finish_loading(self, card_set: CardSet) -> None:
-        """Fixe les dimensions définitives une fois tout chargé."""
+        """Fixe les dimensions définitives une fois tout chargé.
+
+        Les avertissements suivent aussi : la session tient un `CardSet` **à
+        elle**, rempli lot par lot, et non celui que le chargeur a produit. Les
+        laisser derrière donnerait un `session.card_set.has_warnings` toujours
+        faux, alors que le chargement en a relevé.
+        """
         self.card_set.full_size = card_set.full_size
         self.card_set.thumb_size = card_set.thumb_size
+        self.card_set.odd_sizes = list(card_set.odd_sizes)
+        self.card_set.unreadable = list(card_set.unreadable)
         self.cards_loaded.emit()
 
     def set_cards(self, card_set: CardSet, data_dir: str) -> None:

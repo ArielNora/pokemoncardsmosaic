@@ -136,13 +136,37 @@ def qt_palette(dark: bool) -> QPalette:
     return palette
 
 
+# Palette que le système avait posée, retenue au premier passage. Voir
+# `remember_system` pour la raison.
+_SYSTEM_PALETTE: QPalette | None = None
+
+
+def remember_system(app) -> None:
+    """Retient la palette du système, avant que nous ne posions la nôtre.
+
+    ⚠️ Sans elle, le repli de `system_is_dark` relit `app.palette()` — devenue
+    **la nôtre** dès le premier `apply` — et confirme donc toujours le mode
+    courant. Sur un bureau où `colorScheme()` rend `Unknown`, une bascule en
+    cours d'exécution ne pouvait plus être détectée : l'application restait
+    définitivement dans le mode où elle avait démarré.
+    """
+    global _SYSTEM_PALETTE
+    if _SYSTEM_PALETTE is None:
+        _SYSTEM_PALETTE = QPalette(app.palette())
+
+
+def forget_system() -> None:
+    """Oublie la palette retenue. Pour les tests, qui partagent une QApplication."""
+    global _SYSTEM_PALETTE
+    _SYSTEM_PALETTE = None
+
+
 def system_is_dark(app) -> bool:
     """Le système est-il en mode sombre ?
 
-    Lu **avant** que nous n'imposions notre palette, sinon la question se mord
-    la queue. `colorScheme()` d'abord, qui est la réponse directe ; à défaut —
-    hors écran, où il n'y a aucun thème de plateforme — la clarté du fond que le
-    système avait posé.
+    `colorScheme()` d'abord, qui est la réponse directe et suit les bascules.
+    À défaut — certains bureaux, et le mode hors écran, ne répondent pas — la
+    clarté du fond que le système avait posé **avant** notre palette.
     """
     from PySide6.QtCore import Qt
 
@@ -151,7 +175,8 @@ def system_is_dark(app) -> bool:
         return True
     if scheme == Qt.ColorScheme.Light:
         return False
-    return is_dark(app.palette())
+    reference = _SYSTEM_PALETTE if _SYSTEM_PALETTE is not None else app.palette()
+    return is_dark(reference)
 
 
 def stylesheet(palette: QPalette) -> str:
@@ -217,6 +242,7 @@ QWidget[role="floating-bar"] {{
 
 def apply(app) -> None:
     """Pose la palette du mode courant, puis la feuille globale par-dessus."""
+    remember_system(app)
     app.setPalette(qt_palette(system_is_dark(app)))
     app.setStyleSheet(stylesheet(app.palette()))
 
