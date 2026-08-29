@@ -138,6 +138,14 @@ class CardGalleryModel(QAbstractListModel):
 class CardGallery(QListView):
     """Grille de vignettes ; un clic bascule l'inclusion d'une carte."""
 
+    # Vide réservé **après** la dernière rangée, pour que les boutons posés en
+    # bas à droite ne recouvrent aucune carte une fois arrivé au bout.
+    #
+    # Une marge de vue serait toujours visible, y compris en haut de la liste où
+    # elle ne servirait à rien : on allonge la course de la barre plutôt que de
+    # rétrécir la zone d'affichage.
+    BOTTOM_ROOM = 42
+
     def __init__(self, session: Session, parent=None):
         super().__init__(parent)
         self._session = session
@@ -150,6 +158,19 @@ class CardGallery(QListView):
         self.setSpacing(3)
         self.setIconSize(QSize(THUMB_WIDTH, int(THUMB_WIDTH * 984 / 713)))
         self.clicked.connect(self._on_clicked)
+
+    def updateGeometries(self):
+        """Allonge la course verticale du vide réservé sous la dernière rangée.
+
+        Qt recalcule les barres ici à chaque changement de contenu ou de taille ;
+        c'est donc le seul endroit où le supplément survive à un redimensionnement.
+        """
+        super().updateGeometries()
+        barre = self.verticalScrollBar()
+        # Rien à réserver si tout tient déjà à l'écran : on n'invente pas une
+        # barre de défilement là où il n'y en avait pas.
+        if barre.maximum() > 0:
+            barre.setMaximum(barre.maximum() + self.BOTTOM_ROOM)
 
     def set_folder_filter(self, folders) -> None:
         self.model().set_folder_filter(folders)

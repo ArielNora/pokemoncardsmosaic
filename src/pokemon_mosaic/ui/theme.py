@@ -14,7 +14,7 @@ Les widgets ne posent plus leur propre couleur : ils se marquent d'une propriét
 n'a donc qu'un seul endroit à toucher, au lieu d'aller réveiller chaque widget.
 """
 
-from PySide6.QtCore import QTimer
+from PySide6.QtCore import QEvent, QObject, Qt, QTimer
 from PySide6.QtGui import QPalette
 
 # Chaque rôle vaut dans les deux modes. Contraste vérifié par les tests : au
@@ -33,6 +33,15 @@ LIGHT = {
     "empty_border": "#828282",   # 3,2:1 — #999 n'atteignait que 2,5:1
     "empty_text": "#6e6e6e",
     "empty_bg": "#e4e4e4",
+    "button_bg": "#fbfbfb",
+    "button_border": "#b6b6b6",
+    "button_hover_bg": "#e9f0f8",
+    "button_hover_border": "#4a86c8",
+    "button_pressed_bg": "#d8e2ee",
+    "button_off_bg": "#f1f1f1",
+    "button_off_border": "#d6d6d6",
+    "bar_bg": "#f4f4f4",
+    "bar_border": "#c8c8c8",
 }
 
 DARK = {
@@ -45,12 +54,44 @@ DARK = {
     "empty_border": "#7a7a7a",
     "empty_text": "#a8a8a8",
     "empty_bg": "#2b2b2b",
+    "button_bg": "#3b3b3b",
+    "button_border": "#5c5c5c",
+    "button_hover_bg": "#4c525a",
+    "button_hover_border": "#7fb0e8",
+    "button_pressed_bg": "#2d3138",
+    "button_off_bg": "#303030",
+    "button_off_border": "#464646",
+    "bar_bg": "#323232",
+    "bar_border": "#4d4d4d",
 }
 
-# Fonds de référence pour la vérification de contraste. Ce ne sont pas des
-# valeurs utilisées à l'affichage — le vrai fond vient de la palette système —
-# mais les pires cas plausibles de chaque mode.
-REFERENCE_BG = {"light": "#efefef", "dark": "#1e1e1e"}
+# Les rôles que Qt, lui, connaît. On les pose nous-mêmes plutôt que de laisser
+# le style les choisir : `setStyle("Fusion")` remplace la palette du système, et
+# l'application perdrait son mode sombre. Les poser garantit aussi le **même
+# rendu sur macOS, Windows et Linux**, qui est le but.
+PALETTE_LIGHT = {
+    "window": "#efefef", "window_text": "#1a1a1a",
+    "base": "#ffffff", "alt_base": "#f5f5f5",
+    "text": "#1a1a1a", "placeholder": "#8a8a8a",
+    "button": "#fbfbfb", "button_text": "#1a1a1a",
+    "highlight": "#3573b9", "highlight_text": "#ffffff",
+    "tooltip_bg": "#fdfdf2", "tooltip_text": "#1a1a1a",
+    "link": "#1a5fb4", "disabled_text": "#9a9a9a",
+}
+
+PALETTE_DARK = {
+    "window": "#252525", "window_text": "#e6e6e6",
+    "base": "#1c1c1c", "alt_base": "#232323",
+    "text": "#e6e6e6", "placeholder": "#7d7d7d",
+    "button": "#3b3b3b", "button_text": "#e6e6e6",
+    "highlight": "#3a78c2", "highlight_text": "#ffffff",
+    "tooltip_bg": "#2f2f2f", "tooltip_text": "#e6e6e6",
+    "link": "#7fb0e8", "disabled_text": "#6b6b6b",
+}
+
+# Fonds de référence pour la vérification de contraste : ce sont désormais les
+# fonds réels, puisque c'est nous qui les posons.
+REFERENCE_BG = {"light": PALETTE_LIGHT["window"], "dark": PALETTE_DARK["window"]}
 
 
 def is_dark(palette: QPalette) -> bool:
@@ -65,6 +106,52 @@ def is_dark(palette: QPalette) -> bool:
 
 def colours(palette: QPalette) -> dict:
     return DARK if is_dark(palette) else LIGHT
+
+
+def qt_palette(dark: bool) -> QPalette:
+    """La palette Qt du mode voulu, construite de bout en bout.
+
+    Les rôles désactivés sont posés à part : sans eux, Fusion grise un libellé
+    en le mélangeant au fond, ce qui donne un texte à peine plus pâle et non un
+    texte visiblement inerte.
+    """
+    from PySide6.QtGui import QColor
+
+    c = PALETTE_DARK if dark else PALETTE_LIGHT
+    palette = QPalette()
+    for role, cle in (
+        (QPalette.Window, "window"), (QPalette.WindowText, "window_text"),
+        (QPalette.Base, "base"), (QPalette.AlternateBase, "alt_base"),
+        (QPalette.Text, "text"), (QPalette.PlaceholderText, "placeholder"),
+        (QPalette.Button, "button"), (QPalette.ButtonText, "button_text"),
+        (QPalette.BrightText, "highlight_text"),
+        (QPalette.Highlight, "highlight"),
+        (QPalette.HighlightedText, "highlight_text"),
+        (QPalette.ToolTipBase, "tooltip_bg"), (QPalette.ToolTipText, "tooltip_text"),
+        (QPalette.Link, "link"),
+    ):
+        palette.setColor(role, QColor(c[cle]))
+    for role in (QPalette.Text, QPalette.WindowText, QPalette.ButtonText):
+        palette.setColor(QPalette.Disabled, role, QColor(c["disabled_text"]))
+    return palette
+
+
+def system_is_dark(app) -> bool:
+    """Le système est-il en mode sombre ?
+
+    Lu **avant** que nous n'imposions notre palette, sinon la question se mord
+    la queue. `colorScheme()` d'abord, qui est la réponse directe ; à défaut —
+    hors écran, où il n'y a aucun thème de plateforme — la clarté du fond que le
+    système avait posé.
+    """
+    from PySide6.QtCore import Qt
+
+    scheme = app.styleHints().colorScheme()
+    if scheme == Qt.ColorScheme.Dark:
+        return True
+    if scheme == Qt.ColorScheme.Light:
+        return False
+    return is_dark(app.palette())
 
 
 def stylesheet(palette: QPalette) -> str:
@@ -92,11 +179,45 @@ QFrame[role="cell-empty"] QLabel {{ border: none; color: {c["empty_text"]}; }}
    un widget reçoit son habillage. Sans ce calage, le champ de recherche paraît
    écrasé à côté de la liste déroulante voisine, qui se dimensionne seule. */
 QLineEdit[role="search"] {{ padding: 5px 7px; }}
+
+/* ⚠️ Décrire les boutons **entièrement**, et pas seulement leur survol.
+   Une règle `:hover` isolée fait dessiner cet état-là par la feuille pendant que
+   les autres restent natifs : le bouton change de forme en passant dessus, ce
+   qui est pire que pas de survol du tout. En les décrivant en entier, on assume
+   leur apparence — et le survol devient une simple variation de la même.
+   Le texte, lui, reste `palette(button-text)` : il suit le système. */
+QPushButton, QToolButton {{
+    background: {c["button_bg"]};
+    border: 1px solid {c["button_border"]};
+    border-radius: 5px;
+    padding: 4px 12px;
+}}
+QPushButton:hover, QToolButton:hover {{
+    background: {c["button_hover_bg"]};
+    border-color: {c["button_hover_border"]};
+}}
+QPushButton:pressed, QToolButton:pressed {{
+    background: {c["button_pressed_bg"]};
+}}
+QPushButton:disabled, QToolButton:disabled {{
+    background: {c["button_off_bg"]};
+    border-color: {c["button_off_border"]};
+}}
+
+/* La barre d'actions posée sur la galerie. Opaque et bordée : par-dessus des
+   illustrations, un fond translucide laisse lire la carte au travers et les
+   boutons deviennent illisibles. */
+QWidget[role="floating-bar"] {{
+    background: {c["bar_bg"]};
+    border: 1px solid {c["bar_border"]};
+    border-radius: 6px;
+}}
 """
 
 
 def apply(app) -> None:
-    """Pose la feuille globale, et la repose quand le système change de mode."""
+    """Pose la palette du mode courant, puis la feuille globale par-dessus."""
+    app.setPalette(qt_palette(system_is_dark(app)))
     app.setStyleSheet(stylesheet(app.palette()))
 
 
@@ -136,3 +257,27 @@ def mark(widget, role: str) -> None:
     for cible in (widget, *widget.findChildren(QWidget)):
         style.unpolish(cible)
         style.polish(cible)
+
+
+class ClickableCursor(QObject):
+    """Donne à tout bouton le curseur en main, et le retire quand il est inerte.
+
+    Posé à l'échelle de l'application plutôt que bouton par bouton : il y en a
+    une quarantaine, répartis sur cinq écrans et trois dialogues, et en oublier
+    un ne se verrait pas.
+
+    Le curseur est un signal que la feuille de style ne sait pas donner — Qt
+    n'admet pas de propriété `cursor` — et il vient **en plus** du survol coloré,
+    pas à sa place.
+    """
+
+    def eventFilter(self, watched, event):
+        from PySide6.QtWidgets import QAbstractButton
+
+        if isinstance(watched, QAbstractButton) and event.type() in (
+                QEvent.Polish, QEvent.EnabledChange):
+            # Rien sur un bouton inerte : promettre un clic qui ne se produira
+            # pas est pire que de ne rien promettre.
+            watched.setCursor(Qt.PointingHandCursor if watched.isEnabled()
+                              else Qt.ArrowCursor)
+        return super().eventFilter(watched, event)

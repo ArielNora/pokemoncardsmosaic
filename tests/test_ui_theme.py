@@ -149,3 +149,97 @@ def test_the_empty_cell_background_is_a_role_not_a_palette_lookup():
     sombre = theme.stylesheet(palette_pour("#1e1e1e"))
     assert "palette(alternate-base)" not in sombre
     assert theme.DARK["empty_bg"] in sombre
+
+
+# --- La palette Qt, posée par nous ----------------------------------------
+
+def test_both_qt_palettes_define_the_same_roles():
+    assert set(theme.PALETTE_LIGHT) == set(theme.PALETTE_DARK)
+
+
+def test_the_two_qt_palettes_really_differ():
+    from PySide6.QtGui import QPalette
+
+    clair, sombre = theme.qt_palette(False), theme.qt_palette(True)
+    assert clair.color(QPalette.Window) != sombre.color(QPalette.Window)
+    assert clair.color(QPalette.Text) != sombre.color(QPalette.Text)
+
+
+def test_disabled_text_is_visibly_weaker_than_normal_text():
+    """Sans rôle désactivé posé, Fusion mélange le libellé au fond : on obtient
+    un texte à peine plus pâle, pas un texte visiblement inerte."""
+    for table in (theme.PALETTE_LIGHT, theme.PALETTE_DARK):
+        fort = contraste(table["text"], table["window"])
+        faible = contraste(table["disabled_text"], table["window"])
+        assert faible < fort / 1.8
+
+
+@pytest.mark.parametrize("table", [theme.PALETTE_LIGHT, theme.PALETTE_DARK])
+def test_the_ordinary_text_is_legible_on_its_own_window(table):
+    assert contraste(table["text"], table["window"]) >= 4.5
+
+
+@pytest.mark.parametrize("table", [theme.PALETTE_LIGHT, theme.PALETTE_DARK])
+def test_the_selection_text_is_legible_on_the_highlight(table):
+    assert contraste(table["highlight_text"], table["highlight"]) >= 4.5
+
+
+def test_the_scheme_is_decided_before_our_palette_replaces_the_system_one(qt_app):
+    """Sinon la question se mord la queue : on lirait le fond qu'on vient
+    justement de poser."""
+    from PySide6.QtGui import QPalette
+
+    original = qt_app.palette()
+    try:
+        qt_app.setPalette(theme.qt_palette(dark=True))
+        assert theme.is_dark(qt_app.palette())
+        assert theme.colours(qt_app.palette()) is theme.DARK
+    finally:
+        qt_app.setPalette(original)
+    assert original.color(QPalette.Window).isValid()
+
+
+# --- Le curseur des boutons -----------------------------------------------
+
+def test_a_button_gets_the_pointing_cursor(qt_app):
+    """Un second signal, que la feuille de style ne sait pas donner : Qt
+    n'admet pas de propriété `cursor`."""
+    from PySide6.QtCore import Qt
+    from PySide6.QtWidgets import QPushButton
+
+    filtre = theme.ClickableCursor()
+    qt_app.installEventFilter(filtre)
+    try:
+        bouton = QPushButton("essai")
+        bouton.show()
+        qt_app.processEvents()
+        assert bouton.cursor().shape() == Qt.PointingHandCursor
+    finally:
+        qt_app.removeEventFilter(filtre)
+
+
+def test_a_disabled_button_loses_the_pointing_cursor(qt_app):
+    """Promettre un clic qui ne se produira pas est pire que ne rien promettre."""
+    from PySide6.QtCore import Qt
+    from PySide6.QtWidgets import QPushButton
+
+    filtre = theme.ClickableCursor()
+    qt_app.installEventFilter(filtre)
+    try:
+        bouton = QPushButton("essai")
+        bouton.show()
+        qt_app.processEvents()
+        bouton.setEnabled(False)
+        qt_app.processEvents()
+        assert bouton.cursor().shape() == Qt.ArrowCursor
+    finally:
+        qt_app.removeEventFilter(filtre)
+
+
+def test_the_stylesheet_gives_buttons_a_hover_state():
+    """C'est ce qui manquait : le style natif de macOS dessine exactement les
+    mêmes pixels survolé ou non — mesuré, 0 sur 3600."""
+    feuille = theme.stylesheet(palette_pour("#1e1e1e"))
+    assert "QPushButton:hover" in feuille
+    assert theme.DARK["button_hover_bg"] in feuille
+    assert theme.DARK["button_hover_border"] in feuille

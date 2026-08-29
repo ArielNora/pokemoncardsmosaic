@@ -172,8 +172,9 @@ class CardsStep(QWidget):
         # droite, plutôt que dans la barre du haut d'où ils commandaient de loin
         # une zone qu'ils ne touchaient pas.
         self._bulk = QWidget(self._gallery)
+        theme.mark(self._bulk, "floating-bar")
         bulk_row = QHBoxLayout(self._bulk)
-        bulk_row.setContentsMargins(0, 0, 0, 0)
+        bulk_row.setContentsMargins(6, 5, 6, 5)
         bulk_row.setSpacing(6)
         bulk_row.addWidget(self._include_all)
         bulk_row.addWidget(self._exclude_all)
