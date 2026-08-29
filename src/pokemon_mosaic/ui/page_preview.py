@@ -9,9 +9,9 @@ parce que c'est le seul objet des deux que l'on ait déjà tenu en main.
 La mosaïque peut se poser dessus, pour voir ce qu'elle laisse de marge.
 """
 
-from PySide6.QtCore import QPointF, QRectF, Qt
+from PySide6.QtCore import QPointF, QRect, QRectF, Qt, Signal
 from PySide6.QtGui import QBrush, QColor, QPainter, QPen
-from PySide6.QtWidgets import QWidget
+from PySide6.QtWidgets import QPushButton, QWidget
 
 from ..layout import MM_PER_INCH, REAL_CARD_MM, card_pixel_size, paper_size_mm
 from . import theme
@@ -35,19 +35,104 @@ BOTTOM_ROOM = 42
 # aplat de traits où l'on ne distingue plus rien.
 FINE_PEN_ABOVE = 900
 
+# Le bouton d'ajout, à droite de la feuille : sa largeur et l'écart qui l'en
+# sépare. Haut comme un tiers de la feuille, pour se viser sans précision.
+PLUS_WIDTH = 30
+PLUS_GAP = 10
+PLUS_MIN_HEIGHT = 44
+# Les boutons de retrait, sous chaque feuille. ⚠️ Leur hauteur **entre dans
+# l'écart existant** entre la feuille et sa cote : l'agrandir éloignerait la
+# cote de ce qu'elle mesure, pour loger un bouton qu'on ne regarde pas.
+MINUS_SIZE = (30, 16)
+# Nombre maximal de feuilles côte à côte, comme au formulaire d'impression.
+MAX_PANELS = 6
+
 
 class PagePreview(QWidget):
     """Dessine la feuille cotée et l'étalon, tous deux à la même échelle."""
+
+    # Nouveau nombre de feuilles côte à côte, demandé depuis l'aperçu.
+    panels_requested = Signal(int)
 
     def __init__(self, session, parent=None):
         super().__init__(parent)
         self._session = session
         self._show_grid = True
+        self._plus = QPushButton("＋", self)
+        theme.mark(self._plus, "mini")
+        self._plus.clicked.connect(
+            lambda: self.panels_requested.emit(self._session.panels + 1))
+        self._minus: list[QPushButton] = []
         self.setMinimumHeight(260)
+        self.retranslate_ui()
+
+    def retranslate_ui(self) -> None:
+        self._plus.setToolTip(self.tr("Ajouter une feuille à droite"))
+        for bouton in self._minus:
+            bouton.setToolTip(self.tr("Retirer une feuille"))
+
+    def refresh(self) -> None:
+        """Recale les boutons **puis** repeint.
+
+        ⚠️ Les deux ensemble, et jamais depuis `paintEvent` : y montrer ou
+        déplacer un widget enfant relancerait un tour de dessin.
+        """
+        self.place_buttons()
+        self.update()
 
     def set_show_grid(self, montrer: bool) -> None:
         self._show_grid = bool(montrer)
         self.update()
+
+    # --- Les boutons posés sur le dessin ---------------------------------
+
+    def _sync_minus_buttons(self) -> None:
+        """Un bouton de retrait par feuille, jamais quand il n'en reste qu'une.
+
+        Ils font tous la même chose — les feuilles sont identiques —, mais un
+        seul bouton pour l'ensemble ne dirait pas **où** l'on retire : posé sous
+        chacune, il se lit comme la colonne qu'il enlève.
+        """
+        voulus = 0 if self._session.panels <= 1 else self._session.panels
+        while len(self._minus) < voulus:
+            bouton = QPushButton("－", self)
+            theme.mark(bouton, "mini")
+            bouton.setFixedSize(*MINUS_SIZE)
+            bouton.clicked.connect(
+                lambda: self.panels_requested.emit(self._session.panels - 1))
+            bouton.setToolTip(self.tr("Retirer une feuille"))
+            self._minus.append(bouton)
+        while len(self._minus) > voulus:
+            self._minus.pop().deleteLater()
+
+    def place_buttons(self) -> None:
+        """Recale les boutons sur la géométrie courante du dessin."""
+        self._sync_minus_buttons()
+        geometrie = self.rects()
+        if geometrie is None:
+            self._plus.hide()
+            for bouton in self._minus:
+                bouton.hide()
+            return
+        feuille = geometrie[0]
+
+        hauteur = max(PLUS_MIN_HEIGHT, feuille.height() / 3)
+        self._plus.setGeometry(QRect(
+            round(feuille.right() + PLUS_GAP),
+            round(feuille.center().y() - hauteur / 2), PLUS_WIDTH, round(hauteur)))
+        self._plus.setEnabled(self._session.panels < MAX_PANELS)
+        self._plus.show()
+
+        largeur = feuille.width() / max(1, len(self._minus))
+        for rang, bouton in enumerate(self._minus):
+            centre = feuille.left() + largeur * (rang + 0.5)
+            bouton.move(round(centre - MINUS_SIZE[0] / 2),
+                        round(feuille.bottom() + 1))
+            bouton.show()
+
+    def resizeEvent(self, event) -> None:
+        super().resizeEvent(event)
+        self.place_buttons()
 
     # --- Géométrie --------------------------------------------------------
 
@@ -56,6 +141,14 @@ class PagePreview(QWidget):
         session = self._session
         width, height = paper_size_mm(session.paper, session.landscape)
         return width * session.panels, height
+
+    def _side_reserve(self) -> float:
+        """Tout ce qui borde la feuille horizontalement, hors étalon.
+
+        L'écart, la gouttière de la cote de hauteur, puis à droite l'écart du
+        bouton d'ajout et le bouton lui-même.
+        """
+        return GAP + GUTTER + PLUS_GAP + PLUS_WIDTH + 4
 
     def _label_width(self) -> float:
         """Largeur du texte de l'étalon, qui ne doit jamais être rogné."""
@@ -81,7 +174,7 @@ class PagePreview(QWidget):
         tient dans les deux, où le calcul en un seul passage débordait dès que
         l'étalon devenait plus étroit que son texte.
         """
-        libre_x = self.width() - GUTTER - GAP - 4
+        libre_x = self.width() - self._side_reserve()
         libre_y = self.height() - BOTTOM_ROOM - LABEL_HEIGHT
         if sheet[0] <= 0 or sheet[1] <= 0 or libre_x <= 0 or libre_y <= 0:
             return 0.0
@@ -103,8 +196,12 @@ class PagePreview(QWidget):
         if scale <= 0:
             return None
         colonne = self._column_width(scale)
-        largeur_totale = sheet[0] * scale + GAP + colonne
-        gauche = max(GUTTER, (self.width() - largeur_totale) / 2)
+        # De gauche à droite : l'étalon, l'écart, la gouttière de la cote de
+        # hauteur, la feuille, puis le bouton d'ajout.
+        largeur_totale = (colonne + GAP + GUTTER + sheet[0] * scale
+                          + PLUS_GAP + PLUS_WIDTH)
+        gauche_bloc = max(2.0, (self.width() - largeur_totale) / 2)
+        gauche = gauche_bloc + colonne + GAP + GUTTER
         # ⚠️ **La feuille n'est pas centrée dans le cadre entier**, mais dans ce
         # qui reste une fois l'étiquette réservée en haut et la cote en bas.
         # Centrée sur tout, la moitié de la réserve partait vers le haut où elle
@@ -114,7 +211,7 @@ class PagePreview(QWidget):
         haut = LABEL_HEIGHT + max(0.0, (libre_y - sheet[1] * scale) / 2)
 
         feuille = QRectF(gauche, haut, sheet[0] * scale, sheet[1] * scale)
-        centre_x = feuille.right() + GAP + colonne / 2
+        centre_x = gauche_bloc + colonne / 2
         carte = QRectF(centre_x - REAL_CARD_MM[0] * scale / 2,
                        feuille.bottom() - REAL_CARD_MM[1] * scale,
                        REAL_CARD_MM[0] * scale, REAL_CARD_MM[1] * scale)
@@ -201,6 +298,10 @@ class PagePreview(QWidget):
         ⚠️ **La colonne est large du plus large des deux.** L'étiquette était
         centrée sur la seule carte : dès que celle-ci se réduisait — un A1, un
         A0 —, le texte débordait des deux côtés et passait sous la feuille.
+
+        Elle est à **gauche** depuis que la droite revient au bouton d'ajout :
+        les feuilles s'ajoutent de ce côté-là, et l'étalon aurait été poussé
+        plus loin à chaque clic.
         """
         painter.setBrush(self.palette().alternateBase())
         painter.setPen(QPen(encre, 1.2))

@@ -726,10 +726,12 @@ def test_the_standard_is_never_covered_by_the_sheet(qt_app, session):
             session.set_layout(paper=nom, panels=panneaux, cols=4, rows=5)
             vue.grab()
             feuille, carte, etiquette = vue.rects()
-            assert carte.left() >= feuille.right() + GAP - 0.5, (nom, panneaux)
-            assert etiquette.left() >= feuille.right() + GAP - 0.5, (nom, panneaux)
-            assert etiquette.right() <= vue.width() + 0.5, (nom, panneaux)
-            assert carte.right() <= vue.width() + 0.5, (nom, panneaux)
+            # L'étalon est passé à gauche : la droite revient au bouton
+            # d'ajout, et il y aurait été poussé plus loin à chaque feuille.
+            assert carte.right() <= feuille.left() - GAP + 0.5, (nom, panneaux)
+            assert etiquette.right() <= feuille.left() - GAP + 0.5, (nom, panneaux)
+            assert carte.left() >= 0, (nom, panneaux)
+            assert etiquette.left() >= 0, (nom, panneaux)
             assert etiquette.top() >= 0, (nom, panneaux)
 
 
@@ -742,8 +744,8 @@ def test_a_narrow_frame_still_keeps_everything_inside(qt_app, session):
     session.set_layout(paper="A0", panels=2)
     vue.grab()
     feuille, _, etiquette = vue.rects()
-    assert etiquette.left() >= feuille.right() + GAP - 0.5
-    assert etiquette.right() <= vue.width() + 0.5
+    assert etiquette.right() <= feuille.left() - GAP + 0.5
+    assert etiquette.left() >= 0
 
 
 def test_the_mosaic_is_drawn_on_the_sheet_when_asked(qt_app, session):
@@ -842,3 +844,129 @@ def test_the_selected_tab_label_stays_legible(qt_app):
                      theme.PALETTE_LIGHT["window"]) >= 3.0
     assert contraste(theme.DARK["tab_on_border"],
                      theme.PALETTE_DARK["window"]) >= 3.0
+
+
+# --- Ajouter et retirer des feuilles depuis l'aperçu ------------------------
+
+@pytest.fixture
+def papier(session, ecran):
+    onglet = ecran._tabs[1]
+    onglet.show()
+    onglet._preview.resize(760, 460)
+    onglet._preview.refresh()
+    return onglet
+
+
+def test_the_plus_adds_a_sheet_and_the_minus_removes_one(session, papier):
+    session.set_layout(cols=6, rows=5, panels=1)
+    assert papier._preview._minus == [], "une feuille seule ne s'enlève pas"
+
+    papier._preview._plus.click()
+    assert session.panels == 2
+    assert len(papier._preview._minus) == 2, "un bouton de retrait par feuille"
+
+    papier._preview._minus[0].click()
+    assert session.panels == 1
+
+
+def test_the_sheet_count_stays_between_one_and_six(session, papier):
+    session.set_layout(cols=6, rows=5, panels=1)
+    for _ in range(10):
+        papier._preview._plus.click()
+    assert session.panels == 6
+    assert not papier._preview._plus.isEnabled()
+
+    for _ in range(10):
+        if papier._preview._minus:
+            papier._preview._minus[0].click()
+    assert session.panels == 1
+
+
+def test_the_standard_moved_to_the_left_of_the_sheet(session, papier):
+    """Les feuilles s'ajoutent à droite : l'étalon y aurait été poussé plus loin
+    à chaque clic."""
+    from pokemon_mosaic.ui.page_preview import GAP
+
+    session.set_layout(cols=6, rows=5, panels=2)
+    feuille, carte, etiquette = papier._preview.rects()
+    assert carte.right() <= feuille.left() - GAP + 0.5
+    assert etiquette.right() <= feuille.left() - GAP + 0.5
+    assert carte.left() >= 0 and etiquette.left() >= 0
+
+
+def test_the_plus_sits_to_the_right_of_the_sheet(session, papier):
+    session.set_layout(cols=6, rows=5, panels=2)
+    feuille, _, _ = papier._preview.rects()
+    assert papier._preview._plus.x() >= feuille.right()
+    assert (papier._preview._plus.x() + papier._preview._plus.width()
+            <= papier._preview.width())
+
+
+def test_the_minus_buttons_fit_in_the_existing_gap(session, papier):
+    """⚠️ Leur hauteur entre dans l'écart entre la feuille et sa cote :
+    l'agrandir éloignerait la cote de ce qu'elle mesure."""
+    from pokemon_mosaic.ui.page_preview import COTE, GUTTER
+
+    session.set_layout(cols=6, rows=5, panels=3)
+    feuille, _, _ = papier._preview.rects()
+    ligne_de_cote = feuille.bottom() + GUTTER * COTE
+    for bouton in papier._preview._minus:
+        assert bouton.y() >= feuille.bottom()
+        assert bouton.y() + bouton.height() <= ligne_de_cote + 0.5
+
+
+def test_one_arrow_spans_every_sheet(session, papier):
+    """Une seule cote pour l'ensemble, et non une par feuille : c'est la
+    largeur du poster qu'on veut lire, pas celle d'un morceau."""
+    from pokemon_mosaic.layout import paper_size_mm
+
+    session.set_layout(cols=6, rows=5, panels=3)
+    feuille, _, _ = papier._preview.rects()
+    largeur_mm, _ = papier._preview._sheet_mm()
+    assert largeur_mm == paper_size_mm(session.paper, session.landscape)[0] * 3
+    # La flèche est tracée d'un bord à l'autre de ce rectangle unique.
+    assert feuille.width() > 0
+
+
+def test_an_indivisible_grid_is_named_and_blocks_the_way(session, papier, ecran):
+    """Ajouter une feuille depuis l'aperçu peut rendre la grille indivisible :
+    la mosaïque cesse alors d'être dessinée, et la feuille se vidait sans
+    qu'aucun mot ne dise pourquoi."""
+    session.set_layout(cols=21, rows=21, panels=1)
+    assert papier.is_valid()
+    assert not papier._split_error.isVisibleTo(papier)
+
+    papier._preview._plus.click()
+    assert not papier.is_valid()
+    assert papier._split_error.isVisibleTo(papier)
+    assert "21" in papier._split_error.text()
+
+    ecran._list.setCurrentRow(1)
+    assert not ecran.can_advance()
+
+    papier._preview._plus.click()             # trois feuilles : 21 = 3 × 7
+    assert papier.is_valid()
+    assert not papier._split_error.isVisibleTo(papier)
+
+
+def test_the_hint_says_where_the_card_actually_is(session, papier):
+    """L'étalon est passé à gauche : la phrase renvoyait à droite, où il n'y a
+    plus qu'un bouton « + »."""
+    feuille, carte, _ = papier._preview.rects()
+    assert carte.right() < feuille.left()
+    assert "gauche" in papier._hint.text()
+    assert "posée à droite" not in papier._hint.text()
+
+
+def test_both_tabs_refuse_an_indivisible_split(session, ecran):
+    """⚠️ La même faute passait ou bloquait selon l'onglet où elle était
+    commise : 21 colonnes portées à 2 feuilles depuis l'onglet d'impression
+    laissaient « Suivant » actif."""
+    session.set_layout(cols=21, rows=21, panels=1)
+    assert ecran._tabs[1].is_valid() and ecran._tabs[2].is_valid()
+
+    ecran._list.setCurrentRow(2)
+    ecran._tabs[2]._panels.setValue(2)
+    assert not ecran._tabs[1].is_valid()
+    assert not ecran._tabs[2].is_valid()
+    assert not ecran.can_advance()

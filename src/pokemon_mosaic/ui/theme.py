@@ -236,6 +236,14 @@ QPushButton:disabled, QToolButton:disabled {{
     border-color: {c["button_off_border"]};
 }}
 
+/* Les boutons minuscules posés sur un dessin — ajouter, retirer une feuille.
+   Le calage ordinaire des boutons leur mange toute leur largeur : sur trente
+   pixels, douze de marge de chaque côté ne laissent rien au signe. */
+QPushButton[role="mini"] {{
+    padding: 0px;
+    font-weight: bold;
+}}
+
 /* Les parties d'une étape, à gauche. Des lignes de liste ordinaires ne se
    lisaient pas comme des onglets : hautes de dix-huit pixels et collées les
    unes aux autres, elles ressemblaient à un contenu à faire défiler. On leur

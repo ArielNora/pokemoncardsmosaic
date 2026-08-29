@@ -34,7 +34,7 @@ from ..layout import (
 from ..optimize import check_links_fit
 from . import theme
 from .big_spin import BigSpin
-from .page_preview import PagePreview
+from .page_preview import MAX_PANELS, PagePreview
 from .session import Session
 from .wireframe import WireframeView
 
@@ -358,8 +358,8 @@ class PaperTab(LayoutTab):
         self._build()
         session.layout_changed.connect(self.refresh)
         # La mosaïque dessinée dessus dépend de la grille et du nombre de cartes.
-        session.selection_changed.connect(self._preview.update)
-        session.cards_loaded.connect(self._preview.update)
+        session.selection_changed.connect(self._preview.refresh)
+        session.cards_loaded.connect(self._preview.refresh)
 
     def title(self) -> str:
         return self.tr("Format de la feuille")
@@ -390,14 +390,27 @@ class PaperTab(LayoutTab):
         self._grid_warning = QLabel()
         self._grid_warning.setWordWrap(True)
         theme.mark(self._grid_warning, "warning")
+        # ⚠️ Ajouter une feuille depuis l'aperçu peut rendre la grille
+        # indivisible : la mosaïque cesse alors d'être dessinée. Sans ce
+        # message, la feuille se vidait sans qu'aucun mot ne dise pourquoi.
+        self._split_error = QLabel()
+        self._split_error.setWordWrap(True)
+        theme.mark(self._split_error, "error")
         self._preview = PagePreview(self._session)
+        # Les feuilles s'ajoutent et se retirent depuis le dessin lui-même : on
+        # y voit tout de suite ce que cela change à la place occupée.
+        self._preview.panels_requested.connect(self._on_panels_requested)
 
         layout = QVBoxLayout(self)
         layout.addLayout(haut)
         layout.addWidget(self._hint)
         layout.addWidget(self._grid_warning)
+        layout.addWidget(self._split_error)
         layout.addWidget(self._preview, 1)
         self.retranslate_ui()
+
+    def _on_panels_requested(self, panels: int) -> None:
+        self._session.set_layout(panels=max(1, min(MAX_PANELS, panels)))
 
     def _on_grid_toggled(self, montrer: bool) -> None:
         self._preview.set_show_grid(montrer)
@@ -406,9 +419,11 @@ class PaperTab(LayoutTab):
     def retranslate_ui(self) -> None:
         self._paper_label.setText(self.tr("Format d'impression"))
         self._show_grid.setText(self.tr("Montrer la mosaïque sur la feuille"))
+        self._preview.retranslate_ui()
         self._hint.setText(
-            self.tr("La carte posée à droite est à ses dimensions réelles, à la "
-                    "même échelle que la feuille : c'est elle qui donne la taille.")
+            self.tr("La carte posée à gauche est à ses dimensions réelles, à la "
+                    "même échelle que la feuille : c'est elle qui donne la taille. "
+                    "Le « + » à droite ajoute une feuille côte à côte.")
         )
         self._grid_warning.setText(
             self.tr("Cet ajustement n'est pas définitif : l'orientation et le "
@@ -424,6 +439,23 @@ class PaperTab(LayoutTab):
             return
         self._session.set_layout(paper=self._paper.currentData())
 
+    def is_valid(self) -> bool:
+        """Une coupe ne doit jamais tomber au milieu d'une carte."""
+        return not self._session.cols % self._session.panels
+
+    def _update_split(self) -> None:
+        session = self._session
+        reste = session.cols % session.panels
+        self._split_error.setVisible(bool(reste))
+        if reste:
+            self._split_error.setText(
+                self.tr("%1 colonnes ne se divisent pas en %2 feuilles : la coupe "
+                        "tomberait au milieu d'une carte. La mosaïque n'est pas "
+                        "dessinée tant que ce n'est pas réglé — retirez une "
+                        "feuille, ou changez les colonnes au premier onglet.")
+                .replace("%1", str(session.cols))
+                .replace("%2", str(session.panels)))
+
     def refresh(self) -> None:
         self._updating = True
         self._paper.setCurrentText(self._session.paper)
@@ -432,7 +464,8 @@ class PaperTab(LayoutTab):
         # la main : on renvoie à la session ce qu'il a réellement accepté.
         if self._paper.currentText() != self._session.paper:
             self._session.set_layout(paper=self._paper.currentText())
-        self._preview.update()
+        self._update_split()
+        self._preview.refresh()
         self.state_changed.emit()
 
 
@@ -450,6 +483,15 @@ class PrintingTab(LayoutTab):
 
     def title(self) -> str:
         return self.tr("Orientation et impression")
+
+    def is_valid(self) -> bool:
+        """Même refus qu'à l'onglet du format, qui règle le même nombre.
+
+        ⚠️ Sans cela, la faute passait ou bloquait selon l'onglet où elle était
+        commise : 21 colonnes portées à 2 feuilles **ici** laissaient « Suivant »
+        actif, et l'on quittait l'étape avec une coupe en pleine carte.
+        """
+        return not self._session.cols % self._session.panels
 
     def _build(self) -> None:
         self._landscape = QCheckBox()
