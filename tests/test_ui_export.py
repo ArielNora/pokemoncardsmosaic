@@ -272,3 +272,12 @@ def test_resuming_comes_back_after_the_export(step, tmp_path, monkeypatch):
     widget._on_exported([str(tmp_path / "poster.png")])
     assert widget._extend.isEnabled() and widget._resume.isEnabled()
     assert widget.can_resume()
+
+
+def test_the_card_size_and_gap_reach_the_export(dialog, session):
+    """⚠️ Oubliés, l'export repassait en taille automatique et sans écart : le
+    fichier écrit n'avait rien à voir avec l'aperçu qu'on venait de régler."""
+    session.set_layout(card_width_mm=63.0, card_gap_mm=2.5)
+    reglages = dialog.settings()
+    assert reglages.card_width_mm == 63.0
+    assert reglages.card_gap_mm == 2.5

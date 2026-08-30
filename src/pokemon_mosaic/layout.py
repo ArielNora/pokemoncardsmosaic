@@ -104,6 +104,10 @@ class GridSuggestion:
         return self.cols * self.rows
 
 
+# Plus grand côté qu'une grille puisse avoir. C'est la borne des champs de
+# l'interface, et donc celle de tout ce qu'on propose.
+MAX_GRID_SIDE = 200
+
 # Écart maximal admis entre les deux côtés d'une grille proposée. Au-delà, la
 # mosaïque devient une bande : le poster perd sa forme et l'image occupe une
 # fraction dérisoire de la feuille.
@@ -239,48 +243,141 @@ def card_pixel_size(
     return (max(1, card_w), max(1, math.floor(card_w / card_aspect)))
 
 
-def panel_card_size(
+@dataclass(frozen=True)
+class GridGeometry:
+    """Tout ce qu'il faut pour poser une grille sur des feuilles, en pixels.
+
+    `per_panel` est le nombre de cartes que porte **une** feuille : c'est lui qui
+    garantit qu'une coupe tombe entre deux cartes, chaque feuille repartant de
+    son propre bord.
+    """
+
+    per_panel: int
+    card_w: int
+    card_h: int
+    gap: int
+
+    @property
+    def pitch(self) -> tuple[int, int]:
+        """De combien on avance d'une carte à la suivante, écart compris."""
+        return self.card_w + self.gap, self.card_h + self.gap
+
+    def span(self, count: int) -> int:
+        """Largeur occupée par `count` cartes en ligne, écarts intérieurs compris."""
+        return count * self.card_w + max(0, count - 1) * self.gap
+
+
+def cards_across(paper_w_px: int, card_w: int, gap: int) -> int:
+    """Combien de cartes tiennent en largeur sur une feuille, écarts compris."""
+    if card_w <= 0:
+        return 0
+    return max(0, (paper_w_px + gap) // (card_w + gap))
+
+
+def grid_geometry(
     paper: tuple[float, float],
     panels: int,
     cols: int,
     rows: int,
     card_aspect: float,
     dpi: int = DEFAULT_DPI,
-) -> tuple[int, int, int]:
-    """Taille d'une carte telle qu'**une coupe tombe toujours entre deux cartes**.
+    card_width_mm: float | None = None,
+    gap_mm: float = 0.0,
+) -> GridGeometry:
+    """La géométrie d'une grille sur `panels` feuilles.
 
-    Renvoie `(cartes par feuille, largeur, hauteur)` en pixels.
+    `card_width_mm` à `None` demande la **plus grande** carte qui fasse tenir la
+    grille : c'est le réglage automatique, tant que l'utilisateur n'a pas choisi
+    de taille. Une valeur la fige, et c'est alors à la grille de s'y adapter —
+    l'écran le dit et propose de la corriger.
 
     ⚠️ **C'est la carte qui se plie à la feuille, pas l'inverse.** Exiger que le
     nombre de colonnes se divise par le nombre de feuilles interdisait des
     grilles parfaitement bonnes — 21 colonnes sur 2 feuilles — pour une raison
-    qui n'était pas la leur. On fixe plutôt un nombre **entier** de cartes par
-    feuille : la coupe tombe alors sur un bord de carte par construction, quel
-    que soit le nombre de colonnes, et la grille peut déborder sur la feuille
-    suivante sans qu'aucune carte ne soit coupée en deux.
-
-    Le nombre de cartes par feuille est le plus **petit** qui convienne, donc la
-    carte la plus grande : il lui faut de quoi loger toutes les colonnes sur les
-    feuilles disponibles, et une hauteur qui tienne sur la feuille.
+    qui n'était pas la leur. On pose plutôt un nombre **entier** de cartes par
+    feuille : la coupe tombe alors sur un bord de carte par construction.
     """
     paper_w_px = mm_to_pixels(paper[0], dpi)
     paper_h_px = mm_to_pixels(paper[1], dpi)
     if panels < 1 or cols < 1 or rows < 1 or card_aspect <= 0:
         raise ValueError("Mise en page vide : ni colonne, ni ligne, ni feuille.")
+    gap = max(0, mm_to_pixels(max(0.0, gap_mm), dpi))
 
-    # Assez de cartes par feuille pour que les colonnes tiennent sur l'ensemble.
+    if card_width_mm is not None:
+        card_w = max(1, mm_to_pixels(card_width_mm, dpi))
+        card_h = max(1, math.floor(card_w / card_aspect))
+        return GridGeometry(max(1, cards_across(paper_w_px, card_w, gap)),
+                            card_w, card_h, gap)
+
+    # Automatique : le plus **petit** nombre de cartes par feuille qui convienne,
+    # donc la carte la plus grande. Il lui faut de quoi loger toutes les colonnes
+    # sur les feuilles disponibles, et une hauteur qui tienne sur la feuille.
     per_panel = max(1, math.ceil(cols / panels))
     while per_panel <= paper_w_px:
-        card_w = paper_w_px // per_panel
+        card_w = max(1, (paper_w_px - (per_panel - 1) * gap) // per_panel)
         card_h = math.floor(card_w / card_aspect)
-        if card_h >= 1 and card_h * rows <= paper_h_px:
-            return per_panel, card_w, max(1, card_h)
-        # Trop haute pour la feuille : on en met une de plus par feuille, donc
-        # des cartes plus petites.
+        if card_h >= 1 and card_h * rows + max(0, rows - 1) * gap <= paper_h_px:
+            return GridGeometry(per_panel, card_w, max(1, card_h), gap)
+        # Trop haute pour la feuille : une carte de plus par feuille, donc des
+        # cartes plus petites.
         per_panel += 1
     # Grille absurdement dense : on rend la plus petite carte possible plutôt
     # que de lever, l'écran ayant déjà de quoi la dire trop fine.
-    return paper_w_px, 1, 1
+    return GridGeometry(max(1, cards_across(paper_w_px, 1, gap)), 1, 1, gap)
+
+
+def grid_fits(
+    paper: tuple[float, float],
+    panels: int,
+    cols: int,
+    rows: int,
+    geometry: GridGeometry,
+    dpi: int = DEFAULT_DPI,
+) -> bool:
+    """La grille tient-elle sur les feuilles, à cette géométrie ?"""
+    paper_h_px = mm_to_pixels(paper[1], dpi)
+    hauteur = rows * geometry.card_h + max(0, rows - 1) * geometry.gap
+    return geometry.per_panel * panels >= cols and hauteur <= paper_h_px
+
+
+def best_grid_shapes(
+    paper: tuple[float, float],
+    panels: int,
+    card_count: int,
+    current_cells: int,
+    geometry: GridGeometry,
+    dpi: int = DEFAULT_DPI,
+    limit: int = 6,
+) -> list[tuple[int, int]]:
+    """Les grilles qui tiennent, classées par intérêt, à géométrie figée.
+
+    Classement, dans cet ordre : d'abord celles qui **placent le plus de
+    cartes** — une grille qui en laisse dehors est un poster amputé —, puis
+    celles dont le nombre de cases s'écarte le moins de la grille actuelle, en
+    trop comme en moins. On ne cherche donc pas la plus grande grille possible,
+    mais la plus proche de ce que l'utilisateur avait en tête.
+    """
+    paper_h_px = mm_to_pixels(paper[1], dpi)
+    # ⚠️ **Plafonné.** Sans borne, une carte d'un millimètre sur cinq A0 à
+    # 1200 DPI donne des centaines de milliers de candidats à trier sur le fil
+    # de l'interface — mesuré, 4,3 secondes de fenêtre figée. Les champs de
+    # grille s'arrêtent de toute façon à `MAX_GRID_SIDE` : au-delà, rien n'est
+    # applicable.
+    max_cols = min(MAX_GRID_SIDE, geometry.per_panel * panels)
+    pitch_h = geometry.card_h + geometry.gap
+    max_rows = min(MAX_GRID_SIDE,
+                   (paper_h_px + geometry.gap) // pitch_h if pitch_h else 0)
+    if max_cols < 1 or max_rows < 1:
+        return []
+
+    candidates = []
+    for cols in range(1, int(max_cols) + 1):
+        for rows in range(1, int(max_rows) + 1):
+            cells = cols * rows
+            candidates.append((-min(cells, card_count), abs(cells - current_cells),
+                               abs(cols - rows), cols, rows))
+    candidates.sort()
+    return [(cols, rows) for *_, cols, rows in candidates[:limit]]
 
 
 def max_useful_dpi(

@@ -21,9 +21,9 @@ from PIL import Image, ImageDraw
 from .cards import CardSet, load_full_image
 from .layout import (
     DEFAULT_DPI,
+    grid_geometry,
     max_useful_dpi,
     mm_to_pixels,
-    panel_card_size,
     paper_size_mm,
 )
 from .scoring import EMPTY
@@ -47,6 +47,10 @@ class PosterSettings:
     landscape: bool = False
     dpi: int = DEFAULT_DPI
     panels: int = 1
+    # Largeur d'une carte sur le papier ; `None` demande la plus grande qui
+    # fasse tenir la grille. L'écart les sépare, en millimètres.
+    card_width_mm: float | None = None
+    card_gap_mm: float = 0.0
     overlap_mm: float = 0.0
     crop_marks: bool = False
     background: tuple[int, int, int] = WHITE
@@ -83,6 +87,7 @@ class PosterPlan:
     card_px: tuple[int, int]
     margin_px: tuple[int, int]
     cards_per_panel: int = 1
+    gap_px: int = 0
     warnings: list[str] = field(default_factory=list)
 
     def column_x(self, col: int) -> int:
@@ -97,7 +102,7 @@ class PosterPlan:
         """
         par_feuille = max(1, self.cards_per_panel)
         return ((col // par_feuille) * self.settings.paper_px[0]
-                + (col % par_feuille) * self.card_px[0])
+                + (col % par_feuille) * (self.card_px[0] + self.gap_px))
 
     @property
     def total_px(self) -> tuple[int, int]:
@@ -128,10 +133,11 @@ def plan_poster(
     """
     rows, cols = grid.shape
     card_aspect = cards.full_size[0] / cards.full_size[1]
-    per_panel, card_w, card_h = panel_card_size(
-        settings.paper_mm, settings.panels, cols, rows, card_aspect, settings.dpi
+    geometry = grid_geometry(
+        settings.paper_mm, settings.panels, cols, rows, card_aspect, settings.dpi,
+        settings.card_width_mm, settings.card_gap_mm,
     )
-    card_px = (card_w, card_h)
+    per_panel, card_px = geometry.per_panel, (geometry.card_w, geometry.card_h)
 
     paper_w, paper_h = settings.paper_px
     # ⚠️ **La grille est calée à gauche**, non centrée : la place en trop est ce
@@ -140,7 +146,8 @@ def plan_poster(
     # demi-marges qui ne disaient rien. La marge verticale, elle, ne dépend
     # d'aucune feuille et reste centrée.
     margin_x = 0
-    margin_y = (paper_h - rows * card_px[1]) // 2
+    hauteur = rows * card_px[1] + max(0, rows - 1) * geometry.gap
+    margin_y = (paper_h - hauteur) // 2
 
     warnings: list[str] = []
     ceiling = max_useful_dpi(settings.paper_mm, per_panel, cards.full_size[0])
@@ -156,8 +163,13 @@ def plan_poster(
             f"de mémoire pendant l'export."
         )
 
+    if per_panel * settings.panels < cols or hauteur > paper_h:
+        warnings.append(
+            f"La grille {cols}×{rows} déborde de {settings.panels} feuille(s) à "
+            f"cette taille de carte : le poster serait tronqué."
+        )
     return PosterPlan(settings, cols, rows, card_px, (margin_x, margin_y),
-                      per_panel, warnings)
+                      per_panel, geometry.gap, warnings)
 
 
 def _render_window(
@@ -186,8 +198,9 @@ def _render_window(
     touchees = [c for c in range(plan.cols)
                 if margin_x + plan.column_x(c) < x1
                 and margin_x + plan.column_x(c) + card_w > x0]
-    first_row = max(0, (y0 - margin_y) // card_h)
-    last_row = min(plan.rows - 1, (y1 - margin_y) // card_h)
+    pas_h = card_h + plan.gap_px
+    first_row = max(0, (y0 - margin_y) // pas_h)
+    last_row = min(plan.rows - 1, (y1 - margin_y) // pas_h)
 
     for r in range(first_row, last_row + 1):
         # Une ligne de 17 cartes pleine résolution prend le temps de lire 17
@@ -196,7 +209,7 @@ def _render_window(
             raise ExportCancelled()
         for c in touchees:
             left = margin_x + plan.column_x(c) - x0
-            top = margin_y + r * card_h - y0
+            top = margin_y + r * (card_h + plan.gap_px) - y0
             index = int(grid[r, c])
             if index == EMPTY:
                 draw.rectangle(

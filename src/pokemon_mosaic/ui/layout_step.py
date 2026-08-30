@@ -23,7 +23,7 @@ from PySide6.QtWidgets import (
 )
 
 from . import theme
-from .layout_tabs import GridTab, PaperTab, PrintingTab
+from .layout_tabs import CardSizeTab, GridSizeTab, PaperTab, PlacementTab
 from .session import Session
 
 # Taille de la pastille d'état posée devant chaque onglet.
@@ -34,8 +34,15 @@ TAB_WIDTH = 248
 # Hauteur d'un onglet. Il n'y en aura jamais plus de cinq ou six : autant leur
 # donner la taille d'un bouton qu'on vise sans réfléchir.
 TAB_HEIGHT = 62
-# Ce que leur libellé gagne sur la police de l'interface.
+# Un onglet de second rang : plus court, décalé, et d'un libellé plus discret.
+SUB_TAB_HEIGHT = 44
+SUB_TAB_INDENT = 22
+# Ce que leur libellé gagne sur la police de l'interface. Les seconds rangs n'y
+# gagnent rien : c'est ce qui les distingue au premier coup d'œil.
 TAB_BOOST = 2
+SUB_TAB_BOOST = 0
+# Intitulé de la famille, posé sur une ligne qui n'est pas un onglet.
+FAMILY_ROW = -1
 
 
 def state_icon(ready: bool, palette) -> QIcon:
@@ -78,17 +85,19 @@ class LayoutStep(QWidget):
     # --- Construction -----------------------------------------------------
 
     def _build(self) -> None:
-        self._tabs = [GridTab(self._session), PaperTab(self._session),
-                      PrintingTab(self._session)]
+        # ⚠️ **L'ordre est celui des décisions** : d'abord le papier, ensuite ce
+        # qu'on y pose. La grille se règle en trois temps, regroupés sous un même
+        # intitulé : sa taille, la taille de ses cartes, puis son emplacement.
+        self._tabs = [PaperTab(self._session), GridSizeTab(self._session),
+                      CardSizeTab(self._session), PlacementTab(self._session)]
+        # Rang de la liste -> onglet, ou `FAMILY_ROW` pour l'intitulé de famille.
+        self._rows: list[int] = []
 
         self._list = QListWidget()
         self._list.setFixedWidth(TAB_WIDTH)
         self._list.setIconSize(QSize(BADGE, BADGE))
         self._list.setWordWrap(True)
         theme.mark(self._list, "tabs")
-        police = self._list.font()
-        police.setPointSize(police.pointSize() + TAB_BOOST)
-        self._list.setFont(police)
         self._list.setSpacing(0)      # l'air vient des marges de la feuille
         # Une seule partie à la fois : la liste est une navigation, pas une
         # sélection.
@@ -97,11 +106,13 @@ class LayoutStep(QWidget):
 
         self._pages = QStackedWidget()
         for tab in self._tabs:
-            item = QListWidgetItem("")
-            item.setSizeHint(QSize(TAB_WIDTH - 8, TAB_HEIGHT))
-            self._list.addItem(item)
             self._pages.addWidget(tab)
             tab.state_changed.connect(self._refresh_badges)
+
+        self._add_row(0)              # les pages
+        self._add_family_row()        # « Grille », simple intitulé
+        for position in range(1, len(self._tabs)):
+            self._add_row(position)
 
         self._list.currentRowChanged.connect(self._on_tab_picked)
         self._list.setCurrentRow(0)
@@ -110,6 +121,41 @@ class LayoutStep(QWidget):
         layout.addWidget(self._list)
         layout.addWidget(self._pages, 1)
         self.retranslate_ui()
+
+    def _add_row(self, position: int) -> None:
+        """Une ligne cliquable pour un onglet. Les seconds rangs sont décalés."""
+        sous_onglet = position > 0
+        item = QListWidgetItem("")
+        hauteur = SUB_TAB_HEIGHT if sous_onglet else TAB_HEIGHT
+        item.setSizeHint(QSize(TAB_WIDTH - 8, hauteur))
+        police = self.font()
+        police.setPointSize(police.pointSize()
+                            + (SUB_TAB_BOOST if sous_onglet else TAB_BOOST))
+        police.setBold(not sous_onglet)
+        item.setFont(police)
+        if sous_onglet:
+            item.setData(Qt.UserRole + 1, True)
+        self._list.addItem(item)
+        self._rows.append(position)
+
+    def _add_family_row(self) -> None:
+        """L'intitulé « Grille » : une ligne qui nomme, et qu'on ne sélectionne pas.
+
+        Cliquable, elle aurait fait un quatrième onglet sans contenu ; muette,
+        elle laisse voir que les trois lignes suivantes vont ensemble.
+        """
+        item = QListWidgetItem("")
+        item.setSizeHint(QSize(TAB_WIDTH - 8, TAB_HEIGHT))
+        item.setFlags(Qt.NoItemFlags)
+        police = self.font()
+        police.setPointSize(police.pointSize() + TAB_BOOST)
+        police.setBold(True)
+        item.setFont(police)
+        self._list.addItem(item)
+        self._rows.append(FAMILY_ROW)
+
+    def _row_of(self, position: int) -> int:
+        return self._rows.index(position)
 
     def retranslate_ui(self) -> None:
         for tab in self._tabs:
@@ -124,23 +170,33 @@ class LayoutStep(QWidget):
 
     def _refresh_badges(self) -> None:
         palette = self.palette()
-        for position, tab in enumerate(self._tabs):
-            item = self._list.item(position)
-            item.setText(tab.title())
+        for rang, position in enumerate(self._rows):
+            item = self._list.item(rang)
+            if position == FAMILY_ROW:
+                item.setText(self.tr("Grille"))
+                continue
+            marge = "    " if item.data(Qt.UserRole + 1) else ""
+            item.setText(marge + self._tabs[position].title())
             item.setIcon(state_icon(self._ready(position), palette))
         self.advance_state_changed.emit()
 
     def _on_tab_picked(self, row: int) -> None:
-        if 0 <= row < len(self._tabs):
-            self._pages.setCurrentIndex(row)
+        if 0 <= row < len(self._rows) and self._rows[row] != FAMILY_ROW:
+            self._pages.setCurrentIndex(self._rows[row])
         self.advance_state_changed.emit()
+
+    def _current_tab(self) -> int:
+        rang = self._list.currentRow()
+        if 0 <= rang < len(self._rows) and self._rows[rang] != FAMILY_ROW:
+            return self._rows[rang]
+        return -1
 
     # --- Ce que la fenêtre demande ---------------------------------------
 
     def can_advance(self) -> bool:
         """La partie affichée laisse-t-elle passer à la suivante ?"""
-        row = self._list.currentRow()
-        return 0 <= row < len(self._tabs) and self._tabs[row].is_valid()
+        position = self._current_tab()
+        return position >= 0 and self._tabs[position].is_valid()
 
     def advance(self) -> bool:
         """Valide la partie affichée et passe à la suivante.
@@ -150,13 +206,13 @@ class LayoutStep(QWidget):
         permet à la fenêtre de garder un seul bouton « Suivant » : il déroule
         les parties, puis change d'étape.
         """
-        row = self._list.currentRow()
-        if not (0 <= row < len(self._tabs)) or not self._tabs[row].is_valid():
+        position = self._current_tab()
+        if position < 0 or not self._tabs[position].is_valid():
             return True                     # rien ne bouge, mais on garde le clic
-        self._validated.add(row)
+        self._validated.add(position)
         self._refresh_badges()
-        if row + 1 < len(self._tabs):
-            self._list.setCurrentRow(row + 1)
+        if position + 1 < len(self._tabs):
+            self._list.setCurrentRow(self._row_of(position + 1))
             return True
         return False
 

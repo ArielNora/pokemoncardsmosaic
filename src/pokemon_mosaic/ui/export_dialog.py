@@ -173,6 +173,12 @@ class ExportDialog(QDialog):
             landscape=session.landscape,
             dpi=session.dpi,
             panels=session.panels,
+            # ⚠️ **La taille de carte et l'écart aussi.** Oubliés ici, l'export
+            # repassait en taille automatique et sans écart : le fichier écrit
+            # n'avait rien à voir avec l'aperçu que l'utilisateur venait de
+            # régler.
+            card_width_mm=session.card_width_mm,
+            card_gap_mm=session.card_gap_mm,
             overlap_mm=self._overlap.value(),
             crop_marks=self._crop_marks.isChecked(),
             empty_colour=session.empty_colour,

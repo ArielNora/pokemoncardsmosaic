@@ -13,7 +13,7 @@ from PySide6.QtCore import QPointF, QRect, QRectF, Qt, Signal
 from PySide6.QtGui import QBrush, QColor, QPainter, QPen
 from PySide6.QtWidgets import QPushButton, QWidget
 
-from ..layout import MM_PER_INCH, REAL_CARD_MM, panel_card_size, paper_size_mm
+from ..layout import MM_PER_INCH, REAL_CARD_MM, grid_geometry, paper_size_mm
 from . import theme
 from .wireframe import CARD_EDGE, CARD_FILL, EMPTY_EDGE, EMPTY_FILL
 
@@ -54,6 +54,9 @@ class PagePreview(QWidget):
 
     # Nouveau nombre de feuilles côte à côte, demandé depuis l'aperçu.
     panels_requested = Signal(int)
+    # Une case cliquée, et le trajet d'un glissement avec l'état à y poser.
+    cell_clicked = Signal(int, int)
+    cells_painted = Signal(list, bool)
 
     def __init__(self, session, parent=None):
         super().__init__(parent)
@@ -62,6 +65,12 @@ class PagePreview(QWidget):
         # pourrait donner, pas la décision de cet onglet, qui est la taille du
         # papier. On la montre quand on la demande.
         self._show_grid = False
+        # Les cases vides ne se posent que là où on les règle : ailleurs le
+        # dessin est une illustration, et un clic qui creuse la mosaïque sans
+        # qu'on l'ait demandé serait une surprise désagréable.
+        self._paintable = False
+        self._painted: list[tuple[int, int]] = []
+        self._paint_mode: bool | None = None
         self._plus = QPushButton("＋", self)
         theme.mark(self._plus, "mini")
         self._plus.clicked.connect(
@@ -87,6 +96,11 @@ class PagePreview(QWidget):
     def set_show_grid(self, montrer: bool) -> None:
         self._show_grid = bool(montrer)
         self.update()
+
+    def set_paintable(self, actif: bool) -> None:
+        """Autorise ou non la pose de cases vides au clic dans les pages."""
+        self._paintable = bool(actif)
+        self.setCursor(Qt.PointingHandCursor if actif else Qt.ArrowCursor)
 
     # --- Les boutons posés sur le dessin ---------------------------------
 
@@ -137,6 +151,40 @@ class PagePreview(QWidget):
     def resizeEvent(self, event) -> None:
         super().resizeEvent(event)
         self.place_buttons()
+
+    # --- Poser des cases vides, dans les pages ---------------------------
+
+    def mousePressEvent(self, event) -> None:
+        """Ouvre un geste. Ce qu'il pose est décidé par sa **première** case.
+
+        Même grammaire que le fil de fer d'où ce geste vient : bouton gauche
+        seul, et basculer case par case ferait clignoter tout ce sur quoi on
+        repasse.
+        """
+        self._painted = []
+        self._paint_mode = None
+        if not self._paintable or event.button() != Qt.LeftButton:
+            return
+        cell = self.cell_at(event.position().x(), event.position().y())
+        if cell is None:
+            return
+        self._paint_mode = cell not in set(self._session.empty_cells())
+        self._painted = [cell]
+
+    def mouseMoveEvent(self, event) -> None:
+        if self._paint_mode is None or not (event.buttons() & Qt.LeftButton):
+            return
+        cell = self.cell_at(event.position().x(), event.position().y())
+        if cell is None or cell in self._painted:
+            return
+        self._painted.append(cell)
+        self.cells_painted.emit(list(self._painted), self._paint_mode)
+
+    def mouseReleaseEvent(self, event) -> None:
+        if self._paint_mode is not None and len(self._painted) == 1:
+            self.cell_clicked.emit(*self._painted[0])
+        self._painted = []
+        self._paint_mode = None
 
     # --- Géométrie --------------------------------------------------------
 
@@ -261,52 +309,90 @@ class PagePreview(QWidget):
         self._draw_standard(painter, carte, etiquette, encre, colours)
         painter.end()
 
-    def _draw_grid(self, painter, feuille: QRectF) -> None:
-        """La mosaïque posée sur la surface, pour voir ce qu'elle en remplit.
+    def grid_cells(self, feuille: QRectF) -> list[tuple[int, int, QRectF]] | None:
+        """Chaque case de la mosaïque, avec son rectangle à l'écran.
 
-        Les cartes sont dessinées toutes pareilles : ce panneau répond à la
-        seule question « combien de papier reste autour », et y marquer les
-        cases vides le ferait empiéter sur l'onglet des dimensions.
+        Calculée à part pour que le dessin **et** le clic lisent la même
+        géométrie : les cases se posent désormais dans les pages, et un
+        placement qui ne tomberait pas sur ce qu'on voit ne servirait à rien.
         """
         session = self._session
         if session.cols <= 0 or session.rows <= 0:
-            return
+            return None
         surface = self._sheet_mm()
         aspect = _card_aspect(session)
         # ⚠️ **Un nombre entier de cartes par feuille**, pour qu'une coupe tombe
-        # toujours entre deux cartes.
-        # ⚠️ **À la résolution de la session**, jamais à une autre : les arrondis
-        # en pixels ne donnent pas le même nombre de cartes par feuille, et le
-        # dessin cesserait d'être celui du poster.
-        par_feuille, card_w_px, card_h_px = panel_card_size(
+        # toujours entre deux cartes. **À la résolution de la session**, jamais à
+        # une autre : les arrondis en pixels ne donnent pas le même nombre de
+        # cartes par feuille, et le dessin cesserait d'être celui du poster.
+        geometrie = grid_geometry(
             paper_size_mm(session.paper, session.landscape), session.panels,
-            session.cols, session.rows, aspect, dpi=session.dpi)
-        # On revient au millimètre, seule unité que partage tout ce dessin.
-        card_w = card_w_px / session.dpi * MM_PER_INCH * feuille.width() / surface[0]
-        card_h = card_h_px / session.dpi * MM_PER_INCH * feuille.height() / surface[1]
+            session.cols, session.rows, aspect, session.dpi,
+            session.card_width_mm, session.card_gap_mm)
+        par_feuille = geometrie.per_panel
+        px_vers_x = MM_PER_INCH / session.dpi * feuille.width() / surface[0]
+        px_vers_y = MM_PER_INCH / session.dpi * feuille.height() / surface[1]
+        card_w = geometrie.card_w * px_vers_x
+        card_h = geometrie.card_h * px_vers_y
+        gap_x, gap_y = geometrie.gap * px_vers_x, geometrie.gap * px_vers_y
         feuille_w = feuille.width() / max(1, session.panels)
 
         # ⚠️ **Calée à gauche.** La place en trop est ce qu'apporte la feuille
         # suivante : elle doit se voir d'un bloc, du côté où l'on ajoutera la
         # prochaine, et non coupée en deux demi-marges.
         gx = feuille.left()
-        gy = feuille.top() + (feuille.height() - card_h * session.rows) / 2
-        # ⚠️ **Les cases vides s'y voient aussi.** Elles ne se montraient qu'au
-        # premier onglet, si bien que la mosaïque dessinée ici n'était pas celle
-        # qu'on venait de composer : on ne pouvait pas juger de la place occupée
-        # sur une image qui ne disait pas la vérité.
-        vides = set(session.empty_cells())
-        trait = 0 if session.cols * session.rows > FINE_PEN_ABOVE else 0.8
+        gy = feuille.top() + (feuille.height() - card_h * session.rows
+                              - max(0, session.rows - 1) * gap_y) / 2
+        cases = []
         for row in range(session.rows):
             for col in range(session.cols):
-                creux = (row, col) in vides
-                painter.setBrush(QBrush(EMPTY_FILL if creux else CARD_FILL))
-                painter.setPen(QPen(EMPTY_EDGE if creux else CARD_EDGE,
-                                    1.2 if creux else trait))
                 # ⚠️ Chaque feuille repart de son bord, comme à l'export.
                 x = ((col // par_feuille) * feuille_w
-                     + (col % par_feuille) * card_w)
-                painter.drawRect(QRectF(gx + x, gy + row * card_h, card_w, card_h))
+                     + (col % par_feuille) * (card_w + gap_x))
+                cases.append((row, col, QRectF(gx + x, gy + row * (card_h + gap_y),
+                                               card_w, card_h)))
+        return cases
+
+    def cell_at(self, x: float, y: float) -> tuple[int, int] | None:
+        """Case de la mosaïque sous ce point, ou None en dehors."""
+        geometrie = self.rects()
+        if geometrie is None:
+            return None
+        cases = self.grid_cells(geometrie[0])
+        if cases is None:
+            return None
+        for row, col, rect in cases:
+            if rect.contains(x, y):
+                return row, col
+        return None
+
+    def _draw_grid(self, painter, feuille: QRectF) -> None:
+        """La mosaïque posée sur la surface, cases vides comprises.
+
+        ⚠️ **Les cases vides s'y voient.** Elles ne se montraient qu'au premier
+        onglet, si bien que la mosaïque dessinée ici n'était pas celle qu'on
+        venait de composer : on ne pouvait pas juger de la place occupée sur une
+        image qui ne disait pas la vérité.
+        """
+        session = self._session
+        cases = self.grid_cells(feuille)
+        if cases is None:
+            return
+        vides = set(session.empty_cells())
+        trait = 0 if session.cols * session.rows > FINE_PEN_ABOVE else 0.8
+        # ⚠️ **Bornée à la feuille.** Une grille trop grande pour le papier
+        # débordait sur tout le cadre, par-dessus les cotes et le bouton
+        # d'ajout. Ce qui dépasse ne s'imprimera pas : la feuille pleine à ras
+        # bord le dit, et la ligne d'état chiffre ce qui tiendrait.
+        painter.save()
+        painter.setClipRect(feuille)
+        for row, col, rect in cases:
+            creux = (row, col) in vides
+            painter.setBrush(QBrush(EMPTY_FILL if creux else CARD_FILL))
+            painter.setPen(QPen(EMPTY_EDGE if creux else CARD_EDGE,
+                                1.2 if creux else trait))
+            painter.drawRect(rect)
+        painter.restore()
 
     def _label_text(self) -> str:
         return (self.tr("carte réelle\n%1 × %2 cm")

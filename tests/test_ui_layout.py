@@ -183,10 +183,22 @@ def ecran(session):
     return LayoutStep(session)
 
 
-def test_the_three_parts_are_listed(ecran):
+def test_the_menu_has_two_levels(ecran):
+    """Les pages d'abord, puis la famille « Grille » et ses trois temps."""
     titres = [ecran._list.item(i).text() for i in range(ecran._list.count())]
-    assert len(titres) == 3
-    assert all(titres), "un onglet sans titre"
+    assert len(titres) == 5
+    assert all(titres), "une ligne sans intitulé"
+    assert titres[1].strip() == "Grille", "l'intitulé de famille manque"
+    assert all(t.startswith("    ") for t in titres[2:]), "les sous-onglets sont décalés"
+    assert not titres[0].startswith(" ")
+
+
+def test_the_family_row_is_not_a_tab(ecran):
+    """Cliquable, elle aurait fait un onglet sans contenu."""
+    from PySide6.QtCore import Qt
+
+    assert ecran._list.item(1).flags() == Qt.NoItemFlags
+    assert ecran._rows[1] == -1
 
 
 def test_nothing_is_ready_before_the_user_says_so(session, ecran):
@@ -194,8 +206,8 @@ def test_nothing_is_ready_before_the_user_says_so(session, ecran):
     portent toutes l'avertissement."""
     ecran.show()
     session.auto_place_empty_cells()
-    assert ecran._tabs[0].is_valid(), "la grille est pourtant en état"
-    assert not ecran._ready(0)
+    assert ecran._tabs[1].is_valid(), "la grille est pourtant en état"
+    assert not ecran._ready(1)
     assert not ecran.all_ready()
 
 
@@ -205,13 +217,13 @@ def test_advancing_marks_the_part_ready_and_moves_on(session, ecran):
 
     assert ecran.advance() is True, "il reste des parties : le clic est consommé"
     assert ecran._ready(0)
-    assert ecran._list.currentRow() == 1
+    assert ecran._list.currentRow() == ecran._row_of(1)
 
 
 def test_the_last_part_hands_the_click_back(session, ecran):
     ecran.show()
     session.auto_place_empty_cells()
-    for _ in range(2):
+    for _ in range(len(ecran._tabs) - 1):
         ecran.advance()
 
     assert ecran.advance() is False, "la fenêtre doit changer d'étape"
@@ -223,16 +235,17 @@ def test_a_validated_part_that_breaks_loses_its_tick(session, ecran):
     rallume l'avertissement : la coche promettrait sinon un état qui n'est plus."""
     ecran.show()
     session.auto_place_empty_cells()
+    ecran._list.setCurrentRow(ecran._row_of(1))
     ecran.advance()
-    assert ecran._ready(0)
+    assert ecran._ready(1)
 
     session.set_layout(cols=2, rows=2)       # 4 cases pour 20 cartes
-    assert not ecran._ready(0)
+    assert not ecran._ready(1)
 
 
 def test_an_incomplete_grid_blocks_the_way(session, ecran):
     ecran.show()
-    ecran._list.setCurrentRow(0)
+    ecran._list.setCurrentRow(ecran._row_of(1))
     session.set_layout(cols=5, rows=5)        # 25 cases pour 20 cartes
     assert session.missing_empty_cells() > 0
     assert not ecran.can_advance()
@@ -245,65 +258,67 @@ def test_the_other_parts_never_block(session, ecran):
     """Format, orientation et finesse ont toujours une valeur acceptable : rien
     n'y est à compléter."""
     ecran.show()
-    for position in (1, 2):
-        ecran._list.setCurrentRow(position)
-        assert ecran.can_advance()
+    session.auto_place_empty_cells()
+    for position in (0, 3):
+        ecran._list.setCurrentRow(ecran._row_of(position))
+        assert ecran.can_advance(), position
 
 
 # --- L'onglet des dimensions ------------------------------------------------
 
 def test_the_status_line_says_red_when_cards_are_left_out(session, ecran):
-    grille = ecran._tabs[0]
+    grille = ecran._tabs[1]
     session.set_layout(cols=2, rows=2)
     assert grille._status.property("role") == "error"
     assert "16" in grille._status.text()      # 20 cartes moins 4 cases
 
 
 def test_the_status_line_says_amber_while_holes_remain(session, ecran):
-    grille = ecran._tabs[0]
+    grille = ecran._tabs[1]
     session.set_layout(cols=5, rows=5)
     assert grille._status.property("role") == "warning"
     assert "5" in grille._status.text()
 
 
 def test_the_status_line_turns_green_at_zero(session, ecran):
-    grille = ecran._tabs[0]
+    grille = ecran._tabs[1]
     session.set_layout(cols=5, rows=5)
     session.auto_place_empty_cells()
     assert grille._status.property("role") == "ok"
 
 
 def test_an_exact_grid_is_green_without_any_hole(session, ecran):
-    grille = ecran._tabs[0]
+    grille = ecran._tabs[1]
     session.set_layout(cols=4, rows=5)        # 20 cases pour 20 cartes
     assert grille._status.property("role") == "ok"
     assert session.empty_cells() == []
 
 
 def test_five_suggestions_are_offered(session, ecran):
-    assert ecran._tabs[0]._suggestions.count() == 5
+    assert ecran._tabs[1]._suggestions.count() == 5
 
 
 def test_the_grid_tab_says_nothing_of_the_paper(ecran):
     """Le format se décide à l'onglet suivant : le mêler ici obligeait à tout
     arbitrer d'un coup."""
-    grille = ecran._tabs[0]
+    grille = ecran._tabs[1]
     assert not hasattr(grille, "_paper")
     assert not hasattr(grille, "_dpi")
-    assert not grille._wireframe._show_paper
 
 
 # --- La grille proposée au premier passage ---------------------------------
 
 def test_the_first_visit_fits_the_grid_to_the_selection(session, ecran):
     session.set_layout(cols=17, rows=17)
-    ecran._tabs[0]._auto_fit_pending = True   # le préréglage a désarmé
+    ecran._tabs[1]._auto_fit_pending = True   # le préréglage a désarmé
     ecran.show()
+    ecran._list.setCurrentRow(ecran._row_of(1))   # on entre sur l'onglet
     assert (session.cols, session.rows) == (4, 5)   # 20 cases pour 20 cartes
 
 
 def test_the_grid_is_only_fitted_once(session, ecran):
     ecran.show()
+    ecran._list.setCurrentRow(ecran._row_of(1))
     session.set_layout(cols=10, rows=10)
     ecran.hide()
     ecran.show()
@@ -311,15 +326,17 @@ def test_the_grid_is_only_fitted_once(session, ecran):
 
 
 def test_a_hand_picked_grid_survives_the_first_visit(session, ecran):
-    ecran._tabs[0]._cols.setValue(4)
-    ecran._tabs[0]._rows.setValue(6)
+    ecran._tabs[1]._cols.setValue(4)
+    ecran._tabs[1]._rows.setValue(6)
     ecran.show()
+    ecran._list.setCurrentRow(ecran._row_of(1))
     assert (session.cols, session.rows) == (4, 6)
 
 
 def test_a_preset_grid_survives_the_first_visit(session, ecran):
     session.set_layout(cols=2, rows=10)       # venu d'ailleurs, pas des champs
     ecran.show()
+    ecran._list.setCurrentRow(ecran._row_of(1))
     assert (session.cols, session.rows) == (2, 10)
 
 
@@ -336,11 +353,13 @@ def test_a_preset_that_repeats_the_current_grid_survives_too(session, ecran):
                 "panels": session.panels},
     ))
     ecran.show()
+    ecran._list.setCurrentRow(ecran._row_of(1))
     assert (session.cols, session.rows) == voulue
 
 
 def test_a_new_card_set_reopens_the_question(session, ecran, tmp_path):
     ecran.show()
+    ecran._list.setCurrentRow(ecran._row_of(1))
     ecran.hide()
     jeu = card_set_in(tmp_path / "autre", {"s/b": [str(i) for i in range(12)]})
     session.set_cards(jeu, str(tmp_path / "autre"))
@@ -356,6 +375,7 @@ def test_nothing_moves_without_a_card(qt_app):
     ecran = LayoutStep(vide)
     avant = (vide.cols, vide.rows)
     ecran.show()
+    ecran._list.setCurrentRow(ecran._row_of(1))
     assert (vide.cols, vide.rows) == avant
 
 
@@ -370,13 +390,14 @@ def test_the_fitted_grid_never_drops_a_card(session, ecran):
     assert classement[0].card_delta < 0, "le classement brut perd bien des cartes"
 
     ecran.show()
+    ecran._list.setCurrentRow(ecran._row_of(1))
     assert session.grid_fit().surplus == 0
 
 
 # --- L'onglet du format -----------------------------------------------------
 
 def test_the_paper_tab_follows_the_session(session, ecran):
-    papier = ecran._tabs[1]
+    papier = ecran._tabs[0]
     session.set_layout(paper="A3")
     assert papier._paper.currentText() == "A3"
 
@@ -386,8 +407,8 @@ def test_an_unknown_paper_falls_back_instead_of_lying(session, ecran):
     l'ignore, et sans retour la session garderait une valeur qui ferait échouer
     l'export."""
     session.set_layout(paper="B3")
-    ecran._tabs[1].refresh()
-    assert session.paper in ("A4", ecran._tabs[1]._paper.currentText())
+    ecran._tabs[0].refresh()
+    assert session.paper in ("A4", ecran._tabs[0]._paper.currentText())
     assert session.paper != "B3"
 
 
@@ -416,7 +437,7 @@ def test_a_link_wider_than_the_grid_is_flagged(qt_app, session):
     from pokemon_mosaic.ui.layout_step import LayoutStep
 
     ecran = LayoutStep(session)
-    assert "3×1" in ecran._tabs[2]._warnings.text()
+    assert "3×1" in ecran._tabs[0]._warnings.text()
 
 
 def test_a_link_taller_than_the_grid_is_flagged_too(qt_app, session):
@@ -426,7 +447,7 @@ def test_a_link_taller_than_the_grid_is_flagged_too(qt_app, session):
     session.links.add(Link(cards=(0, 1, 2), shape=(1, 3)))
     session.set_layout(cols=10, rows=2)
     ecran = LayoutStep(session)
-    assert "1×3" in ecran._tabs[2]._warnings.text()
+    assert "1×3" in ecran._tabs[0]._warnings.text()
 
 
 def test_no_warning_when_the_link_fits(qt_app, session):
@@ -436,12 +457,12 @@ def test_no_warning_when_the_link_fits(qt_app, session):
     session.links.add(Link(cards=(0, 1, 2), shape=(3, 1)))
     session.set_layout(cols=5, rows=4)
     ecran = LayoutStep(session)
-    assert "occupe" not in ecran._tabs[2]._warnings.text()
+    assert "occupe" not in ecran._tabs[0]._warnings.text()
 
 
 def test_a_dpi_outside_the_field_bounds_comes_back_corrected(session, ecran):
     session.set_layout(dpi=5000)
-    ecran._tabs[2].refresh()
+    ecran._tabs[0].refresh()
     assert session.dpi == 1200
 
 
@@ -451,14 +472,14 @@ def test_a_mostly_empty_sheet_is_reported_without_being_judged(session, ecran):
     l'état normal, et l'onglet précédent l'annonce comme tel : deux écrans
     disaient le contraire du même blanc."""
     session.set_layout(panels=3, cols=6, rows=5)
-    texte = ecran._tabs[2]._warnings.text()
+    texte = ecran._tabs[0]._warnings.text()
     assert "%" in texte and "blanc" in texte
     assert "normal si vous avez ajouté des feuilles" in texte
 
 
 def test_a_grid_that_follows_the_sheet_says_nothing(session, ecran):
     session.set_layout(panels=2, cols=30, rows=15)
-    assert "sortira blanc" not in ecran._tabs[2]._warnings.text()
+    assert "sortira blanc" not in ecran._tabs[0]._warnings.text()
 
 
 def test_a_click_on_a_cell_hidden_by_the_quota_still_lands(session, tmp_path):
@@ -534,7 +555,7 @@ def test_an_emptied_field_keeps_the_previous_value(qt_app):
 
 
 def test_the_grid_tab_drives_the_session_from_the_big_counters(session, ecran):
-    grille = ecran._tabs[0]
+    grille = ecran._tabs[1]
     grille._cols.setValue(7)
     grille._rows.setValue(4)
     assert (session.cols, session.rows) == (7, 4)
@@ -549,9 +570,9 @@ def geste(vue, cases):
     from PySide6.QtWidgets import QApplication
 
     def point(row, col):
-        scale, _, _, (cw, ch) = vue._geometry
-        gx, gy = vue._grid_origin(vue._geometry)
-        return QPointF(gx + cw * scale * (col + 0.5), gy + ch * scale * (row + 0.5))
+        rect = next(r for lig, c, r in vue.grid_cells(vue.rects()[0])
+                    if (lig, c) == (row, col))
+        return QPointF(rect.center())
 
     app = QApplication.instance()
     p = point(*cases[0])
@@ -567,9 +588,10 @@ def geste(vue, cases):
 
 @pytest.fixture
 def grille(session, ecran):
+    """L'aperçu des pages de l'onglet des tailles, où l'on pose les cases vides."""
     session.set_layout(cols=6, rows=6)       # 36 cases pour 20 cartes
-    vue = ecran._tabs[0]._wireframe
-    vue.resize(400, 500)
+    vue = ecran._tabs[1]._preview
+    vue.resize(700, 460)
     vue.grab()                               # force le calcul de géométrie
     return vue
 
@@ -599,8 +621,8 @@ def test_a_drag_stops_at_the_quota_instead_of_chasing(session, ecran):
     """Poser au-delà en évinçant les plus anciennes ferait courir les trous
     derrière le curseur au lieu d'en poser."""
     session.set_layout(cols=5, rows=5)       # 25 cases, 20 cartes -> 5 trous
-    vue = ecran._tabs[0]._wireframe
-    vue.resize(400, 500)
+    vue = ecran._tabs[1]._preview
+    vue.resize(700, 460)
     vue.grab()
 
     geste(vue, [(4, col) for col in range(5)] + [(3, col) for col in range(5)])
@@ -629,9 +651,9 @@ def test_the_right_button_paints_nothing(session, grille):
     from PySide6.QtWidgets import QApplication
 
     def point(row, col):
-        scale, _, _, (cw, ch) = grille._geometry
-        gx, gy = grille._grid_origin(grille._geometry)
-        return QPointF(gx + cw * scale * (col + 0.5), gy + ch * scale * (row + 0.5))
+        rect = next(r for lig, c, r in grille.grid_cells(grille.rects()[0])
+                    if (lig, c) == (row, col))
+        return QPointF(rect.center())
 
     app = QApplication.instance()
     p = point(0, 0)
@@ -649,7 +671,7 @@ def test_the_right_button_paints_nothing(session, grille):
 # --- Ce que la ligne d'état et la grille montrent --------------------------
 
 def test_the_suggestions_are_named(ecran):
-    grille = ecran._tabs[0]
+    grille = ecran._tabs[1]
     assert grille._suggestions_title.text() == "Recommandations de grilles"
     assert grille._suggestions_title.font().bold()
 
@@ -657,7 +679,7 @@ def test_the_suggestions_are_named(ecran):
 def test_the_status_line_is_larger_than_the_interface(qt_app, ecran):
     """C'est le verdict de l'onglet : il se lit d'un coup d'œil depuis l'autre
     bout de l'écran, et non en se penchant sur le bas du panneau."""
-    grille = ecran._tabs[0]
+    grille = ecran._tabs[1]
     assert grille._status.font().pointSize() > qt_app.font().pointSize()
 
 
@@ -665,7 +687,7 @@ def test_the_count_is_bold_in_every_state(session, ecran):
     """Sans texte enrichi, les balises s'afficheraient telles quelles."""
     from PySide6.QtCore import Qt
 
-    grille = ecran._tabs[0]
+    grille = ecran._tabs[1]
     assert grille._status.textFormat() == Qt.RichText
 
     for cols, rows in ((2, 2), (5, 5)):          # trop petit, puis à combler
@@ -777,31 +799,32 @@ def test_the_mosaic_is_drawn_on_the_sheet_when_asked(qt_app, session):
     assert garni.blue() > garni.red(), f"la case ne paraît pas une carte : {garni.name()}"
 
 
-def test_the_toggle_starts_off_and_carries_its_warning(session, ecran):
-    """La mosaïque n'est qu'une idée de ce que ça donnerait, pas la décision de
-    cet onglet : elle ne s'affiche que si on la demande, et le dire n'a de sens
-    que quand elle est là."""
-    papier = ecran._tabs[1]
-    papier.show()
-    assert not papier._show_grid.isChecked()
-    assert not papier._preview._show_grid
-    assert not papier._grid_warning.isVisibleTo(papier)
+def test_the_mosaic_is_always_shown(session, ecran):
+    """⚠️ La bascule « montrer la mosaïque » et son message disparaissent : la
+    famille d'onglets la montre partout, dans les pages."""
+    for position in range(len(ecran._tabs)):
+        onglet = ecran._tabs[position]
+        assert not hasattr(onglet, "_show_grid"), position
+        assert onglet._preview._show_grid, position
 
-    papier._show_grid.setChecked(True)
-    assert papier._preview._show_grid
-    assert papier._grid_warning.isVisibleTo(papier)
-    assert "idée rapide" in papier._grid_warning.text()
-    assert "onglet suivant" in papier._grid_warning.text()
+
+def test_only_the_size_tab_lets_you_paint(session, ecran):
+    """Un clic qui creuse la mosaïque sans qu'on l'ait demandé serait une
+    surprise désagréable : on ne pose des cases vides que là où on les règle."""
+    assert ecran._tabs[1]._preview._paintable
+    for position in (0, 2, 3):
+        assert not ecran._tabs[position]._preview._paintable, position
 
 
 # --- De gros onglets --------------------------------------------------------
 
 def test_the_tabs_are_big_enough_to_be_aimed_at(ecran):
-    from pokemon_mosaic.ui.layout_step import TAB_HEIGHT
+    from pokemon_mosaic.ui.layout_step import SUB_TAB_HEIGHT, TAB_HEIGHT
 
     assert ecran._list.property("role") == "tabs"
-    for position in range(ecran._list.count()):
-        assert ecran._list.item(position).sizeHint().height() >= TAB_HEIGHT
+    for rang, position in enumerate(ecran._rows):
+        attendu = SUB_TAB_HEIGHT if position > 0 else TAB_HEIGHT
+        assert ecran._list.item(rang).sizeHint().height() >= attendu, rang
 
 
 def test_no_tab_label_is_cut_off(qt_app, ecran):
@@ -858,7 +881,7 @@ def test_the_selected_tab_label_stays_legible(qt_app):
 
 @pytest.fixture
 def papier(session, ecran):
-    onglet = ecran._tabs[1]
+    onglet = ecran._tabs[0]
     onglet.show()
     onglet._preview.resize(760, 460)
     onglet._preview.refresh()
@@ -950,15 +973,19 @@ def test_an_extra_sheet_only_adds_room(session, papier):
     assert papier.is_valid(), "21 colonnes sur 2 feuilles reste une mise en page"
 
 
-def test_the_mosaic_hugs_the_left_edge(session, papier):
+def test_the_mosaic_hugs_the_left_edge(qt_app, session):
     """La place en trop est ce qu'apporte la feuille suivante : elle doit se
     voir d'un bloc, du côté où l'on ajoutera la prochaine."""
     from PySide6.QtGui import QColor
 
+    from pokemon_mosaic.ui.page_preview import PagePreview
+
     session.set_layout(cols=4, rows=5, panels=2)
-    papier._preview.set_show_grid(True)
-    feuille, _, _ = papier._preview.rects()
-    image = papier._preview.grab().toImage()
+    vue = PagePreview(session)
+    vue.set_show_grid(True)
+    vue.resize(760, 460)
+    feuille, _, _ = vue.rects()
+    image = vue.grab().toImage()
 
     milieu_y = int(feuille.center().y())
     gauche = QColor(image.pixel(int(feuille.left()) + 3, milieu_y))
@@ -980,38 +1007,36 @@ def test_no_tab_blocks_on_the_sheet_count_any_more(session, ecran):
     """Aucune combinaison de feuilles n'est fautive : c'est la carte qui se plie
     à la feuille, pas les colonnes."""
     session.set_layout(cols=21, rows=21, panels=2)
-    ecran._list.setCurrentRow(2)
-    assert ecran._tabs[1].is_valid()
-    assert ecran._tabs[2].is_valid()
+    ecran._list.setCurrentRow(ecran._row_of(0))
+    assert ecran._tabs[0].is_valid()
     assert ecran.can_advance()
 
 
 def test_the_orientation_moved_to_the_paper_tab(session, ecran):
     """L'orientation décrit la feuille : elle n'avait rien à voir avec la
     finesse d'impression."""
-    papier, impression = ecran._tabs[1], ecran._tabs[2]
+    papier = ecran._tabs[0]
     assert hasattr(papier, "_landscape")
-    assert not hasattr(impression, "_landscape")
-    assert not hasattr(impression, "_panels"), "le nombre de feuilles est passé au « + »"
+    assert not hasattr(papier, "_panels"), "le nombre de feuilles est passé au « + »"
 
     papier._landscape.setChecked(True)
     assert session.landscape
     papier._landscape.setChecked(False)
     assert not session.landscape
+    assert hasattr(papier, "_dpi"), "la finesse décrit les pages"
 
 
 def test_a_cut_never_falls_on_a_card_whatever_the_grid(session):
     """⚠️ La règle qui tient tout, vue depuis la mise en page de l'écran."""
-    from pokemon_mosaic.layout import mm_to_pixels, panel_card_size, paper_size_mm
+    from pokemon_mosaic.layout import grid_geometry, mm_to_pixels, paper_size_mm
 
     for panneaux in range(1, 6):
         for cols, rows in ((7, 3), (21, 21), (5, 4), (13, 9)):
             paper = paper_size_mm("A3")
-            par_feuille, card_w, _ = panel_card_size(
-                paper, panneaux, cols, rows, 713 / 984, 300)
+            g = grid_geometry(paper, panneaux, cols, rows, 713 / 984, 300)
             paper_w = mm_to_pixels(paper[0], 300)
-            assert par_feuille * card_w <= paper_w, (panneaux, cols, rows)
-            assert par_feuille * panneaux >= cols, "des colonnes sans feuille"
+            assert g.span(g.per_panel) <= paper_w, (panneaux, cols, rows)
+            assert g.per_panel * panneaux >= cols, "des colonnes sans feuille"
 
 
 # --- L'écran montre ce que l'imprimante fera --------------------------------
@@ -1077,3 +1102,97 @@ def test_clicks_still_land_on_the_right_cell_across_sheets(qt_app, session):
         x = gx + (vue.column_offset(col, vue._geometry) + card_w / 2) * scale
         y = gy + card_h * scale * 1.5
         assert vue.cell_at(x, y) == (1, col), col
+
+
+# --- L'onglet de la taille des cartes ---------------------------------------
+
+@pytest.fixture
+def cartes(session, ecran):
+    onglet = ecran._tabs[2]
+    onglet._preview.resize(700, 460)
+    return onglet
+
+
+def test_the_card_size_starts_automatic(session, cartes):
+    """La plus grande taille qui fasse tenir la grille, tant qu'on n'y touche
+    pas : aucun avertissement avant que l'utilisateur n'ait rien décidé."""
+    session.set_layout(cols=4, rows=5)
+    assert session.card_width_mm is None
+    assert cartes._auto.isChecked()
+    assert not cartes._width.isEnabled()
+    assert cartes.is_valid()
+    assert cartes._status.property("role") == "ok"
+
+
+def test_leaving_automatic_keeps_what_was_shown(session, cartes):
+    """Partir d'autre chose ferait sauter le dessin sous les yeux."""
+    session.set_layout(cols=4, rows=5)
+    montre = cartes._width.value()
+    cartes._auto.setChecked(False)
+    assert session.card_width_mm == pytest.approx(montre, abs=0.2)
+    assert cartes._width.isEnabled()
+
+
+def test_the_real_card_button_fixes_the_width(session, cartes):
+    from pokemon_mosaic.layout import REAL_CARD_MM
+
+    cartes._real_card.click()
+    assert session.card_width_mm == pytest.approx(REAL_CARD_MM[0])
+    assert not cartes._auto.isChecked()
+
+
+def test_a_card_too_big_is_refused_with_its_numbers(session, cartes, ecran):
+    """441 cartes à taille réelle ne tiennent pas sur un A2 : on le dit, et on
+    ne passe pas."""
+    session.set_layout(cols=11, rows=13, paper="A2", panels=1)
+    cartes._real_card.click()
+
+    assert not cartes.is_valid()
+    assert cartes._status.property("role") == "error"
+    assert "63" in cartes._status.text()
+
+    ecran._list.setCurrentRow(ecran._row_of(2))
+    assert not ecran.can_advance()
+
+
+def test_the_shapes_that_would_fit_are_listed_on_demand(session, cartes):
+    """Le bouton ne propose que quand il y a quelque chose à proposer."""
+    session.set_layout(cols=4, rows=5)
+    assert not cartes._show_shapes.isEnabled()
+    assert not cartes._shapes.isVisibleTo(cartes)
+
+    session.set_layout(cols=11, rows=13, paper="A2")
+    cartes._real_card.click()
+    assert cartes._show_shapes.isEnabled()
+
+    cartes._show_shapes.click()
+    assert cartes._shapes.count() > 0
+    from PySide6.QtCore import Qt
+
+    cols, rows = cartes._shapes.item(0).data(Qt.UserRole)
+    cartes._apply_shape(cartes._shapes.item(0))
+    assert (session.cols, session.rows) == (cols, rows)
+    assert cartes.is_valid(), "la forme proposée doit tenir"
+
+
+def test_the_gap_shrinks_the_cards_in_automatic(session, cartes):
+    """L'écart prend de la place : les cartes la cèdent."""
+    session.set_layout(cols=5, rows=5, card_gap_mm=0.0)
+    sans = cartes._width.value()
+    session.set_layout(card_gap_mm=3.0)
+    assert cartes._width.value() < sans
+
+
+def test_the_gap_is_in_millimetres_like_everything_else(cartes):
+    """La même unité que la carte et la feuille, seule mesurable sur le poster
+    imprimé."""
+    assert cartes._gap.suffix().strip() == "mm"
+    assert cartes._width.suffix().strip() == "mm"
+
+
+def test_the_placement_tab_is_a_placeholder(ecran):
+    """Le voir vide dit mieux ce qui viendra qu'une absence qu'on prendrait
+    pour un oubli."""
+    emplacement = ecran._tabs[3]
+    assert emplacement.is_valid(), "un jalon ne bloque personne"
+    assert "À venir" in emplacement._todo.text()

@@ -7,6 +7,7 @@ from pokemon_mosaic.layout import (
     card_pixel_size,
     distribute_empty_cells,
     max_useful_dpi,
+    mm_to_pixels,
     paper_size_mm,
     suggest_grids,
 )
@@ -419,3 +420,44 @@ def test_the_output_folder_is_not_guessed_once_packaged(monkeypatch):
     monkeypatch.setattr(paths.sys, "frozen", True, raising=False)
     monkeypatch.setattr(paths.sys, "_MEIPASS", "/tmp/deplie", raising=False)
     assert paths.output_dir() is None
+
+
+def test_the_shape_search_stays_instant():
+    """⚠️ Sans plafond, une carte d'un millimètre sur cinq A0 à 1200 DPI donnait
+    des centaines de milliers de candidats à trier sur le fil de l'interface —
+    mesuré, 4,3 secondes de fenêtre figée."""
+    import time
+
+    from pokemon_mosaic.layout import MAX_GRID_SIDE, best_grid_shapes, grid_geometry
+
+    paper = paper_size_mm("A0")
+    geometrie = grid_geometry(paper, 5, 21, 21, CARD_ASPECT, 1200, card_width_mm=1.0)
+    depart = time.perf_counter()
+    formes = best_grid_shapes(paper, 5, 441, 441, geometrie, 1200)
+    duree = time.perf_counter() - depart
+
+    assert duree < 0.5, f"{duree:.1f} s pour proposer des grilles"
+    assert formes, "aucune grille proposée"
+    assert all(cols <= MAX_GRID_SIDE and rows <= MAX_GRID_SIDE
+               for cols, rows in formes), "au-delà, les champs ne suivent pas"
+
+
+def test_the_gap_takes_room_from_the_cards():
+    from pokemon_mosaic.layout import grid_geometry
+
+    paper = paper_size_mm("A4")
+    sans = grid_geometry(paper, 1, 5, 5, CARD_ASPECT, 300)
+    avec = grid_geometry(paper, 1, 5, 5, CARD_ASPECT, 300, gap_mm=3.0)
+    assert avec.card_w < sans.card_w
+    assert avec.gap > 0
+    assert avec.span(5) <= mm_to_pixels(paper[0], 300)
+
+
+def test_a_fixed_card_width_is_obeyed_even_when_it_overflows():
+    """C'est alors à la grille de s'adapter, et l'écran le dit."""
+    from pokemon_mosaic.layout import grid_fits, grid_geometry
+
+    paper = paper_size_mm("A5")
+    g = grid_geometry(paper, 1, 11, 13, CARD_ASPECT, 300, card_width_mm=63.0)
+    assert g.card_w == mm_to_pixels(63.0, 300)
+    assert not grid_fits(paper, 1, 11, 13, g, 300)

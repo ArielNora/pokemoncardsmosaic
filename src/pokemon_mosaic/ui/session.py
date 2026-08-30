@@ -56,6 +56,13 @@ class Session(QObject):
         self.panels = 1
         self.cols = 17
         self.rows = 17
+        # Largeur d'une carte sur le papier. `None` = automatique : la plus
+        # grande qui fasse tenir la grille, recalculée à chaque changement.
+        # Une valeur la fige, et c'est alors à la grille de s'y adapter.
+        self.card_width_mm: float | None = None
+        # Écart entre deux cartes, en millimètres — la même unité que la carte
+        # et la feuille, seule mesurable sur le poster imprimé.
+        self.card_gap_mm: float = 0.0
         # Liste ordonnée, pas un ensemble : le rang sert à savoir quel trou céder
         # sa place quand l'utilisateur en pose un nouveau alors que le quota est
         # atteint. Le plus ancien s'efface, façon file d'attente.
@@ -483,6 +490,8 @@ class Session(QObject):
                 "paper": self.paper, "landscape": self.landscape,
                 "dpi": self.dpi, "panels": self.panels,
                 "cols": self.cols, "rows": self.rows,
+                "card_width_mm": self.card_width_mm,
+                "card_gap_mm": self.card_gap_mm,
                 # Toutes les cases vides sont posées à la main désormais : il
                 # n'y a plus de répartition d'office à distinguer d'un choix.
                 # `None` reste écrit quand il n'y en a aucune, pour qu'un

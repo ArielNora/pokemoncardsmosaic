@@ -10,7 +10,7 @@ from PySide6.QtCore import QRectF, Qt, Signal
 from PySide6.QtGui import QBrush, QColor, QPainter, QPen
 from PySide6.QtWidgets import QWidget
 
-from ..layout import panel_card_size
+from ..layout import grid_geometry
 
 PAPER = QColor(252, 252, 252)
 PAPER_EDGE = QColor(120, 120, 120)
@@ -51,6 +51,7 @@ class WireframeView(QWidget):
         # Cartes par feuille du dernier calcul, pour placer les colonnes comme
         # l'export : chaque feuille repart de son bord.
         self._per_panel = 1
+        self._gap = 0.0
         self.setMinimumSize(320, 380)
         self.setCursor(Qt.PointingHandCursor)
 
@@ -105,13 +106,15 @@ class WireframeView(QWidget):
         # pixels ne donnaient pas le même nombre de cartes par feuille — 49 161
         # combinaisons en désaccord sur les sept formats —, et l'on jugeait la
         # mise en page sur un dessin qui n'était pas celui du poster.
-        self._per_panel, card_w_px, card_h_px = panel_card_size(
+        geometrie = grid_geometry(
             (paper_w, paper_h), session.panels, session.cols, session.rows,
-            card_aspect, dpi=session.dpi,
+            card_aspect, session.dpi, session.card_width_mm, session.card_gap_mm,
         )
+        self._per_panel = geometrie.per_panel
+        self._gap = geometrie.gap / session.dpi * 25.4
         # Tout est ramené en millimètres pour le dessin, puis mis à l'échelle.
-        card_w = card_w_px / session.dpi * 25.4
-        card_h = card_h_px / session.dpi * 25.4
+        card_w = geometrie.card_w / session.dpi * 25.4
+        card_h = geometrie.card_h / session.dpi * 25.4
 
         margin = 12
         scale = min((self.width() - 2 * margin) / total_w,
@@ -131,11 +134,12 @@ class WireframeView(QWidget):
         montrait une carte à cheval sur la coupe là où le poster n'en a pas.
         """
         _, _, (total_w, _), (card_w, _) = geometry
+        pas = card_w + self._gap
         if self._show_paper:
             par_feuille = max(1, self._per_panel)
             feuille_w = total_w / max(1, self._session.panels)
-            return (col // par_feuille) * feuille_w + (col % par_feuille) * card_w
-        return col * card_w
+            return (col // par_feuille) * feuille_w + (col % par_feuille) * pas
+        return col * pas
 
     def _grid_origin(self, geometry):
         """Coin haut-gauche de la grille.
@@ -147,7 +151,8 @@ class WireframeView(QWidget):
         d'aucune feuille et reste centrée.
         """
         scale, (ox, oy), (_, paper_h), (_card_w, card_h) = geometry
-        grid_h = card_h * self._session.rows
+        rows = self._session.rows
+        grid_h = card_h * rows + max(0, rows - 1) * self._gap
         return ox, oy + (paper_h - grid_h) * scale / 2
 
     # --- Dessin -----------------------------------------------------------
@@ -185,7 +190,8 @@ class WireframeView(QWidget):
             for col in range(session.cols):
                 rect = QRectF(
                     gx + self.column_offset(col, geometry) * scale,
-                    gy + row * card_h * scale, card_w * scale, card_h * scale)
+                    gy + row * (card_h + self._gap) * scale,
+                    card_w * scale, card_h * scale)
                 is_empty = (row, col) in empty
                 painter.setBrush(QBrush(EMPTY_FILL if is_empty else CARD_FILL))
                 painter.setPen(QPen(EMPTY_EDGE if is_empty else CARD_EDGE,
@@ -257,7 +263,7 @@ class WireframeView(QWidget):
         # donnerait la colonne 0 au lieu d'être rejeté. On écarte d'abord.
         if x < gx or y < gy:
             return None
-        row = int((y - gy) / (card_h * scale))
+        row = int((y - gy) / ((card_h + self._gap) * scale))
         # Les colonnes n'étant plus à pas constant, on cherche celle dont la
         # bande contient le point plutôt que de diviser.
         col = next(
