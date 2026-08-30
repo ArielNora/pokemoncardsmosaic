@@ -69,11 +69,34 @@ def dialog(step):
 
 
 def test_the_settings_come_from_the_layout_step(dialog, session):
-    """Format, orientation, DPI et panneaux appartiennent à l'étape 2 : les
-    ressaisir ici les laisserait diverger sans que rien ne le signale."""
-    session.set_layout(paper="A3", landscape=True, dpi=150, panels=1)
+    """Format, orientation et panneaux appartiennent à l'étape 2 : les ressaisir
+    ici les laisserait diverger sans que rien ne le signale."""
+    session.set_layout(paper="A3", landscape=True, panels=1)
     settings = dialog.settings()
-    assert (settings.paper, settings.landscape, settings.dpi) == ("A3", True, 150)
+    assert (settings.paper, settings.landscape, settings.panels) == ("A3", True, 1)
+
+
+def test_the_resolution_is_chosen_here_and_written_to_the_session(dialog, session):
+    """⚠️ La finesse était demandée à l'étape 2, avant que la mosaïque n'existe :
+    elle n'y changeait rien de visible, et il fallait deviner le poids d'un
+    fichier qu'on n'avait pas encore décrit. Elle se choisit devant lui."""
+    dialog._dpi.setValue(300)
+    assert dialog.settings().dpi == 300
+    # Écrite dans la session : les aperçus arrondissent leurs pixels comme
+    # l'export, et un préréglage la retrouve.
+    assert session.dpi == 300
+
+
+def test_a_resolution_outside_the_field_bounds_comes_back_corrected(step):
+    """Un préréglage écrit à la main peut porter n'importe quoi."""
+    from pokemon_mosaic.ui.export_dialog import ExportDialog
+
+    widget, session = step
+    session.set_layout(dpi=5000)
+    dialog = ExportDialog(session, grid_of(widget), widget._cards)
+    assert dialog._dpi.value() == 1200
+    assert session.dpi == 1200
+    assert dialog.settings().dpi == 1200
 
 
 def test_the_dialog_owns_the_printing_choices(dialog):

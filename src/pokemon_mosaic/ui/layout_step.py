@@ -80,6 +80,16 @@ class LayoutStep(QWidget):
         # ⚠️ Cet ensemble **survit** à un aller-retour vers l'étape 1 : revalider
         # trois écrans pour avoir changé une carte serait une punition.
         self._validated: set[int] = set()
+        # Position de l'onglet affiché. La liste ne suffit pas à la donner :
+        # cliquer l'intitulé de famille y déplace le rang courant, et il faut
+        # savoir où revenir.
+        self._position = 0
+        # Vrai quand la famille est repliée. On s'ouvre dépliée : cacher au
+        # premier regard les trois quarts du parcours le raccourcirait pour de
+        # faux.
+        self._collapsed = False
+        # Vrai le temps d'un retour de sélection que nous provoquons.
+        self._navigating = False
         self._build()
 
     # --- Construction -----------------------------------------------------
@@ -115,6 +125,7 @@ class LayoutStep(QWidget):
             self._add_row(position)
 
         self._list.currentRowChanged.connect(self._on_tab_picked)
+        self._list.itemClicked.connect(self._on_item_clicked)
         self._list.setCurrentRow(0)
 
         layout = QHBoxLayout(self)
@@ -139,14 +150,17 @@ class LayoutStep(QWidget):
         self._rows.append(position)
 
     def _add_family_row(self) -> None:
-        """L'intitulé « Grille » : une ligne qui nomme, et qu'on ne sélectionne pas.
+        """L'intitulé « Grille » : il nomme le groupe, et le plie.
 
-        Cliquable, elle aurait fait un quatrième onglet sans contenu ; muette,
-        elle laisse voir que les trois lignes suivantes vont ensemble.
+        **Cliquable sans être sélectionnable** : il n'a pas de contenu à
+        montrer, donc il ne peut pas devenir une destination ; mais un titre de
+        groupe qui ne répond pas au clic passe pour un onglet en panne. Il plie
+        et déplie les trois lignes qu'il chapeaute, comme n'importe quel
+        accordéon.
         """
         item = QListWidgetItem("")
         item.setSizeHint(QSize(TAB_WIDTH - 8, TAB_HEIGHT))
-        item.setFlags(Qt.NoItemFlags)
+        item.setFlags(Qt.ItemIsEnabled)
         police = self.font()
         police.setPointSize(police.pointSize() + TAB_BOOST)
         police.setBold(True)
@@ -168,21 +182,69 @@ class LayoutStep(QWidget):
         """Validée par l'utilisateur, **et** toujours valide."""
         return position in self._validated and self._tabs[position].is_valid()
 
+    def _family_positions(self) -> range:
+        """Les onglets que l'intitulé « Grille » chapeaute."""
+        return range(1, len(self._tabs))
+
     def _refresh_badges(self) -> None:
         palette = self.palette()
         for rang, position in enumerate(self._rows):
             item = self._list.item(rang)
             if position == FAMILY_ROW:
-                item.setText(self.tr("Grille"))
+                chevron = "▸" if self._collapsed else "▾"
+                item.setText(f"{chevron} " + self.tr("Grille"))
+                # Repliée, la famille répond pour ses trois onglets : sans cela,
+                # ce qui reste à faire disparaîtrait avec eux.
+                item.setIcon(
+                    state_icon(all(self._ready(p) for p in self._family_positions()),
+                               palette)
+                    if self._collapsed else QIcon()
+                )
                 continue
             marge = "    " if item.data(Qt.UserRole + 1) else ""
             item.setText(marge + self._tabs[position].title())
             item.setIcon(state_icon(self._ready(position), palette))
         self.advance_state_changed.emit()
 
+    # --- Navigation -------------------------------------------------------
+
+    def _on_item_clicked(self, item: QListWidgetItem) -> None:
+        if self._rows[self._list.row(item)] == FAMILY_ROW:
+            self._toggle_family()
+
+    def _toggle_family(self) -> None:
+        """Plie ou déplie les trois onglets de la grille.
+
+        ⚠️ **Replier depuis l'un d'eux ramène aux pages.** Garder affiché un
+        onglet dont la ligne vient d'être cachée laisserait un écran que plus
+        aucune sélection ne désigne, et un « Suivant » qui avance depuis un
+        endroit invisible.
+        """
+        self._collapsed = not self._collapsed
+        for position in self._family_positions():
+            self._list.setRowHidden(self._row_of(position), self._collapsed)
+        if self._collapsed and self._position in self._family_positions():
+            self._show(0)
+        self._refresh_badges()
+
+    def _show(self, position: int) -> None:
+        """Affiche un onglet, en dépliant la famille s'il s'y trouve."""
+        if position in self._family_positions() and self._collapsed:
+            self._toggle_family()
+        self._list.setCurrentRow(self._row_of(position))
+
     def _on_tab_picked(self, row: int) -> None:
         if 0 <= row < len(self._rows) and self._rows[row] != FAMILY_ROW:
-            self._pages.setCurrentIndex(self._rows[row])
+            self._position = self._rows[row]
+            self._pages.setCurrentIndex(self._position)
+        elif not self._navigating:
+            # Le rang courant s'est posé sur l'intitulé de famille, qui n'est
+            # pas une destination : on le remet là où l'écran est resté.
+            self._navigating = True
+            try:
+                self._list.setCurrentRow(self._row_of(self._position))
+            finally:
+                self._navigating = False
         self.advance_state_changed.emit()
 
     def _current_tab(self) -> int:
@@ -212,7 +274,7 @@ class LayoutStep(QWidget):
         self._validated.add(position)
         self._refresh_badges()
         if position + 1 < len(self._tabs):
-            self._list.setCurrentRow(self._row_of(position + 1))
+            self._show(position + 1)
             return True
         return False
 

@@ -9,6 +9,11 @@ avec quel champ.
 
 Le nombre reste **saisissable** : passer de 4 à 21 à la flèche demanderait dix-
 sept clics.
+
+Deux variantes, la même présentation : `BigSpin` pour un entier, `BigFloatSpin`
+pour une longueur en millimètres. Les réglages qui comptent autant que les
+dimensions — largeur d'une carte, écart entre deux — se montrent de la même
+façon qu'elles, sous peine de passer pour des détails.
 """
 
 from PySide6.QtCore import Qt, Signal
@@ -29,14 +34,16 @@ FIELD_HEIGHT = 58
 FONT_BOOST = 16
 
 
-class BigSpin(QWidget):
-    """Un entier borné, présenté en colonne : titre, ▲, nombre, ▼."""
+class _BigSpinBase(QWidget):
+    """La présentation commune : titre, ▲, nombre, ▼.
 
-    value_changed = Signal(int)
+    Les sous-classes disent seulement comment un nombre s'écrit, se relit et
+    s'annonce.
+    """
 
-    def __init__(self, minimum: int, maximum: int, parent=None):
+    def __init__(self, minimum, maximum, step, parent=None):
         super().__init__(parent)
-        self._min, self._max = minimum, maximum
+        self._min, self._max, self._increment = minimum, maximum, step
         self._value = minimum
 
         self._title = QLabel()
@@ -54,13 +61,12 @@ class BigSpin(QWidget):
             # deux boutons perdus au-dessus et au-dessous d'un champ trois fois
             # plus large, qu'il faut viser au lieu de simplement cliquer.
             bouton.setSizePolicy(QSizePolicy.Expanding, QSizePolicy.Fixed)
-        self._up.clicked.connect(lambda: self._step(1))
-        self._down.clicked.connect(lambda: self._step(-1))
+        self._up.clicked.connect(lambda: self._bump(1))
+        self._down.clicked.connect(lambda: self._bump(-1))
 
         self._field = QLineEdit()
         self._field.setAlignment(Qt.AlignCenter)
         self._field.setFixedHeight(FIELD_HEIGHT)
-        self._field.setValidator(QIntValidator(minimum, maximum, self))
         police = self._field.font()
         police.setPointSize(police.pointSize() + FONT_BOOST)
         self._field.setFont(police)
@@ -78,39 +84,113 @@ class BigSpin(QWidget):
         layout.addWidget(self._down)
         self._show_value()
 
+    # --- Ce que les variantes précisent -----------------------------------
+
+    def _clamp(self, value):
+        raise NotImplementedError
+
+    def _text(self, value) -> str:
+        raise NotImplementedError
+
+    def _parse(self, text):
+        """Le nombre écrit, ou `None` si ce n'en est pas un."""
+        raise NotImplementedError
+
+    def _emit(self, value) -> None:
+        raise NotImplementedError
+
     # --- Contenu ----------------------------------------------------------
 
     def setTitle(self, text: str) -> None:
         self._title.setText(text)
 
-    def value(self) -> int:
+    def value(self):
         return self._value
 
-    def setValue(self, value: int) -> None:
+    def setValue(self, value) -> None:
         """Pose une valeur écrêtée. N'émet que si elle change réellement."""
-        borne = max(self._min, min(self._max, int(value)))
+        borne = self._clamp(value)
         if borne == self._value:
             self._show_value()
             return
         self._value = borne
         self._show_value()
-        self.value_changed.emit(borne)
+        self._emit(borne)
 
     # --- Réactions --------------------------------------------------------
 
-    def _step(self, delta: int) -> None:
-        self.setValue(self._value + delta)
+    def _bump(self, direction: int) -> None:
+        self.setValue(self._value + direction * self._increment)
 
     def _on_typed(self) -> None:
-        texte = self._field.text().strip()
-        if not texte:
-            # Champ vidé puis quitté : on remet ce qui était là plutôt que de
-            # retomber sur la borne basse, qui n'a jamais été demandée.
+        lu = self._parse(self._field.text().strip())
+        if lu is None:
+            # Champ vidé ou illisible puis quitté : on remet ce qui était là
+            # plutôt que de retomber sur la borne basse, jamais demandée.
             self._show_value()
             return
-        self.setValue(int(texte))
+        self.setValue(lu)
 
     def _show_value(self) -> None:
-        self._field.setText(str(self._value))
+        self._field.setText(self._text(self._value))
         self._up.setEnabled(self._value < self._max)
         self._down.setEnabled(self._value > self._min)
+
+
+class BigSpin(_BigSpinBase):
+    """Un entier borné."""
+
+    value_changed = Signal(int)
+
+    def __init__(self, minimum: int, maximum: int, parent=None):
+        super().__init__(minimum, maximum, 1, parent)
+        self._field.setValidator(QIntValidator(minimum, maximum, self))
+
+    def _clamp(self, value) -> int:
+        return max(self._min, min(self._max, int(value)))
+
+    def _text(self, value) -> str:
+        return str(value)
+
+    def _parse(self, text: str):
+        try:
+            return int(text)
+        except ValueError:
+            return None
+
+    def _emit(self, value: int) -> None:
+        self.value_changed.emit(value)
+
+
+class BigFloatSpin(_BigSpinBase):
+    """Une longueur, écrite avec ses décimales.
+
+    Pas de `QDoubleValidator` : il suit la langue du système, et refuserait le
+    point décimal sur une machine française — ou la virgule sur une autre. On
+    relit soi-même, en acceptant les deux.
+    """
+
+    value_changed = Signal(float)
+
+    def __init__(self, minimum: float, maximum: float, step: float = 1.0,
+                 decimals: int = 1, parent=None):
+        self._decimals = decimals
+        super().__init__(float(minimum), float(maximum), float(step), parent)
+
+    def _clamp(self, value) -> float:
+        borne = max(self._min, min(self._max, float(value)))
+        # Arrondi à l'affiché : sans lui, deux valeurs que l'écran montre
+        # identiques se comparent inégales, et chaque pas réémettrait.
+        return round(borne, self._decimals)
+
+    def _text(self, value) -> str:
+        return f"{value:.{self._decimals}f}"
+
+    def _parse(self, text: str):
+        try:
+            return float(text.replace(",", "."))
+        except ValueError:
+            return None
+
+    def _emit(self, value: float) -> None:
+        self.value_changed.emit(value)

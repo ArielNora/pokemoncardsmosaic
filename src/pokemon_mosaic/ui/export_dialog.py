@@ -1,9 +1,16 @@
 """Choix du format et de la destination avant d'écrire le poster.
 
-Le format d'impression, l'orientation, le DPI et le nombre de panneaux viennent
-de l'étape 2 : ils sont rappelés ici sans être modifiables, pour qu'on sache ce
+Le format d'impression, l'orientation et le nombre de panneaux viennent de
+l'étape 2 : ils sont rappelés ici sans être modifiables, pour qu'on sache ce
 qu'on exporte sans avoir à revenir en arrière. Ne restent réglables que les
 décisions propres à l'écriture du fichier.
+
+⚠️ **La finesse en fait partie.** Elle était demandée à l'étape 2, avant que la
+mosaïque n'existe : elle n'y changeait rien de visible — tout s'y mesure en
+millimètres — et il fallait deviner le poids d'un fichier qu'on n'avait pas
+encore décrit. Elle se choisit ici, à côté du nombre de mégapixels qu'elle
+donne. Le choix est écrit dans la session : les aperçus arrondissent leurs
+pixels comme l'export, et un préréglage le retrouve.
 """
 
 import os
@@ -56,6 +63,19 @@ class ExportDialog(QDialog):
         self._full_resolution.setChecked(True)
         self._full_resolution.stateChanged.connect(self._update_plan)
 
+        # Écrite dans la session sur-le-champ : les aperçus de l'étape 2
+        # calculent leur géométrie à cette résolution, et se tromperaient d'un
+        # arrondi si le fichier partait à une autre.
+        self._dpi = QSpinBox()
+        self._dpi.setRange(50, 1200)
+        self._dpi.setSingleStep(50)
+        self._dpi.setValue(self._session.dpi)
+        # Un préréglage écrit à la main peut porter une finesse hors bornes : le
+        # champ l'a écrêtée, et la session doit apprendre ce qu'il a accepté.
+        if self._dpi.value() != self._session.dpi:
+            self._session.set_layout(dpi=self._dpi.value())
+        self._dpi.valueChanged.connect(self._on_dpi_changed)
+
         self._quality = QSpinBox()
         self._quality.setRange(1, 100)
         self._quality.setValue(95)
@@ -91,6 +111,8 @@ class ExportDialog(QDialog):
         self._form.addRow(self._layout_row, self._layout_recap)
         self._format_row = QLabel()
         self._form.addRow(self._format_row, self._format)
+        self._dpi_row = QLabel()
+        self._form.addRow(self._dpi_row, self._dpi)
         self._resolution_row = QLabel()
         self._form.addRow(self._resolution_row, self._full_resolution)
         self._quality_row = QLabel()
@@ -122,6 +144,12 @@ class ExportDialog(QDialog):
         self.setWindowTitle(self.tr("Exporter le poster"))
         self._layout_row.setText(self.tr("Mise en page"))
         self._format_row.setText(self.tr("Format"))
+        self._dpi_row.setText(self.tr("Finesse (DPI)"))
+        self._dpi.setToolTip(
+            self.tr("Combien de points par pouce l'imprimante recevra. Elle ne "
+                    "change rien aux dimensions du poster, seulement au poids du "
+                    "fichier et à la netteté.")
+        )
         self._resolution_row.setText(self.tr("Résolution"))
         self._quality_row.setText(self.tr("Qualité JPEG"))
         self._overlap_row.setText(self.tr("Chevauchement"))
@@ -155,6 +183,10 @@ class ExportDialog(QDialog):
             self._path.setText(base + extension)
         self._update_plan()
 
+    def _on_dpi_changed(self, dpi: int) -> None:
+        self._session.set_layout(dpi=dpi)
+        self._update_plan()
+
     def _pick_file(self) -> None:
         name = self._format.currentText()
         extension = self._extension()
@@ -171,7 +203,7 @@ class ExportDialog(QDialog):
         return PosterSettings(
             paper=session.paper,
             landscape=session.landscape,
-            dpi=session.dpi,
+            dpi=self._dpi.value(),
             panels=session.panels,
             # ⚠️ **La taille de carte et l'écart aussi.** Oubliés ici, l'export
             # repassait en taille automatique et sans écart : le fichier écrit
@@ -198,9 +230,7 @@ class ExportDialog(QDialog):
         orientation = (self.tr("paysage") if session.landscape
                        else self.tr("portrait"))
         panels = self.tr("%n panneau(x)", "", session.panels)
-        self._layout_recap.setText(
-            f"{session.paper} {orientation} — {session.dpi} DPI — {panels}"
-        )
+        self._layout_recap.setText(f"{session.paper} {orientation} — {panels}")
         self._overlap.setEnabled(session.panels > 1)
 
         try:

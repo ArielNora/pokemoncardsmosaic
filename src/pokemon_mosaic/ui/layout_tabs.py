@@ -10,14 +10,12 @@ from PySide6.QtCore import Qt, Signal
 from PySide6.QtWidgets import (
     QCheckBox,
     QComboBox,
-    QDoubleSpinBox,
     QHBoxLayout,
     QLabel,
     QListWidget,
     QListWidgetItem,
     QPushButton,
     QSizePolicy,
-    QSpinBox,
     QVBoxLayout,
     QWidget,
 )
@@ -29,14 +27,13 @@ from ..layout import (
     best_grid_shapes,
     grid_fits,
     grid_geometry,
-    max_useful_dpi,
     mm_to_pixels,
     paper_size_mm,
     suggest_grids,
 )
 from ..optimize import check_links_fit
 from . import theme
-from .big_spin import BigSpin
+from .big_spin import BigFloatSpin, BigSpin
 from .page_preview import MAX_PANELS, PagePreview
 from .session import Session
 
@@ -385,22 +382,17 @@ class PaperTab(LayoutTab):
         # suivant, où elle n'avait rien à voir avec la finesse d'impression.
         self._landscape = QCheckBox()
         self._landscape.toggled.connect(self._on_form_changed)
-        # La finesse décrit les pages à imprimer : elle est ici, avec elles, et
-        # non sur un onglet à part où elle n'avait aucun voisin.
-        self._dpi = QSpinBox()
-        self._dpi.setRange(50, 1200)
-        self._dpi.setSingleStep(50)
-        self._dpi.valueChanged.connect(self._on_form_changed)
-        self._dpi_label = QLabel()
+        # ⚠️ **La finesse n'est plus ici.** Elle ne décide de rien qui se voie
+        # sur cet écran — tout s'y mesure en millimètres — et la demander au
+        # début obligeait à trancher une question d'impression avant d'avoir
+        # posé la mosaïque. Elle se choisit à l'export, devant le fichier
+        # qu'elle pèse.
 
         haut = QHBoxLayout()
         haut.addWidget(self._paper_label)
         haut.addWidget(self._paper)
         haut.addSpacing(20)
         haut.addWidget(self._landscape)
-        haut.addSpacing(20)
-        haut.addWidget(self._dpi_label)
-        haut.addWidget(self._dpi)
         haut.addStretch(1)
 
         self._hint = QLabel()
@@ -431,7 +423,6 @@ class PaperTab(LayoutTab):
     def retranslate_ui(self) -> None:
         self._paper_label.setText(self.tr("Format d'impression"))
         self._landscape.setText(self.tr("Paysage"))
-        self._dpi_label.setText(self.tr("Finesse (DPI)"))
         self._preview.retranslate_ui()
         self._hint.setText(
             self.tr("Cet onglet choisit le papier : son format, son orientation, "
@@ -447,25 +438,17 @@ class PaperTab(LayoutTab):
         if self._updating:
             return
         self._session.set_layout(paper=self._paper.currentData(),
-                                 landscape=self._landscape.isChecked(),
-                                 dpi=self._dpi.value())
+                                 landscape=self._landscape.isChecked())
 
     def refresh(self) -> None:
         self._updating = True
         self._paper.setCurrentText(self._session.paper)
         self._landscape.setChecked(self._session.landscape)
-        self._dpi.setValue(self._session.dpi)
         self._updating = False
-        # Les champs ont pu refuser un format inconnu ou un DPI hors bornes,
-        # venus d'un préréglage écrit à la main : on renvoie à la session ce
-        # qu'ils ont réellement accepté.
-        drifted = {}
+        # Le champ a pu refuser un format inconnu, venu d'un préréglage écrit à
+        # la main : on renvoie à la session ce qu'il a réellement accepté.
         if self._paper.currentText() != self._session.paper:
-            drifted["paper"] = self._paper.currentText()
-        if self._dpi.value() != self._session.dpi:
-            drifted["dpi"] = self._dpi.value()
-        if drifted:
-            self._session.set_layout(**drifted)
+            self._session.set_layout(paper=self._paper.currentText())
         self._update_summary()
         self._preview.refresh()
         self.state_changed.emit()
@@ -481,15 +464,24 @@ class PaperTab(LayoutTab):
         geometrie = grid_geometry(
             paper, session.panels, session.cols, session.rows, aspect,
             session.dpi, session.card_width_mm, session.card_gap_mm)
-        per_panel, card_w, card_h = (geometrie.per_panel, geometrie.card_w,
-                                     geometrie.card_h)
-        total_w = card_w * session.cols
-        total_h = card_h * session.rows
+        card_w, card_h = geometrie.card_w, geometrie.card_h
+        # ⚠️ **Les écarts comptent dans la mosaïque.** Ils étaient omis, ce qui
+        # ne se voyait pas tant que le chiffre était en pixels ; en millimètres,
+        # c'est une dimension qu'on peut mesurer à la règle sur le poster.
+        total_w = geometrie.span(session.cols)
+        total_h = card_h * session.rows + max(0, session.rows - 1) * geometrie.gap
+        # ⚠️ **En millimètres, pas en pixels.** Les pixels dépendent de la
+        # finesse, qui ne se choisit plus ici : les afficher ferait parler cet
+        # écran d'un réglage qu'il ne montre pas, et qu'on ne pourrait pas
+        # rapporter à la règle posée sur la feuille imprimée.
+        en_mm = MM_PER_INCH / session.dpi
         self._summary.setText(
-            self.tr("Cartes de %1×%2 px — image totale %3×%4 px sur %5 feuille(s) "
-                    "%6 de %7×%8 mm.")
-            .replace("%1", str(card_w)).replace("%2", str(card_h))
-            .replace("%3", str(total_w)).replace("%4", str(total_h))
+            self.tr("Cartes de %1 × %2 mm — mosaïque de %3 × %4 mm sur %5 "
+                    "feuille(s) %6 de %7×%8 mm.")
+            .replace("%1", f"{card_w * en_mm:.1f}")
+            .replace("%2", f"{card_h * en_mm:.1f}")
+            .replace("%3", f"{total_w * en_mm:.0f}")
+            .replace("%4", f"{total_h * en_mm:.0f}")
             .replace("%5", str(session.panels)).replace("%6", session.paper)
             .replace("%7", f"{paper[0]:.0f}").replace("%8", f"{paper[1]:.0f}")
         )
@@ -501,16 +493,6 @@ class PaperTab(LayoutTab):
                             session.cols, session.rows)
         except ValueError as error:
             warnings.append(str(error))
-
-        source_width = (session.card_set.full_size[0]
-                        if session.card_set and session.card_set.full_size[0] else 713)
-        ceiling = max_useful_dpi(paper, per_panel, source_width)
-        if session.dpi > ceiling:
-            warnings.append(
-                self.tr("%1 DPI dépasse le maximum utile (%2 DPI pour ce format) : "
-                        "les cartes seront agrandies sans gagner en détail.")
-                .replace("%1", str(session.dpi)).replace("%2", f"{ceiling:.0f}")
-            )
 
         # ⚠️ **La part de papier réellement couverte, dite sans la juger.** Le
         # message conseillait d'allonger la grille pour mieux remplir : depuis
@@ -531,12 +513,8 @@ class PaperTab(LayoutTab):
                 .replace("%1", f"{coverage * 100:.0f}")
             )
 
-        megapixels = total_w * total_h / 1e6
-        if megapixels > 100:
-            warnings.append(
-                self.tr("Image de %1 Mpx : l'export demandera beaucoup de mémoire.")
-                .replace("%1", f"{megapixels:.0f}")
-            )
+        # Le poids de l'image en mégapixels est parti avec la finesse : il se
+        # dit à l'export, où elle se choisit, et avec le chiffre de mémoire.
         self._warnings.setText("\n".join(warnings))
 
 
@@ -564,13 +542,16 @@ class CardSizeTab(LayoutTab):
     # --- Construction -----------------------------------------------------
 
     def _build(self) -> None:
-        self._width = QDoubleSpinBox()
-        self._width.setRange(1.0, 2000.0)
-        self._width.setDecimals(1)
-        self._width.setSingleStep(1.0)
-        self._width.setSuffix(" mm")
-        self._width.setMinimumWidth(110)
-        self._width.valueChanged.connect(self._on_form_changed)
+        # ⚠️ **Les mêmes champs que les dimensions de la grille.** Ce sont deux
+        # réglages du même ordre — ce qu'on met dans la case, après la taille de
+        # la grille —, et deux `QDoubleSpinBox` de vingt pixels les faisaient
+        # passer pour des détails d'un formulaire.
+        self._width = BigFloatSpin(1.0, 2000.0, step=1.0)
+        self._width.value_changed.connect(self._on_form_changed)
+        self._gap = BigFloatSpin(0.0, 100.0, step=0.5)
+        self._gap.value_changed.connect(self._on_form_changed)
+        for champ in (self._width, self._gap):
+            champ.setFixedWidth(150)
 
         # ⚠️ L'automatique est un **état**, pas une valeur : décoché, le champ
         # montre ce que le calcul a trouvé sans que ce soit un choix.
@@ -578,29 +559,64 @@ class CardSizeTab(LayoutTab):
         self._auto.setChecked(True)
         self._auto.toggled.connect(self._on_auto_toggled)
 
-        self._gap = QDoubleSpinBox()
-        self._gap.setRange(0.0, 100.0)
-        self._gap.setDecimals(1)
-        self._gap.setSingleStep(0.5)
-        self._gap.setSuffix(" mm")
-        self._gap.setMinimumWidth(100)
-        self._gap.valueChanged.connect(self._on_form_changed)
-
-        self._width_label = QLabel()
-        self._gap_label = QLabel()
+        # Le bouton se lit comme une valeur possible du champ qu'il remplit :
+        # sa place est dessous, pas à l'autre bout de la ligne.
         self._real_card = QPushButton()
         self._real_card.clicked.connect(self._use_real_card)
 
+        largeur = QVBoxLayout()
+        largeur.setSpacing(4)
+        largeur.addWidget(self._width)
+        largeur.addWidget(self._real_card)
+        largeur.addWidget(self._auto, 0, Qt.AlignHCenter)
+
+        ecart = QVBoxLayout()
+        ecart.setSpacing(4)
+        ecart.addWidget(self._gap)
+        ecart.addStretch(1)
+
+        reglages = QHBoxLayout()
+        reglages.setSpacing(14)
+        reglages.addLayout(largeur)
+        reglages.addLayout(ecart)
+
+        # Les formes qui tiendraient, en haut avec les réglages qu'elles
+        # corrigent : en bas, la liste poussait la grille hors de l'écran au
+        # moment précis où l'on voulait la regarder changer.
+        self._show_shapes = QPushButton()
+        self._show_shapes.clicked.connect(self._fill_shapes)
+        self._shapes_hint = QLabel()
+        self._shapes = QListWidget()
+        ligne = self._shapes.fontMetrics().height() + 6
+        self._shapes.setFixedHeight(ligne * SHAPE_COUNT + 8)
+        self._shapes.itemDoubleClicked.connect(self._apply_shape)
+        # Vide, elle laissait un rectangle noir sur un quart du panneau. Une
+        # fois ouverte, en revanche, elle **reste** : elle se refermait dès que
+        # la grille tenait, c'est-à-dire juste après le double-clic, et comparer
+        # deux propositions demandait de la rouvrir entre chacune.
+        self._shapes.hide()
+
+        entete = QHBoxLayout()
+        entete.setContentsMargins(0, 0, 0, 0)
+        entete.addWidget(self._show_shapes)
+        entete.addSpacing(12)
+        entete.addWidget(self._shapes_hint)
+        entete.addStretch(1)
+
+        self._shapes_box = QWidget()
+        formes = QVBoxLayout(self._shapes_box)
+        formes.setContentsMargins(0, 0, 0, 0)
+        formes.setSpacing(2)
+        formes.addLayout(entete)
+        formes.addWidget(self._shapes)
+
         haut = QHBoxLayout()
-        haut.addWidget(self._width_label)
-        haut.addWidget(self._width)
-        haut.addWidget(self._auto)
-        haut.addSpacing(20)
-        haut.addWidget(self._gap_label)
-        haut.addWidget(self._gap)
-        haut.addSpacing(20)
-        haut.addWidget(self._real_card)
-        haut.addStretch(1)
+        haut.setSpacing(16)
+        haut.addLayout(reglages)
+        haut.addWidget(self._shapes_box, 1)
+        bandeau = QWidget()
+        bandeau.setLayout(haut)
+        bandeau.setSizePolicy(QSizePolicy.Preferred, QSizePolicy.Fixed)
 
         self._preview = PagePreview(self._session)
         self._preview.set_show_grid(True)
@@ -614,39 +630,21 @@ class CardSizeTab(LayoutTab):
         etat.setPointSize(etat.pointSize() + STATUS_BOOST)
         self._status.setFont(etat)
 
-        # Les formes qui tiennent, sur demande : la liste ne s'ouvre que quand
-        # la grille déborde, seul moment où elle a quelque chose à proposer.
-        self._show_shapes = QPushButton()
-        self._show_shapes.clicked.connect(self._fill_shapes)
-        self._shapes = QListWidget()
-        ligne = self._shapes.fontMetrics().height() + 6
-        self._shapes.setFixedHeight(ligne * SHAPE_COUNT + 8)
-        self._shapes.itemDoubleClicked.connect(self._apply_shape)
-        self._shapes_hint = QLabel()
-        self._shapes.hide()
-        self._shapes_hint.hide()
-
-        bas = QHBoxLayout()
-        bas.addWidget(self._status, 1)
-        bas.addWidget(self._show_shapes)
-
         layout = QVBoxLayout(self)
         layout.setContentsMargins(8, 6, 8, 6)
-        layout.addLayout(haut)
+        layout.addWidget(bandeau)
         layout.addWidget(self._preview, 1)
-        layout.addWidget(self._shapes_hint)
-        layout.addWidget(self._shapes)
-        layout.addLayout(bas)
+        layout.addWidget(self._status)
         self.retranslate_ui()
 
     def retranslate_ui(self) -> None:
-        self._width_label.setText(self.tr("Largeur d'une carte"))
+        self._width.setTitle(self.tr("Largeur d'une carte (mm)"))
+        self._gap.setTitle(self.tr("Écart entre cartes (mm)"))
         self._auto.setText(self.tr("automatique"))
         self._auto.setToolTip(
             self.tr("La plus grande taille qui fasse tenir la grille, recalculée "
                     "à chaque changement.")
         )
-        self._gap_label.setText(self.tr("Écart entre cartes"))
         self._real_card.setText(self.tr("Taille d'une vraie carte"))
         self._real_card.setToolTip(
             self.tr("Fixe la largeur à %1 mm, celle d'une carte qu'on tient en "
@@ -654,10 +652,7 @@ class CardSizeTab(LayoutTab):
                         "%1", f"{REAL_CARD_MM[0]:.0f}")
         )
         self._show_shapes.setText(self.tr("Grilles qui tiendraient"))
-        self._shapes_hint.setText(
-            self.tr("Double-cliquez pour appliquer. Classées par nombre de cartes "
-                    "placées, puis par écart à la grille actuelle.")
-        )
+        self._shapes_hint.setText(self.tr("Double-cliquez pour appliquer"))
         self._preview.retranslate_ui()
         self.refresh()
 
@@ -716,9 +711,14 @@ class CardSizeTab(LayoutTab):
             item = QListWidgetItem(f"{cols} × {rows}  —  {note}")
             item.setData(Qt.UserRole, (cols, rows))
             self._shapes.addItem(item)
-        montrer = self._shapes.count() > 0
-        self._shapes.setVisible(montrer)
-        self._shapes_hint.setVisible(montrer)
+        # Aucune forme ne tient parfois — une carte de 2 000 mm sur un A5 — et
+        # la liste vide était alors un rectangle noir sans explication.
+        trouve = self._shapes.count() > 0
+        self._shapes.setVisible(trouve)
+        self._shapes_hint.setText(
+            self.tr("Double-cliquez pour appliquer") if trouve
+            else self.tr("Aucune grille ne tiendrait à cette taille de carte.")
+        )
 
     def refresh(self) -> None:
         session = self._session
@@ -766,10 +766,6 @@ class CardSizeTab(LayoutTab):
                      .replace("%5", str(self._max_rows(geometrie))))
         theme.mark(self._status, role)
         self._status.setText(texte)
-        self._show_shapes.setEnabled(not tient)
-        if tient:
-            self._shapes.hide()
-            self._shapes_hint.hide()
 
     def _max_rows(self, geometrie) -> int:
         session = self._session

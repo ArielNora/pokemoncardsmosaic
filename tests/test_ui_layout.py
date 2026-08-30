@@ -188,17 +188,95 @@ def test_the_menu_has_two_levels(ecran):
     titres = [ecran._list.item(i).text() for i in range(ecran._list.count())]
     assert len(titres) == 5
     assert all(titres), "une ligne sans intitulé"
-    assert titres[1].strip() == "Grille", "l'intitulé de famille manque"
+    assert titres[1].strip().endswith("Grille"), "l'intitulé de famille manque"
     assert all(t.startswith("    ") for t in titres[2:]), "les sous-onglets sont décalés"
     assert not titres[0].startswith(" ")
 
 
 def test_the_family_row_is_not_a_tab(ecran):
-    """Cliquable, elle aurait fait un onglet sans contenu."""
+    """Cliquable pour plier, jamais sélectionnable : elle n'a rien à montrer."""
     from PySide6.QtCore import Qt
 
-    assert ecran._list.item(1).flags() == Qt.NoItemFlags
+    assert ecran._list.item(1).flags() == Qt.ItemIsEnabled
+    assert not (ecran._list.item(1).flags() & Qt.ItemIsSelectable)
     assert ecran._rows[1] == -1
+
+
+def click_family(ecran):
+    """Un vrai clic sur l'intitulé, pour éprouver aussi le rang qui rebondit."""
+    from PySide6.QtCore import Qt
+    from PySide6.QtTest import QTest
+
+    ecran.show()
+    rect = ecran._list.visualItemRect(ecran._list.item(1))
+    QTest.mouseClick(ecran._list.viewport(), Qt.LeftButton, Qt.NoModifier,
+                     rect.center())
+
+
+def test_the_family_row_folds_its_three_tabs(session, ecran):
+    """Un titre de groupe qui ne répond pas au clic passe pour un onglet en
+    panne : il plie, comme n'importe quel accordéon."""
+    click_family(ecran)
+    assert ecran._collapsed
+    assert all(ecran._list.isRowHidden(ecran._row_of(p)) for p in (1, 2, 3))
+    assert not ecran._list.isRowHidden(ecran._row_of(0))
+
+    click_family(ecran)
+    assert not ecran._collapsed
+    assert not any(ecran._list.isRowHidden(ecran._row_of(p)) for p in (1, 2, 3))
+
+
+def test_folding_never_leaves_the_screen_without_a_tab(session, ecran):
+    """⚠️ Garder affiché un onglet dont la ligne vient d'être cachée laisserait
+    un écran que plus aucune sélection ne désigne, et un « Suivant » qui avance
+    depuis un endroit invisible."""
+    ecran.show()
+    ecran._list.setCurrentRow(ecran._row_of(2))
+    click_family(ecran)
+
+    assert ecran._current_tab() == 0, "on revient aux pages"
+    assert ecran._pages.currentIndex() == 0
+    assert ecran.can_advance()
+
+
+def test_clicking_the_family_never_makes_it_the_current_tab(session, ecran):
+    """Elle n'a pas de contenu : le rang courant rebondit là où l'écran est
+    resté."""
+    ecran.show()
+    click_family(ecran)                      # replie
+    click_family(ecran)                      # déplie
+
+    assert not ecran._collapsed
+    assert ecran._current_tab() == 0, "le rang est resté sur l'intitulé"
+    assert ecran._list.currentRow() == ecran._row_of(0)
+
+
+def test_advancing_into_the_family_unfolds_it(session, ecran):
+    ecran.show()
+    session.auto_place_empty_cells()
+    click_family(ecran)                      # replié, on est sur les pages
+    assert ecran._collapsed
+
+    ecran.advance()
+    assert not ecran._collapsed
+    assert ecran._current_tab() == 1
+
+
+def test_the_folded_family_answers_for_its_tabs(session, ecran):
+    """Ce qui reste à faire disparaîtrait sinon avec les lignes cachées."""
+    ecran.show()
+    session.auto_place_empty_cells()
+    click_family(ecran)
+    plie = ecran._list.item(1)
+    assert not plie.icon().isNull()
+
+    for position in (1, 2, 3):
+        ecran._validated.add(position)
+    ecran._refresh_badges()
+    from pokemon_mosaic.ui.layout_step import state_icon
+
+    attendu = state_icon(True, ecran.palette()).pixmap(22, 22).toImage()
+    assert plie.icon().pixmap(22, 22).toImage() == attendu
 
 
 def test_nothing_is_ready_before_the_user_says_so(session, ecran):
@@ -460,10 +538,13 @@ def test_no_warning_when_the_link_fits(qt_app, session):
     assert "occupe" not in ecran._tabs[0]._warnings.text()
 
 
-def test_a_dpi_outside_the_field_bounds_comes_back_corrected(session, ecran):
-    session.set_layout(dpi=5000)
-    ecran._tabs[0].refresh()
-    assert session.dpi == 1200
+def test_the_paper_tab_says_nothing_of_the_resolution(ecran):
+    """⚠️ La finesse ne change rien de visible ici — tout s'y mesure en
+    millimètres — et la demander d'abord obligeait à trancher une question
+    d'impression avant d'avoir posé la mosaïque. Elle est passée à l'export."""
+    papier = ecran._tabs[0]
+    assert not hasattr(papier, "_dpi")
+    assert "DPI" not in papier._warnings.text()
 
 
 def test_a_mostly_empty_sheet_is_reported_without_being_judged(session, ecran):
@@ -1023,7 +1104,7 @@ def test_the_orientation_moved_to_the_paper_tab(session, ecran):
     assert session.landscape
     papier._landscape.setChecked(False)
     assert not session.landscape
-    assert hasattr(papier, "_dpi"), "la finesse décrit les pages"
+    assert not hasattr(papier, "_dpi"), "la finesse est passée à l'export"
 
 
 def test_a_cut_never_falls_on_a_card_whatever_the_grid(session):
@@ -1155,12 +1236,45 @@ def test_a_card_too_big_is_refused_with_its_numbers(session, cartes, ecran):
     assert not ecran.can_advance()
 
 
-def test_the_shapes_that_would_fit_are_listed_on_demand(session, cartes):
-    """Le bouton ne propose que quand il y a quelque chose à proposer."""
-    session.set_layout(cols=4, rows=5)
-    assert not cartes._show_shapes.isEnabled()
-    assert not cartes._shapes.isVisibleTo(cartes)
+def test_the_paper_tab_measures_in_millimetres(session, ecran):
+    """⚠️ Les pixels dépendent de la finesse, qui ne se choisit plus ici : les
+    afficher ferait parler cet écran d'un réglage qu'il ne montre pas, et qu'on
+    ne pourrait pas rapporter à la règle posée sur la feuille imprimée."""
+    session.set_layout(cols=5, rows=4, paper="A4")
+    resume = ecran._tabs[0]._summary.text()
+    assert "px" not in resume
+    assert resume.count("mm") >= 2
 
+
+def test_the_mosaic_size_counts_the_gaps(session, ecran):
+    """Une dimension qu'on peut mesurer à la règle : les écarts en font partie."""
+    session.set_layout(cols=5, rows=4, paper="A4", card_width_mm=30.0,
+                       card_gap_mm=0.0)
+    serre = ecran._tabs[0]._summary.text()
+    session.set_layout(card_gap_mm=5.0)
+    assert ecran._tabs[0]._summary.text() != serre
+
+
+def test_the_shapes_list_only_opens_on_demand(cartes):
+    """Vide, elle laissait un rectangle noir sur un quart du panneau."""
+    assert not cartes._shapes.isVisibleTo(cartes)
+    cartes._show_shapes.click()
+    assert cartes._shapes.isVisibleTo(cartes)
+
+
+def test_a_size_where_nothing_fits_says_so(session, cartes):
+    """La liste vide était un rectangle noir sans explication."""
+    session.set_layout(cols=5, rows=4, paper="A5", card_width_mm=2000.0)
+    cartes._show_shapes.click()
+    assert cartes._shapes.count() == 0
+    assert not cartes._shapes.isVisibleTo(cartes)
+    assert "Aucune" in cartes._shapes_hint.text()
+
+
+def test_the_shapes_that_would_fit_are_listed_on_demand(session, cartes):
+    """⚠️ **La liste reste après qu'on a choisi.** Elle s'effaçait dès que la
+    grille tenait — c'est-à-dire juste après un double-clic —, et comparer deux
+    propositions demandait de rouvrir la liste entre chacune."""
     session.set_layout(cols=11, rows=13, paper="A2")
     cartes._real_card.click()
     assert cartes._show_shapes.isEnabled()
@@ -1170,9 +1284,11 @@ def test_the_shapes_that_would_fit_are_listed_on_demand(session, cartes):
     from PySide6.QtCore import Qt
 
     cols, rows = cartes._shapes.item(0).data(Qt.UserRole)
+    combien = cartes._shapes.count()
     cartes._apply_shape(cartes._shapes.item(0))
     assert (session.cols, session.rows) == (cols, rows)
     assert cartes.is_valid(), "la forme proposée doit tenir"
+    assert cartes._shapes.count() == combien, "la liste a disparu sous le clic"
 
 
 def test_the_gap_shrinks_the_cards_in_automatic(session, cartes):
@@ -1185,9 +1301,50 @@ def test_the_gap_shrinks_the_cards_in_automatic(session, cartes):
 
 def test_the_gap_is_in_millimetres_like_everything_else(cartes):
     """La même unité que la carte et la feuille, seule mesurable sur le poster
-    imprimé."""
-    assert cartes._gap.suffix().strip() == "mm"
-    assert cartes._width.suffix().strip() == "mm"
+    imprimé. L'unité est dans l'intitulé : le champ n'est plus une boîte à
+    suffixe mais un grand nombre, comme les dimensions de la grille."""
+    assert cartes._gap._title.text().endswith("(mm)")
+    assert cartes._width._title.text().endswith("(mm)")
+
+
+def test_the_card_settings_are_as_big_as_the_grid_dimensions(cartes, ecran):
+    """Deux réglages du même ordre : ce qu'on met dans la case, après la taille
+    de la grille. Des boîtes de vingt pixels les faisaient passer pour des
+    détails de formulaire."""
+    from pokemon_mosaic.ui.big_spin import _BigSpinBase
+
+    for champ in (cartes._width, cartes._gap):
+        assert isinstance(champ, _BigSpinBase)
+    assert cartes._width.height() >= ecran._tabs[1]._cols.height() - 2
+
+
+def posed(session):
+    """Un onglet seul, dimensionné et affiché : dans la pile de l'écran, il ne
+    reçoit aucune géométrie tant que l'étape n'est pas montrée."""
+    from pokemon_mosaic.ui.layout_tabs import CardSizeTab
+
+    onglet = CardSizeTab(session)
+    onglet.resize(900, 600)
+    onglet.show()
+    return onglet
+
+
+def test_the_real_card_button_sits_under_the_width(session):
+    """Il se lit comme une valeur possible du champ qu'il remplit."""
+    onglet = posed(session)
+    bouton = onglet._real_card.mapTo(onglet, onglet._real_card.rect().topLeft())
+    champ = onglet._width.mapTo(onglet, onglet._width.rect().bottomLeft())
+    assert bouton.y() >= champ.y() - 2
+    assert abs(bouton.x() - champ.x()) < 20, "sous le champ, pas à côté"
+
+
+def test_the_shapes_button_is_up_with_the_settings_it_corrects(session):
+    """En bas, la liste poussait la grille hors de l'écran au moment précis où
+    l'on voulait la regarder changer."""
+    onglet = posed(session)
+    bouton = onglet._show_shapes.mapTo(onglet, onglet._show_shapes.rect().center())
+    dessin = onglet._preview.mapTo(onglet, onglet._preview.rect().topLeft())
+    assert bouton.y() < dessin.y()
 
 
 def test_the_placement_tab_is_a_placeholder(ecran):
