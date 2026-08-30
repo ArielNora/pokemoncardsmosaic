@@ -66,6 +66,23 @@ seule provenance. Voir `docs/IMAGES.md`.
 
 ## Dettes ouvertes
 
+- ⭐ **Le troisième petit onglet de l'étape 2 est un jalon vide.** Décidé le
+  2026-08-30 : « Emplacement de la grille » existe dans le parcours, montre les
+  pages, et annonce ce qui viendra sans rien régler. À écrire :
+
+  - un bouton **« centrer »** qui pose la mosaïque au mieux au milieu de la ou
+    des feuilles ;
+  - le **déplacement au glissement** : cliquer dans la grille, garder le bouton
+    enfoncé, et la faire monter ou descendre. L'utilisateur veut aussi la
+    gauche-droite, mais a demandé qu'on y revienne à ce moment-là.
+
+  La grille est pour l'instant **calée contre le bord gauche et centrée
+  verticalement** ; c'est cet onglet qui rendra les deux réglables.
+
+- **Aucun poster n'a encore été fabriqué avec les 441 cartes.** `output/` date
+  du 19 août et porte les 281 anciennes cartes encadrées. Ce n'est pas une dette
+  technique mais une vérification manquante — et c'est le but du projet.
+
 - **Empaqueter pour Linux et Windows.** Tranché le 2026-08-29 : l'application
   vise les trois systèmes. Le plus gros obstacle est levé — Fusion et nos deux
   palettes lui donnent déjà la même apparence partout, et son mode sombre ne
