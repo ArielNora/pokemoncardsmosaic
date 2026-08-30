@@ -44,14 +44,43 @@ def test_columns_need_not_divide_into_panels():
     assert plan.cols == 5
 
 
-def test_the_card_is_sized_on_the_whole_surface():
-    """Deux feuilles côte à côte donnent deux fois plus de largeur : la carte
-    grandit d'autant, au lieu de se calculer sur une seule feuille."""
-    seule = plan_poster(small_grid(4, 4), card_set(16),
+def test_a_second_sheet_lets_the_cards_grow():
+    """Une grille large et courte est bornée par la largeur : lui donner une
+    feuille de plus, c'est en mettre moins par feuille, donc de plus grandes."""
+    seule = plan_poster(small_grid(10, 2), card_set(20),
                         PosterSettings(paper="A4", panels=1, dpi=72))
-    deux = plan_poster(small_grid(4, 4), card_set(16),
+    deux = plan_poster(small_grid(10, 2), card_set(20),
                        PosterSettings(paper="A4", panels=2, dpi=72))
+    assert deux.cards_per_panel < seule.cards_per_panel
     assert deux.card_px[0] > seule.card_px[0]
+
+
+def test_a_cut_never_falls_on_a_card():
+    """⚠️ **La règle qui tient tout.** Chaque feuille repart de son propre bord :
+    les cartes ne se suivent pas d'une feuille à l'autre en ignorant la coupe."""
+    for panneaux in (1, 2, 3, 4, 5):
+        for cols, rows in ((7, 3), (21, 21), (5, 4), (13, 9)):
+            reglages = PosterSettings(paper="A5", panels=panneaux, dpi=72)
+            plan = plan_poster(small_grid(cols, rows), card_set(cols * rows),
+                               reglages)
+            card_w = plan.card_px[0]
+            paper_w = reglages.paper_px[0]
+            for feuille in range(1, panneaux):
+                coupe = feuille * paper_w
+                for col in range(cols):
+                    gauche = plan.column_x(col)
+                    assert not (gauche < coupe < gauche + card_w), (
+                        f"la coupe {coupe} traverse la colonne {col} "
+                        f"({panneaux} feuilles, {cols}×{rows})")
+
+
+def test_every_column_stays_on_the_paper():
+    """Une colonne poussée hors des feuilles disponibles sortirait du poster."""
+    for panneaux in (1, 2, 3):
+        reglages = PosterSettings(paper="A5", panels=panneaux, dpi=72)
+        plan = plan_poster(small_grid(11, 4), card_set(44), reglages)
+        dernier = plan.column_x(plan.cols - 1) + plan.card_px[0]
+        assert dernier <= plan.total_px[0], (panneaux, dernier, plan.total_px)
 
 
 def test_the_grid_is_flush_with_the_left_edge():

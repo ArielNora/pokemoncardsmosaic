@@ -19,7 +19,13 @@ import numpy as np
 from PIL import Image, ImageDraw
 
 from .cards import CardSet, load_full_image
-from .layout import DEFAULT_DPI, card_pixel_size, max_useful_dpi, mm_to_pixels, paper_size_mm
+from .layout import (
+    DEFAULT_DPI,
+    max_useful_dpi,
+    mm_to_pixels,
+    panel_card_size,
+    paper_size_mm,
+)
 from .scoring import EMPTY
 
 WHITE = (255, 255, 255)
@@ -76,7 +82,22 @@ class PosterPlan:
     rows: int
     card_px: tuple[int, int]
     margin_px: tuple[int, int]
+    cards_per_panel: int = 1
     warnings: list[str] = field(default_factory=list)
+
+    def column_x(self, col: int) -> int:
+        """Abscisse du bord gauche d'une colonne dans l'image du poster.
+
+        ⚠️ **Chaque feuille repart de son propre bord.** Les cartes ne se suivent
+        pas d'une feuille à l'autre en ignorant la coupe : elles recommencent à
+        gauche de la suivante. C'est ce qui garantit qu'une coupe tombe toujours
+        **entre** deux cartes, et jamais sur une. Le reste de feuille — moins
+        d'une carte, quelques dixièmes de millimètre — sort blanc et disparaît
+        au raboutage, les repères de coupe étant là pour le rogner.
+        """
+        par_feuille = max(1, self.cards_per_panel)
+        return ((col // par_feuille) * self.settings.paper_px[0]
+                + (col % par_feuille) * self.card_px[0])
 
     @property
     def total_px(self) -> tuple[int, int]:
@@ -97,20 +118,20 @@ def plan_poster(
 ) -> PosterPlan:
     """Calcule la mise en page et rassemble les avertissements à montrer.
 
-    ⚠️ **Plusieurs feuilles, c'est une seule surface.** Le calcul découpait
-    auparavant la grille par feuille et exigeait que les colonnes s'y divisent,
-    pour que la coupe tombe toujours sur un bord de carte. Cette contrainte est
-    abandonnée : des feuilles côte à côte ne sont qu'une façon d'avoir **plus de
-    place**, la carte se dimensionne sur la surface entière, et la coupe tombe
-    où elle tombe — c'est du papier qu'on raboute, pas une mosaïque qu'on
-    partage. Le chevauchement et les repères de coupe existent précisément pour
-    ça.
+    ⚠️ **Plusieurs feuilles, c'est de la place en plus** — et la coupe tombe
+    toujours **entre deux cartes**. On exigeait pour cela que le nombre de
+    colonnes se divise par le nombre de feuilles, ce qui interdisait des grilles
+    parfaitement bonnes pour une raison qui n'était pas la leur. C'est désormais
+    la **carte** qui se plie à la feuille : `panel_card_size` en pose un nombre
+    entier par feuille, et la grille peut alors déborder sur la suivante sans
+    qu'aucune carte ne soit coupée en deux.
     """
     rows, cols = grid.shape
     card_aspect = cards.full_size[0] / cards.full_size[1]
-    paper_w_mm, paper_h_mm = settings.paper_mm
-    surface_mm = (paper_w_mm * settings.panels, paper_h_mm)
-    card_px = card_pixel_size(surface_mm, cols, rows, card_aspect, settings.dpi)
+    per_panel, card_w, card_h = panel_card_size(
+        settings.paper_mm, settings.panels, cols, rows, card_aspect, settings.dpi
+    )
+    card_px = (card_w, card_h)
 
     paper_w, paper_h = settings.paper_px
     # ⚠️ **La grille est calée à gauche**, non centrée : la place en trop est ce
@@ -122,7 +143,7 @@ def plan_poster(
     margin_y = (paper_h - rows * card_px[1]) // 2
 
     warnings: list[str] = []
-    ceiling = max_useful_dpi(surface_mm, cols, cards.full_size[0])
+    ceiling = max_useful_dpi(settings.paper_mm, per_panel, cards.full_size[0])
     if settings.dpi > ceiling:
         warnings.append(
             f"{settings.dpi} DPI dépasse le maximum utile ({ceiling:.0f} DPI pour ce "
@@ -135,7 +156,8 @@ def plan_poster(
             f"de mémoire pendant l'export."
         )
 
-    return PosterPlan(settings, cols, rows, card_px, (margin_x, margin_y), warnings)
+    return PosterPlan(settings, cols, rows, card_px, (margin_x, margin_y),
+                      per_panel, warnings)
 
 
 def _render_window(
@@ -157,8 +179,13 @@ def _render_window(
     canvas = Image.new("RGB", (x1 - x0, y1 - y0), plan.settings.background)
     draw = ImageDraw.Draw(canvas)
 
-    first_col = max(0, (x0 - margin_x) // card_w)
-    last_col = min(plan.cols - 1, (x1 - margin_x) // card_w)
+    # Les colonnes ne sont plus à pas constant — chaque feuille repart de son
+    # bord —, donc on relève celles qui touchent la fenêtre plutôt que de les
+    # déduire d'une division. Deux cents colonnes au plus : le balayage ne pèse
+    # rien à côté de la lecture des images.
+    touchees = [c for c in range(plan.cols)
+                if margin_x + plan.column_x(c) < x1
+                and margin_x + plan.column_x(c) + card_w > x0]
     first_row = max(0, (y0 - margin_y) // card_h)
     last_row = min(plan.rows - 1, (y1 - margin_y) // card_h)
 
@@ -167,8 +194,8 @@ def _render_window(
         # fichiers : c'est la granularité la plus fine où l'arrêt reste franc.
         if check_cancelled is not None and check_cancelled():
             raise ExportCancelled()
-        for c in range(first_col, last_col + 1):
-            left = margin_x + c * card_w - x0
+        for c in touchees:
+            left = margin_x + plan.column_x(c) - x0
             top = margin_y + r * card_h - y0
             index = int(grid[r, c])
             if index == EMPTY:

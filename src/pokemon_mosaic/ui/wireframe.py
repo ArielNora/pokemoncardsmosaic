@@ -10,7 +10,7 @@ from PySide6.QtCore import QRectF, Qt, Signal
 from PySide6.QtGui import QBrush, QColor, QPainter, QPen
 from PySide6.QtWidgets import QWidget
 
-from ..layout import card_pixel_size
+from ..layout import panel_card_size
 
 PAPER = QColor(252, 252, 252)
 PAPER_EDGE = QColor(120, 120, 120)
@@ -48,6 +48,9 @@ class WireframeView(QWidget):
         # pose. `None` quand aucun bouton n'est enfoncé.
         self._painted: list[tuple[int, int]] = []
         self._paint_mode: bool | None = None
+        # Cartes par feuille du dernier calcul, pour placer les colonnes comme
+        # l'export : chaque feuille repart de son bord.
+        self._per_panel = 1
         self.setMinimumSize(320, 380)
         self.setCursor(Qt.PointingHandCursor)
 
@@ -93,15 +96,22 @@ class WireframeView(QWidget):
         card_aspect = self._card_aspect()
         paper_w, paper_h = _paper_mm(session)
         total_w = paper_w * session.panels
-        # ⚠️ **La surface entière, et toutes les colonnes.** On dimensionnait la
-        # carte feuille par feuille, ce qui obligeait les colonnes à s'y diviser.
-        # Plusieurs feuilles ne sont qu'une façon d'avoir plus de place.
-        card_w_px, card_h_px = card_pixel_size(
-            (total_w, paper_h), session.cols, session.rows, card_aspect, dpi=72,
+        # ⚠️ **Un nombre entier de cartes par feuille**, pour qu'une coupe tombe
+        # toujours entre deux cartes. La carte se plie à la feuille ; les
+        # colonnes, elles, n'ont plus à se diviser par le nombre de feuilles.
+        #
+        # ⚠️ **À la résolution de la session, jamais à une autre.** Le dessin
+        # tournait à 72 dpi et l'export à celle des réglages : les arrondis en
+        # pixels ne donnaient pas le même nombre de cartes par feuille — 49 161
+        # combinaisons en désaccord sur les sept formats —, et l'on jugeait la
+        # mise en page sur un dessin qui n'était pas celui du poster.
+        self._per_panel, card_w_px, card_h_px = panel_card_size(
+            (paper_w, paper_h), session.panels, session.cols, session.rows,
+            card_aspect, dpi=session.dpi,
         )
         # Tout est ramené en millimètres pour le dessin, puis mis à l'échelle.
-        card_w = card_w_px / 72 * 25.4
-        card_h = card_h_px / 72 * 25.4
+        card_w = card_w_px / session.dpi * 25.4
+        card_h = card_h_px / session.dpi * 25.4
 
         margin = 12
         scale = min((self.width() - 2 * margin) / total_w,
@@ -112,6 +122,20 @@ class WireframeView(QWidget):
         origin_x = (self.width() - total_w * scale) / 2
         origin_y = (self.height() - paper_h * scale) / 2
         return scale, (origin_x, origin_y), (total_w, paper_h), (card_w, card_h)
+
+    def column_offset(self, col: int, geometry) -> float:
+        """Décalage d'une colonne depuis le bord gauche, en millimètres.
+
+        ⚠️ **Chaque feuille repart de son propre bord**, comme à l'export : les
+        colonnes ne sont pas à pas constant. Posées à la file, le dessin
+        montrait une carte à cheval sur la coupe là où le poster n'en a pas.
+        """
+        _, _, (total_w, _), (card_w, _) = geometry
+        if self._show_paper:
+            par_feuille = max(1, self._per_panel)
+            feuille_w = total_w / max(1, self._session.panels)
+            return (col // par_feuille) * feuille_w + (col % par_feuille) * card_w
+        return col * card_w
 
     def _grid_origin(self, geometry):
         """Coin haut-gauche de la grille.
@@ -159,8 +183,9 @@ class WireframeView(QWidget):
         pen_width = 1 if session.cols * session.rows <= 900 else 0
         for row in range(session.rows):
             for col in range(session.cols):
-                rect = QRectF(gx + col * card_w * scale, gy + row * card_h * scale,
-                              card_w * scale, card_h * scale)
+                rect = QRectF(
+                    gx + self.column_offset(col, geometry) * scale,
+                    gy + row * card_h * scale, card_w * scale, card_h * scale)
                 is_empty = (row, col) in empty
                 painter.setBrush(QBrush(EMPTY_FILL if is_empty else CARD_FILL))
                 painter.setPen(QPen(EMPTY_EDGE if is_empty else CARD_EDGE,
@@ -232,8 +257,15 @@ class WireframeView(QWidget):
         # donnerait la colonne 0 au lieu d'être rejeté. On écarte d'abord.
         if x < gx or y < gy:
             return None
-        col = int((x - gx) / (card_w * scale))
         row = int((y - gy) / (card_h * scale))
+        # Les colonnes n'étant plus à pas constant, on cherche celle dont la
+        # bande contient le point plutôt que de diviser.
+        col = next(
+            (c for c in range(self._session.cols)
+             if 0 <= x - gx - self.column_offset(c, self._geometry) * scale
+             < card_w * scale),
+            -1,
+        )
         if 0 <= row < self._session.rows and 0 <= col < self._session.cols:
             return row, col
         return None

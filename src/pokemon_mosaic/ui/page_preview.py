@@ -13,9 +13,9 @@ from PySide6.QtCore import QPointF, QRect, QRectF, Qt, Signal
 from PySide6.QtGui import QBrush, QColor, QPainter, QPen
 from PySide6.QtWidgets import QPushButton, QWidget
 
-from ..layout import MM_PER_INCH, REAL_CARD_MM, card_pixel_size, paper_size_mm
+from ..layout import MM_PER_INCH, REAL_CARD_MM, panel_card_size, paper_size_mm
 from . import theme
-from .wireframe import CARD_EDGE, CARD_FILL
+from .wireframe import CARD_EDGE, CARD_FILL, EMPTY_EDGE, EMPTY_FILL
 
 # Place réservée aux cotes, en pixels écran : la flèche, sa tête, et le nombre
 # sous elle. Trop juste, la largeur se retrouvait coupée par le bas du cadre.
@@ -44,8 +44,9 @@ PLUS_MIN_HEIGHT = 44
 # l'écart existant** entre la feuille et sa cote : l'agrandir éloignerait la
 # cote de ce qu'elle mesure, pour loger un bouton qu'on ne regarde pas.
 MINUS_SIZE = (30, 16)
-# Nombre maximal de feuilles côte à côte, comme au formulaire d'impression.
-MAX_PANELS = 6
+# Nombre maximal de feuilles côte à côte. Cinq A2 font déjà deux mètres de
+# large : au-delà, ce n'est plus un poster qu'on accroche.
+MAX_PANELS = 5
 
 
 class PagePreview(QWidget):
@@ -57,7 +58,10 @@ class PagePreview(QWidget):
     def __init__(self, session, parent=None):
         super().__init__(parent)
         self._session = session
-        self._show_grid = True
+        # Décochée d'office : l'aperçu de la mosaïque est une idée de ce que ça
+        # pourrait donner, pas la décision de cet onglet, qui est la taille du
+        # papier. On la montre quand on la demande.
+        self._show_grid = False
         self._plus = QPushButton("＋", self)
         theme.mark(self._plus, "mini")
         self._plus.clicked.connect(
@@ -269,25 +273,40 @@ class PagePreview(QWidget):
             return
         surface = self._sheet_mm()
         aspect = _card_aspect(session)
-        card_w_px, card_h_px = card_pixel_size(
-            surface, session.cols, session.rows, aspect, dpi=72)
-        # `card_pixel_size` raisonne en pixels d'impression ; on revient au
-        # millimètre, seule unité que partage tout ce dessin.
-        card_w = card_w_px / 72 * MM_PER_INCH * feuille.width() / surface[0]
-        card_h = card_h_px / 72 * MM_PER_INCH * feuille.height() / surface[1]
+        # ⚠️ **Un nombre entier de cartes par feuille**, pour qu'une coupe tombe
+        # toujours entre deux cartes.
+        # ⚠️ **À la résolution de la session**, jamais à une autre : les arrondis
+        # en pixels ne donnent pas le même nombre de cartes par feuille, et le
+        # dessin cesserait d'être celui du poster.
+        par_feuille, card_w_px, card_h_px = panel_card_size(
+            paper_size_mm(session.paper, session.landscape), session.panels,
+            session.cols, session.rows, aspect, dpi=session.dpi)
+        # On revient au millimètre, seule unité que partage tout ce dessin.
+        card_w = card_w_px / session.dpi * MM_PER_INCH * feuille.width() / surface[0]
+        card_h = card_h_px / session.dpi * MM_PER_INCH * feuille.height() / surface[1]
+        feuille_w = feuille.width() / max(1, session.panels)
 
         # ⚠️ **Calée à gauche.** La place en trop est ce qu'apporte la feuille
         # suivante : elle doit se voir d'un bloc, du côté où l'on ajoutera la
         # prochaine, et non coupée en deux demi-marges.
         gx = feuille.left()
         gy = feuille.top() + (feuille.height() - card_h * session.rows) / 2
-        painter.setBrush(QBrush(CARD_FILL))
+        # ⚠️ **Les cases vides s'y voient aussi.** Elles ne se montraient qu'au
+        # premier onglet, si bien que la mosaïque dessinée ici n'était pas celle
+        # qu'on venait de composer : on ne pouvait pas juger de la place occupée
+        # sur une image qui ne disait pas la vérité.
+        vides = set(session.empty_cells())
         trait = 0 if session.cols * session.rows > FINE_PEN_ABOVE else 0.8
-        painter.setPen(QPen(CARD_EDGE, trait))
         for row in range(session.rows):
             for col in range(session.cols):
-                painter.drawRect(QRectF(gx + col * card_w, gy + row * card_h,
-                                        card_w, card_h))
+                creux = (row, col) in vides
+                painter.setBrush(QBrush(EMPTY_FILL if creux else CARD_FILL))
+                painter.setPen(QPen(EMPTY_EDGE if creux else CARD_EDGE,
+                                    1.2 if creux else trait))
+                # ⚠️ Chaque feuille repart de son bord, comme à l'export.
+                x = ((col // par_feuille) * feuille_w
+                     + (col % par_feuille) * card_w)
+                painter.drawRect(QRectF(gx + x, gy + row * card_h, card_w, card_h))
 
     def _label_text(self) -> str:
         return (self.tr("carte réelle\n%1 × %2 cm")

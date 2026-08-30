@@ -827,26 +827,26 @@
 <context>
     <name>PagePreview</name>
     <message>
-        <location filename="../src/pokemon_mosaic/ui/page_preview.py" line="70" />
+        <location filename="../src/pokemon_mosaic/ui/page_preview.py" line="74" />
         <source>Ajouter une feuille à droite</source>
         <translation>Add a sheet on the right</translation>
     </message>
     <message>
-        <location filename="../src/pokemon_mosaic/ui/page_preview.py" line="72" />
-        <location filename="../src/pokemon_mosaic/ui/page_preview.py" line="103" />
+        <location filename="../src/pokemon_mosaic/ui/page_preview.py" line="76" />
+        <location filename="../src/pokemon_mosaic/ui/page_preview.py" line="107" />
         <source>Retirer une feuille</source>
         <translation>Remove a sheet</translation>
     </message>
     <message>
-        <location filename="../src/pokemon_mosaic/ui/page_preview.py" line="293" />
+        <location filename="../src/pokemon_mosaic/ui/page_preview.py" line="312" />
         <source>carte réelle
 %1 × %2 cm</source>
         <translation>real card
 %1 × %2 cm</translation>
     </message>
     <message>
-        <location filename="../src/pokemon_mosaic/ui/page_preview.py" line="325" />
-        <location filename="../src/pokemon_mosaic/ui/page_preview.py" line="340" />
+        <location filename="../src/pokemon_mosaic/ui/page_preview.py" line="344" />
+        <location filename="../src/pokemon_mosaic/ui/page_preview.py" line="359" />
         <source>%1 cm</source>
         <translation>%1 cm</translation>
     </message>
@@ -859,24 +859,33 @@
         <translation>Sheet format</translation>
     </message>
     <message>
-        <location filename="../src/pokemon_mosaic/ui/layout_tabs.py" line="412" />
+        <location filename="../src/pokemon_mosaic/ui/layout_tabs.py" line="417" />
         <source>Format d'impression</source>
         <translation>Print format</translation>
     </message>
     <message>
-        <location filename="../src/pokemon_mosaic/ui/layout_tabs.py" line="413" />
+        <location filename="../src/pokemon_mosaic/ui/layout_tabs.py" line="418" />
+        <source>Paysage</source>
+        <translation>Landscape</translation>
+    </message>
+    <message>
+        <location filename="../src/pokemon_mosaic/ui/layout_tabs.py" line="419" />
         <source>Montrer la mosaïque sur la feuille</source>
         <translation>Show the mosaic on the sheet</translation>
     </message>
     <message>
-        <location filename="../src/pokemon_mosaic/ui/layout_tabs.py" line="416" />
+        <location filename="../src/pokemon_mosaic/ui/layout_tabs.py" line="422" />
         <source>La carte posée à gauche est à ses dimensions réelles, à la même échelle que la feuille : c'est elle qui donne la taille. Le « + » à droite ajoute une feuille, donc de la place.</source>
         <translation>The card on the left is at its real size, at the same scale as the sheet: that is what gives you the scale. The “+” on the right adds a sheet, and so more room.</translation>
     </message>
     <message>
-        <location filename="../src/pokemon_mosaic/ui/layout_tabs.py" line="421" />
+        <location filename="../src/pokemon_mosaic/ui/layout_tabs.py" line="427" />
+        <source>La mosaïque n'est là que pour donner une idée rapide de ce que ça donnerait : elle est posée contre le bord gauche, et le blanc qui reste est la place encore libre. L'onglet suivant permettra de la répartir précisément sur les feuilles.</source>
+        <translation>The mosaic is only here to give a quick idea of how it could look: it sits against the left edge, and the white left over is the room still free. The next tab will let you lay it out precisely across the sheets.</translation>
+    </message>
+    <message>
         <source>La mosaïque est posée contre le bord gauche, et le blanc qui reste est la place encore libre : cet onglet ne décide que de la taille du papier et du nombre de feuilles. La façon dont la grille s'y installe — marges, centrage — viendra à l'onglet suivant.</source>
-        <translation>The mosaic sits against the left edge, and the white left over is the room still free: this tab only decides the paper size and the number of sheets. How the grid settles into them — margins, centring — comes on the next tab.</translation>
+        <translation type="vanished">The mosaic sits against the left edge, and the white left over is the room still free: this tab only decides the paper size and the number of sheets. How the grid settles into them — margins, centring — comes on the next tab.</translation>
     </message>
     <message>
         <source>La carte posée à gauche est à ses dimensions réelles, à la même échelle que la feuille : c'est elle qui donne la taille. Le « + » à droite ajoute une feuille côte à côte.</source>
@@ -1006,37 +1015,39 @@
         <translation type="vanished">Orientation, resolution and panels</translation>
     </message>
     <message>
-        <location filename="../src/pokemon_mosaic/ui/layout_tabs.py" line="460" />
         <source>Orientation et impression</source>
-        <translation>Orientation and printing</translation>
+        <translation type="vanished">Orientation and printing</translation>
     </message>
     <message>
-        <location filename="../src/pokemon_mosaic/ui/layout_tabs.py" line="509" />
+        <location filename="../src/pokemon_mosaic/ui/layout_tabs.py" line="514" />
         <source>Impression</source>
         <translation>Printing</translation>
     </message>
     <message>
-        <location filename="../src/pokemon_mosaic/ui/layout_tabs.py" line="510" />
         <source>Paysage</source>
-        <translation>Landscape</translation>
+        <translation type="vanished">Landscape</translation>
     </message>
     <message>
-        <location filename="../src/pokemon_mosaic/ui/layout_tabs.py" line="511" />
+        <location filename="../src/pokemon_mosaic/ui/layout_tabs.py" line="515" />
         <source>Résolution (DPI)</source>
         <translation>Resolution (DPI)</translation>
     </message>
     <message>
-        <location filename="../src/pokemon_mosaic/ui/layout_tabs.py" line="512" />
         <source>Posters côte à côte</source>
-        <translation>Posters side by side</translation>
+        <translation type="vanished">Posters side by side</translation>
     </message>
     <message>
-        <location filename="../src/pokemon_mosaic/ui/layout_tabs.py" line="514" />
+        <location filename="../src/pokemon_mosaic/ui/layout_tabs.py" line="468" />
+        <source>Finesse d'impression</source>
+        <translation>Printing resolution</translation>
+    </message>
+    <message>
+        <location filename="../src/pokemon_mosaic/ui/layout_tabs.py" line="517" />
         <source>Aperçu de la mise en page sur la feuille, sans les images. Cliquez une case pour y placer ou retirer un vide.</source>
         <translation>Preview of the layout on the sheet, without the images. Click a cell to place or remove a blank there.</translation>
     </message>
     <message>
-        <location filename="../src/pokemon_mosaic/ui/layout_tabs.py" line="604" />
+        <location filename="../src/pokemon_mosaic/ui/layout_tabs.py" line="602" />
         <source>La mosaïque couvre %1 % du papier : le reste sortira blanc de l'imprimante. C'est normal si vous avez ajouté des feuilles pour avoir de la place ; sinon, une grille plus large ou moins de feuilles la rempliraient mieux.</source>
         <translation>The mosaic covers %1 % of the paper: the rest will come out of the printer blank. That is expected if you added sheets for room; otherwise a wider grid or fewer sheets would fill it better.</translation>
     </message>
@@ -1045,12 +1056,12 @@
         <translation type="vanished">%1 columns do not divide into %2 panels: the cut would fall in the middle of a card.</translation>
     </message>
     <message>
-        <location filename="../src/pokemon_mosaic/ui/layout_tabs.py" line="566" />
+        <location filename="../src/pokemon_mosaic/ui/layout_tabs.py" line="564" />
         <source>Cartes de %1×%2 px — image totale %3×%4 px sur %5 feuille(s) %6 de %7×%8 mm.</source>
         <translation>Cards of %1×%2 px — total image %3×%4 px on %5 sheet(s) %6 of %7×%8 mm.</translation>
     </message>
     <message>
-        <location filename="../src/pokemon_mosaic/ui/layout_tabs.py" line="587" />
+        <location filename="../src/pokemon_mosaic/ui/layout_tabs.py" line="585" />
         <source>%1 DPI dépasse le maximum utile (%2 DPI pour ce format) : les cartes seront agrandies sans gagner en détail.</source>
         <translation>%1 DPI exceeds the useful maximum (%2 DPI for this format): cards will be enlarged without gaining detail.</translation>
     </message>
@@ -1062,7 +1073,7 @@
         </translation>
     </message>
     <message>
-        <location filename="../src/pokemon_mosaic/ui/layout_tabs.py" line="614" />
+        <location filename="../src/pokemon_mosaic/ui/layout_tabs.py" line="612" />
         <source>Image de %1 Mpx : l'export demandera beaucoup de mémoire.</source>
         <translation>Image of %1 Mpx: exporting will require a lot of memory.</translation>
     </message>

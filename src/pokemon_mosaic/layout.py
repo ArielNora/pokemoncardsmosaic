@@ -239,6 +239,50 @@ def card_pixel_size(
     return (max(1, card_w), max(1, math.floor(card_w / card_aspect)))
 
 
+def panel_card_size(
+    paper: tuple[float, float],
+    panels: int,
+    cols: int,
+    rows: int,
+    card_aspect: float,
+    dpi: int = DEFAULT_DPI,
+) -> tuple[int, int, int]:
+    """Taille d'une carte telle qu'**une coupe tombe toujours entre deux cartes**.
+
+    Renvoie `(cartes par feuille, largeur, hauteur)` en pixels.
+
+    ⚠️ **C'est la carte qui se plie à la feuille, pas l'inverse.** Exiger que le
+    nombre de colonnes se divise par le nombre de feuilles interdisait des
+    grilles parfaitement bonnes — 21 colonnes sur 2 feuilles — pour une raison
+    qui n'était pas la leur. On fixe plutôt un nombre **entier** de cartes par
+    feuille : la coupe tombe alors sur un bord de carte par construction, quel
+    que soit le nombre de colonnes, et la grille peut déborder sur la feuille
+    suivante sans qu'aucune carte ne soit coupée en deux.
+
+    Le nombre de cartes par feuille est le plus **petit** qui convienne, donc la
+    carte la plus grande : il lui faut de quoi loger toutes les colonnes sur les
+    feuilles disponibles, et une hauteur qui tienne sur la feuille.
+    """
+    paper_w_px = mm_to_pixels(paper[0], dpi)
+    paper_h_px = mm_to_pixels(paper[1], dpi)
+    if panels < 1 or cols < 1 or rows < 1 or card_aspect <= 0:
+        raise ValueError("Mise en page vide : ni colonne, ni ligne, ni feuille.")
+
+    # Assez de cartes par feuille pour que les colonnes tiennent sur l'ensemble.
+    per_panel = max(1, math.ceil(cols / panels))
+    while per_panel <= paper_w_px:
+        card_w = paper_w_px // per_panel
+        card_h = math.floor(card_w / card_aspect)
+        if card_h >= 1 and card_h * rows <= paper_h_px:
+            return per_panel, card_w, max(1, card_h)
+        # Trop haute pour la feuille : on en met une de plus par feuille, donc
+        # des cartes plus petites.
+        per_panel += 1
+    # Grille absurdement dense : on rend la plus petite carte possible plutôt
+    # que de lever, l'écran ayant déjà de quoi la dire trop fine.
+    return paper_w_px, 1, 1
+
+
 def max_useful_dpi(
     paper: tuple[float, float], cols: int, source_card_width_px: int
 ) -> float:

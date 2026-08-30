@@ -25,9 +25,9 @@ from PySide6.QtWidgets import (
 
 from ..layout import (
     PAPER_FORMATS_MM,
-    card_pixel_size,
     max_useful_dpi,
     mm_to_pixels,
+    panel_card_size,
     paper_size_mm,
     suggest_grids,
 )
@@ -371,14 +371,19 @@ class PaperTab(LayoutTab):
         self._paper.currentTextChanged.connect(self._on_form_changed)
 
         self._paper_label = QLabel()
+        # L'orientation décrit la feuille : elle appartient à cet onglet, pas au
+        # suivant, où elle n'avait rien à voir avec la finesse d'impression.
+        self._landscape = QCheckBox()
+        self._landscape.toggled.connect(self._on_form_changed)
         self._show_grid = QCheckBox()
-        self._show_grid.setChecked(True)
         self._show_grid.toggled.connect(self._on_grid_toggled)
 
         haut = QHBoxLayout()
         haut.addWidget(self._paper_label)
         haut.addWidget(self._paper)
-        haut.addSpacing(24)
+        haut.addSpacing(20)
+        haut.addWidget(self._landscape)
+        haut.addSpacing(20)
         haut.addWidget(self._show_grid)
         haut.addStretch(1)
 
@@ -410,6 +415,7 @@ class PaperTab(LayoutTab):
 
     def retranslate_ui(self) -> None:
         self._paper_label.setText(self.tr("Format d'impression"))
+        self._landscape.setText(self.tr("Paysage"))
         self._show_grid.setText(self.tr("Montrer la mosaïque sur la feuille"))
         self._preview.retranslate_ui()
         self._hint.setText(
@@ -418,11 +424,11 @@ class PaperTab(LayoutTab):
                     "Le « + » à droite ajoute une feuille, donc de la place.")
         )
         self._grid_warning.setText(
-            self.tr("La mosaïque est posée contre le bord gauche, et le blanc "
-                    "qui reste est la place encore libre : cet onglet ne décide "
-                    "que de la taille du papier et du nombre de feuilles. La "
-                    "façon dont la grille s'y installe — marges, centrage — "
-                    "viendra à l'onglet suivant.")
+            self.tr("La mosaïque n'est là que pour donner une idée rapide de ce "
+                    "que ça donnerait : elle est posée contre le bord gauche, et "
+                    "le blanc qui reste est la place encore libre. L'onglet "
+                    "suivant permettra de la répartir précisément sur les "
+                    "feuilles.")
         )
         self._on_grid_toggled(self._show_grid.isChecked())
         self.refresh()
@@ -430,11 +436,13 @@ class PaperTab(LayoutTab):
     def _on_form_changed(self, *_) -> None:
         if self._updating:
             return
-        self._session.set_layout(paper=self._paper.currentData())
+        self._session.set_layout(paper=self._paper.currentData(),
+                                 landscape=self._landscape.isChecked())
 
     def refresh(self) -> None:
         self._updating = True
         self._paper.setCurrentText(self._session.paper)
+        self._landscape.setChecked(self._session.landscape)
         self._updating = False
         # Le champ a pu refuser un format inconnu venu d'un préréglage écrit à
         # la main : on renvoie à la session ce qu'il a réellement accepté.
@@ -457,22 +465,19 @@ class PrintingTab(LayoutTab):
         session.cards_loaded.connect(self.refresh)
 
     def title(self) -> str:
-        return self.tr("Orientation et impression")
+        return self.tr("Finesse d'impression")
 
     def _build(self) -> None:
-        self._landscape = QCheckBox()
+        # Orientation et nombre de feuilles décrivent la feuille : ils sont
+        # passés à l'onglet du format, où on les voit agir sur le dessin. Il ne
+        # reste ici que la finesse, et le récapitulatif chiffré.
         self._dpi = QSpinBox(); self._dpi.setRange(50, 1200); self._dpi.setSingleStep(50)
-        self._panels = QSpinBox(); self._panels.setRange(1, 6)
-        for widget in (self._landscape, self._dpi, self._panels):
-            signal = (widget.toggled if isinstance(widget, QCheckBox)
-                      else widget.valueChanged)
-            signal.connect(self._on_form_changed)
+        self._dpi.valueChanged.connect(self._on_form_changed)
 
         self._form_box = QGroupBox()
         form = QFormLayout(self._form_box)
         self._labels = {}
-        for key, widget in (("landscape", self._landscape), ("dpi", self._dpi),
-                            ("panels", self._panels)):
+        for key, widget in (("dpi", self._dpi),):
             label = QLabel()
             self._labels[key] = label
             form.addRow(label, widget)
@@ -507,9 +512,7 @@ class PrintingTab(LayoutTab):
 
     def retranslate_ui(self) -> None:
         self._form_box.setTitle(self.tr("Impression"))
-        self._labels["landscape"].setText(self.tr("Paysage"))
         self._labels["dpi"].setText(self.tr("Résolution (DPI)"))
-        self._labels["panels"].setText(self.tr("Posters côte à côte"))
         self._preview_hint.setText(
             self.tr("Aperçu de la mise en page sur la feuille, sans les images. "
                     "Cliquez une case pour y placer ou retirer un vide.")
@@ -519,14 +522,11 @@ class PrintingTab(LayoutTab):
     def _on_form_changed(self, *_) -> None:
         if self._updating:
             return
-        self._session.set_layout(landscape=self._landscape.isChecked(),
-                                 dpi=self._dpi.value(), panels=self._panels.value())
+        self._session.set_layout(dpi=self._dpi.value())
 
     def refresh(self) -> None:
         self._updating = True
-        self._landscape.setChecked(self._session.landscape)
         self._dpi.setValue(self._session.dpi)
-        self._panels.setValue(self._session.panels)
         self._updating = False
         self._push_back_clamped()
         self._update_summary()
@@ -542,7 +542,7 @@ class PrintingTab(LayoutTab):
         produit.
         """
         session = self._session
-        accepted = {"dpi": self._dpi.value(), "panels": self._panels.value()}
+        accepted = {"dpi": self._dpi.value()}
         drifted = {name: value for name, value in accepted.items()
                    if getattr(session, name) != value}
         if drifted:
@@ -553,13 +553,11 @@ class PrintingTab(LayoutTab):
         paper = paper_size_mm(session.paper, session.landscape)
         warnings = []
 
-        # ⚠️ **La surface entière, et toutes les colonnes.** La carte se
-        # dimensionnait feuille par feuille, ce qui obligeait les colonnes à s'y
-        # diviser ; plusieurs feuilles ne sont qu'une façon d'avoir plus de place.
-        surface = (paper[0] * session.panels, paper[1])
+        # ⚠️ **Un nombre entier de cartes par feuille**, pour qu'une coupe tombe
+        # toujours entre deux cartes. C'est la carte qui se plie à la feuille.
         aspect = card_aspect(session)
-        card_w, card_h = card_pixel_size(surface, session.cols, session.rows,
-                                         aspect, session.dpi)
+        per_panel, card_w, card_h = panel_card_size(
+            paper, session.panels, session.cols, session.rows, aspect, session.dpi)
         total_w = card_w * session.cols
         total_h = card_h * session.rows
         self._summary.setText(
@@ -581,7 +579,7 @@ class PrintingTab(LayoutTab):
 
         source_width = (session.card_set.full_size[0]
                         if session.card_set and session.card_set.full_size[0] else 713)
-        ceiling = max_useful_dpi(surface, session.cols, source_width)
+        ceiling = max_useful_dpi(paper, per_panel, source_width)
         if session.dpi > ceiling:
             warnings.append(
                 self.tr("%1 DPI dépasse le maximum utile (%2 DPI pour ce format) : "

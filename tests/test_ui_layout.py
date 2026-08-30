@@ -777,20 +777,21 @@ def test_the_mosaic_is_drawn_on_the_sheet_when_asked(qt_app, session):
     assert garni.blue() > garni.red(), f"la case ne paraît pas une carte : {garni.name()}"
 
 
-def test_the_toggle_hides_and_shows_its_warning(session, ecran):
-    """L'ajustement montré dépend de réglages qui ne sont pas encore pris :
-    le dire n'a de sens que si la mosaïque est là."""
+def test_the_toggle_starts_off_and_carries_its_warning(session, ecran):
+    """La mosaïque n'est qu'une idée de ce que ça donnerait, pas la décision de
+    cet onglet : elle ne s'affiche que si on la demande, et le dire n'a de sens
+    que quand elle est là."""
     papier = ecran._tabs[1]
     papier.show()
-    assert papier._show_grid.isChecked()
-    assert papier._grid_warning.isVisibleTo(papier)
-
-    papier._show_grid.setChecked(False)
-    assert not papier._grid_warning.isVisibleTo(papier)
+    assert not papier._show_grid.isChecked()
     assert not papier._preview._show_grid
+    assert not papier._grid_warning.isVisibleTo(papier)
 
     papier._show_grid.setChecked(True)
+    assert papier._preview._show_grid
     assert papier._grid_warning.isVisibleTo(papier)
+    assert "idée rapide" in papier._grid_warning.text()
+    assert "onglet suivant" in papier._grid_warning.text()
 
 
 # --- De gros onglets --------------------------------------------------------
@@ -876,11 +877,13 @@ def test_the_plus_adds_a_sheet_and_the_minus_removes_one(session, papier):
     assert session.panels == 1
 
 
-def test_the_sheet_count_stays_between_one_and_six(session, papier):
+def test_the_sheet_count_stays_between_one_and_five(session, papier):
+    """Cinq A2 font déjà deux mètres de large : au-delà, ce n'est plus un poster
+    qu'on accroche."""
     session.set_layout(cols=6, rows=5, panels=1)
     for _ in range(10):
         papier._preview._plus.click()
-    assert session.panels == 6
+    assert session.panels == 5
     assert not papier._preview._plus.isEnabled()
 
     for _ in range(10):
@@ -974,11 +977,103 @@ def test_the_hint_says_where_the_card_actually_is(session, papier):
 
 
 def test_no_tab_blocks_on_the_sheet_count_any_more(session, ecran):
-    """Cet onglet ne décide que de la taille du papier et du nombre de feuilles :
-    aucune combinaison n'y est fautive."""
-    session.set_layout(cols=21, rows=21, panels=1)
+    """Aucune combinaison de feuilles n'est fautive : c'est la carte qui se plie
+    à la feuille, pas les colonnes."""
+    session.set_layout(cols=21, rows=21, panels=2)
     ecran._list.setCurrentRow(2)
-    ecran._tabs[2]._panels.setValue(2)
     assert ecran._tabs[1].is_valid()
     assert ecran._tabs[2].is_valid()
     assert ecran.can_advance()
+
+
+def test_the_orientation_moved_to_the_paper_tab(session, ecran):
+    """L'orientation décrit la feuille : elle n'avait rien à voir avec la
+    finesse d'impression."""
+    papier, impression = ecran._tabs[1], ecran._tabs[2]
+    assert hasattr(papier, "_landscape")
+    assert not hasattr(impression, "_landscape")
+    assert not hasattr(impression, "_panels"), "le nombre de feuilles est passé au « + »"
+
+    papier._landscape.setChecked(True)
+    assert session.landscape
+    papier._landscape.setChecked(False)
+    assert not session.landscape
+
+
+def test_a_cut_never_falls_on_a_card_whatever_the_grid(session):
+    """⚠️ La règle qui tient tout, vue depuis la mise en page de l'écran."""
+    from pokemon_mosaic.layout import mm_to_pixels, panel_card_size, paper_size_mm
+
+    for panneaux in range(1, 6):
+        for cols, rows in ((7, 3), (21, 21), (5, 4), (13, 9)):
+            paper = paper_size_mm("A3")
+            par_feuille, card_w, _ = panel_card_size(
+                paper, panneaux, cols, rows, 713 / 984, 300)
+            paper_w = mm_to_pixels(paper[0], 300)
+            assert par_feuille * card_w <= paper_w, (panneaux, cols, rows)
+            assert par_feuille * panneaux >= cols, "des colonnes sans feuille"
+
+
+# --- L'écran montre ce que l'imprimante fera --------------------------------
+
+def test_the_previews_use_the_printing_resolution(qt_app, session):
+    """⚠️ Le dessin tournait à 72 dpi et l'export à celle des réglages : les
+    arrondis en pixels ne donnaient pas le même nombre de cartes par feuille —
+    49 161 combinaisons en désaccord sur les sept formats."""
+    from pokemon_mosaic.export import PosterSettings, plan_poster
+    from pokemon_mosaic.ui.wireframe import WireframeView
+
+    session.set_layout(paper="A6", cols=1, rows=14, panels=1, dpi=300)
+    vue = WireframeView(session)
+    vue.resize(400, 500)
+    vue.grab()
+
+    import numpy as np
+
+    grille = np.zeros((session.rows, session.cols), np.int16)
+    plan = plan_poster(grille, session.card_set,
+                       PosterSettings(paper=session.paper, dpi=session.dpi,
+                                      panels=session.panels))
+    assert vue._per_panel == plan.cards_per_panel
+
+
+def test_the_drawn_columns_restart_on_each_sheet(qt_app, session):
+    """⚠️ L'export fait repartir chaque feuille de son bord ; le dessin posait
+    les colonnes à la file. Il montrait donc une carte à cheval sur la coupe là
+    où le poster n'en a pas."""
+    from pokemon_mosaic.ui.wireframe import WireframeView
+
+    session.set_layout(paper="A4", cols=30, rows=4, panels=2, dpi=300)
+    vue = WireframeView(session)
+    vue.resize(600, 400)
+    vue.grab()
+
+    geometrie = vue._geometry
+    _, _, (total_w, _), (card_w, _) = geometrie
+    feuille_w = total_w / 2
+    par_feuille = vue._per_panel
+
+    # La première colonne de la seconde feuille tombe pile sur son bord.
+    assert vue.column_offset(par_feuille, geometrie) == pytest.approx(feuille_w)
+    # Et aucune colonne ne chevauche la coupe.
+    for col in range(session.cols):
+        gauche = vue.column_offset(col, geometrie)
+        assert not (gauche < feuille_w < gauche + card_w), col
+
+
+def test_clicks_still_land_on_the_right_cell_across_sheets(qt_app, session):
+    """Les colonnes n'étant plus à pas constant, le clic ne peut plus se déduire
+    d'une division."""
+    from pokemon_mosaic.ui.wireframe import WireframeView
+
+    session.set_layout(paper="A4", cols=30, rows=4, panels=2, dpi=300)
+    vue = WireframeView(session)
+    vue.resize(600, 400)
+    vue.grab()
+
+    scale, _, _, (card_w, card_h) = vue._geometry
+    gx, gy = vue._grid_origin(vue._geometry)
+    for col in (0, vue._per_panel - 1, vue._per_panel, session.cols - 1):
+        x = gx + (vue.column_offset(col, vue._geometry) + card_w / 2) * scale
+        y = gy + card_h * scale * 1.5
+        assert vue.cell_at(x, y) == (1, col), col
