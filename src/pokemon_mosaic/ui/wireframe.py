@@ -278,6 +278,4 @@ class WireframeView(QWidget):
 
 
 def _paper_mm(session):
-    from ..layout import paper_size_mm
-
-    return paper_size_mm(session.paper, session.landscape)
+    return session.paper_mm()

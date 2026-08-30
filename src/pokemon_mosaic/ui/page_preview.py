@@ -13,7 +13,7 @@ from PySide6.QtCore import QPointF, QRect, QRectF, Qt, Signal
 from PySide6.QtGui import QBrush, QColor, QPainter, QPen
 from PySide6.QtWidgets import QPushButton, QWidget
 
-from ..layout import MM_PER_INCH, REAL_CARD_MM, grid_geometry, paper_size_mm
+from ..layout import MM_PER_INCH, REAL_CARD_MM, grid_geometry
 from . import theme
 from .wireframe import CARD_EDGE, CARD_FILL, EMPTY_EDGE, EMPTY_FILL
 
@@ -191,7 +191,7 @@ class PagePreview(QWidget):
     def _sheet_mm(self) -> tuple[float, float]:
         """La feuille entière, panneaux compris."""
         session = self._session
-        width, height = paper_size_mm(session.paper, session.landscape)
+        width, height = session.paper_mm()
         return width * session.panels, height
 
     def _side_reserve(self) -> float:
@@ -326,7 +326,7 @@ class PagePreview(QWidget):
         # une autre : les arrondis en pixels ne donnent pas le même nombre de
         # cartes par feuille, et le dessin cesserait d'être celui du poster.
         geometrie = grid_geometry(
-            paper_size_mm(session.paper, session.landscape), session.panels,
+            session.paper_mm(), session.panels,
             session.cols, session.rows, aspect, session.dpi,
             session.card_width_mm, session.card_gap_mm)
         par_feuille = geometrie.per_panel

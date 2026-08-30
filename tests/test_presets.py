@@ -142,6 +142,26 @@ def test_a_preset_captures_the_whole_configuration(session):
     assert preset.algorithm["use_annealing"] is False
 
 
+def test_a_sheet_without_a_name_survives_the_round_trip(session):
+    """⚠️ Une feuille hors catalogue n'a pas de nom : le seul « paper » ne
+    suffit plus à la décrire, et un préréglage relu aurait rendu un A2."""
+    from pokemon_mosaic.presets import Preset
+
+    session.set_layout(paper_size_mm=(300.0, 400.0))
+    preset = session.to_preset("essai")
+    assert preset.layout["paper"] == ""
+    assert preset.layout["paper_size_mm"] == [300.0, 400.0]
+
+    session.set_layout(paper="A5")
+    relu = Preset.from_json(preset.to_json())
+    assert isinstance(relu, Preset)
+    session.apply_preset(relu)
+    # Tuple et non liste : une liste ne serait jamais égale à la taille en
+    # place, et chaque rechargement rejouerait un changement pour rien.
+    assert session.paper_size_mm == (300.0, 400.0)
+    assert session.paper == ""
+
+
 def test_applying_a_preset_restores_everything(session):
     session.set_excluded([1], True)
     session.add_link(Link(cards=(2, 3)))

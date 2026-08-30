@@ -9,7 +9,6 @@ de leur contenu — ajouter un panneau se fait en l'écrivant ici et en l'ajouta
 from PySide6.QtCore import Qt, Signal
 from PySide6.QtWidgets import (
     QCheckBox,
-    QComboBox,
     QHBoxLayout,
     QLabel,
     QListWidget,
@@ -28,12 +27,11 @@ from ..layout import (
     grid_fits,
     grid_geometry,
     mm_to_pixels,
-    paper_size_mm,
     suggest_grids,
 )
 from ..optimize import check_links_fit
 from . import theme
-from .big_spin import BigFloatSpin, BigSpin
+from .big_spin import BigChoice, BigFloatSpin, BigSpin
 from .page_preview import MAX_PANELS, PagePreview
 from .session import Session
 
@@ -157,7 +155,7 @@ class GridSizeTab(LayoutTab):
             return
         self._auto_fit_pending = False
         session = self._session
-        paper_w, paper_h = paper_size_mm(session.paper, session.landscape)
+        paper_w, paper_h = session.paper_mm()
         found = suggest_grids(
             session.selected_count, card_aspect(session),
             paper_w * session.panels / paper_h,
@@ -305,7 +303,7 @@ class GridSizeTab(LayoutTab):
     def _fill_suggestions(self) -> None:
         self._suggestions.clear()
         session = self._session
-        paper_w, paper_h = paper_size_mm(session.paper, session.landscape)
+        paper_w, paper_h = session.paper_mm()
         for suggestion in suggest_grids(
             max(session.selected_count, 1), card_aspect(session),
             paper_w * session.panels / paper_h, limit=SUGGESTION_COUNT,
@@ -371,36 +369,71 @@ class PaperTab(LayoutTab):
         return self.tr("Pages")
 
     def _build(self) -> None:
-        self._paper = QComboBox()
-        for name in PAPER_FORMATS_MM:
-            self._paper.addItem(name, name)
-        self._paper.setMinimumWidth(120)
-        self._paper.currentTextChanged.connect(self._on_form_changed)
+        # ⚠️ **Trois champs pour une seule feuille.** Le format nommé est une
+        # commodité, pas la définition : la feuille se décrit par ses deux
+        # côtés, et un nom n'existe que pour sept d'entre elles. Les deux
+        # dimensions sont donc modifiables, et le nom suit ce qu'elles disent —
+        # rien à quoi il corresponde, et le champ montre une croix.
+        self._paper = BigChoice(list(PAPER_FORMATS_MM))
+        self._paper.value_changed.connect(self._on_format_chosen)
+        # En centimètres : c'est ce qu'on lit sur une rame de papier, et le
+        # millimètre demanderait quatre chiffres pour dire la même chose.
+        self._width = BigFloatSpin(1.0, 200.0, step=0.5)
+        self._height = BigFloatSpin(1.0, 200.0, step=0.5)
+        for champ in (self._width, self._height):
+            champ.value_changed.connect(self._on_size_changed)
+        for champ in (self._paper, self._width, self._height):
+            champ.setFixedWidth(140)
 
-        self._paper_label = QLabel()
         # L'orientation décrit la feuille : elle appartient à cet onglet, pas au
         # suivant, où elle n'avait rien à voir avec la finesse d'impression.
         self._landscape = QCheckBox()
-        self._landscape.toggled.connect(self._on_form_changed)
+        self._landscape.toggled.connect(self._on_landscape_toggled)
         # ⚠️ **La finesse n'est plus ici.** Elle ne décide de rien qui se voie
         # sur cet écran — tout s'y mesure en millimètres — et la demander au
         # début obligeait à trancher une question d'impression avant d'avoir
         # posé la mosaïque. Elle se choisit à l'export, devant le fichier
         # qu'elle pèse.
 
-        haut = QHBoxLayout()
-        haut.addWidget(self._paper_label)
-        haut.addWidget(self._paper)
-        haut.addSpacing(20)
-        haut.addWidget(self._landscape)
-        haut.addStretch(1)
+        champs = QHBoxLayout()
+        champs.setSpacing(14)
+        champs.addWidget(self._paper)
+        champs.addWidget(self._width)
+        champs.addWidget(self._height)
+        champs.addStretch(1)
+
+        self._sheet_title = QLabel()
+        titre = self._sheet_title.font()
+        titre.setBold(True)
+        titre.setPointSize(titre.pointSize() + 1)
+        self._sheet_title.setFont(titre)
+
+        gauche = QVBoxLayout()
+        gauche.setSpacing(6)
+        gauche.addWidget(self._sheet_title)
+        gauche.addLayout(champs)
+        gauche.addWidget(self._landscape)
 
         self._hint = QLabel()
         self._hint.setWordWrap(True)
-        # La mosaïque est toujours dessinée : la bascule et son message n'ont
-        # plus lieu d'être, la famille d'onglets suivante la montrant partout.
+        self._hint.setAlignment(Qt.AlignTop)
+
+        haut = QHBoxLayout()
+        haut.setSpacing(24)
+        haut.addLayout(gauche)
+        haut.addWidget(self._hint, 1)
+        bandeau = QWidget()
+        bandeau.setLayout(haut)
+        bandeau.setSizePolicy(QSizePolicy.Preferred, QSizePolicy.Fixed)
+
+        # ⚠️ **La mosaïque ne se dessine pas ici.** Cet onglet ne décide que du
+        # papier, et une grille posée dessus se lisait comme un aperçu du
+        # résultat alors qu'elle n'était réglée nulle part encore : on la
+        # regardait pour juger une mise en page que les onglets suivants
+        # allaient refaire. La feuille, l'étalon et les boutons suffisent à
+        # dire ce que cet onglet décide.
         self._preview = PagePreview(self._session)
-        self._preview.set_show_grid(True)
+        self._preview.set_show_grid(False)
         # Les feuilles s'ajoutent et se retirent depuis le dessin lui-même : on
         # y voit tout de suite ce que cela change à la place occupée.
         self._preview.panels_requested.connect(self._on_panels_requested)
@@ -410,8 +443,7 @@ class PaperTab(LayoutTab):
         theme.mark(self._warnings, "warning")
 
         layout = QVBoxLayout(self)
-        layout.addLayout(haut)
-        layout.addWidget(self._hint)
+        layout.addWidget(bandeau)
         layout.addWidget(self._preview, 1)
         layout.addWidget(self._summary)
         layout.addWidget(self._warnings)
@@ -421,70 +453,83 @@ class PaperTab(LayoutTab):
         self._session.set_layout(panels=max(1, min(MAX_PANELS, panels)))
 
     def retranslate_ui(self) -> None:
-        self._paper_label.setText(self.tr("Format d'impression"))
+        self._sheet_title.setText(self.tr("Format de la feuille"))
+        self._paper.setTitle(self.tr("Format"))
+        self._width.setTitle(self.tr("Largeur (cm)"))
+        self._height.setTitle(self.tr("Hauteur (cm)"))
         self._landscape.setText(self.tr("Paysage"))
         self._preview.retranslate_ui()
         self._hint.setText(
-            self.tr("Cet onglet choisit le papier : son format, son orientation, "
-                    "et combien de feuilles côte à côte. La carte posée à gauche "
-                    "est à ses dimensions réelles et donne l'échelle ; le « + » à "
-                    "droite ajoute une feuille, donc de la place. La mosaïque "
-                    "dessinée n'est qu'une idée de ce que ça donnerait : les "
-                    "onglets « Grille » la régleront précisément.")
+            self.tr("Choisissez le format de la feuille, et appuyez sur les "
+                    "boutons + ou − pour ajouter ou enlever des feuilles.")
         )
         self.refresh()
 
-    def _on_form_changed(self, *_) -> None:
+    # --- Réactions --------------------------------------------------------
+
+    def _on_format_chosen(self, name: str) -> None:
+        if not self._updating:
+            self._session.set_layout(paper=name)
+
+    def _on_landscape_toggled(self, landscape: bool) -> None:
+        if not self._updating:
+            self._session.set_layout(landscape=landscape)
+
+    def _on_size_changed(self, *_) -> None:
+        """Les deux champs disent la feuille **telle qu'elle s'imprime**.
+
+        C'est donc l'orientation qu'on défait avant de ranger : la session tient
+        toujours la feuille en portrait, et « A4 paysage » doit rester un A4.
+        """
         if self._updating:
             return
-        self._session.set_layout(paper=self._paper.currentData(),
-                                 landscape=self._landscape.isChecked())
+        width = self._width.value() * 10
+        height = self._height.value() * 10
+        if self._session.landscape:
+            width, height = height, width
+        self._session.set_layout(paper_size_mm=(width, height))
 
     def refresh(self) -> None:
+        session = self._session
+        width, height = session.paper_mm()
         self._updating = True
-        self._paper.setCurrentText(self._session.paper)
-        self._landscape.setChecked(self._session.landscape)
+        self._paper.setValue(session.paper)
+        self._width.setValue(width / 10)
+        self._height.setValue(height / 10)
+        self._landscape.setChecked(session.landscape)
         self._updating = False
-        # Le champ a pu refuser un format inconnu, venu d'un préréglage écrit à
-        # la main : on renvoie à la session ce qu'il a réellement accepté.
-        if self._paper.currentText() != self._session.paper:
-            self._session.set_layout(paper=self._paper.currentText())
         self._update_summary()
         self._preview.refresh()
         self.state_changed.emit()
 
     def _update_summary(self) -> None:
         session = self._session
-        paper = paper_size_mm(session.paper, session.landscape)
+        paper = session.paper_mm()
         warnings = []
 
-        # ⚠️ **Un nombre entier de cartes par feuille**, pour qu'une coupe tombe
-        # toujours entre deux cartes. C'est la carte qui se plie à la feuille.
+        # ⚠️ **Le résumé ne parle que du papier.** Il annonçait la taille des
+        # cartes et de la mosaïque : ni l'une ni l'autre ne se règle ici, ni ne
+        # se voit depuis que la grille n'y est plus dessinée, et un format hors
+        # catalogue laissait un trou là où le nom devait aller. Ce que cet
+        # onglet décide, c'est une surface — c'est elle qu'il chiffre.
+        self._summary.setText(
+            self.tr("%n feuille(s) de %1 × %2 cm — surface totale de %3 × %4 cm.",
+                    "", session.panels)
+            .replace("%1", f"{paper[0] / 10:.1f}")
+            .replace("%2", f"{paper[1] / 10:.1f}")
+            .replace("%3", f"{paper[0] * session.panels / 10:.1f}")
+            .replace("%4", f"{paper[1] / 10:.1f}")
+        )
+
+        # La mosaïque n'est pas dessinée ici, mais c'est bien cette surface
+        # qu'elle couvrira : le blanc qui reste se compte en feuilles achetées.
         aspect = card_aspect(session)
         geometrie = grid_geometry(
             paper, session.panels, session.cols, session.rows, aspect,
             session.dpi, session.card_width_mm, session.card_gap_mm)
-        card_w, card_h = geometrie.card_w, geometrie.card_h
-        # ⚠️ **Les écarts comptent dans la mosaïque.** Ils étaient omis, ce qui
-        # ne se voyait pas tant que le chiffre était en pixels ; en millimètres,
-        # c'est une dimension qu'on peut mesurer à la règle sur le poster.
         total_w = geometrie.span(session.cols)
-        total_h = card_h * session.rows + max(0, session.rows - 1) * geometrie.gap
-        # ⚠️ **En millimètres, pas en pixels.** Les pixels dépendent de la
-        # finesse, qui ne se choisit plus ici : les afficher ferait parler cet
-        # écran d'un réglage qu'il ne montre pas, et qu'on ne pourrait pas
-        # rapporter à la règle posée sur la feuille imprimée.
-        en_mm = MM_PER_INCH / session.dpi
-        self._summary.setText(
-            self.tr("Cartes de %1 × %2 mm — mosaïque de %3 × %4 mm sur %5 "
-                    "feuille(s) %6 de %7×%8 mm.")
-            .replace("%1", f"{card_w * en_mm:.1f}")
-            .replace("%2", f"{card_h * en_mm:.1f}")
-            .replace("%3", f"{total_w * en_mm:.0f}")
-            .replace("%4", f"{total_h * en_mm:.0f}")
-            .replace("%5", str(session.panels)).replace("%6", session.paper)
-            .replace("%7", f"{paper[0]:.0f}").replace("%8", f"{paper[1]:.0f}")
-        )
+        total_h = (geometrie.card_h * session.rows
+                   + max(0, session.rows - 1) * geometrie.gap)
 
         # Un lien qui déborde de la grille ne se verrait sinon qu'au lancement
         # du calcul, bien après le choix de la mise en page.
@@ -661,7 +706,7 @@ class CardSizeTab(LayoutTab):
     def _geometry(self):
         session = self._session
         return grid_geometry(
-            paper_size_mm(session.paper, session.landscape), session.panels,
+            session.paper_mm(), session.panels,
             session.cols, session.rows, card_aspect(session), session.dpi,
             session.card_width_mm, session.card_gap_mm)
 
@@ -697,7 +742,7 @@ class CardSizeTab(LayoutTab):
         session = self._session
         self._shapes.clear()
         for cols, rows in best_grid_shapes(
-            paper_size_mm(session.paper, session.landscape), session.panels,
+            session.paper_mm(), session.panels,
             session.selected_count, session.cols * session.rows,
             self._geometry(), session.dpi, limit=SHAPE_COUNT,
         ):
@@ -737,7 +782,7 @@ class CardSizeTab(LayoutTab):
 
     def is_valid(self) -> bool:
         session = self._session
-        return grid_fits(paper_size_mm(session.paper, session.landscape),
+        return grid_fits(session.paper_mm(),
                          session.panels, session.cols, session.rows,
                          self._geometry(), session.dpi)
 
@@ -770,7 +815,7 @@ class CardSizeTab(LayoutTab):
     def _max_rows(self, geometrie) -> int:
         session = self._session
         paper_h = mm_to_pixels(
-            paper_size_mm(session.paper, session.landscape)[1], session.dpi)
+            session.paper_mm()[1], session.dpi)
         pas = geometrie.card_h + geometrie.gap
         return max(0, (paper_h + geometrie.gap) // pas) if pas else 0
 

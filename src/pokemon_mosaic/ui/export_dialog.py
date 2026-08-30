@@ -202,6 +202,10 @@ class ExportDialog(QDialog):
         session = self._session
         return PosterSettings(
             paper=session.paper,
+            # ⚠️ **Les dimensions aussi.** Une feuille hors catalogue n'a pas de
+            # nom : le seul `paper` aurait fait échouer la traduction, ou pire,
+            # imprimé un A2 à la place de ce que l'écran montrait.
+            paper_size_mm=session.paper_size_mm,
             landscape=session.landscape,
             dpi=self._dpi.value(),
             panels=session.panels,
@@ -230,7 +234,9 @@ class ExportDialog(QDialog):
         orientation = (self.tr("paysage") if session.landscape
                        else self.tr("portrait"))
         panels = self.tr("%n panneau(x)", "", session.panels)
-        self._layout_recap.setText(f"{session.paper} {orientation} — {panels}")
+        largeur, hauteur = session.paper_mm()
+        feuille = session.paper or f"{largeur / 10:.1f} × {hauteur / 10:.1f} cm"
+        self._layout_recap.setText(f"{feuille} {orientation} — {panels}")
         self._overlap.setEnabled(session.panels > 1)
 
         try:

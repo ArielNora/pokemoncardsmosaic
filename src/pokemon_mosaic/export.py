@@ -44,6 +44,10 @@ class PosterSettings:
     """Tout ce qui décrit le poster à produire."""
 
     paper: str = "A2"
+    # Dimensions de la feuille en portrait, quand elles ne sont pas celles d'un
+    # format nommé. `None` s'en remet à `paper`, ce que fait la ligne de
+    # commande, qui ne connaît que des noms.
+    paper_size_mm: tuple[float, float] | None = None
     landscape: bool = False
     dpi: int = DEFAULT_DPI
     panels: int = 1
@@ -65,7 +69,10 @@ class PosterSettings:
 
     @property
     def paper_mm(self) -> tuple[float, float]:
-        return paper_size_mm(self.paper, self.landscape)
+        if self.paper_size_mm is None:
+            return paper_size_mm(self.paper, self.landscape)
+        width, height = self.paper_size_mm
+        return (height, width) if self.landscape else (width, height)
 
     @property
     def paper_px(self) -> tuple[int, int]:

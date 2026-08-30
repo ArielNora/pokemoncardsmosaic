@@ -554,17 +554,62 @@ def test_the_fitted_grid_never_drops_a_card(session, ecran):
 def test_the_paper_tab_follows_the_session(session, ecran):
     papier = ecran._tabs[0]
     session.set_layout(paper="A3")
-    assert papier._paper.currentText() == "A3"
+    assert papier._paper.value() == "A3"
+    assert (papier._width.value(), papier._height.value()) == (29.7, 42.0)
+
+
+def test_the_sheet_is_defined_by_its_two_sides(session, ecran):
+    """⚠️ Le format nommé est une commodité, pas la définition : sept feuilles
+    ont un nom, toutes ont deux côtés. Le nom suit donc les dimensions, et
+    montre une croix quand aucune ne leur correspond."""
+    papier = ecran._tabs[0]
+    session.set_layout(paper="A4")
+    papier._width.setValue(30.0)          # 30 × 29,7 cm : aucun format
+
+    assert session.paper == "", "un format nommé qui ne l'est plus"
+    assert session.paper_size_mm == (300.0, 297.0)
+    assert papier._paper.value() == ""
+    assert papier._paper._combo.currentText() == papier._paper.NONE
+
+    # Et le chemin inverse : retomber sur des dimensions connues rend le nom.
+    papier._width.setValue(21.0)
+    assert session.paper == "A4"
+    assert papier._paper._combo.currentText() == "A4"
+
+
+def test_the_cross_cannot_be_chosen_from_the_list(session, ecran):
+    """Elle dit qu'aucun format ne correspond : elle ne décrit aucune feuille,
+    et n'a donc rien à proposer."""
+    papier = ecran._tabs[0]
+    session.set_layout(paper="A4")
+    papier._width.setValue(30.0)
+    modele = papier._paper._combo.model()
+    assert not modele.item(0).isEnabled()
+
+
+def test_the_two_sides_are_the_sheet_as_printed(session, ecran):
+    """Ce que les champs montrent est ce qui sortira de l'imprimante : le
+    paysage échange les deux nombres sous les yeux, sans que « A4 paysage »
+    cesse d'être un A4."""
+    papier = ecran._tabs[0]
+    session.set_layout(paper="A4", landscape=True)
+    assert (papier._width.value(), papier._height.value()) == (29.7, 21.0)
+    assert session.paper == "A4", "l'orientation n'est pas une autre feuille"
+
+    papier._width.setValue(40.0)          # saisie en paysage
+    assert session.paper_size_mm == (210.0, 400.0), "rangée en portrait"
+    assert session.paper_mm() == (400.0, 210.0)
 
 
 def test_an_unknown_paper_falls_back_instead_of_lying(session, ecran):
-    """Un préréglage écrit à la main peut porter un format inconnu : la liste
-    l'ignore, et sans retour la session garderait une valeur qui ferait échouer
-    l'export."""
+    """Un préréglage écrit à la main peut porter un format inconnu : sans
+    retour, la session garderait une valeur qui ferait échouer l'export.
+    La correction est désormais dans la session — elle ne dépend plus de
+    l'écran, qui pouvait n'avoir jamais été ouvert."""
+    session.set_layout(paper="A4")
     session.set_layout(paper="B3")
-    ecran._tabs[0].refresh()
-    assert session.paper in ("A4", ecran._tabs[0]._paper.currentText())
-    assert session.paper != "B3"
+    assert session.paper == "A4", "la feuille en place reste, le faux nom part"
+    assert session.paper_size_mm == (210.0, 297.0)
 
 
 def test_the_page_preview_scales_the_sheet_and_the_card(qt_app, session):
@@ -957,13 +1002,15 @@ def test_the_mosaic_is_drawn_on_the_sheet_when_asked(qt_app, session):
     assert garni.blue() > garni.red(), f"la case ne paraît pas une carte : {garni.name()}"
 
 
-def test_the_mosaic_is_always_shown(session, ecran):
-    """⚠️ La bascule « montrer la mosaïque » et son message disparaissent : la
-    famille d'onglets la montre partout, dans les pages."""
+def test_the_mosaic_is_shown_by_the_grid_family_only(session, ecran):
+    """⚠️ La bascule « montrer la mosaïque » disparaît : la famille « Grille »
+    la montre partout. L'onglet des pages, lui, ne décide que du papier, et une
+    grille posée dessus se lisait comme un aperçu du résultat alors qu'elle
+    n'était réglée nulle part encore."""
     for position in range(len(ecran._tabs)):
         onglet = ecran._tabs[position]
         assert not hasattr(onglet, "_show_grid"), position
-        assert onglet._preview._show_grid, position
+        assert onglet._preview._show_grid is (position > 0), position
 
 
 def test_only_the_size_tab_lets_you_paint(session, ecran):
@@ -1157,8 +1204,6 @@ def test_the_hint_says_where_the_card_actually_is(session, papier):
     plus qu'un bouton « + »."""
     feuille, carte, _ = papier._preview.rects()
     assert carte.right() < feuille.left()
-    assert "gauche" in papier._hint.text()
-    assert "posée à droite" not in papier._hint.text()
 
 
 def test_no_tab_blocks_on_the_sheet_count_any_more(session, ecran):
@@ -1313,23 +1358,28 @@ def test_a_card_too_big_is_refused_with_its_numbers(session, cartes, ecran):
     assert not ecran.can_advance()
 
 
-def test_the_paper_tab_measures_in_millimetres(session, ecran):
-    """⚠️ Les pixels dépendent de la finesse, qui ne se choisit plus ici : les
-    afficher ferait parler cet écran d'un réglage qu'il ne montre pas, et qu'on
-    ne pourrait pas rapporter à la règle posée sur la feuille imprimée."""
-    session.set_layout(cols=5, rows=4, paper="A4")
+def test_the_paper_tab_only_talks_about_paper(session, ecran):
+    """⚠️ Le résumé annonçait la taille des cartes et de la mosaïque : ni l'une
+    ni l'autre ne se règle ici, ni ne se voit depuis que la grille n'y est plus
+    dessinée, et un format hors catalogue laissait un trou là où le nom devait
+    aller. Les pixels, eux, dépendent d'une finesse partie à l'export."""
+    session.set_layout(cols=5, rows=4, paper="A4", panels=2)
     resume = ecran._tabs[0]._summary.text()
-    assert "px" not in resume
-    assert resume.count("mm") >= 2
+    assert "px" not in resume and "carte" not in resume.lower()
+    assert "21.0 × 29.7 cm" in resume, resume
+    assert "42.0 × 29.7 cm" in resume, "la surface totale suit les feuilles"
 
 
-def test_the_mosaic_size_counts_the_gaps(session, ecran):
-    """Une dimension qu'on peut mesurer à la règle : les écarts en font partie."""
-    session.set_layout(cols=5, rows=4, paper="A4", card_width_mm=30.0,
-                       card_gap_mm=0.0)
-    serre = ecran._tabs[0]._summary.text()
+def test_the_covered_share_counts_the_gaps(session, ecran):
+    """La mosaïque n'est pas dessinée ici, mais c'est bien cette surface
+    qu'elle couvrira : les écarts en font partie, et le blanc qui reste se
+    compte en feuilles achetées."""
+    session.set_layout(cols=5, rows=4, paper="A4", panels=2,
+                       card_width_mm=30.0, card_gap_mm=0.0)
+    serre = ecran._tabs[0]._warnings.text()
     session.set_layout(card_gap_mm=5.0)
-    assert ecran._tabs[0]._summary.text() != serre
+    assert ecran._tabs[0]._warnings.text() != serre
+    assert "%" in serre
 
 
 def test_the_shapes_list_only_opens_on_demand(cartes):

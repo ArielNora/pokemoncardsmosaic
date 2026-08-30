@@ -76,6 +76,23 @@ def test_the_settings_come_from_the_layout_step(dialog, session):
     assert (settings.paper, settings.landscape, settings.panels) == ("A3", True, 1)
 
 
+def test_a_sheet_without_a_name_still_exports(step):
+    """⚠️ Une feuille hors catalogue n'a pas de nom : le seul « paper » aurait
+    fait échouer la traduction, ou pire, imprimé un A2 à la place de ce que
+    l'écran montrait. Le rappel de mise en page la dit alors en centimètres,
+    faute de nom à citer."""
+    from pokemon_mosaic.ui.export_dialog import ExportDialog
+
+    widget, session = step
+    session.set_layout(paper_size_mm=(300.0, 400.0), landscape=True)
+    dialog = ExportDialog(session, grid_of(widget), widget._cards)
+
+    settings = dialog.settings()
+    assert settings.paper == ""
+    assert settings.paper_mm == (400.0, 300.0)
+    assert "40.0 × 30.0 cm" in dialog._layout_recap.text()
+
+
 def test_the_resolution_is_chosen_here_and_written_to_the_session(dialog, session):
     """⚠️ La finesse était demandée à l'étape 2, avant que la mosaïque n'existe :
     elle n'y changeait rien de visible, et il fallait deviner le poids d'un

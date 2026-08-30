@@ -38,6 +38,27 @@ def paper_size_mm(name: str, landscape: bool = False) -> tuple[float, float]:
     return (height, width) if landscape else (width, height)
 
 
+# Tolérance de reconnaissance d'un format, en millimètres. L'écran saisit en
+# centimètres au dixième, donc au millimètre : tout ce qui dépasse le bruit du
+# flottant est une dimension réellement différente.
+FORMAT_TOLERANCE_MM = 0.05
+
+
+def format_name(size_mm: tuple[float, float]) -> str:
+    """Le nom du format qui fait ces dimensions, ou `""` si aucun ne les fait.
+
+    Les sept formats se distinguent d'au moins quatre millimètres : reconnaître
+    à un dixième près ne peut pas confondre deux d'entre eux, et laisse passer
+    l'arrondi d'une saisie en centimètres.
+    """
+    width, height = size_mm
+    for name, (w, h) in PAPER_FORMATS_MM.items():
+        if (abs(width - w) <= FORMAT_TOLERANCE_MM
+                and abs(height - h) <= FORMAT_TOLERANCE_MM):
+            return name
+    return ""
+
+
 def mm_to_pixels(mm: float, dpi: int = DEFAULT_DPI) -> int:
     return round(mm / MM_PER_INCH * dpi)
 

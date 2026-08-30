@@ -11,7 +11,13 @@ from PySide6.QtCore import QObject, Signal
 
 from ..annealing import Annealing
 from ..cards import DEFAULT_STRIP_SIZE, CardSet
-from ..layout import DEFAULT_DPI, GridFit, distribute_empty_cells
+from ..layout import (
+    DEFAULT_DPI,
+    PAPER_FORMATS_MM,
+    GridFit,
+    distribute_empty_cells,
+    format_name,
+)
 from ..links import DEFAULT_LINKS, Link, LinkLibrary, resolve_links
 from ..optimize import StopConditions
 from ..presets import LinkRef, Preset
@@ -50,6 +56,13 @@ class Session(QObject):
 
         # Mise en page (étape 2). Le format d'impression commande : la taille des
         # cartes en pixels s'en déduit, jamais l'inverse.
+        # ⚠️ **Les dimensions sont la vérité, le nom en découle.** La feuille se
+        # saisit aussi au centimètre près : un format hors catalogue n'a pas de
+        # nom, et `paper` vaut alors la chaîne vide. Les deux ne peuvent pas
+        # diverger — `set_layout` recalcule toujours l'un depuis l'autre.
+        # Toujours en portrait : c'est `landscape` qui décide de l'orientation,
+        # et stocker la feuille déjà tournée ferait deux façons de dire pareil.
+        self.paper_size_mm: tuple[float, float] = PAPER_FORMATS_MM["A2"]
         self.paper = "A2"
         self.landscape = False
         self.dpi = DEFAULT_DPI
@@ -220,8 +233,14 @@ class Session(QObject):
 
     # --- Mise en page -----------------------------------------------------
 
+    def paper_mm(self) -> tuple[float, float]:
+        """La feuille telle qu'elle sortira, orientation comprise."""
+        width, height = self.paper_size_mm
+        return (height, width) if self.landscape else (width, height)
+
     def set_layout(self, **changes) -> None:
         """Modifie un ou plusieurs réglages de grille et prévient une seule fois."""
+        changes = self._settle_paper(changes)
         # On compare les valeurs avant de les appliquer : le formulaire renvoie
         # toujours les six réglages d'un bloc, donc tester la seule présence de
         # « cols » effacerait le placement manuel à chaque changement de DPI,
@@ -243,6 +262,31 @@ class Session(QObject):
             # dire, quand elles ne sortiraient pas carrément du cadre.
             self._empty_cells = []
         self.layout_changed.emit()
+
+    def _settle_paper(self, changes: dict) -> dict:
+        """Accorde le nom du format et les dimensions, quel que soit le donné.
+
+        ⚠️ Un nom **inconnu** — un préréglage écrit à la main — ne laisse ni le
+        nom ni des dimensions fausses : on garde la feuille en place et le nom
+        qui lui revient. Sans cela, la session portait un format que l'export
+        refusait de traduire, et l'erreur ne sortait qu'à l'écriture du fichier.
+
+        Donnés tous les deux et en désaccord, ce sont les **dimensions** qui
+        l'emportent : elles décrivent la feuille, le nom ne fait que la nommer.
+        """
+        if not changes.keys() & {"paper", "paper_size_mm"}:
+            return changes
+        changes = dict(changes)
+        nom = changes.get("paper")
+        if nom and nom.upper() in PAPER_FORMATS_MM:
+            changes.setdefault("paper_size_mm", PAPER_FORMATS_MM[nom.upper()])
+            changes["paper"] = nom.upper()
+        taille = tuple(round(float(côté), 1)
+                       for côté in changes.get("paper_size_mm",
+                                               self.paper_size_mm))
+        changes["paper_size_mm"] = taille
+        changes["paper"] = format_name(taille)
+        return changes
 
     def grid_fit(self) -> GridFit:
         return GridFit(cols=self.cols, rows=self.rows,
@@ -487,7 +531,12 @@ class Session(QObject):
                 for link in self.links.active
             ),
             layout={
-                "paper": self.paper, "landscape": self.landscape,
+                # Les dimensions **et** le nom : le nom se relit d'un coup
+                # d'œil dans le fichier, les dimensions survivent à un format
+                # hors catalogue.
+                "paper": self.paper,
+                "paper_size_mm": list(self.paper_size_mm),
+                "landscape": self.landscape,
                 "dpi": self.dpi, "panels": self.panels,
                 "cols": self.cols, "rows": self.rows,
                 "card_width_mm": self.card_width_mm,
@@ -544,6 +593,10 @@ class Session(QObject):
         cells = layout.get("empty_cells")
         known = {name: value for name, value in layout.items()
                  if name != "empty_cells"}
+        # JSON ne connaît pas les tuples, et une liste ne serait jamais égale à
+        # la taille en place : chaque rechargement rejouerait un changement.
+        if known.get("paper_size_mm"):
+            known["paper_size_mm"] = tuple(known["paper_size_mm"])
         if known:
             self.set_layout(**known)
         # Après `set_layout` : changer la grille efface les cases posées à la

@@ -181,6 +181,21 @@ def test_card_pixel_size_preserves_aspect_and_fits():
     assert 17 * h <= round(paper[1] / 25.4 * 300) + 17
 
 
+def test_a_format_is_recognised_from_its_two_sides():
+    """L'écran saisit en centimètres au dixième, donc au millimètre : les sept
+    formats se distinguent d'au moins quatre millimètres, et reconnaître à un
+    dixième près ne peut pas en confondre deux."""
+    from pokemon_mosaic.layout import PAPER_FORMATS_MM, format_name
+
+    for nom, taille in PAPER_FORMATS_MM.items():
+        assert format_name(taille) == nom
+        assert format_name((taille[0] + 0.02, taille[1])) == nom, "bruit du flottant"
+    assert format_name((300.0, 400.0)) == ""
+    assert format_name((211.0, 297.0)) == "", "un millimètre est une autre feuille"
+    # Un format tourné n'est pas le même format : c'est `landscape` qui le dit.
+    assert format_name((297.0, 210.0)) == ""
+
+
 def test_max_useful_dpi_matches_measured_values():
     """Repères calculés dans SPEC.md §4, pour une grille 17x17 de cartes 713 px."""
     assert max_useful_dpi(paper_size_mm("A2"), 17, 713) == pytest.approx(733, abs=2)

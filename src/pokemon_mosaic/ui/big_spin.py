@@ -19,6 +19,7 @@ façon qu'elles, sous peine de passer pour des détails.
 from PySide6.QtCore import Qt, Signal
 from PySide6.QtGui import QIntValidator
 from PySide6.QtWidgets import (
+    QComboBox,
     QLabel,
     QLineEdit,
     QSizePolicy,
@@ -194,3 +195,71 @@ class BigFloatSpin(_BigSpinBase):
 
     def _emit(self, value: float) -> None:
         self.value_changed.emit(value)
+
+
+class BigChoice(QWidget):
+    """Un choix dans une liste, à la taille des compteurs voisins.
+
+    Pas de flèches : les valeurs ne se suivent pas, on les prend dans une liste.
+    Le champ garde en revanche la hauteur et la police des compteurs, faute de
+    quoi le premier des trois réglages d'une même ligne se lirait comme un
+    détail des deux autres.
+
+    Une valeur vide n'est pas une absence de choix, mais un choix **hors
+    catalogue** : le champ montre alors une croix, qu'on ne peut pas prendre
+    dans la liste puisqu'elle ne décrit rien.
+    """
+
+    value_changed = Signal(str)
+    NONE = "✕"
+
+    def __init__(self, choices, parent=None):
+        super().__init__(parent)
+        self._title = QLabel()
+        self._title.setAlignment(Qt.AlignCenter)
+
+        self._combo = QComboBox()
+        self._combo.setFixedHeight(FIELD_HEIGHT)
+        police = self._combo.font()
+        police.setPointSize(police.pointSize() + FONT_BOOST)
+        self._combo.setFont(police)
+        for choix in choices:
+            self._combo.addItem(choix, choix)
+        # `activated` et non `currentIndexChanged` : seul le geste de
+        # l'utilisateur compte, et poser la valeur venue de la session ne doit
+        # pas la lui renvoyer.
+        self._combo.activated.connect(lambda _: self.value_changed.emit(self.value()))
+
+        layout = QVBoxLayout(self)
+        layout.setContentsMargins(0, 0, 0, 0)
+        layout.setSpacing(3)
+        layout.addWidget(self._title)
+        layout.addStretch(1)
+        layout.addWidget(self._combo)
+        layout.addStretch(1)
+
+    def setTitle(self, text: str) -> None:
+        self._title.setText(text)
+
+    def value(self) -> str:
+        donnee = self._combo.currentData()
+        return "" if donnee is None else donnee
+
+    def setValue(self, value: str) -> None:
+        """Pose le choix. Une chaîne vide affiche la croix."""
+        if value:
+            self._drop_none()
+            index = self._combo.findData(value)
+            if index >= 0:
+                self._combo.setCurrentIndex(index)
+            return
+        if self._combo.itemData(0) is not None:
+            self._combo.insertItem(0, self.NONE)
+            # Désactivée : la croix dit qu'aucun format ne correspond, elle ne
+            # décrit aucune feuille et n'a donc rien à proposer.
+            self._combo.model().item(0).setEnabled(False)
+        self._combo.setCurrentIndex(0)
+
+    def _drop_none(self) -> None:
+        if self._combo.count() and self._combo.itemData(0) is None:
+            self._combo.removeItem(0)
