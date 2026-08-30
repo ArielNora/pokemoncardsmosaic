@@ -189,8 +189,7 @@ def test_the_menu_has_two_levels(ecran):
     assert len(titres) == 5
     assert all(titres), "une ligne sans intitulé"
     assert titres[1].strip().endswith("Grille"), "l'intitulé de famille manque"
-    assert all(t.startswith("    ") for t in titres[2:]), "les sous-onglets sont décalés"
-    assert not titres[0].startswith(" ")
+    assert not any(t.startswith(" ") for t in titres), "le retrait n'est pas du texte"
 
 
 def test_the_family_row_is_not_a_tab(ecran):
@@ -277,6 +276,84 @@ def test_the_folded_family_answers_for_its_tabs(session, ecran):
 
     attendu = state_icon(True, ecran.palette()).pixmap(22, 22).toImage()
     assert plie.icon().pixmap(22, 22).toImage() == attendu
+
+
+def painted(ecran):
+    """La colonne d'onglets telle qu'elle est réellement peinte.
+
+    ⚠️ Rendue à la densité de l'écran : sur un écran Retina, l'image fait le
+    double des coordonnées de la liste, et lire un pixel sans en tenir compte
+    interroge une tout autre ligne.
+    """
+    ecran.resize(1000, 700)
+    ecran.show()
+    pixmap = ecran._list.grab()
+    return pixmap.toImage(), pixmap.devicePixelRatio()
+
+
+def dot(image, ratio, x, y) -> int:
+    return image.pixel(int(x * ratio), int(y * ratio))
+
+
+def box_edges(image, ratio, teinte, y) -> tuple[int, int]:
+    """Les deux bords du cadre coloré, sur cette ligne.
+
+    On cherche la **teinte** de la sélection plutôt que le premier pixel encré :
+    le trait qui relie les petits onglets se trouve à leur gauche, et un simple
+    « premier pixel différent du fond » s'y arrêterait.
+    """
+    trouves = [x for x in range(2, image.width() // int(ratio))
+               if dot(image, ratio, x, y) == teinte]
+    return (trouves[0], trouves[-1]) if trouves else (-1, -1)
+
+
+def test_the_small_tabs_are_narrower_on_their_left_only(ecran):
+    """⚠️ Le retrait est **géométrique** : quatre espaces dans le libellé
+    décalaient le texte sans décaler l'onglet, qui gardait toute la largeur.
+    Le bord droit reste aligné sur les primaires — décalé des deux côtés, le
+    second rang aurait flotté au milieu de la colonne."""
+    from pokemon_mosaic.ui.layout_step import SUB_TAB_INDENT
+
+    image, ratio = painted(ecran)          # l'onglet des pages est sélectionné
+    primaire = ecran._list.visualItemRect(ecran._list.item(0)).center().y()
+    teinte = dot(image, ratio, 100, primaire)
+    gauche, droite = box_edges(image, ratio, teinte, primaire)
+
+    ecran._show(1)                          # un onglet de la famille
+    image, ratio = painted(ecran)
+    petit = ecran._list.visualItemRect(ecran._list.item(2)).center().y()
+    gauche_petit, droite_petit = box_edges(image, ratio, teinte, petit)
+
+    assert gauche_petit - gauche == pytest.approx(SUB_TAB_INDENT, abs=2)
+    assert droite_petit == pytest.approx(droite, abs=1), "bord droit désaligné"
+
+
+def test_a_single_line_joins_the_small_tabs_to_their_family(ecran):
+    """Trois onglets décalés se lisent comme trois onglets décalés ; un trait
+    unique qui les longe dit qu'ils sortent tous du même."""
+    from pokemon_mosaic.ui.layout_step import TRUNK_X
+
+    image, ratio = painted(ecran)
+    haut = ecran._list.visualItemRect(ecran._list.item(2))
+    bas = ecran._list.visualItemRect(ecran._list.item(4))
+    x = haut.left() + TRUNK_X
+    fond = dot(image, ratio, 100, haut.top() + 1)
+    # Sans interruption d'un bout à l'autre des trois.
+    for y in range(haut.top() + 2, bas.bottom() - 10):
+        assert dot(image, ratio, x, y) != fond, y
+
+
+def test_the_line_goes_away_with_the_folded_family(ecran):
+    """Repliée, la famille n'a plus rien à rattacher."""
+    from pokemon_mosaic.ui.layout_step import TRUNK_X
+
+    bande = ecran._list.visualItemRect(ecran._list.item(2))
+    click_family(ecran)
+    image, ratio = painted(ecran)
+    x = bande.left() + TRUNK_X
+    fond = dot(image, ratio, 100, bande.center().y())
+    assert all(dot(image, ratio, x, y) == fond
+               for y in range(bande.top() + 2, bande.bottom()))
 
 
 def test_nothing_is_ready_before_the_user_says_so(session, ecran):

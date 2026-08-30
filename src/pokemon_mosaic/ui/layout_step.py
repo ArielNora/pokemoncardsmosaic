@@ -12,13 +12,15 @@ mais changer un réglage jusqu'à le rendre invalide rallume l'avertissement.
 """
 
 from PySide6.QtCore import QSize, Qt, Signal
-from PySide6.QtGui import QColor, QIcon, QPainter, QPixmap
+from PySide6.QtGui import QColor, QIcon, QPainter, QPen, QPixmap
 from PySide6.QtWidgets import (
     QAbstractItemView,
     QHBoxLayout,
     QListWidget,
     QListWidgetItem,
     QStackedWidget,
+    QStyledItemDelegate,
+    QStyleOptionViewItem,
     QWidget,
 )
 
@@ -36,7 +38,16 @@ TAB_WIDTH = 248
 TAB_HEIGHT = 62
 # Un onglet de second rang : plus court, décalé, et d'un libellé plus discret.
 SUB_TAB_HEIGHT = 44
-SUB_TAB_INDENT = 22
+# Ce que le second rang cède sur sa gauche. Son bord **droit** reste aligné sur
+# celui des onglets primaires : décalé des deux côtés, il aurait flotté au
+# milieu de la colonne sans se rattacher à rien.
+SUB_TAB_INDENT = 26
+# Le tronc qui les relie, dans l'espace ainsi libéré, et son épaisseur.
+TRUNK_X = 9
+TRUNK_WIDTH = 2
+# La marge basse que la feuille de style pose sous chaque onglet. Le tronc
+# s'arrête au bas du **dessin** du dernier, pas au bas de sa ligne.
+BOX_BOTTOM_MARGIN = 8
 # Ce que leur libellé gagne sur la police de l'interface. Les seconds rangs n'y
 # gagnent rien : c'est ce qui les distingue au premier coup d'œil.
 TAB_BOOST = 2
@@ -65,6 +76,49 @@ def state_icon(ready: bool, palette) -> QIcon:
     painter.drawText(pixmap.rect(), Qt.AlignCenter, "✓" if ready else "!")
     painter.end()
     return QIcon(pixmap)
+
+
+class SubTabDelegate(QStyledItemDelegate):
+    """Rétrécit les onglets de second rang par la gauche.
+
+    Un `QListView` donne à chaque ligne toute la largeur de sa vue, et une
+    feuille de style ne sait pas viser une ligne en particulier : c'est au
+    dessin qu'on reprend la place, en rognant le rectangle avant de le confier
+    au style. Le clic, lui, porte toujours sur la ligne entière — viser le
+    retrait plutôt que l'onglet ne doit pas rester sans effet.
+    """
+
+    def paint(self, painter, option, index) -> None:
+        if index.data(Qt.UserRole + 1):
+            option = QStyleOptionViewItem(option)
+            option.rect = option.rect.adjusted(SUB_TAB_INDENT, 0, 0, 0)
+        super().paint(painter, option, index)
+
+
+class TabList(QListWidget):
+    """La colonne d'onglets, et le trait qui rattache le second rang au premier.
+
+    Trois onglets décalés se lisent comme trois onglets décalés ; un trait
+    unique qui les longe dit qu'ils sortent tous du même. Il est tracé ici et
+    non par un cadre autour d'eux : un cadre les séparerait de leur intitulé,
+    qui n'est pas dedans.
+    """
+
+    def paintEvent(self, event) -> None:
+        super().paintEvent(event)
+        rangs = [rang for rang in range(self.count())
+                 if self.item(rang).data(Qt.UserRole + 1)
+                 and not self.isRowHidden(rang)]
+        if not rangs:
+            return                      # famille repliée : rien à rattacher
+        premier = self.visualItemRect(self.item(rangs[0]))
+        dernier = self.visualItemRect(self.item(rangs[-1]))
+        painter = QPainter(self.viewport())
+        painter.setPen(QPen(QColor(theme.colours(self.palette())["button_border"]),
+                            TRUNK_WIDTH))
+        x = premier.left() + TRUNK_X
+        painter.drawLine(x, premier.top(), x, dernier.bottom() - BOX_BOTTOM_MARGIN)
+        painter.end()
 
 
 class LayoutStep(QWidget):
@@ -103,7 +157,8 @@ class LayoutStep(QWidget):
         # Rang de la liste -> onglet, ou `FAMILY_ROW` pour l'intitulé de famille.
         self._rows: list[int] = []
 
-        self._list = QListWidget()
+        self._list = TabList()
+        self._list.setItemDelegate(SubTabDelegate(self._list))
         self._list.setFixedWidth(TAB_WIDTH)
         self._list.setIconSize(QSize(BADGE, BADGE))
         self._list.setWordWrap(True)
@@ -201,8 +256,10 @@ class LayoutStep(QWidget):
                     if self._collapsed else QIcon()
                 )
                 continue
-            marge = "    " if item.data(Qt.UserRole + 1) else ""
-            item.setText(marge + self._tabs[position].title())
+            # Le retrait est **géométrique** — voir `SubTabDelegate` — et non
+            # quatre espaces dans le libellé, qui décalaient le texte sans
+            # décaler l'onglet.
+            item.setText(self._tabs[position].title())
             item.setIcon(state_icon(self._ready(position), palette))
         self.advance_state_changed.emit()
 

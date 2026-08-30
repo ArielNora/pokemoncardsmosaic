@@ -253,6 +253,9 @@ QListWidget[role="tabs"] {{
     border: none;
     outline: none;
 }}
+/* ⚠️ La marge basse est reprise par `layout_step.BOX_BOTTOM_MARGIN` : le trait
+   qui relie les onglets de second rang s'arrête au bas du dessin du dernier, et
+   non au bas de sa ligne. La changer ici sans l'y changer le ferait dépasser. */
 QListWidget[role="tabs"]::item {{
     background: {c["button_bg"]};
     border: 1px solid {c["button_border"]};
