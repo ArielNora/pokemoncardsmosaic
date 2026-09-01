@@ -374,6 +374,32 @@ def grid_geometry(
                         cards_down(paper_h_px, 1, gap))
 
 
+def cards_on_panel(total: int, per_panel: int, index: int) -> int:
+    """Combien de cartes une feuille porte dans un sens.
+
+    La dernière en porte souvent moins que les autres : c'est elle qui a le plus
+    de place libre, et donc le plus de latitude quand on déplace son bout de
+    grille à la main.
+    """
+    if per_panel <= 0:
+        return 0
+    return max(0, min(per_panel, total - index * per_panel))
+
+
+def clamp_offset_mm(
+    offset_mm: tuple[float, float], free_mm: tuple[float, float]
+) -> tuple[float, float]:
+    """Borne la position d'un bout de grille à ce qui reste de sa feuille.
+
+    ⚠️ **La même fonction des deux côtés** — l'écran qui laisse glisser et
+    l'export qui écrit. Un bout de grille qui sortirait de sa feuille ferait
+    tomber la coupe en pleine carte, et un préréglage écrit à la main suffirait
+    à l'obtenir si seul l'écran bornait.
+    """
+    return (min(max(0.0, offset_mm[0]), max(0.0, free_mm[0])),
+            min(max(0.0, offset_mm[1]), max(0.0, free_mm[1])))
+
+
 def grid_fits(
     panels: int,
     cols: int,

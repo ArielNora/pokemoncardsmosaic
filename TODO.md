@@ -66,18 +66,13 @@ seule provenance. Voir `docs/IMAGES.md`.
 
 ## Dettes ouvertes
 
-- ⭐ **Le troisième petit onglet de l'étape 2 est un jalon vide.** Décidé le
-  2026-08-30 : « Emplacement de la grille » existe dans le parcours, montre les
-  pages, et annonce ce qui viendra sans rien régler. À écrire :
-
-  - un bouton **« centrer »** qui pose la mosaïque au mieux au milieu de la ou
-    des feuilles ;
-  - le **déplacement au glissement** : cliquer dans la grille, garder le bouton
-    enfoncé, et la faire monter ou descendre. L'utilisateur veut aussi la
-    gauche-droite, mais a demandé qu'on y revienne à ce moment-là.
-
-  La grille est pour l'instant **calée contre le bord gauche et centrée
-  verticalement** ; c'est cet onglet qui rendra les deux réglables.
+- **Le bouton « centrer » de l'onglet d'emplacement** reste à écrire. Le
+  déplacement au glissement est **fait** (2026-09-02) : on tire la mosaïque
+  dans sa feuille, chaque feuille portant son morceau. Ce qui manque est le
+  geste inverse — poser un morceau au **milieu** de sa feuille d'un clic. Le
+  bouton « Remettre en place » ramène aux emplacements par défaut, calés à
+  gauche et centrés en hauteur ; « centrer » les centrerait aussi
+  horizontalement.
 
 - **Aucun poster n'a encore été fabriqué avec les 441 cartes.** `output/` date
   du 19 août et porte les 281 anciennes cartes encadrées. Ce n'est pas une dette

@@ -1350,6 +1350,60 @@ def test_a_card_wider_than_the_sheet_never_fits(session):
 
 # --- L'écran montre ce que l'imprimante fera --------------------------------
 
+def test_the_screen_and_the_export_place_each_piece_at_the_same_spot(
+        qt_app, session):
+    """⚠️ **La leçon déjà payée deux fois** : tout aperçu d'un résultat imprimé
+    doit placer ses cartes là où l'export les écrira. L'écran lit
+    `panel_position_mm`, l'export son propre plan — on vérifie qu'ils tombent
+    d'accord, déplacement ou non, y compris quand la grille déborde de sa
+    feuille."""
+    import numpy as np
+
+    from pokemon_mosaic.export import PosterSettings, plan_poster
+    from pokemon_mosaic.layout import MM_PER_INCH
+
+    def reglages(deplacements):
+        return PosterSettings(
+            paper=session.paper, paper_size_mm=session.paper_size_mm,
+            landscape=session.landscape, dpi=session.dpi,
+            panels=session.panels, panel_rows=session.panel_rows,
+            card_width_mm=session.card_width_mm,
+            card_gap_mm=session.card_gap_mm, panel_offsets=deplacements)
+
+    # Le dernier cas fige la carte pour que la grille **déborde** : c'est là que
+    # les deux calculs de marge divergeaient.
+    for cols, rows, panneaux, lignes, largeur in (
+        (5, 4, 2, 1, None), (8, 8, 2, 2, None),
+        (3, 30, 1, 1, None), (7, 5, 3, 2, None), (2, 9, 1, 1, 60.0),
+    ):
+        session.set_layout(paper="A5", cols=cols, rows=rows, panels=panneaux,
+                           panel_rows=lignes, dpi=150, card_width_mm=largeur)
+        grille = np.zeros((rows, cols), np.int16)
+        paper_w, paper_h = session.paper_mm()
+        en_mm = MM_PER_INCH / session.dpi
+
+        # D'abord tel quel — c'est le placement **par défaut** qu'on compare —,
+        # puis une feuille déplacée à la main.
+        for bouger in (False, True):
+            if bouger:
+                session.move_panel(0, 3.0, 1.0)
+            plan = plan_poster(grille, session.card_set,
+                               reglages(dict(session.panel_offsets)))
+            for index in range(session.panel_count()):
+                ligne, colonne = divmod(index, session.panels)
+                premiere_l = ligne * plan.rows_per_panel
+                premiere_c = colonne * plan.cards_per_panel
+                if premiere_l >= rows or premiere_c >= cols:
+                    continue       # feuille sans carte : rien à comparer
+                x, y = plan.card_origin(premiere_l, premiere_c)
+                attendu = session.panel_position_mm(index)
+                cas = (cols, rows, panneaux, lignes, largeur, index, bouger)
+                assert x * en_mm - colonne * paper_w == pytest.approx(
+                    attendu[0], abs=0.2), cas
+                assert y * en_mm - ligne * paper_h == pytest.approx(
+                    attendu[1], abs=0.2), cas
+
+
 def test_the_previews_use_the_printing_resolution(qt_app, session):
     """⚠️ Le dessin tournait à 72 dpi et l'export à celle des réglages : les
     arrondis en pixels ne donnaient pas le même nombre de cartes par feuille —
@@ -1668,9 +1722,96 @@ def test_the_shapes_button_is_up_with_the_settings_it_corrects(session):
     assert bouton.y() < dessin.y()
 
 
-def test_the_placement_tab_is_a_placeholder(ecran):
-    """Le voir vide dit mieux ce qui viendra qu'une absence qu'on prendrait
-    pour un oubli."""
-    emplacement = ecran._tabs[3]
-    assert emplacement.is_valid(), "un jalon ne bloque personne"
-    assert "À venir" in emplacement._todo.text()
+# --- L'onglet de l'emplacement ----------------------------------------------
+
+@pytest.fixture
+def emplacement(session, ecran):
+    onglet = ecran._tabs[3]
+    onglet.resize(700, 520)
+    onglet.show()
+    return onglet
+
+
+def glisser(onglet, depart, arrivee):
+    """Un vrai geste : on saisit la mosaïque, on tire, on lâche."""
+    from PySide6.QtCore import QPointF, Qt
+    from PySide6.QtGui import QMouseEvent
+
+    apercu = onglet._preview
+
+    def evenement(type_, point, boutons):
+        return QMouseEvent(type_, QPointF(*point), QPointF(*point),
+                           Qt.LeftButton, boutons, Qt.NoModifier)
+
+    apercu.mousePressEvent(evenement(QMouseEvent.Type.MouseButtonPress,
+                                     depart, Qt.LeftButton))
+    apercu.mouseMoveEvent(evenement(QMouseEvent.Type.MouseMove,
+                                    arrivee, Qt.LeftButton))
+    apercu.mouseReleaseEvent(evenement(QMouseEvent.Type.MouseButtonRelease,
+                                       arrivee, Qt.NoButton))
+
+
+def test_dragging_moves_the_piece_inside_its_own_sheet(session, emplacement):
+    """Le geste : on garde le clic sur la mosaïque et on tire."""
+    session.set_layout(paper="A4", cols=4, rows=4, panels=1)
+    emplacement.refresh()
+    cases = emplacement._preview.grid_cells(emplacement._preview.rects()[0])
+    depart = cases[0][2].center()
+
+    glisser(emplacement, (depart.x(), depart.y()), (depart.x() + 30, depart.y()))
+    assert session.panel_offsets, "rien n'a bougé"
+    assert session.panel_offsets[0][0] > 0
+
+
+def test_a_piece_never_leaves_its_sheet(session, emplacement):
+    """⚠️ Laisser glisser la mosaïque d'une feuille à l'autre remettrait en jeu
+    la règle de la coupe à chaque geste."""
+    session.set_layout(paper="A4", cols=4, rows=4, panels=2)
+    emplacement.refresh()
+    cases = emplacement._preview.grid_cells(emplacement._preview.rects()[0])
+    depart = cases[0][2].center()
+
+    # On tire très loin à droite : le morceau s'arrête au bord de sa feuille.
+    glisser(emplacement, (depart.x(), depart.y()), (depart.x() + 5000, depart.y()))
+    libre = session.panel_free_mm(0)
+    assert session.panel_offsets[0][0] == pytest.approx(libre[0])
+
+    paper_w = session.paper_mm()[0]
+    x, _ = session.panel_position_mm(0)
+    assert x <= paper_w, "le morceau est sorti de sa feuille"
+
+
+def test_clicking_the_blank_of_a_sheet_grabs_nothing(session, emplacement):
+    """On ne déplace que ce qu'on voit bouger : le vide d'une feuille
+    n'appartient à personne."""
+    session.set_layout(paper="A4", cols=2, rows=2, panels=1)
+    emplacement.refresh()
+    feuille = emplacement._preview.rects()[0]
+
+    glisser(emplacement, (feuille.right() - 4, feuille.bottom() - 4),
+            (feuille.left() + 20, feuille.top() + 20))
+    assert session.panel_offsets == {}
+
+
+def test_changing_the_grid_puts_every_piece_back(session, emplacement):
+    """⚠️ Une carte plus large, une feuille de plus, un autre format : le
+    morceau de chaque feuille n'a plus la même taille, et la place qu'on lui
+    avait choisie ne veut plus rien dire."""
+    session.set_layout(paper="A4", cols=4, rows=4, panels=1)
+    session.move_panel(0, 10.0, 5.0)
+    assert session.panel_offsets
+
+    session.set_layout(cols=5)
+    assert session.panel_offsets == {}, "les déplacements devaient être défaits"
+
+
+def test_the_placement_tab_says_what_it_carries(session, emplacement):
+    assert "défaut" in emplacement._status.text()
+    assert not emplacement._reset.isEnabled()
+
+    session.move_panel(0, 5.0, 0.0)
+    assert "1" in emplacement._status.text()
+    assert emplacement._reset.isEnabled()
+
+    emplacement._reset.click()
+    assert session.panel_offsets == {}

@@ -821,11 +821,12 @@ class CardSizeTab(LayoutTab):
 
 
 class PlacementTab(LayoutTab):
-    """Où la grille se pose dans les pages. À écrire.
+    """Où chaque bout de grille se pose dans sa feuille.
 
-    Laissé en place plutôt qu'omis : l'onglet existe dans le parcours, et le
-    voir vide dit mieux ce qui viendra qu'une absence qu'on prendrait pour un
-    oubli.
+    ⚠️ **Un bout de grille ne quitte pas sa feuille.** Le poster se coupe entre
+    deux cartes, jamais au milieu d'une : laisser glisser la mosaïque d'une
+    feuille à l'autre remettrait cette règle en jeu à chaque geste. Chaque
+    feuille porte donc son morceau, et le déplace pour son compte.
     """
 
     def __init__(self, session: Session, parent=None):
@@ -833,6 +834,8 @@ class PlacementTab(LayoutTab):
         self._session = session
         self._build()
         session.layout_changed.connect(self.refresh)
+        session.selection_changed.connect(self.refresh)
+        session.cards_loaded.connect(self.refresh)
 
     def title(self) -> str:
         return self.tr("Emplacement de la grille")
@@ -840,34 +843,66 @@ class PlacementTab(LayoutTab):
     def _build(self) -> None:
         self._hint = QLabel()
         self._hint.setWordWrap(True)
+        self._reset = QPushButton()
+        self._reset.clicked.connect(self._put_back)
+
+        haut = QHBoxLayout()
+        haut.addWidget(self._hint, 1)
+        haut.addWidget(self._reset)
+        bandeau = QWidget()
+        bandeau.setLayout(haut)
+        bandeau.setSizePolicy(QSizePolicy.Preferred, QSizePolicy.Fixed)
+
         self._preview = PagePreview(self._session)
         self._preview.set_show_grid(True)
+        self._preview.set_draggable(True)
         self._preview.panels_requested.connect(self._on_panels_requested)
         self._preview.panel_rows_requested.connect(self._on_panel_rows_requested)
-        self._todo = QLabel()
-        self._todo.setWordWrap(True)
-        theme.mark(self._todo, "warning")
+        self._preview.panel_moved.connect(self._session.move_panel)
+
+        self._status = QLabel()
+        self._status.setWordWrap(True)
+        self._status.setTextFormat(Qt.RichText)
+        etat = self._status.font()
+        etat.setPointSize(etat.pointSize() + STATUS_BOOST)
+        self._status.setFont(etat)
 
         layout = QVBoxLayout(self)
         layout.setContentsMargins(8, 6, 8, 6)
-        layout.addWidget(self._hint)
+        layout.addWidget(bandeau)
         layout.addWidget(self._preview, 1)
-        layout.addWidget(self._todo)
+        layout.addWidget(self._status)
         self.retranslate_ui()
 
     def retranslate_ui(self) -> None:
         self._hint.setText(
-            self.tr("La mosaïque est pour l'instant calée contre le bord gauche, "
-                    "et centrée verticalement.")
+            self.tr("Cliquez dans la mosaïque et tirez pour la déplacer. Chaque "
+                    "feuille porte son morceau et le déplace pour son compte : "
+                    "un morceau ne passe jamais sur la feuille voisine, sans "
+                    "quoi une coupe tomberait en pleine carte.")
         )
-        self._todo.setText(
-            self.tr("À venir : un bouton pour la centrer au mieux sur les "
-                    "feuilles, et la possibilité de la déplacer en la faisant "
-                    "glisser.")
+        self._reset.setText(self.tr("Remettre en place"))
+        self._reset.setToolTip(
+            self.tr("Ramène tous les morceaux à leur emplacement par défaut : "
+                    "calés à gauche, centrés en hauteur.")
         )
         self._preview.retranslate_ui()
         self.refresh()
 
+    def _put_back(self) -> None:
+        if self._session.panel_offsets:
+            self._session.set_layout(panel_offsets={})
+
     def refresh(self) -> None:
+        deplaces = len(self._session.panel_offsets)
+        if deplaces:
+            role, texte = "ok", self.tr(
+                "<b>%n</b> feuille(s) déplacée(s) à la main.", "", deplaces)
+        else:
+            role, texte = "ok", self.tr(
+                "Les morceaux sont à leur emplacement par défaut.")
+        theme.mark(self._status, role)
+        self._status.setText(texte)
+        self._reset.setEnabled(bool(deplaces))
         self._preview.refresh()
         self.state_changed.emit()

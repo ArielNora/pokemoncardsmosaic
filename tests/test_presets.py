@@ -163,6 +163,37 @@ def test_a_sheet_without_a_name_survives_the_round_trip(session):
     assert session.paper == ""
 
 
+def test_a_hand_written_offset_is_brought_back_onto_its_sheet(session):
+    """⚠️ Un préréglage écrit à la main pousserait un morceau hors de sa
+    feuille : l'export le ramènerait, l'écran non, et les deux ne montreraient
+    plus le même poster."""
+    from pokemon_mosaic.presets import Preset
+
+    session.set_layout(paper="A5", cols=4, rows=4, panels=2)
+    preset = Preset(name="essai", excluded=(), active_links=(),
+                    layout={"paper": "A5", "cols": 4, "rows": 4, "panels": 2,
+                            "panel_offsets": [[0, 9999.0, 9999.0],
+                                              [42, 1.0, 1.0]]},
+                    algorithm={})
+    session.apply_preset(preset)
+
+    libre = session.panel_free_mm(0)
+    assert session.panel_offsets[0] == pytest.approx(libre)
+    assert 42 not in session.panel_offsets, "une feuille qui n'existe pas"
+
+
+def test_moving_a_piece_survives_the_round_trip(session):
+    session.set_layout(paper="A5", cols=4, rows=4, panels=2)
+    session.move_panel(1, 5.0, 1.0)
+    preset = session.to_preset("essai")
+    assert preset.layout["panel_offsets"] == [[1, 5.0, 1.0]]
+
+    session.set_layout(cols=5)                # défait les déplacements
+    assert session.panel_offsets == {}
+    session.apply_preset(preset)
+    assert session.panel_offsets == {1: (5.0, 1.0)}
+
+
 def test_applying_a_preset_restores_everything(session):
     session.set_excluded([1], True)
     session.add_link(Link(cards=(2, 3)))

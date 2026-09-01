@@ -13,10 +13,14 @@ from ..annealing import Annealing
 from ..cards import DEFAULT_STRIP_SIZE, CardSet
 from ..layout import (
     DEFAULT_DPI,
+    MM_PER_INCH,
     PAPER_FORMATS_MM,
     GridFit,
+    cards_on_panel,
+    clamp_offset_mm,
     distribute_empty_cells,
     format_name,
+    grid_geometry,
 )
 from ..links import DEFAULT_LINKS, Link, LinkLibrary, resolve_links
 from ..optimize import StopConditions
@@ -71,6 +75,10 @@ class Session(QObject):
         # comme dans l'autre.
         self.panels = 1
         self.panel_rows = 1
+        # Où l'utilisateur a posé le bout de grille de chaque feuille, en
+        # millimètres depuis le coin haut-gauche de **sa** feuille. Vide tant
+        # qu'il n'a rien déplacé, et vidé dès que la mise en page change.
+        self.panel_offsets: dict[int, tuple[float, float]] = {}
         self.cols = 17
         self.rows = 17
         # Largeur d'une carte sur le papier. `None` = automatique : la plus
@@ -246,6 +254,73 @@ class Session(QObject):
         """Le nombre de feuilles à imprimer, toutes lignes confondues."""
         return self.panels * self.panel_rows
 
+    def move_panel(self, index: int, x_mm: float, y_mm: float) -> None:
+        """Pose le bout de grille d'une feuille à cet endroit **de sa feuille**.
+
+        Les coordonnées partent de son coin haut-gauche, et sont bornées à ce
+        qui reste de libre : un bout de grille ne déborde jamais sur la feuille
+        voisine, faute de quoi la coupe tomberait en pleine carte.
+        """
+        libre = self.panel_free_mm(index)
+        borne = clamp_offset_mm((x_mm, y_mm), libre)
+        if self.panel_offsets.get(index) == borne:
+            return
+        self.set_layout(panel_offsets={**self.panel_offsets, index: borne})
+
+    def panel_geometry(self):
+        """La géométrie des cartes pour la mise en page courante."""
+        aspect = 713 / 984
+        if self.card_set and self.card_set.full_size[1]:
+            aspect = self.card_set.full_size[0] / self.card_set.full_size[1]
+        return grid_geometry(
+            self.paper_mm(), self.panels, max(1, self.cols), max(1, self.rows),
+            aspect, self.dpi, self.card_width_mm, self.card_gap_mm,
+            self.panel_rows)
+
+    def panel_of(self, row: int, col: int) -> int:
+        """La feuille qui porte cette case, lue de gauche à droite.
+
+        ⚠️ **Un seul endroit le calcule côté écran.** Le dessin, la saisie à la
+        souris et la place libre s'accordaient chacun de leur côté sur la même
+        division : trois occasions de diverger pour une formule de deux lignes.
+        """
+        geometrie = self.panel_geometry()
+        return ((row // max(1, geometrie.rows_per_panel)) * self.panels
+                + col // max(1, geometrie.per_panel))
+
+    def panel_free_mm(self, index: int) -> tuple[float, float]:
+        """Place libre autour du bout de grille d'une feuille, en millimètres."""
+        geometrie = self.panel_geometry()
+        ligne, colonne = divmod(index, max(1, self.panels))
+        paper_w, paper_h = self.paper_mm()
+        en_mm = MM_PER_INCH / self.dpi
+
+        def libre(total, par_feuille, rang, taille, papier):
+            combien = cards_on_panel(total, par_feuille, rang)
+            occupe = (combien * taille
+                      + max(0, combien - 1) * geometrie.gap) * en_mm
+            return max(0.0, papier - occupe)
+
+        return (libre(self.cols, geometrie.per_panel, colonne,
+                      geometrie.card_w, paper_w),
+                libre(self.rows, geometrie.rows_per_panel, ligne,
+                      geometrie.card_h, paper_h))
+
+    def panel_default_mm(self, index: int) -> tuple[float, float]:
+        """Où se pose ce bout de grille quand on n'y a pas touché.
+
+        Calé à gauche, et centré en hauteur tant qu'il n'y a qu'une ligne de
+        feuilles — la même règle qu'à l'export, d'où la lecture de la place
+        libre plutôt qu'un calcul refait à côté.
+        """
+        if self.panel_rows > 1:
+            return (0.0, 0.0)
+        return (0.0, self.panel_free_mm(index)[1] / 2)
+
+    def panel_position_mm(self, index: int) -> tuple[float, float]:
+        """Où ce bout de grille se trouve : déplacé s'il l'a été, défaut sinon."""
+        return self.panel_offsets.get(index, self.panel_default_mm(index))
+
     def sheet_mm(self) -> tuple[float, float]:
         """La surface entière, toutes feuilles mises bout à bout."""
         width, height = self.paper_mm()
@@ -260,6 +335,12 @@ class Session(QObject):
         # de format ou d'orientation.
         grid_changed = (changes.get("cols", self.cols) != self.cols
                         or changes.get("rows", self.rows) != self.rows)
+        # ⚠️ **Tout le reste défait les déplacements.** Une carte plus large,
+        # une feuille de plus, un autre format : le bout de grille de chaque
+        # feuille n'a plus la même taille, et la place qu'on lui avait choisie
+        # ne veut plus rien dire. On revient aux emplacements par défaut plutôt
+        # que de garder des positions calculées pour une autre mise en page.
+        moved = "panel_offsets" in changes
 
         touched = False
         for name, value in changes.items():
@@ -274,6 +355,8 @@ class Session(QObject):
             # grille : elles tomberaient à des endroits qui ne veulent plus rien
             # dire, quand elles ne sortiraient pas carrément du cadre.
             self._empty_cells = []
+        if not moved and self.panel_offsets:
+            self.panel_offsets = {}
         self.layout_changed.emit()
 
     def _settle_paper(self, changes: dict) -> dict:
@@ -552,6 +635,10 @@ class Session(QObject):
                 "landscape": self.landscape,
                 "dpi": self.dpi, "panels": self.panels,
                 "panel_rows": self.panel_rows,
+                # Une liste, JSON ne sachant pas nommer une clé entière. Vide
+                # quand rien n'a été déplacé, ce qui est le cas le plus courant.
+                "panel_offsets": [[index, *offset] for index, offset
+                                  in sorted(self.panel_offsets.items())] or None,
                 "cols": self.cols, "rows": self.rows,
                 "card_width_mm": self.card_width_mm,
                 "card_gap_mm": self.card_gap_mm,
@@ -605,8 +692,12 @@ class Session(QObject):
 
     def _apply_layout(self, layout: dict) -> None:
         cells = layout.get("empty_cells")
+        # ⚠️ Posés **après** `set_layout`, comme les cases vides : tout autre
+        # réglage défait les déplacements, et les poser avant les effacerait.
+        deplacements = {int(index): (float(x), float(y))
+                        for index, x, y in (layout.get("panel_offsets") or ())}
         known = {name: value for name, value in layout.items()
-                 if name != "empty_cells"}
+                 if name not in ("empty_cells", "panel_offsets")}
         # JSON ne connaît pas les tuples, et une liste ne serait jamais égale à
         # la taille en place : chaque rechargement rejouerait un changement.
         if known.get("paper_size_mm"):
@@ -616,6 +707,14 @@ class Session(QObject):
         # Après `set_layout` : changer la grille efface les cases posées à la
         # main, ce qui annulerait celles du préréglage si on les posait avant.
         self._empty_cells = [tuple(cell) for cell in (cells or ())]
+        # ⚠️ **Bornés en entrant.** Un préréglage écrit à la main pousserait
+        # sinon un morceau hors de sa feuille : l'export le ramènerait, l'écran
+        # non, et les deux ne montreraient plus le même poster.
+        self.panel_offsets = {
+            index: clamp_offset_mm(offset, self.panel_free_mm(index))
+            for index, offset in deplacements.items()
+            if 0 <= index < self.panel_count()
+        }
         # ⚠️ **On prévient toujours**, même quand rien n'a bougé. Un préréglage
         # est une mise en page affirmée : c'est ce signal qui dit à l'étape 2 que
         # la grille a été choisie, et qu'elle n'a donc plus à la proposer. Un

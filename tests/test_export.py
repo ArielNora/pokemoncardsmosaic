@@ -68,7 +68,7 @@ def test_a_cut_never_falls_on_a_card():
             for feuille in range(1, panneaux):
                 coupe = feuille * paper_w
                 for col in range(cols):
-                    gauche = plan.column_x(col)
+                    gauche = plan.card_origin(0, col)[0]
                     assert not (gauche < coupe < gauche + card_w), (
                         f"la coupe {coupe} traverse la colonne {col} "
                         f"({panneaux} feuilles, {cols}×{rows})")
@@ -79,7 +79,7 @@ def test_every_column_stays_on_the_paper():
     for panneaux in (1, 2, 3):
         reglages = PosterSettings(paper="A5", panels=panneaux, dpi=72)
         plan = plan_poster(small_grid(11, 4), card_set(44), reglages)
-        dernier = plan.column_x(plan.cols - 1) + plan.card_px[0]
+        dernier = plan.card_origin(0, plan.cols - 1)[0] + plan.card_px[0]
         assert dernier <= plan.total_px[0], (panneaux, dernier, plan.total_px)
 
 
@@ -152,14 +152,14 @@ def test_each_sheet_row_restarts_at_its_own_top_edge():
 
     # La dernière ligne d'une feuille tient sur elle ; la suivante recommence
     # au bord haut de la feuille d'en dessous.
-    derniere = plan.row_y(par_feuille - 1) + plan.card_px[1]
+    derniere = plan.card_origin(par_feuille - 1, 0)[1] + plan.card_px[1]
     assert derniere <= paper_h
-    assert plan.row_y(par_feuille) == paper_h
+    assert plan.card_origin(par_feuille, 0)[1] == paper_h
 
 
 def test_no_card_ever_straddles_a_sheet_edge():
     """⚠️ **La règle qui tient tout**, vérifiée sur le plan lui-même et dans les
-    deux sens : une carte posée à `column_x` / `row_y` tient tout entière sur la
+    deux sens : une carte posée à `card_origin` tient tout entière sur la
     feuille où elle commence."""
     for panneaux in (1, 3, 5):
         for lignes in (1, 2, 3):
@@ -171,11 +171,52 @@ def test_no_card_ever_straddles_a_sheet_edge():
                 paper_w, paper_h = settings.paper_px
                 card_w, card_h = plan.card_px
                 cas = (panneaux, lignes, cols, rows)
-                for col in range(cols):
-                    assert plan.column_x(col) % paper_w + card_w <= paper_w, cas
                 for row in range(rows):
-                    debut = plan.margin_px[1] + plan.row_y(row)
-                    assert debut % paper_h + card_h <= paper_h, cas
+                    for col in range(cols):
+                        x, y = plan.card_origin(row, col)
+                        assert x % paper_w + card_w <= paper_w, cas
+                        assert y % paper_h + card_h <= paper_h, cas
+
+
+def test_a_sheet_can_be_moved_inside_its_own_page():
+    """⚠️ Chaque bout de grille se déplace dans **sa** feuille, et n'en sort
+    pas : il ne peut donc pas déborder sur la voisine."""
+    from pokemon_mosaic.layout import mm_to_pixels
+
+    settings = PosterSettings(paper="A5", panels=2, dpi=72,
+                              panel_offsets={1: (20.0, 2.0)})
+    plan = plan_poster(small_grid(4, 4), card_set(16), settings)
+    paper_w = settings.paper_px[0]
+    par_feuille = plan.cards_per_panel
+
+    # La première feuille n'a pas bougé, la seconde s'est décalée d'elle-même.
+    assert plan.card_origin(0, 0) == (0, plan.margin_px[1])
+    decale = plan.card_origin(0, par_feuille)
+    assert decale[0] == paper_w + mm_to_pixels(20.0, 72)
+    assert decale[1] == mm_to_pixels(2.0, 72)
+
+
+def test_a_hand_written_offset_cannot_push_a_card_off_its_sheet():
+    """⚠️ L'écran borne déjà le déplacement, mais un préréglage écrit à la main
+    pousserait sinon la coupe en pleine carte."""
+    settings = PosterSettings(paper="A5", panels=1, dpi=72,
+                              panel_offsets={0: (5000.0, 5000.0)})
+    plan = plan_poster(small_grid(4, 4), card_set(16), settings)
+    paper_w, paper_h = settings.paper_px
+    card_w, card_h = plan.card_px
+    for row in range(4):
+        for col in range(4):
+            x, y = plan.card_origin(row, col)
+            assert x + card_w <= paper_w
+            assert y + card_h <= paper_h
+
+
+def test_an_offset_for_a_sheet_that_does_not_exist_is_ignored():
+    """Un préréglage relu après avoir retiré une feuille en porte encore."""
+    settings = PosterSettings(paper="A5", panels=1, dpi=72,
+                              panel_offsets={7: (10.0, 10.0)})
+    plan = plan_poster(small_grid(4, 4), card_set(16), settings)
+    assert plan.offsets_px == {}
 
 
 def test_the_files_say_which_sheet_goes_where():
@@ -230,8 +271,9 @@ def test_empty_cells_are_painted_in_their_own_colour():
     image = render_panels(grid, card_set(16), settings, full_resolution=False)[0]
 
     card_w, card_h = plan.card_px
-    x = plan.margin_px[0] + card_w + card_w // 2
-    y = plan.margin_px[1] + card_h + card_h // 2
+    origine = plan.card_origin(1, 1)
+    x = origine[0] + card_w // 2
+    y = origine[1] + card_h // 2
     assert image.getpixel((x, y)) == (255, 0, 0)
 
 

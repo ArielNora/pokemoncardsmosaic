@@ -21,6 +21,9 @@ from PIL import Image, ImageDraw
 from .cards import CardSet, load_full_image
 from .layout import (
     DEFAULT_DPI,
+    MM_PER_INCH,
+    cards_on_panel,
+    clamp_offset_mm,
     grid_geometry,
     max_useful_dpi,
     mm_to_pixels,
@@ -54,6 +57,11 @@ class PosterSettings:
     # leur somme : `panels` × `panel_rows` fichiers à imprimer et à rabouter.
     panels: int = 1
     panel_rows: int = 1
+    # Où l'utilisateur a posé le bout de grille de chaque feuille, en
+    # millimètres depuis le coin haut-gauche de **sa** feuille. Absente, la
+    # feuille garde le placement par défaut : calée à gauche, centrée en
+    # hauteur quand il n'y a qu'une ligne de feuilles.
+    panel_offsets: dict[int, tuple[float, float]] = field(default_factory=dict)
     # Largeur d'une carte sur le papier ; `None` demande la plus grande qui
     # fasse tenir la grille. L'écart les sépare, en millimètres.
     card_width_mm: float | None = None
@@ -104,31 +112,40 @@ class PosterPlan:
     cards_per_panel: int = 1
     gap_px: int = 0
     rows_per_panel: int = 1
+    # Position du bout de grille de chaque feuille, en pixels depuis son coin
+    # haut-gauche. Toujours bornée : voir `plan_poster`.
+    offsets_px: dict[int, tuple[int, int]] = field(default_factory=dict)
     warnings: list[str] = field(default_factory=list)
 
-    def column_x(self, col: int) -> int:
-        """Abscisse du bord gauche d'une colonne dans l'image du poster.
+    def panel_of(self, row: int, col: int) -> int:
+        """Numéro de la feuille qui porte cette case, lue de gauche à droite."""
+        return ((row // max(1, self.rows_per_panel)) * self.settings.panels
+                + col // max(1, self.cards_per_panel))
+
+    def card_origin(self, row: int, col: int) -> tuple[int, int]:
+        """Coin haut-gauche d'une case dans l'image du poster.
 
         ⚠️ **Chaque feuille repart de son propre bord.** Les cartes ne se suivent
-        pas d'une feuille à l'autre en ignorant la coupe : elles recommencent à
-        gauche de la suivante. C'est ce qui garantit qu'une coupe tombe toujours
+        pas d'une feuille à l'autre en ignorant la coupe : elles recommencent au
+        coin de la suivante. C'est ce qui garantit qu'une coupe tombe toujours
         **entre** deux cartes, et jamais sur une. Le reste de feuille — moins
         d'une carte, quelques dixièmes de millimètre — sort blanc et disparaît
         au raboutage, les repères de coupe étant là pour le rogner.
-        """
-        par_feuille = max(1, self.cards_per_panel)
-        return ((col // par_feuille) * self.settings.paper_px[0]
-                + (col % par_feuille) * (self.card_px[0] + self.gap_px))
 
-    def row_y(self, row: int) -> int:
-        """Ordonnée du bord haut d'une ligne, même règle que `column_x`.
-
-        Une coupe horizontale ne coupe pas plus une carte qu'une coupe
-        verticale : chaque ligne de feuilles repart de son **bord haut**.
+        ⚠️ **Un seul endroit calcule cette position.** Elle en avait deux — une
+        par axe —, et le déplacement à la main dépend des deux à la fois : le
+        bout de grille d'une feuille se déplace dans **sa** feuille, donc son
+        décalage se lit à l'intersection d'une ligne et d'une colonne.
         """
-        par_feuille = max(1, self.rows_per_panel)
-        return ((row // par_feuille) * self.settings.paper_px[1]
-                + (row % par_feuille) * (self.card_px[1] + self.gap_px))
+        par_col = max(1, self.cards_per_panel)
+        par_lig = max(1, self.rows_per_panel)
+        paper_w, paper_h = self.settings.paper_px
+        feuille_c, dans_c = divmod(col, par_col)
+        feuille_l, dans_l = divmod(row, par_lig)
+        dx, dy = self.offsets_px.get(self.panel_of(row, col),
+                                     (self.margin_px[0], self.margin_px[1]))
+        return (feuille_c * paper_w + dx + dans_c * (self.card_px[0] + self.gap_px),
+                feuille_l * paper_h + dy + dans_l * (self.card_px[1] + self.gap_px))
 
     @property
     def total_px(self) -> tuple[int, int]:
@@ -180,13 +197,20 @@ def plan_poster(
     # l'on ajoutera la prochaine. Répartie de part et d'autre, elle donnait deux
     # demi-marges qui ne disaient rien.
     margin_x = 0
-    hauteur = rows * card_px[1] + max(0, rows - 1) * geometry.gap
     # ⚠️ **Une seule ligne de feuilles : on centre.** Rien ne se coupe en
     # hauteur, et la marge ne dépend alors d'aucune feuille. Dès qu'il y en a
     # plusieurs, la marge passe à zéro : décalée, elle pousserait la dernière
     # ligne de chaque feuille au-delà de son bord bas, et la coupe tomberait en
     # pleine carte — la seule chose que l'on ne s'autorise jamais.
-    margin_y = (paper_h - hauteur) // 2 if settings.panel_rows == 1 else 0
+    #
+    # ⚠️ **Ce que porte la feuille, pas ce que porte la grille.** Les deux se
+    # confondent tant que tout tient ; quand la grille déborde, compter toutes
+    # les lignes donnait une marge **négative**, là où l'écran, qui compte ce
+    # que la feuille loge, en donnait une positive. Deux dessins du même poster.
+    sur_la_feuille = _span(cards_on_panel(rows, geometry.rows_per_panel, 0),
+                           card_px[1], geometry.gap)
+    margin_y = (max(0, (paper_h - sur_la_feuille) // 2)
+                if settings.panel_rows == 1 else 0)
 
     warnings: list[str] = []
     ceiling = max_useful_dpi(settings.paper_mm, per_panel, cards.full_size[0])
@@ -208,8 +232,34 @@ def plan_poster(
             f"La grille {cols}×{rows} déborde de {settings.panel_count} feuille(s) "
             f"à cette taille de carte : le poster serait tronqué."
         )
+    # ⚠️ **Les déplacements sont re-bornés ici.** L'écran les borne déjà, mais
+    # un préréglage écrit à la main pousserait sinon un bout de grille hors de
+    # sa feuille, et la coupe tomberait en pleine carte.
+    offsets = {}
+    for index, offset in settings.panel_offsets.items():
+        ligne, colonne = divmod(int(index), settings.panels)
+        if not (0 <= colonne < settings.panels
+                and 0 <= ligne < settings.panel_rows):
+            continue
+        libre = (
+            paper_w - _span(cards_on_panel(cols, per_panel, colonne),
+                            card_px[0], geometry.gap),
+            paper_h - _span(cards_on_panel(rows, geometry.rows_per_panel, ligne),
+                            card_px[1], geometry.gap),
+        )
+        borne = clamp_offset_mm(tuple(offset), (libre[0] / settings.dpi * MM_PER_INCH,
+                                                libre[1] / settings.dpi * MM_PER_INCH))
+        offsets[int(index)] = (mm_to_pixels(borne[0], settings.dpi),
+                               mm_to_pixels(borne[1], settings.dpi))
+
     return PosterPlan(settings, cols, rows, card_px, (margin_x, margin_y),
-                      per_panel, geometry.gap, geometry.rows_per_panel, warnings)
+                      per_panel, geometry.gap, geometry.rows_per_panel,
+                      offsets, warnings)
+
+
+def _span(count: int, size: int, gap: int) -> int:
+    """Place occupée par `count` cartes à la file, écarts intérieurs compris."""
+    return max(0, count * size + max(0, count - 1) * gap)
 
 
 def _render_window(
@@ -227,31 +277,27 @@ def _render_window(
     """
     x0, y0, x1, y1 = window
     card_w, card_h = plan.card_px
-    margin_x, margin_y = plan.margin_px
     canvas = Image.new("RGB", (x1 - x0, y1 - y0), plan.settings.background)
     draw = ImageDraw.Draw(canvas)
 
-    # Les colonnes ne sont plus à pas constant — chaque feuille repart de son
-    # bord —, donc on relève celles qui touchent la fenêtre plutôt que de les
-    # déduire d'une division. Deux cents colonnes au plus : le balayage ne pèse
-    # rien à côté de la lecture des images.
-    touchees = [c for c in range(plan.cols)
-                if margin_x + plan.column_x(c) < x1
-                and margin_x + plan.column_x(c) + card_w > x0]
-    # Les lignes non plus ne sont plus à pas constant, chaque ligne de feuilles
-    # repartant de son bord haut : on les relève comme les colonnes.
-    lignes = [r for r in range(plan.rows)
-              if margin_y + plan.row_y(r) < y1
-              and margin_y + plan.row_y(r) + card_h > y0]
-
-    for r in lignes:
+    # ⚠️ **Aucune case ne se déduit d'une division.** Chaque feuille repart de
+    # son coin, et son bout de grille a pu être déplacé à la main : la position
+    # d'une case dépend de sa ligne **et** de sa colonne. On demande donc à
+    # `card_origin` et on garde ce qui touche la fenêtre. Quarante mille cases
+    # au plus, quelques additions chacune : rien à côté de la lecture des
+    # images.
+    for r in range(plan.rows):
         # Une ligne de 17 cartes pleine résolution prend le temps de lire 17
         # fichiers : c'est la granularité la plus fine où l'arrêt reste franc.
         if check_cancelled is not None and check_cancelled():
             raise ExportCancelled()
-        for c in touchees:
-            left = margin_x + plan.column_x(c) - x0
-            top = margin_y + plan.row_y(r) - y0
+        for c in range(plan.cols):
+            origine = plan.card_origin(r, c)
+            if not (origine[0] < x1 and origine[0] + card_w > x0
+                    and origine[1] < y1 and origine[1] + card_h > y0):
+                continue
+            left = origine[0] - x0
+            top = origine[1] - y0
             index = int(grid[r, c])
             if index == EMPTY:
                 draw.rectangle(

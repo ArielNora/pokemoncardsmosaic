@@ -210,6 +210,10 @@ class ExportDialog(QDialog):
             dpi=self._dpi.value(),
             panels=session.panels,
             panel_rows=session.panel_rows,
+            # ⚠️ Les déplacements aussi : sans eux, le fichier écrit remettrait
+            # chaque bout de grille à sa place par défaut, et n'aurait plus rien
+            # à voir avec ce que l'écran montrait.
+            panel_offsets=dict(session.panel_offsets),
             # ⚠️ **La taille de carte et l'écart aussi.** Oubliés ici, l'export
             # repassait en taille automatique et sans écart : le fichier écrit
             # n'avait rien à voir avec l'aperçu que l'utilisateur venait de

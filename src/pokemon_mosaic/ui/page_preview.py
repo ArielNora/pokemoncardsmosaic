@@ -13,7 +13,7 @@ from PySide6.QtCore import QPointF, QRect, QRectF, Qt, Signal
 from PySide6.QtGui import QBrush, QColor, QPainter, QPen
 from PySide6.QtWidgets import QPushButton, QWidget
 
-from ..layout import MM_PER_INCH, REAL_CARD_MM, grid_geometry
+from ..layout import MM_PER_INCH, REAL_CARD_MM
 from . import theme
 from .wireframe import CARD_EDGE, CARD_FILL, EMPTY_EDGE, EMPTY_FILL
 
@@ -68,6 +68,8 @@ class PagePreview(QWidget):
     # Une case cliquée, et le trajet d'un glissement avec l'état à y poser.
     cell_clicked = Signal(int, int)
     cells_painted = Signal(list, bool)
+    # Le bout de grille d'une feuille, tiré à cet endroit **de sa feuille**.
+    panel_moved = Signal(int, float, float)
 
     def __init__(self, session, parent=None):
         super().__init__(parent)
@@ -82,6 +84,11 @@ class PagePreview(QWidget):
         self._paintable = False
         self._painted: list[tuple[int, int]] = []
         self._paint_mode: bool | None = None
+        # Le bout de grille en cours de déplacement, et d'où il est parti.
+        self._draggable = False
+        self._dragged: int | None = None
+        self._drag_from = None
+        self._drag_origin = (0.0, 0.0)
         self._plus = QPushButton("＋", self)
         theme.mark(self._plus, "mini")
         self._plus.clicked.connect(
@@ -213,16 +220,28 @@ class PagePreview(QWidget):
         """
         self._painted = []
         self._paint_mode = None
-        if not self._paintable or event.button() != Qt.LeftButton:
+        self._dragged = None
+        if event.button() != Qt.LeftButton:
             return
-        cell = self.cell_at(event.position().x(), event.position().y())
+        point = event.position()
+        if self._draggable:
+            self._start_drag(point)
+            return
+        if not self._paintable:
+            return
+        cell = self.cell_at(point.x(), point.y())
         if cell is None:
             return
         self._paint_mode = cell not in set(self._session.empty_cells())
         self._painted = [cell]
 
     def mouseMoveEvent(self, event) -> None:
-        if self._paint_mode is None or not (event.buttons() & Qt.LeftButton):
+        if not (event.buttons() & Qt.LeftButton):
+            return
+        if self._dragged is not None:
+            self._drag_to(event.position())
+            return
+        if self._paint_mode is None:
             return
         cell = self.cell_at(event.position().x(), event.position().y())
         if cell is None or cell in self._painted:
@@ -235,6 +254,47 @@ class PagePreview(QWidget):
             self.cell_clicked.emit(*self._painted[0])
         self._painted = []
         self._paint_mode = None
+        if self._dragged is not None:
+            self._dragged = None
+            self.setCursor(Qt.OpenHandCursor)
+
+    # --- Déplacer un bout de grille dans sa feuille ----------------------
+
+    def set_draggable(self, actif: bool) -> None:
+        """Autorise ou non le déplacement d'un bout de grille à la souris."""
+        self._draggable = bool(actif)
+        self.setCursor(Qt.OpenHandCursor if actif else Qt.ArrowCursor)
+
+    def _start_drag(self, point) -> None:
+        """Saisit le bout de grille sous le curseur, s'il y en a un.
+
+        ⚠️ **On saisit la grille, pas la feuille.** Cliquer dans le blanc d'une
+        feuille ne doit rien attraper : on ne déplace que ce qu'on voit bouger,
+        et le vide d'une feuille n'appartient à personne.
+        """
+        cell = self.cell_at(point.x(), point.y())
+        if cell is None:
+            return
+        session = self._session
+        index = session.panel_of(*cell)
+        self._dragged = index
+        self._drag_from = point
+        self._drag_origin = session.panel_position_mm(index)
+        self.setCursor(Qt.ClosedHandCursor)
+
+    def _drag_to(self, point) -> None:
+        """Suit la souris, en millimètres sur le papier."""
+        geometrie = self.rects()
+        if geometrie is None or self._dragged is None:
+            return
+        feuille = geometrie[0]
+        surface = self._sheet_mm()
+        if feuille.width() <= 0 or feuille.height() <= 0:
+            return
+        dx = (point.x() - self._drag_from.x()) * surface[0] / feuille.width()
+        dy = (point.y() - self._drag_from.y()) * surface[1] / feuille.height()
+        self.panel_moved.emit(self._dragged, self._drag_origin[0] + dx,
+                              self._drag_origin[1] + dy)
 
     # --- Géométrie --------------------------------------------------------
 
@@ -376,57 +436,53 @@ class PagePreview(QWidget):
         """Chaque case de la mosaïque, avec son rectangle à l'écran.
 
         Calculée à part pour que le dessin **et** le clic lisent la même
-        géométrie : les cases se posent désormais dans les pages, et un
+        géométrie : les cases se posent dans les pages, s'y déplacent, et un
         placement qui ne tomberait pas sur ce qu'on voit ne servirait à rien.
         """
         session = self._session
         if session.cols <= 0 or session.rows <= 0:
             return None
         surface = self._sheet_mm()
-        aspect = _card_aspect(session)
-        # ⚠️ **Un nombre entier de cartes par feuille**, pour qu'une coupe tombe
-        # toujours entre deux cartes. **À la résolution de la session**, jamais à
-        # une autre : les arrondis en pixels ne donnent pas le même nombre de
-        # cartes par feuille, et le dessin cesserait d'être celui du poster.
-        geometrie = grid_geometry(
-            session.paper_mm(), session.panels,
-            session.cols, session.rows, aspect, session.dpi,
-            session.card_width_mm, session.card_gap_mm, session.panel_rows)
+        # ⚠️ **À la résolution de la session**, jamais à une autre : les
+        # arrondis en pixels ne donnent pas le même nombre de cartes par
+        # feuille, et le dessin cesserait d'être celui du poster.
+        geometrie = session.panel_geometry()
         # Zéro quand la carte ne tient pas sur la feuille : le dessin doit
         # quand même sortir, la ligne d'état étant là pour le dire.
         par_feuille = max(1, geometrie.per_panel)
         par_colonne = max(1, geometrie.rows_per_panel)
-        px_vers_x = MM_PER_INCH / session.dpi * feuille.width() / surface[0]
-        px_vers_y = MM_PER_INCH / session.dpi * feuille.height() / surface[1]
-        card_w = geometrie.card_w * px_vers_x
-        card_h = geometrie.card_h * px_vers_y
-        gap_x, gap_y = geometrie.gap * px_vers_x, geometrie.gap * px_vers_y
-        feuille_w = feuille.width() / max(1, session.panels)
-        feuille_h = feuille.height() / max(1, session.panel_rows)
+        en_mm = MM_PER_INCH / session.dpi
+        vers_x = feuille.width() / surface[0]
+        vers_y = feuille.height() / surface[1]
+        card_w = geometrie.card_w * en_mm * vers_x
+        card_h = geometrie.card_h * en_mm * vers_y
+        gap_x = geometrie.gap * en_mm * vers_x
+        gap_y = geometrie.gap * en_mm * vers_y
+        paper_w, paper_h = session.paper_mm()
 
-        # ⚠️ **Calée à gauche.** La place en trop est ce qu'apporte la feuille
-        # suivante : elle doit se voir d'un bloc, du côté où l'on ajoutera la
-        # prochaine, et non coupée en deux demi-marges. Verticalement, on centre
-        # tant qu'il n'y a qu'une ligne de feuilles — rien ne s'y coupe ; dès
-        # qu'il y en a plusieurs, la marge passe à zéro, comme à l'export : elle
-        # pousserait sinon la dernière ligne de chaque feuille au-delà de son
-        # bord bas, et la coupe tomberait en pleine carte.
-        gx = feuille.left()
-        if session.panel_rows > 1:
-            gy = feuille.top()
-        else:
-            gy = feuille.top() + (feuille.height() - card_h * session.rows
-                                  - max(0, session.rows - 1) * gap_y) / 2
+        # ⚠️ **Où chaque bout de grille se pose, la session seule le sait** —
+        # calé à gauche, centré en hauteur sur une seule ligne de feuilles, ou
+        # là où l'utilisateur l'a tiré. Le recalculer ici en donnerait une
+        # seconde version, qui finirait par diverger de celle de l'export.
+        # Relevé une fois par feuille : quinze au plus, contre quarante mille
+        # cases.
+        places = {index: session.panel_position_mm(index)
+                  for index in range(session.panel_count())}
+
         cases = []
         for row in range(session.rows):
-            # ⚠️ Chaque feuille repart de son bord, comme à l'export.
-            y = ((row // par_colonne) * feuille_h
-                 + (row % par_colonne) * (card_h + gap_y))
+            feuille_l, dans_l = divmod(row, par_colonne)
             for col in range(session.cols):
-                x = ((col // par_feuille) * feuille_w
-                     + (col % par_feuille) * (card_w + gap_x))
-                cases.append((row, col,
-                              QRectF(gx + x, gy + y, card_w, card_h)))
+                feuille_c, dans_c = divmod(col, par_feuille)
+                pose = places.get(feuille_l * session.panels + feuille_c,
+                                  (0.0, 0.0))
+                x = feuille.left() + (
+                    (feuille_c * paper_w + pose[0]) * vers_x
+                    + dans_c * (card_w + gap_x))
+                y = feuille.top() + (
+                    (feuille_l * paper_h + pose[1]) * vers_y
+                    + dans_l * (card_h + gap_y))
+                cases.append((row, col, QRectF(x, y, card_w, card_h)))
         return cases
 
     def cell_at(self, x: float, y: float) -> tuple[int, int] | None:
@@ -520,13 +576,6 @@ class PagePreview(QWidget):
         painter.drawText(QRectF(-feuille.height() / 2, -20, feuille.height(), 18),
                          Qt.AlignCenter, self.tr("%1 cm").replace("%1", _cm(mm)))
         painter.restore()
-
-
-def _card_aspect(session) -> float:
-    card_set = session.card_set
-    if card_set and card_set.full_size[1]:
-        return card_set.full_size[0] / card_set.full_size[1]
-    return 713 / 984
 
 
 def _cm(mm: float) -> str:
