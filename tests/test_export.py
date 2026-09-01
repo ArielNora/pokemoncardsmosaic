@@ -120,23 +120,92 @@ def test_reasonable_dpi_raises_no_dpi_warning():
 
 
 def test_panel_bounds_cover_the_whole_poster_without_gaps():
-    settings = PosterSettings(paper="A4", panels=2, dpi=72)
+    settings = PosterSettings(paper="A4", panels=2, panel_rows=2, dpi=72)
     plan = plan_poster(small_grid(4, 4), card_set(16), settings)
-    paper_w = settings.paper_px[0]
-    assert plan.panel_bounds(0) == (0, paper_w)
-    assert plan.panel_bounds(1) == (paper_w, 2 * paper_w)
+    paper_w, paper_h = settings.paper_px
+    assert plan.panel_bounds(0) == (0, 0, paper_w, paper_h)
+    assert plan.panel_bounds(1) == (paper_w, 0, 2 * paper_w, paper_h)
+    # Les feuilles se lisent de gauche à droite, ligne par ligne.
+    assert plan.panel_bounds(2) == (0, paper_h, paper_w, 2 * paper_h)
+    assert plan.panel_bounds(3) == (paper_w, paper_h, 2 * paper_w, 2 * paper_h)
 
 
 def test_overlap_extends_panels_on_their_inner_edges_only():
-    settings = PosterSettings(paper="A4", panels=2, dpi=72, overlap_mm=10)
+    settings = PosterSettings(paper="A4", panels=2, panel_rows=2, dpi=72,
+                              overlap_mm=10)
     plan = plan_poster(small_grid(4, 4), card_set(16), settings)
     overlap = settings.overlap_px
-    paper_w = settings.paper_px[0]
-    assert plan.panel_bounds(0) == (0, paper_w + overlap)
-    assert plan.panel_bounds(1) == (paper_w - overlap, 2 * paper_w)
+    paper_w, paper_h = settings.paper_px
+    assert plan.panel_bounds(0) == (0, 0, paper_w + overlap, paper_h + overlap)
+    assert plan.panel_bounds(3) == (paper_w - overlap, paper_h - overlap,
+                                    2 * paper_w, 2 * paper_h)
+
+
+def test_each_sheet_row_restarts_at_its_own_top_edge():
+    """⚠️ La règle des colonnes vaut pour les lignes : une coupe horizontale ne
+    coupe pas plus une carte qu'une coupe verticale."""
+    settings = PosterSettings(paper="A4", panels=1, panel_rows=2, dpi=72)
+    plan = plan_poster(small_grid(2, 8), card_set(16), settings)
+    paper_h = settings.paper_px[1]
+    par_feuille = plan.rows_per_panel
+    assert 1 <= par_feuille < 8, "les huit lignes se répartissent"
+
+    # La dernière ligne d'une feuille tient sur elle ; la suivante recommence
+    # au bord haut de la feuille d'en dessous.
+    derniere = plan.row_y(par_feuille - 1) + plan.card_px[1]
+    assert derniere <= paper_h
+    assert plan.row_y(par_feuille) == paper_h
+
+
+def test_no_card_ever_straddles_a_sheet_edge():
+    """⚠️ **La règle qui tient tout**, vérifiée sur le plan lui-même et dans les
+    deux sens : une carte posée à `column_x` / `row_y` tient tout entière sur la
+    feuille où elle commence."""
+    for panneaux in (1, 3, 5):
+        for lignes in (1, 2, 3):
+            for cols, rows in ((7, 3), (13, 9), (4, 20)):
+                settings = PosterSettings(paper="A5", panels=panneaux,
+                                          panel_rows=lignes, dpi=150)
+                plan = plan_poster(small_grid(cols, rows),
+                                   card_set(cols * rows), settings)
+                paper_w, paper_h = settings.paper_px
+                card_w, card_h = plan.card_px
+                cas = (panneaux, lignes, cols, rows)
+                for col in range(cols):
+                    assert plan.column_x(col) % paper_w + card_w <= paper_w, cas
+                for row in range(rows):
+                    debut = plan.margin_px[1] + plan.row_y(row)
+                    assert debut % paper_h + card_h <= paper_h, cas
+
+
+def test_the_files_say_which_sheet_goes_where():
+    """Sur plusieurs lignes, un numéro seul ne dirait plus où coller quoi."""
+    assert panel_paths("/x/poster.png", 1, 1) == ["/x/poster.png"]
+    assert panel_paths("/x/poster.png", 2) == ["/x/poster_1of2.png",
+                                               "/x/poster_2of2.png"]
+    noms = panel_paths("/x/poster.png", 2, 2)
+    assert noms == ["/x/poster_l1c1sur2x2.png", "/x/poster_l1c2sur2x2.png",
+                    "/x/poster_l2c1sur2x2.png", "/x/poster_l2c2sur2x2.png"]
+
+
+def test_the_poster_is_as_tall_as_its_sheet_rows():
+    settings = PosterSettings(paper="A5", panels=3, panel_rows=2, dpi=72)
+    plan = plan_poster(small_grid(4, 4), card_set(16), settings)
+    paper_w, paper_h = settings.paper_px
+    assert plan.total_px == (paper_w * 3, paper_h * 2)
+    assert settings.panel_count == 6
 
 
 # --- Rendu ----------------------------------------------------------------
+
+def test_one_image_per_sheet_including_rows():
+    settings = PosterSettings(paper="A6", panels=2, panel_rows=2, dpi=72)
+    images = render_panels(small_grid(4, 4), card_set(16), settings,
+                           full_resolution=False)
+    assert len(images) == 4
+    for image in images:
+        assert image.size == settings.paper_px
+
 
 def test_one_image_per_panel_at_paper_size():
     settings = PosterSettings(paper="A6", panels=2, dpi=72)
@@ -203,6 +272,23 @@ def test_panels_are_written_as_numbered_files(tmp_path):
         str(tmp_path / "poster.png"), full_resolution=False,
     )
     assert [w.split("/")[-1] for w in written] == ["poster_1of2.png", "poster_2of2.png"]
+
+
+def test_a_grid_of_sheets_writes_one_file_per_sheet(tmp_path):
+    """Six feuilles, six fichiers, chacun nommé par sa place dans le mur."""
+    settings = PosterSettings(paper="A6", panels=3, panel_rows=2, dpi=72)
+    written = export_poster(
+        small_grid(6, 6), card_set(36), settings,
+        str(tmp_path / "poster.png"), full_resolution=False,
+    )
+    assert len(written) == 6
+    assert [os.path.basename(w) for w in written][:2] == [
+        "poster_l1c1sur2x3.png", "poster_l1c2sur2x3.png"]
+    from PIL import Image
+
+    for chemin in written:
+        with Image.open(chemin) as image:
+            assert image.size == settings.paper_px
 
 
 @pytest.mark.parametrize("paper,dpi", [("A5", 150), ("A4", 300), ("A6", 72)])

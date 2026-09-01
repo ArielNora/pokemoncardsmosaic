@@ -128,7 +128,7 @@ def test_an_interrupted_save_leaves_no_temporary_file(tmp_path):
 def test_a_preset_captures_the_whole_configuration(session):
     session.set_excluded([1], True)
     session.add_link(Link(cards=(2, 3)))
-    session.set_layout(cols=3, rows=2, paper="A3", dpi=150)
+    session.set_layout(cols=3, rows=2, paper="A3", dpi=150, panel_rows=2)
     session.set_algorithm(iterations=4242, use_annealing=False)
 
     preset = session.to_preset("essai")
@@ -138,6 +138,7 @@ def test_a_preset_captures_the_whole_configuration(session):
                        os.path.join("serie_A", "delta.png")), shape=(2, 1)),
     )
     assert preset.layout["cols"] == 3 and preset.layout["paper"] == "A3"
+    assert preset.layout["panel_rows"] == 2, "les lignes de feuilles aussi"
     assert preset.algorithm["iterations"] == 4242
     assert preset.algorithm["use_annealing"] is False
 

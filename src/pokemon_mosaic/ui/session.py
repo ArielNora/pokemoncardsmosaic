@@ -66,7 +66,11 @@ class Session(QObject):
         self.paper = "A2"
         self.landscape = False
         self.dpi = DEFAULT_DPI
+        # Feuilles côte à côte, et lignes de feuilles superposées : le poster
+        # est leur somme. Une coupe ne tombe jamais sur une carte, dans un sens
+        # comme dans l'autre.
         self.panels = 1
+        self.panel_rows = 1
         self.cols = 17
         self.rows = 17
         # Largeur d'une carte sur le papier. `None` = automatique : la plus
@@ -237,6 +241,15 @@ class Session(QObject):
         """La feuille telle qu'elle sortira, orientation comprise."""
         width, height = self.paper_size_mm
         return (height, width) if self.landscape else (width, height)
+
+    def panel_count(self) -> int:
+        """Le nombre de feuilles à imprimer, toutes lignes confondues."""
+        return self.panels * self.panel_rows
+
+    def sheet_mm(self) -> tuple[float, float]:
+        """La surface entière, toutes feuilles mises bout à bout."""
+        width, height = self.paper_mm()
+        return width * self.panels, height * self.panel_rows
 
     def set_layout(self, **changes) -> None:
         """Modifie un ou plusieurs réglages de grille et prévient une seule fois."""
@@ -538,6 +551,7 @@ class Session(QObject):
                 "paper_size_mm": list(self.paper_size_mm),
                 "landscape": self.landscape,
                 "dpi": self.dpi, "panels": self.panels,
+                "panel_rows": self.panel_rows,
                 "cols": self.cols, "rows": self.rows,
                 "card_width_mm": self.card_width_mm,
                 "card_gap_mm": self.card_gap_mm,

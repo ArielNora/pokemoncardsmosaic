@@ -448,7 +448,7 @@ def test_the_shape_search_stays_instant():
     paper = paper_size_mm("A0")
     geometrie = grid_geometry(paper, 5, 21, 21, CARD_ASPECT, 1200, card_width_mm=1.0)
     depart = time.perf_counter()
-    formes = best_grid_shapes(paper, 5, 441, 441, geometrie, 1200)
+    formes = best_grid_shapes(5, 441, 441, geometrie)
     duree = time.perf_counter() - depart
 
     assert duree < 0.5, f"{duree:.1f} s pour proposer des grilles"
@@ -475,4 +475,4 @@ def test_a_fixed_card_width_is_obeyed_even_when_it_overflows():
     paper = paper_size_mm("A5")
     g = grid_geometry(paper, 1, 11, 13, CARD_ASPECT, 300, card_width_mm=63.0)
     assert g.card_w == mm_to_pixels(63.0, 300)
-    assert not grid_fits(paper, 1, 11, 13, g, 300)
+    assert not grid_fits(1, 11, 13, g)

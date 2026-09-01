@@ -40,20 +40,31 @@ FINE_PEN_ABOVE = 900
 PLUS_WIDTH = 30
 PLUS_GAP = 10
 PLUS_MIN_HEIGHT = 44
+# Son jumeau au-dessus de la feuille, qui ajoute une **ligne** de feuilles :
+# même écart, mêmes proportions, couché.
+PLUS_HEIGHT = 24
+PLUS_MIN_WIDTH = 44
 # Les boutons de retrait, sous chaque feuille. ⚠️ Leur hauteur **entre dans
 # l'écart existant** entre la feuille et sa cote : l'agrandir éloignerait la
 # cote de ce qu'elle mesure, pour loger un bouton qu'on ne regarde pas.
 MINUS_SIZE = (30, 16)
+# Ceux des lignes, à gauche de chaque ligne de feuilles, dans la gouttière de la
+# cote de hauteur. Même règle : ils entrent dans l'écart existant.
+MINUS_ROW_SIZE = (16, 30)
 # Nombre maximal de feuilles côte à côte. Cinq A2 font déjà deux mètres de
 # large : au-delà, ce n'est plus un poster qu'on accroche.
 MAX_PANELS = 5
+# Et de lignes de feuilles. Trois A2 superposés font déjà un mur.
+MAX_PANEL_ROWS = 3
 
 
 class PagePreview(QWidget):
     """Dessine la feuille cotée et l'étalon, tous deux à la même échelle."""
 
-    # Nouveau nombre de feuilles côte à côte, demandé depuis l'aperçu.
+    # Nouveau nombre de feuilles côte à côte, demandé depuis l'aperçu, et
+    # nouveau nombre de lignes de feuilles.
     panels_requested = Signal(int)
+    panel_rows_requested = Signal(int)
     # Une case cliquée, et le trajet d'un glissement avec l'état à y poser.
     cell_clicked = Signal(int, int)
     cells_painted = Signal(list, bool)
@@ -75,14 +86,22 @@ class PagePreview(QWidget):
         theme.mark(self._plus, "mini")
         self._plus.clicked.connect(
             lambda: self.panels_requested.emit(self._session.panels + 1))
+        self._plus_row = QPushButton("＋", self)
+        theme.mark(self._plus_row, "mini")
+        self._plus_row.clicked.connect(
+            lambda: self.panel_rows_requested.emit(self._session.panel_rows + 1))
         self._minus: list[QPushButton] = []
+        self._minus_rows: list[QPushButton] = []
         self.setMinimumHeight(260)
         self.retranslate_ui()
 
     def retranslate_ui(self) -> None:
         self._plus.setToolTip(self.tr("Ajouter une feuille à droite"))
+        self._plus_row.setToolTip(self.tr("Ajouter une ligne de feuilles"))
         for bouton in self._minus:
             bouton.setToolTip(self.tr("Retirer une feuille"))
+        for bouton in self._minus_rows:
+            bouton.setToolTip(self.tr("Retirer une ligne de feuilles"))
 
     def refresh(self) -> None:
         """Recale les boutons **puis** repeint.
@@ -109,27 +128,37 @@ class PagePreview(QWidget):
 
         Ils font tous la même chose — les feuilles sont identiques —, mais un
         seul bouton pour l'ensemble ne dirait pas **où** l'on retire : posé sous
-        chacune, il se lit comme la colonne qu'il enlève.
+        chaque colonne et à gauche de chaque ligne, il se lit comme la feuille
+        qu'il enlève.
         """
-        voulus = 0 if self._session.panels <= 1 else self._session.panels
-        while len(self._minus) < voulus:
+        session = self._session
+        self._fit_row(self._minus, 0 if session.panels <= 1 else session.panels,
+                      MINUS_SIZE, self.tr("Retirer une feuille"),
+                      lambda: self.panels_requested.emit(session.panels - 1))
+        self._fit_row(self._minus_rows,
+                      0 if session.panel_rows <= 1 else session.panel_rows,
+                      MINUS_ROW_SIZE, self.tr("Retirer une ligne de feuilles"),
+                      lambda: self.panel_rows_requested.emit(
+                          session.panel_rows - 1))
+
+    def _fit_row(self, boutons, voulus, taille, infobulle, action) -> None:
+        while len(boutons) < voulus:
             bouton = QPushButton("－", self)
             theme.mark(bouton, "mini")
-            bouton.setFixedSize(*MINUS_SIZE)
-            bouton.clicked.connect(
-                lambda: self.panels_requested.emit(self._session.panels - 1))
-            bouton.setToolTip(self.tr("Retirer une feuille"))
-            self._minus.append(bouton)
-        while len(self._minus) > voulus:
-            self._minus.pop().deleteLater()
+            bouton.setFixedSize(*taille)
+            bouton.clicked.connect(action)
+            bouton.setToolTip(infobulle)
+            boutons.append(bouton)
+        while len(boutons) > voulus:
+            boutons.pop().deleteLater()
 
     def place_buttons(self) -> None:
         """Recale les boutons sur la géométrie courante du dessin."""
         self._sync_minus_buttons()
         geometrie = self.rects()
         if geometrie is None:
-            self._plus.hide()
-            for bouton in self._minus:
+            for bouton in (self._plus, self._plus_row,
+                           *self._minus, *self._minus_rows):
                 bouton.hide()
             return
         feuille = geometrie[0]
@@ -141,11 +170,32 @@ class PagePreview(QWidget):
         self._plus.setEnabled(self._session.panels < MAX_PANELS)
         self._plus.show()
 
+        # Le jumeau du dessus ajoute une ligne. Large comme un tiers de la
+        # feuille, comme l'autre est haut d'un tiers : les deux se lisent comme
+        # le même geste sur deux axes.
+        largeur_plus = max(PLUS_MIN_WIDTH, feuille.width() / 3)
+        self._plus_row.setGeometry(QRect(
+            round(feuille.center().x() - largeur_plus / 2),
+            round(feuille.top() - PLUS_GAP - PLUS_HEIGHT),
+            round(largeur_plus), PLUS_HEIGHT))
+        self._plus_row.setEnabled(self._session.panel_rows < MAX_PANEL_ROWS)
+        self._plus_row.show()
+
         largeur = feuille.width() / max(1, len(self._minus))
         for rang, bouton in enumerate(self._minus):
             centre = feuille.left() + largeur * (rang + 0.5)
             bouton.move(round(centre - MINUS_SIZE[0] / 2),
                         round(feuille.bottom() + 1))
+            bouton.show()
+
+        # ⚠️ **Dans la gouttière de la cote**, comme les autres entrent dans
+        # l'écart sous la feuille : la cote de hauteur se trace plus à gauche,
+        # et l'élargir pour loger un bouton l'éloignerait de ce qu'elle mesure.
+        haut = feuille.height() / max(1, len(self._minus_rows))
+        for rang, bouton in enumerate(self._minus_rows):
+            centre = feuille.top() + haut * (rang + 0.5)
+            bouton.move(round(feuille.left() - MINUS_ROW_SIZE[0] - 1),
+                        round(centre - MINUS_ROW_SIZE[1] / 2))
             bouton.show()
 
     def resizeEvent(self, event) -> None:
@@ -189,10 +239,17 @@ class PagePreview(QWidget):
     # --- Géométrie --------------------------------------------------------
 
     def _sheet_mm(self) -> tuple[float, float]:
-        """La feuille entière, panneaux compris."""
-        session = self._session
-        width, height = session.paper_mm()
-        return width * session.panels, height
+        """La feuille entière, panneaux compris — dans les deux sens."""
+        return self._session.sheet_mm()
+
+    def _top_room(self) -> float:
+        """Ce qu'il faut garder au-dessus de la feuille.
+
+        L'étiquette de l'étalon, ou le bouton qui ajoute une ligne — le plus
+        encombrant des deux. Sans cette réserve, le bouton se dessinait
+        au-dessus du cadre et disparaissait.
+        """
+        return max(LABEL_HEIGHT, PLUS_GAP + PLUS_HEIGHT)
 
     def _side_reserve(self) -> float:
         """Tout ce qui borde la feuille horizontalement, hors étalon.
@@ -227,7 +284,7 @@ class PagePreview(QWidget):
         l'étalon devenait plus étroit que son texte.
         """
         libre_x = self.width() - self._side_reserve()
-        libre_y = self.height() - BOTTOM_ROOM - LABEL_HEIGHT
+        libre_y = self.height() - BOTTOM_ROOM - self._top_room()
         if sheet[0] <= 0 or sheet[1] <= 0 or libre_x <= 0 or libre_y <= 0:
             return 0.0
         etiquette = self._label_width()
@@ -259,8 +316,8 @@ class PagePreview(QWidget):
         # Centrée sur tout, la moitié de la réserve partait vers le haut où elle
         # ne sert à rien : mesuré, 37 px laissés sous la feuille pour une cote
         # qui en réclame 42, et le « 42 cm » coupé par le bord.
-        libre_y = self.height() - BOTTOM_ROOM - LABEL_HEIGHT
-        haut = LABEL_HEIGHT + max(0.0, (libre_y - sheet[1] * scale) / 2)
+        libre_y = self.height() - BOTTOM_ROOM - self._top_room()
+        haut = self._top_room() + max(0.0, (libre_y - sheet[1] * scale) / 2)
 
         feuille = QRectF(gauche, haut, sheet[0] * scale, sheet[1] * scale)
         centre_x = gauche_bloc + colonne / 2
@@ -293,13 +350,19 @@ class PagePreview(QWidget):
         if self._show_grid:
             self._draw_grid(painter, feuille)
 
-        # Les coupes entre panneaux : la feuille dessinée est leur somme.
-        if self._session.panels > 1:
+        # Les coupes entre panneaux : la feuille dessinée est leur somme, dans
+        # les deux sens.
+        session = self._session
+        if session.panels > 1 or session.panel_rows > 1:
             painter.setPen(QPen(encre, 1, Qt.DashLine))
-            for panneau in range(1, self._session.panels):
-                x = feuille.left() + feuille.width() * panneau / self._session.panels
+            for panneau in range(1, session.panels):
+                x = feuille.left() + feuille.width() * panneau / session.panels
                 painter.drawLine(QPointF(x, feuille.top()),
                                  QPointF(x, feuille.bottom()))
+            for ligne in range(1, session.panel_rows):
+                y = feuille.top() + feuille.height() * ligne / session.panel_rows
+                painter.drawLine(QPointF(feuille.left(), y),
+                                 QPointF(feuille.right(), y))
 
         sheet = self._sheet_mm()
         painter.setBrush(Qt.NoBrush)
@@ -328,29 +391,42 @@ class PagePreview(QWidget):
         geometrie = grid_geometry(
             session.paper_mm(), session.panels,
             session.cols, session.rows, aspect, session.dpi,
-            session.card_width_mm, session.card_gap_mm)
-        par_feuille = geometrie.per_panel
+            session.card_width_mm, session.card_gap_mm, session.panel_rows)
+        # Zéro quand la carte ne tient pas sur la feuille : le dessin doit
+        # quand même sortir, la ligne d'état étant là pour le dire.
+        par_feuille = max(1, geometrie.per_panel)
+        par_colonne = max(1, geometrie.rows_per_panel)
         px_vers_x = MM_PER_INCH / session.dpi * feuille.width() / surface[0]
         px_vers_y = MM_PER_INCH / session.dpi * feuille.height() / surface[1]
         card_w = geometrie.card_w * px_vers_x
         card_h = geometrie.card_h * px_vers_y
         gap_x, gap_y = geometrie.gap * px_vers_x, geometrie.gap * px_vers_y
         feuille_w = feuille.width() / max(1, session.panels)
+        feuille_h = feuille.height() / max(1, session.panel_rows)
 
         # ⚠️ **Calée à gauche.** La place en trop est ce qu'apporte la feuille
         # suivante : elle doit se voir d'un bloc, du côté où l'on ajoutera la
-        # prochaine, et non coupée en deux demi-marges.
+        # prochaine, et non coupée en deux demi-marges. Verticalement, on centre
+        # tant qu'il n'y a qu'une ligne de feuilles — rien ne s'y coupe ; dès
+        # qu'il y en a plusieurs, la marge passe à zéro, comme à l'export : elle
+        # pousserait sinon la dernière ligne de chaque feuille au-delà de son
+        # bord bas, et la coupe tomberait en pleine carte.
         gx = feuille.left()
-        gy = feuille.top() + (feuille.height() - card_h * session.rows
-                              - max(0, session.rows - 1) * gap_y) / 2
+        if session.panel_rows > 1:
+            gy = feuille.top()
+        else:
+            gy = feuille.top() + (feuille.height() - card_h * session.rows
+                                  - max(0, session.rows - 1) * gap_y) / 2
         cases = []
         for row in range(session.rows):
+            # ⚠️ Chaque feuille repart de son bord, comme à l'export.
+            y = ((row // par_colonne) * feuille_h
+                 + (row % par_colonne) * (card_h + gap_y))
             for col in range(session.cols):
-                # ⚠️ Chaque feuille repart de son bord, comme à l'export.
                 x = ((col // par_feuille) * feuille_w
                      + (col % par_feuille) * (card_w + gap_x))
-                cases.append((row, col, QRectF(gx + x, gy + row * (card_h + gap_y),
-                                               card_w, card_h)))
+                cases.append((row, col,
+                              QRectF(gx + x, gy + y, card_w, card_h)))
         return cases
 
     def cell_at(self, x: float, y: float) -> tuple[int, int] | None:

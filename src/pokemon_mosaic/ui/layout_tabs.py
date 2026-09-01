@@ -32,7 +32,7 @@ from ..layout import (
 from ..optimize import check_links_fit
 from . import theme
 from .big_spin import BigChoice, BigFloatSpin, BigSpin
-from .page_preview import MAX_PANELS, PagePreview
+from .page_preview import MAX_PANEL_ROWS, MAX_PANELS, PagePreview
 from .session import Session
 
 # Assez de propositions pour avoir le choix, assez peu pour être lues d'un coup.
@@ -63,6 +63,14 @@ class LayoutTab(QWidget):
 
     # Émis quand ce qui décide de la validité a bougé : l'écran doit relire.
     state_changed = Signal()
+
+    # Le nombre de feuilles se règle depuis le dessin, et les quatre panneaux
+    # montrent le même dessin : le geste appartient donc à la classe commune.
+    def _on_panels_requested(self, panels: int) -> None:
+        self._session.set_layout(panels=max(1, min(MAX_PANELS, panels)))
+
+    def _on_panel_rows_requested(self, rows: int) -> None:
+        self._session.set_layout(panel_rows=max(1, min(MAX_PANEL_ROWS, rows)))
 
     def title(self) -> str:
         raise NotImplementedError
@@ -155,10 +163,9 @@ class GridSizeTab(LayoutTab):
             return
         self._auto_fit_pending = False
         session = self._session
-        paper_w, paper_h = session.paper_mm()
+        largeur, hauteur = session.sheet_mm()
         found = suggest_grids(
-            session.selected_count, card_aspect(session),
-            paper_w * session.panels / paper_h,
+            session.selected_count, card_aspect(session), largeur / hauteur,
         )
         if not found:
             return
@@ -230,8 +237,8 @@ class GridSizeTab(LayoutTab):
         self._preview = PagePreview(self._session)
         self._preview.set_show_grid(True)
         self._preview.set_paintable(True)
-        self._preview.panels_requested.connect(
-            lambda n: self._session.set_layout(panels=max(1, min(MAX_PANELS, n))))
+        self._preview.panels_requested.connect(self._on_panels_requested)
+        self._preview.panel_rows_requested.connect(self._on_panel_rows_requested)
         self._preview.cell_clicked.connect(self._session.toggle_empty_cell)
         self._preview.cells_painted.connect(self._session.paint_empty_cells)
 
@@ -303,10 +310,10 @@ class GridSizeTab(LayoutTab):
     def _fill_suggestions(self) -> None:
         self._suggestions.clear()
         session = self._session
-        paper_w, paper_h = session.paper_mm()
+        largeur, hauteur = session.sheet_mm()
         for suggestion in suggest_grids(
             max(session.selected_count, 1), card_aspect(session),
-            paper_w * session.panels / paper_h, limit=SUGGESTION_COUNT,
+            largeur / hauteur, limit=SUGGESTION_COUNT,
         ):
             delta = suggestion.card_delta
             if delta == 0:
@@ -437,6 +444,7 @@ class PaperTab(LayoutTab):
         # Les feuilles s'ajoutent et se retirent depuis le dessin lui-même : on
         # y voit tout de suite ce que cela change à la place occupée.
         self._preview.panels_requested.connect(self._on_panels_requested)
+        self._preview.panel_rows_requested.connect(self._on_panel_rows_requested)
 
         self._summary = QLabel(); self._summary.setWordWrap(True)
         self._warnings = QLabel(); self._warnings.setWordWrap(True)
@@ -448,9 +456,6 @@ class PaperTab(LayoutTab):
         layout.addWidget(self._summary)
         layout.addWidget(self._warnings)
         self.retranslate_ui()
-
-    def _on_panels_requested(self, panels: int) -> None:
-        self._session.set_layout(panels=max(1, min(MAX_PANELS, panels)))
 
     def retranslate_ui(self) -> None:
         self._sheet_title.setText(self.tr("Format de la feuille"))
@@ -512,13 +517,14 @@ class PaperTab(LayoutTab):
         # se voit depuis que la grille n'y est plus dessinée, et un format hors
         # catalogue laissait un trou là où le nom devait aller. Ce que cet
         # onglet décide, c'est une surface — c'est elle qu'il chiffre.
+        largeur, hauteur = session.sheet_mm()
         self._summary.setText(
             self.tr("%n feuille(s) de %1 × %2 cm — surface totale de %3 × %4 cm.",
-                    "", session.panels)
+                    "", session.panel_count())
             .replace("%1", f"{paper[0] / 10:.1f}")
             .replace("%2", f"{paper[1] / 10:.1f}")
-            .replace("%3", f"{paper[0] * session.panels / 10:.1f}")
-            .replace("%4", f"{paper[1] / 10:.1f}")
+            .replace("%3", f"{largeur / 10:.1f}")
+            .replace("%4", f"{hauteur / 10:.1f}")
         )
 
         # La mosaïque n'est pas dessinée ici, mais c'est bien cette surface
@@ -526,7 +532,8 @@ class PaperTab(LayoutTab):
         aspect = card_aspect(session)
         geometrie = grid_geometry(
             paper, session.panels, session.cols, session.rows, aspect,
-            session.dpi, session.card_width_mm, session.card_gap_mm)
+            session.dpi, session.card_width_mm, session.card_gap_mm,
+            session.panel_rows)
         total_w = geometrie.span(session.cols)
         total_h = (geometrie.card_h * session.rows
                    + max(0, session.rows - 1) * geometrie.gap)
@@ -546,8 +553,8 @@ class PaperTab(LayoutTab):
         # disaient le contraire du même blanc, et le conseil poussait à défaire
         # ce que le « + » venait de faire. On donne le chiffre, et ce qu'il
         # coûte à l'impression — la décision reste à l'utilisateur.
-        sheet_px = (mm_to_pixels(paper[0], session.dpi) * session.panels
-                    * mm_to_pixels(paper[1], session.dpi))
+        sheet_px = (mm_to_pixels(largeur, session.dpi)
+                    * mm_to_pixels(hauteur, session.dpi))
         coverage = total_w * total_h / sheet_px if sheet_px else 1.0
         if coverage < MIN_SHEET_COVERAGE:
             warnings.append(
@@ -665,8 +672,8 @@ class CardSizeTab(LayoutTab):
 
         self._preview = PagePreview(self._session)
         self._preview.set_show_grid(True)
-        self._preview.panels_requested.connect(
-            lambda n: self._session.set_layout(panels=max(1, min(MAX_PANELS, n))))
+        self._preview.panels_requested.connect(self._on_panels_requested)
+        self._preview.panel_rows_requested.connect(self._on_panel_rows_requested)
 
         self._status = QLabel()
         self._status.setWordWrap(True)
@@ -708,7 +715,7 @@ class CardSizeTab(LayoutTab):
         return grid_geometry(
             session.paper_mm(), session.panels,
             session.cols, session.rows, card_aspect(session), session.dpi,
-            session.card_width_mm, session.card_gap_mm)
+            session.card_width_mm, session.card_gap_mm, session.panel_rows)
 
     def _on_auto_toggled(self, auto: bool) -> None:
         if self._updating:
@@ -742,9 +749,9 @@ class CardSizeTab(LayoutTab):
         session = self._session
         self._shapes.clear()
         for cols, rows in best_grid_shapes(
-            session.paper_mm(), session.panels,
-            session.selected_count, session.cols * session.rows,
-            self._geometry(), session.dpi, limit=SHAPE_COUNT,
+            session.panels, session.selected_count,
+            session.cols * session.rows, self._geometry(), limit=SHAPE_COUNT,
+            panel_rows=session.panel_rows,
         ):
             delta = cols * rows - session.selected_count
             if delta == 0:
@@ -782,9 +789,8 @@ class CardSizeTab(LayoutTab):
 
     def is_valid(self) -> bool:
         session = self._session
-        return grid_fits(session.paper_mm(),
-                         session.panels, session.cols, session.rows,
-                         self._geometry(), session.dpi)
+        return grid_fits(session.panels, session.cols, session.rows,
+                         self._geometry(), session.panel_rows)
 
     def _update_status(self) -> None:
         session = self._session
@@ -803,21 +809,15 @@ class CardSizeTab(LayoutTab):
             role = "error"
             texte = self.tr(
                 "À <b>%1 mm</b>, la grille %2 × %3 ne tient pas sur %n feuille(s) : "
-                "elle en logerait <b>%4 × %5</b>.", "", session.panels)
+                "elle en logerait <b>%4 × %5</b>.", "", session.panel_count())
             texte = (texte.replace("%1", f"{largeur:.1f}")
                      .replace("%2", str(session.cols))
                      .replace("%3", str(session.rows))
                      .replace("%4", str(geometrie.per_panel * session.panels))
-                     .replace("%5", str(self._max_rows(geometrie))))
+                     .replace("%5", str(geometrie.rows_per_panel
+                                        * session.panel_rows)))
         theme.mark(self._status, role)
         self._status.setText(texte)
-
-    def _max_rows(self, geometrie) -> int:
-        session = self._session
-        paper_h = mm_to_pixels(
-            session.paper_mm()[1], session.dpi)
-        pas = geometrie.card_h + geometrie.gap
-        return max(0, (paper_h + geometrie.gap) // pas) if pas else 0
 
 
 class PlacementTab(LayoutTab):
@@ -842,8 +842,8 @@ class PlacementTab(LayoutTab):
         self._hint.setWordWrap(True)
         self._preview = PagePreview(self._session)
         self._preview.set_show_grid(True)
-        self._preview.panels_requested.connect(
-            lambda n: self._session.set_layout(panels=max(1, min(MAX_PANELS, n))))
+        self._preview.panels_requested.connect(self._on_panels_requested)
+        self._preview.panel_rows_requested.connect(self._on_panel_rows_requested)
         self._todo = QLabel()
         self._todo.setWordWrap(True)
         theme.mark(self._todo, "warning")

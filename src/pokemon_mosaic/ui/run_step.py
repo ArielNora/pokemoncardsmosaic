@@ -371,7 +371,11 @@ class RunStep(QWidget):
         # Un seul panneau n'a aucune étape intermédiaire à annoncer : une barre
         # figée à 0 % pendant plusieurs secondes se lit comme un export bloqué.
         # Indéterminée, elle dit la seule chose vraie — que ça travaille.
-        self._export_progress.setRange(0, settings.panels if settings.panels > 1 else 0)
+        # ⚠️ **Toutes les feuilles**, lignes comprises : compter les seules
+        # colonnes laissait la barre indéterminée pour un poster de deux
+        # feuilles superposées, et la bornait à trois quand il y en avait six.
+        feuilles = settings.panel_count
+        self._export_progress.setRange(0, feuilles if feuilles > 1 else 0)
         self._export_progress.setValue(0)
         self._export_progress.show()
         self.status_message.emit(self.tr("Export en cours…"))

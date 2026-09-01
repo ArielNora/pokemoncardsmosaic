@@ -209,6 +209,7 @@ class ExportDialog(QDialog):
             landscape=session.landscape,
             dpi=self._dpi.value(),
             panels=session.panels,
+            panel_rows=session.panel_rows,
             # ⚠️ **La taille de carte et l'écart aussi.** Oubliés ici, l'export
             # repassait en taille automatique et sans écart : le fichier écrit
             # n'avait rien à voir avec l'aperçu que l'utilisateur venait de
@@ -233,11 +234,11 @@ class ExportDialog(QDialog):
         session = self._session
         orientation = (self.tr("paysage") if session.landscape
                        else self.tr("portrait"))
-        panels = self.tr("%n panneau(x)", "", session.panels)
+        panels = self.tr("%n panneau(x)", "", session.panel_count())
         largeur, hauteur = session.paper_mm()
         feuille = session.paper or f"{largeur / 10:.1f} × {hauteur / 10:.1f} cm"
         self._layout_recap.setText(f"{feuille} {orientation} — {panels}")
-        self._overlap.setEnabled(session.panels > 1)
+        self._overlap.setEnabled(session.panel_count() > 1)
 
         try:
             plan = self._plan = plan_poster(self._grid, self._cards, self.settings())
@@ -251,7 +252,7 @@ class ExportDialog(QDialog):
         self._buttons.button(QDialogButtonBox.Ok).setEnabled(True)
 
         panel_w, panel_h = plan.settings.paper_px
-        megapixels = panel_w * panel_h * plan.settings.panels / 1e6
+        megapixels = panel_w * panel_h * plan.settings.panel_count / 1e6
         source = (self.tr("images d'origine") if self.full_resolution()
                   else self.tr("vignettes, rendu rapide et flou à l'impression"))
         self._plan_label.setText(
@@ -274,7 +275,8 @@ class ExportDialog(QDialog):
         ne prévient de leur écrasement.
         """
         try:
-            targets = panel_paths(self.path(), self._session.panels)
+            targets = panel_paths(self.path(), self._session.panels,
+                                  self._session.panel_rows)
         except ValueError:
             self._files.setText("")
             return
@@ -298,7 +300,7 @@ class ExportDialog(QDialog):
             # fond pour qu'il échoue aussitôt sur la même erreur.
             return
         try:
-            panel_paths(path, self._session.panels)
+            panel_paths(path, self._session.panels, self._session.panel_rows)
         except ValueError as error:
             self._warnings.setText(str(error))
             return

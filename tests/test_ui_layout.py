@@ -1302,16 +1302,50 @@ def test_the_orientation_moved_to_the_paper_tab(session, ecran):
 
 
 def test_a_cut_never_falls_on_a_card_whatever_the_grid(session):
-    """⚠️ La règle qui tient tout, vue depuis la mise en page de l'écran."""
+    """⚠️ La règle qui tient tout, vue depuis la mise en page de l'écran —
+    **dans les deux sens** depuis que les feuilles se posent aussi en lignes."""
     from pokemon_mosaic.layout import grid_geometry, mm_to_pixels, paper_size_mm
 
     for panneaux in range(1, 6):
-        for cols, rows in ((7, 3), (21, 21), (5, 4), (13, 9)):
-            paper = paper_size_mm("A3")
-            g = grid_geometry(paper, panneaux, cols, rows, 713 / 984, 300)
-            paper_w = mm_to_pixels(paper[0], 300)
-            assert g.span(g.per_panel) <= paper_w, (panneaux, cols, rows)
-            assert g.per_panel * panneaux >= cols, "des colonnes sans feuille"
+        for lignes in range(1, 4):
+            for cols, rows in ((7, 3), (21, 21), (5, 4), (13, 9)):
+                paper = paper_size_mm("A3")
+                g = grid_geometry(paper, panneaux, cols, rows, 713 / 984, 300,
+                                  panel_rows=lignes)
+                cas = (panneaux, lignes, cols, rows)
+                paper_w = mm_to_pixels(paper[0], 300)
+                paper_h = mm_to_pixels(paper[1], 300)
+                # Ce qu'une feuille porte tient sur elle, en largeur comme en
+                # hauteur : la coupe tombe donc sur un bord de carte.
+                assert g.span(g.per_panel) <= paper_w, cas
+                hauteur = (g.rows_per_panel * g.card_h
+                           + max(0, g.rows_per_panel - 1) * g.gap)
+                assert hauteur <= paper_h, cas
+                assert g.per_panel * panneaux >= cols, "des colonnes sans feuille"
+                assert g.rows_per_panel * lignes >= rows, "des lignes sans feuille"
+
+
+def test_sheet_rows_make_the_cards_bigger(session):
+    """Une ligne de feuilles de plus, c'est de la place en plus : la carte n'a
+    plus à rétrécir pour que toute la hauteur tienne sur une seule."""
+    from pokemon_mosaic.layout import grid_geometry, paper_size_mm
+
+    paper = paper_size_mm("A4")
+    seule = grid_geometry(paper, 1, 4, 20, 713 / 984, 300)
+    deux = grid_geometry(paper, 1, 4, 20, 713 / 984, 300, panel_rows=2)
+    assert deux.card_h > seule.card_h
+
+
+def test_a_card_wider_than_the_sheet_never_fits(session):
+    """⚠️ Zéro carte par feuille, et surtout pas un plancher à un : une carte de
+    deux mètres en logeait « une », et la grille d'une colonne passait pour
+    tenable."""
+    from pokemon_mosaic.layout import grid_fits, grid_geometry, paper_size_mm
+
+    paper = paper_size_mm("A4")
+    g = grid_geometry(paper, 1, 1, 1, 713 / 984, 300, card_width_mm=2000.0)
+    assert g.per_panel == 0 and g.rows_per_panel == 0
+    assert not grid_fits(1, 1, 1, g)
 
 
 # --- L'écran montre ce que l'imprimante fera --------------------------------
@@ -1379,6 +1413,27 @@ def test_clicks_still_land_on_the_right_cell_across_sheets(qt_app, session):
         assert vue.cell_at(x, y) == (1, col), col
 
 
+def test_clicks_land_right_across_sheet_rows_too(qt_app, session):
+    """⚠️ Les lignes ne sont pas plus à pas constant que les colonnes depuis
+    qu'une ligne de feuilles repart de son bord haut."""
+    from pokemon_mosaic.ui.wireframe import WireframeView
+
+    session.set_layout(paper="A4", cols=4, rows=20, panels=1, panel_rows=2,
+                       dpi=300)
+    vue = WireframeView(session)
+    vue.resize(600, 500)
+    vue.grab()
+
+    scale, _, _, (card_w, card_h) = vue._geometry
+    gx, gy = vue._grid_origin(vue._geometry)
+    par_feuille = vue._rows_per_panel
+    assert 1 <= par_feuille < session.rows, "les lignes se répartissent"
+    for row in (0, par_feuille - 1, par_feuille, session.rows - 1):
+        x = gx + card_w * scale * 1.5
+        y = gy + (vue.row_offset(row, vue._geometry) + card_h / 2) * scale
+        assert vue.cell_at(x, y) == (row, 1), row
+
+
 # --- L'onglet de la taille des cartes ---------------------------------------
 
 @pytest.fixture
@@ -1428,6 +1483,73 @@ def test_a_card_too_big_is_refused_with_its_numbers(session, cartes, ecran):
 
     ecran._list.setCurrentRow(ecran._row_of(2))
     assert not ecran.can_advance()
+
+
+def test_a_row_of_sheets_is_added_from_above_the_page(session, ecran):
+    """Le « + » du dessus ajoute une ligne, celui de droite une colonne : le
+    même geste sur deux axes."""
+    from pokemon_mosaic.ui.page_preview import MAX_PANEL_ROWS
+
+    papier = ecran._tabs[0]
+    papier.resize(900, 600)
+    papier.show()
+    apercu = papier._preview
+
+    apercu._plus_row.click()
+    assert session.panel_rows == 2
+    assert session.panel_count() == 2 * session.panels
+
+    for _ in range(MAX_PANEL_ROWS + 2):
+        apercu._plus_row.click()
+    assert session.panel_rows == MAX_PANEL_ROWS, "trois A2 superposés font un mur"
+    assert not apercu._plus_row.isEnabled()
+
+
+def test_each_sheet_row_has_its_own_minus_button(session, ecran):
+    """Un seul bouton pour l'ensemble ne dirait pas **où** l'on retire."""
+    papier = ecran._tabs[0]
+    papier.resize(900, 600)
+    papier.show()
+    apercu = papier._preview
+    assert apercu._minus_rows == [], "rien à retirer sur une seule ligne"
+
+    session.set_layout(panel_rows=3)
+    apercu.refresh()
+    assert len(apercu._minus_rows) == 3
+    feuille = apercu.rects()[0]
+    for bouton in apercu._minus_rows:
+        # ⚠️ Dans la gouttière de la cote, comme les autres entrent dans l'écart
+        # sous la feuille : ni sur le papier, ni au-delà de la cote.
+        assert bouton.x() + bouton.width() <= feuille.left() + 1
+        assert bouton.x() > feuille.left() - 20
+
+    apercu._minus_rows[0].click()
+    assert session.panel_rows == 2
+
+
+def test_the_sheet_rows_show_their_cuts(session, ecran):
+    """La feuille dessinée est la somme des feuilles : la coupe entre deux
+    lignes s'y voit, faute de quoi on ne saurait pas où l'on colle."""
+    papier = ecran._tabs[0]
+    papier.resize(900, 600)
+    papier.show()
+    session.set_layout(panels=1, panel_rows=2)
+    papier._preview.refresh()
+
+    pixmap = papier._preview.grab()
+    image, ratio = pixmap.toImage(), pixmap.devicePixelRatio()
+    feuille = papier._preview.rects()[0]
+    interieur = range(int(feuille.left() + 6), int(feuille.right() - 6), 3)
+
+    def encres(y):
+        fond = image.pixel(int(feuille.center().x() * ratio),
+                           int((feuille.top() + 12) * ratio))
+        return sum(1 for x in interieur
+                   if image.pixel(int(x * ratio), int(y * ratio)) != fond)
+
+    milieu = feuille.top() + feuille.height() / 2
+    assert encres(milieu) > len(interieur) / 3, "la coupe ne se voit pas"
+    assert encres(milieu + 12) == 0, "une feuille vide reste vide"
 
 
 def test_the_paper_tab_only_talks_about_paper(session, ecran):

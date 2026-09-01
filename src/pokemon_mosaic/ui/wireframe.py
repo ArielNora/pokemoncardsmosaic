@@ -51,6 +51,7 @@ class WireframeView(QWidget):
         # Cartes par feuille du dernier calcul, pour placer les colonnes comme
         # l'export : chaque feuille repart de son bord.
         self._per_panel = 1
+        self._rows_per_panel = 1
         self._gap = 0.0
         self.setMinimumSize(320, 380)
         self.setCursor(Qt.PointingHandCursor)
@@ -96,7 +97,7 @@ class WireframeView(QWidget):
 
         card_aspect = self._card_aspect()
         paper_w, paper_h = _paper_mm(session)
-        total_w = paper_w * session.panels
+        total_w, total_h = session.sheet_mm()
         # ⚠️ **Un nombre entier de cartes par feuille**, pour qu'une coupe tombe
         # toujours entre deux cartes. La carte se plie à la feuille ; les
         # colonnes, elles, n'ont plus à se diviser par le nombre de feuilles.
@@ -109,8 +110,10 @@ class WireframeView(QWidget):
         geometrie = grid_geometry(
             (paper_w, paper_h), session.panels, session.cols, session.rows,
             card_aspect, session.dpi, session.card_width_mm, session.card_gap_mm,
+            session.panel_rows,
         )
         self._per_panel = geometrie.per_panel
+        self._rows_per_panel = geometrie.rows_per_panel
         self._gap = geometrie.gap / session.dpi * 25.4
         # Tout est ramené en millimètres pour le dessin, puis mis à l'échelle.
         card_w = geometrie.card_w / session.dpi * 25.4
@@ -118,13 +121,28 @@ class WireframeView(QWidget):
 
         margin = 12
         scale = min((self.width() - 2 * margin) / total_w,
-                    (self.height() - 2 * margin) / paper_h)
+                    (self.height() - 2 * margin) / total_h)
         if scale <= 0:
             return None
 
         origin_x = (self.width() - total_w * scale) / 2
-        origin_y = (self.height() - paper_h * scale) / 2
-        return scale, (origin_x, origin_y), (total_w, paper_h), (card_w, card_h)
+        origin_y = (self.height() - total_h * scale) / 2
+        return scale, (origin_x, origin_y), (total_w, total_h), (card_w, card_h)
+
+    def row_offset(self, row: int, geometry) -> float:
+        """Décalage d'une ligne depuis le bord haut, en millimètres.
+
+        Même règle que `column_offset` : chaque ligne de feuilles repart de son
+        bord haut, sans quoi le dessin montrerait une carte à cheval sur une
+        coupe que le poster n'a pas.
+        """
+        _, _, (_, total_h), (_, card_h) = geometry
+        pas = card_h + self._gap
+        if self._show_paper:
+            par_feuille = max(1, self._rows_per_panel)
+            feuille_h = total_h / max(1, self._session.panel_rows)
+            return (row // par_feuille) * feuille_h + (row % par_feuille) * pas
+        return row * pas
 
     def column_offset(self, col: int, geometry) -> float:
         """Décalage d'une colonne depuis le bord gauche, en millimètres.
@@ -147,13 +165,19 @@ class WireframeView(QWidget):
         ⚠️ **Calée à gauche**, non centrée : la place en trop est ce qu'apporte
         la feuille suivante, et elle doit se voir d'un bloc, du côté où l'on
         ajoutera la prochaine. Répartie de part et d'autre, elle donnait deux
-        demi-marges qui ne disaient rien. La marge verticale, elle, ne dépend
-        d'aucune feuille et reste centrée.
+        demi-marges qui ne disaient rien.
+
+        ⚠️ **La marge verticale ne se centre que sur une seule ligne de
+        feuilles.** Dès qu'il y en a plusieurs, elle passe à zéro comme à
+        l'export : décalée, elle pousserait la dernière ligne de chaque feuille
+        au-delà de son bord bas, et la coupe tomberait en pleine carte.
         """
-        scale, (ox, oy), (_, paper_h), (_card_w, card_h) = geometry
-        rows = self._session.rows
-        grid_h = card_h * rows + max(0, rows - 1) * self._gap
-        return ox, oy + (paper_h - grid_h) * scale / 2
+        scale, (ox, oy), (_, total_h), (_card_w, card_h) = geometry
+        session = self._session
+        if self._show_paper and session.panel_rows > 1:
+            return ox, oy
+        grid_h = card_h * session.rows + max(0, session.rows - 1) * self._gap
+        return ox, oy + (total_h - grid_h) * scale / 2
 
     # --- Dessin -----------------------------------------------------------
 
@@ -167,14 +191,14 @@ class WireframeView(QWidget):
         if geometry is None:
             return
 
-        scale, (ox, oy), (total_w, paper_h), (card_w, card_h) = geometry
+        scale, (ox, oy), (total_w, total_h), (card_w, card_h) = geometry
         session = self._session
 
         # La feuille, marges comprises.
         if self._show_paper:
             painter.setBrush(QBrush(MARGIN_FILL))
             painter.setPen(QPen(PAPER_EDGE, 1))
-            painter.drawRect(QRectF(ox, oy, total_w * scale, paper_h * scale))
+            painter.drawRect(QRectF(ox, oy, total_w * scale, total_h * scale))
 
         gx, gy = self._grid_origin(geometry)
         painter.setBrush(QBrush(PAPER))
@@ -190,7 +214,7 @@ class WireframeView(QWidget):
             for col in range(session.cols):
                 rect = QRectF(
                     gx + self.column_offset(col, geometry) * scale,
-                    gy + row * (card_h + self._gap) * scale,
+                    gy + self.row_offset(row, geometry) * scale,
                     card_w * scale, card_h * scale)
                 is_empty = (row, col) in empty
                 painter.setBrush(QBrush(EMPTY_FILL if is_empty else CARD_FILL))
@@ -198,12 +222,16 @@ class WireframeView(QWidget):
                                     1.5 if is_empty else pen_width))
                 painter.drawRect(rect)
 
-        # Coupes entre panneaux : elles tombent toujours sur un bord de carte.
-        if self._show_paper and session.panels > 1:
+        # Coupes entre panneaux : elles tombent toujours sur un bord de carte,
+        # dans un sens comme dans l'autre.
+        if self._show_paper and (session.panels > 1 or session.panel_rows > 1):
             painter.setPen(QPen(CUT_LINE, 2, Qt.DashLine))
             for panel in range(1, session.panels):
                 x = ox + (total_w / session.panels) * panel * scale
-                painter.drawLine(x, oy, x, oy + paper_h * scale)
+                painter.drawLine(x, oy, x, oy + total_h * scale)
+            for ligne in range(1, session.panel_rows):
+                y = oy + (total_h / session.panel_rows) * ligne * scale
+                painter.drawLine(ox, y, ox + total_w * scale, y)
         painter.end()
 
     # --- Interaction ------------------------------------------------------
@@ -263,9 +291,15 @@ class WireframeView(QWidget):
         # donnerait la colonne 0 au lieu d'être rejeté. On écarte d'abord.
         if x < gx or y < gy:
             return None
-        row = int((y - gy) / ((card_h + self._gap) * scale))
-        # Les colonnes n'étant plus à pas constant, on cherche celle dont la
-        # bande contient le point plutôt que de diviser.
+        # Ni les colonnes ni les lignes ne sont à pas constant — chaque feuille
+        # repart de son bord —, donc on cherche la bande qui contient le point
+        # plutôt que de diviser.
+        row = next(
+            (r for r in range(self._session.rows)
+             if 0 <= y - gy - self.row_offset(r, self._geometry) * scale
+             < card_h * scale),
+            -1,
+        )
         col = next(
             (c for c in range(self._session.cols)
              if 0 <= x - gx - self.column_offset(c, self._geometry) * scale

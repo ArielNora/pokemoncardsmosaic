@@ -251,6 +251,15 @@ def test_a_single_panel_shows_an_indeterminate_progress(step, tmp_path):
     assert widget._export_progress.maximum() == 2
     widget.shutdown()
 
+    # ⚠️ Les lignes de feuilles comptent aussi : la barre restait indéterminée
+    # pour deux feuilles superposées, et se bornait à trois quand il y en
+    # avait six.
+    widget._start_export(grid_of(widget)[:, :4],
+                         PosterSettings(paper="A5", dpi=72, panel_rows=2),
+                         str(tmp_path / "empilees.png"), False)
+    assert widget._export_progress.maximum() == 2
+    widget.shutdown()
+
 
 def test_the_worker_writes_the_poster(step, tmp_path):
     widget, _ = step

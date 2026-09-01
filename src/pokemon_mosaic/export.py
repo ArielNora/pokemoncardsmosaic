@@ -50,7 +50,10 @@ class PosterSettings:
     paper_size_mm: tuple[float, float] | None = None
     landscape: bool = False
     dpi: int = DEFAULT_DPI
+    # Feuilles côte à côte, et lignes de feuilles superposées. Le poster est
+    # leur somme : `panels` × `panel_rows` fichiers à imprimer et à rabouter.
     panels: int = 1
+    panel_rows: int = 1
     # Largeur d'une carte sur le papier ; `None` demande la plus grande qui
     # fasse tenir la grille. L'écart les sépare, en millimètres.
     card_width_mm: float | None = None
@@ -62,7 +65,7 @@ class PosterSettings:
     jpeg_quality: int = 95
 
     def __post_init__(self):
-        if self.panels < 1:
+        if self.panels < 1 or self.panel_rows < 1:
             raise ValueError("Il faut au moins un panneau.")
         if self.overlap_mm < 0:
             raise ValueError("Le chevauchement ne peut pas être négatif.")
@@ -83,6 +86,11 @@ class PosterSettings:
     def overlap_px(self) -> int:
         return mm_to_pixels(self.overlap_mm, self.dpi)
 
+    @property
+    def panel_count(self) -> int:
+        """Le nombre de feuilles à imprimer, toutes lignes confondues."""
+        return self.panels * self.panel_rows
+
 
 @dataclass
 class PosterPlan:
@@ -95,6 +103,7 @@ class PosterPlan:
     margin_px: tuple[int, int]
     cards_per_panel: int = 1
     gap_px: int = 0
+    rows_per_panel: int = 1
     warnings: list[str] = field(default_factory=list)
 
     def column_x(self, col: int) -> int:
@@ -111,18 +120,37 @@ class PosterPlan:
         return ((col // par_feuille) * self.settings.paper_px[0]
                 + (col % par_feuille) * (self.card_px[0] + self.gap_px))
 
+    def row_y(self, row: int) -> int:
+        """Ordonnée du bord haut d'une ligne, même règle que `column_x`.
+
+        Une coupe horizontale ne coupe pas plus une carte qu'une coupe
+        verticale : chaque ligne de feuilles repart de son **bord haut**.
+        """
+        par_feuille = max(1, self.rows_per_panel)
+        return ((row // par_feuille) * self.settings.paper_px[1]
+                + (row % par_feuille) * (self.card_px[1] + self.gap_px))
+
     @property
     def total_px(self) -> tuple[int, int]:
         paper_w, paper_h = self.settings.paper_px
-        return paper_w * self.settings.panels, paper_h
+        return paper_w * self.settings.panels, paper_h * self.settings.panel_rows
 
-    def panel_bounds(self, panel: int) -> tuple[int, int]:
-        """Fenêtre horizontale d'un panneau, chevauchement compris."""
-        paper_w = self.settings.paper_px[0]
+    def panel_at(self, index: int) -> tuple[int, int]:
+        """Ligne et colonne de la `index`-ième feuille, lues de gauche à droite."""
+        return divmod(index, self.settings.panels)
+
+    def panel_bounds(self, panel: int) -> tuple[int, int, int, int]:
+        """Fenêtre d'un panneau dans l'image du poster, chevauchement compris."""
+        paper_w, paper_h = self.settings.paper_px
         overlap = self.settings.overlap_px
-        x0 = panel * paper_w - (overlap if panel > 0 else 0)
-        x1 = (panel + 1) * paper_w + (overlap if panel < self.settings.panels - 1 else 0)
-        return x0, x1
+        ligne, colonne = self.panel_at(panel)
+        x0 = colonne * paper_w - (overlap if colonne > 0 else 0)
+        x1 = (colonne + 1) * paper_w + (
+            overlap if colonne < self.settings.panels - 1 else 0)
+        y0 = ligne * paper_h - (overlap if ligne > 0 else 0)
+        y1 = (ligne + 1) * paper_h + (
+            overlap if ligne < self.settings.panel_rows - 1 else 0)
+        return x0, y0, x1, y1
 
 
 def plan_poster(
@@ -142,7 +170,7 @@ def plan_poster(
     card_aspect = cards.full_size[0] / cards.full_size[1]
     geometry = grid_geometry(
         settings.paper_mm, settings.panels, cols, rows, card_aspect, settings.dpi,
-        settings.card_width_mm, settings.card_gap_mm,
+        settings.card_width_mm, settings.card_gap_mm, settings.panel_rows,
     )
     per_panel, card_px = geometry.per_panel, (geometry.card_w, geometry.card_h)
 
@@ -150,11 +178,15 @@ def plan_poster(
     # ⚠️ **La grille est calée à gauche**, non centrée : la place en trop est ce
     # qu'apporte la feuille suivante, et elle doit se voir d'un bloc, du côté où
     # l'on ajoutera la prochaine. Répartie de part et d'autre, elle donnait deux
-    # demi-marges qui ne disaient rien. La marge verticale, elle, ne dépend
-    # d'aucune feuille et reste centrée.
+    # demi-marges qui ne disaient rien.
     margin_x = 0
     hauteur = rows * card_px[1] + max(0, rows - 1) * geometry.gap
-    margin_y = (paper_h - hauteur) // 2
+    # ⚠️ **Une seule ligne de feuilles : on centre.** Rien ne se coupe en
+    # hauteur, et la marge ne dépend alors d'aucune feuille. Dès qu'il y en a
+    # plusieurs, la marge passe à zéro : décalée, elle pousserait la dernière
+    # ligne de chaque feuille au-delà de son bord bas, et la coupe tomberait en
+    # pleine carte — la seule chose que l'on ne s'autorise jamais.
+    margin_y = (paper_h - hauteur) // 2 if settings.panel_rows == 1 else 0
 
     warnings: list[str] = []
     ceiling = max_useful_dpi(settings.paper_mm, per_panel, cards.full_size[0])
@@ -163,20 +195,21 @@ def plan_poster(
             f"{settings.dpi} DPI dépasse le maximum utile ({ceiling:.0f} DPI pour ce "
             f"format) : les cartes seront agrandies sans gagner en détail."
         )
-    megapixels = paper_w * paper_h * settings.panels / 1e6
+    megapixels = paper_w * paper_h * settings.panel_count / 1e6
     if megapixels > 100:
         warnings.append(
             f"Image de {megapixels:.0f} Mpx : prévoir ~{megapixels * 3 / 1024:.1f} Go "
             f"de mémoire pendant l'export."
         )
 
-    if per_panel * settings.panels < cols or hauteur > paper_h:
+    if (per_panel * settings.panels < cols
+            or geometry.rows_per_panel * settings.panel_rows < rows):
         warnings.append(
-            f"La grille {cols}×{rows} déborde de {settings.panels} feuille(s) à "
-            f"cette taille de carte : le poster serait tronqué."
+            f"La grille {cols}×{rows} déborde de {settings.panel_count} feuille(s) "
+            f"à cette taille de carte : le poster serait tronqué."
         )
     return PosterPlan(settings, cols, rows, card_px, (margin_x, margin_y),
-                      per_panel, geometry.gap, warnings)
+                      per_panel, geometry.gap, geometry.rows_per_panel, warnings)
 
 
 def _render_window(
@@ -205,18 +238,20 @@ def _render_window(
     touchees = [c for c in range(plan.cols)
                 if margin_x + plan.column_x(c) < x1
                 and margin_x + plan.column_x(c) + card_w > x0]
-    pas_h = card_h + plan.gap_px
-    first_row = max(0, (y0 - margin_y) // pas_h)
-    last_row = min(plan.rows - 1, (y1 - margin_y) // pas_h)
+    # Les lignes non plus ne sont plus à pas constant, chaque ligne de feuilles
+    # repartant de son bord haut : on les relève comme les colonnes.
+    lignes = [r for r in range(plan.rows)
+              if margin_y + plan.row_y(r) < y1
+              and margin_y + plan.row_y(r) + card_h > y0]
 
-    for r in range(first_row, last_row + 1):
+    for r in lignes:
         # Une ligne de 17 cartes pleine résolution prend le temps de lire 17
         # fichiers : c'est la granularité la plus fine où l'arrêt reste franc.
         if check_cancelled is not None and check_cancelled():
             raise ExportCancelled()
         for c in touchees:
             left = margin_x + plan.column_x(c) - x0
-            top = margin_y + r * (card_h + plan.gap_px) - y0
+            top = margin_y + plan.row_y(r) - y0
             index = int(grid[r, c])
             if index == EMPTY:
                 draw.rectangle(
@@ -237,20 +272,28 @@ def _render_window(
 
 
 def _draw_crop_marks(image: Image.Image, plan: PosterPlan, panel: int) -> None:
-    """Trace de discrets repères de coupe aux angles de la zone à conserver."""
+    """Trace de discrets repères de coupe aux angles de la zone à conserver.
+
+    Le chevauchement déborde désormais des quatre côtés quand les feuilles sont
+    en plusieurs lignes : les repères suivent, sans quoi ils auraient marqué le
+    bord de l'image et non celui du papier à conserver.
+    """
     settings = plan.settings
     overlap = settings.overlap_px
     paper_w, paper_h = settings.paper_px
-    left = overlap if panel > 0 else 0
+    ligne, colonne = plan.panel_at(panel)
+    left = overlap if colonne > 0 else 0
     right = left + paper_w
+    top = overlap if ligne > 0 else 0
+    bottom = top + paper_h
     length = mm_to_pixels(CROP_MARK_MM, settings.dpi)
     draw = ImageDraw.Draw(image)
 
     for x in (left, right - 1):
-        for y in (0, paper_h - 1):
-            end = y + length if y == 0 else y - length
+        for y in (top, bottom - 1):
+            end = y + length if y == top else y - length
             draw.line([(x, y), (x, end)], fill=(0, 0, 0), width=CROP_MARK_WIDTH_PX)
-    for y in (0, paper_h - 1):
+    for y in (top, bottom - 1):
         for x in (left, right - 1):
             end = x + length if x == left else x - length
             draw.line([(x, y), (end, y)], fill=(0, 0, 0), width=CROP_MARK_WIDTH_PX)
@@ -265,9 +308,8 @@ def render_panel(
     check_cancelled: Callable[[], bool] | None = None,
 ) -> Image.Image:
     """Rend un seul panneau, repères de coupe compris."""
-    _, paper_h = plan.settings.paper_px
-    x0, x1 = plan.panel_bounds(panel)
-    image = _render_window(grid, cards, plan, (x0, 0, x1, paper_h),
+    x0, y0, x1, y1 = plan.panel_bounds(panel)
+    image = _render_window(grid, cards, plan, (x0, y0, x1, y1),
                            full_resolution, check_cancelled)
     if plan.settings.crop_marks:
         _draw_crop_marks(image, plan, panel)
@@ -284,24 +326,31 @@ def render_panels(
     `export_poster`, qui écrit chaque panneau avant de rendre le suivant."""
     plan = plan_poster(grid, cards, settings)
     return [render_panel(grid, cards, plan, panel, full_resolution)
-            for panel in range(settings.panels)]
+            for panel in range(settings.panel_count)]
 
 
-def panel_paths(path: str, panels: int) -> list[str]:
+def panel_paths(path: str, panels: int, panel_rows: int = 1) -> list[str]:
     """Chemins des fichiers que produirait un export vers `path`.
 
     Sert aussi à prévenir l'utilisateur de ce qui va être écrasé : avec plusieurs
     panneaux, choisir « poster.png » écrit en réalité « poster_1of2.png » et
     « poster_2of2.png », qu'aucun sélecteur de fichier ne signale.
+
+    Sur plusieurs lignes de feuilles, un numéro seul ne dirait plus où coller
+    quoi : le nom porte alors la ligne et la colonne — « poster_l2c3sur2x3.png ».
     """
     base, extension = os.path.splitext(path)
     extension = extension.lower()
     if extension not in SUPPORTED_EXTENSIONS:
         raise ValueError(f"Format non géré : {extension} (attendu .png, .jpg ou .pdf)")
-    if panels == 1:
+    if panels == 1 and panel_rows == 1:
         return [f"{base}{extension}"]
-    return [f"{base}_{panel}of{panels}{extension}"
-            for panel in range(1, panels + 1)]
+    if panel_rows == 1:
+        return [f"{base}_{panel}of{panels}{extension}"
+                for panel in range(1, panels + 1)]
+    return [f"{base}_l{ligne}c{colonne}sur{panel_rows}x{panels}{extension}"
+            for ligne in range(1, panel_rows + 1)
+            for colonne in range(1, panels + 1)]
 
 
 def export_poster(
@@ -322,7 +371,7 @@ def export_poster(
     Chaque panneau est rendu **puis écrit** avant que le suivant ne commence : garder
     les deux moitiés d'un A0 en mémoire ferait 836 Mo pour rien.
     """
-    targets = panel_paths(path, settings.panels)
+    targets = panel_paths(path, settings.panels, settings.panel_rows)
 
     parent = os.path.dirname(path)
     if parent:
@@ -336,7 +385,7 @@ def export_poster(
     try:
         for panel, target in enumerate(targets):
             if on_progress is not None:
-                on_progress(panel, settings.panels, target)
+                on_progress(panel, settings.panel_count, target)
             image = render_panel(grid, cards, plan, panel,
                                  full_resolution, check_cancelled)
             _save(image, target, settings)
@@ -351,7 +400,7 @@ def export_poster(
         raise
 
     if on_progress is not None:
-        on_progress(settings.panels, settings.panels, "")
+        on_progress(settings.panel_count, settings.panel_count, "")
     return written
 
 
