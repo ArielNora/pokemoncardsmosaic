@@ -788,9 +788,14 @@
         <translation type="vanished">Image of %1 Mpx: exporting will require a lot of memory.</translation>
     </message>
     <message>
-        <location filename="../src/pokemon_mosaic/ui/layout_step.py" line="250"/>
+        <location filename="../src/pokemon_mosaic/ui/layout_step.py" line="275"/>
         <source>Grille</source>
         <translation>Grid</translation>
+    </message>
+    <message>
+        <location filename="../src/pokemon_mosaic/ui/layout_step.py" line="296"/>
+        <source>Cliquez « Suivant » sur les parties précédentes pour ouvrir celle-ci.</source>
+        <translation>Click “Next” on the earlier parts to open this one.</translation>
     </message>
 </context>
 <context>

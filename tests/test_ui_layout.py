@@ -319,7 +319,7 @@ def test_the_small_tabs_are_narrower_on_their_left_only(ecran):
     teinte = dot(image, ratio, 100, primaire)
     gauche, droite = box_edges(image, ratio, teinte, primaire)
 
-    ecran._show(1)                          # un onglet de la famille
+    ecran.advance()                         # « Suivant » ouvre la famille
     image, ratio = painted(ecran)
     petit = ecran._list.visualItemRect(ecran._list.item(2)).center().y()
     gauche_petit, droite_petit = box_edges(image, ratio, teinte, petit)
@@ -354,6 +354,78 @@ def test_the_line_goes_away_with_the_folded_family(ecran):
     fond = dot(image, ratio, 100, bande.center().y())
     assert all(dot(image, ratio, x, y) == fond
                for y in range(bande.top() + 2, bande.bottom()))
+
+
+# --- Le parcours se fait dans l'ordre ---------------------------------------
+
+def test_the_tabs_ahead_are_locked_until_suivant_opens_them(session, ecran):
+    """⚠️ Sauter d'un clic à l'onglet des écarts sans avoir vu les pages ni la
+    grille, c'est régler la taille des cartes pour un papier qu'on n'a pas
+    choisi : les onglets qui suivent dépendent de ce que ceux d'avant décident,
+    et rien à l'écran ne le disait."""
+    from PySide6.QtCore import Qt
+
+    ecran.show()
+    session.auto_place_empty_cells()
+    assert ecran._list.item(0).flags() & Qt.ItemIsEnabled
+    for position in (1, 2, 3):
+        assert not ecran._list.item(ecran._row_of(position)).flags() & Qt.ItemIsEnabled
+        assert "Suivant" in ecran._list.item(ecran._row_of(position)).toolTip()
+
+    ecran.advance()                       # une partie validée, une d'ouverte
+    assert ecran._list.item(ecran._row_of(1)).flags() & Qt.ItemIsEnabled
+    assert not ecran._list.item(ecran._row_of(2)).flags() & Qt.ItemIsEnabled
+
+
+def test_a_locked_tab_does_not_wave_its_badge(session, ecran):
+    """Qt éteint le libellé d'une ligne désactivée, mais pas une icône que nous
+    dessinons nous-mêmes : à pleine intensité, elle réclamait l'attention pour
+    une partie sur laquelle on ne peut rien."""
+    from pokemon_mosaic.ui.layout_step import state_icon
+
+    ecran.show()
+    verrouille = ecran._list.item(ecran._row_of(2)).icon().pixmap(22, 22).toImage()
+    ouvert = state_icon(False, ecran.palette()).pixmap(22, 22).toImage()
+    assert verrouille != ouvert
+
+    ecran.advance()
+    session.auto_place_empty_cells()
+    ecran.advance()                       # l'onglet 2 s'ouvre
+    assert ecran._list.item(ecran._row_of(2)).icon().pixmap(22, 22).toImage() == ouvert
+
+
+def test_clicking_a_locked_tab_does_nothing(session, ecran):
+    """Le verrou tient au clic, pas seulement à l'œil."""
+    from PySide6.QtCore import Qt
+    from PySide6.QtTest import QTest
+
+    ecran.resize(1000, 700)
+    ecran.show()
+    rect = ecran._list.visualItemRect(ecran._list.item(ecran._row_of(2)))
+    QTest.mouseClick(ecran._list.viewport(), Qt.LeftButton, Qt.NoModifier,
+                     rect.center())
+
+    assert ecran._current_tab() == 0
+    assert ecran._pages.currentIndex() == 0
+
+
+def test_going_back_and_changing_your_mind_never_locks_again(session, ecran):
+    """Une seule visite validée suffit, définitivement : le verrou ne sert
+    qu'au premier passage, et c'est la pastille qui dit si la partie tient
+    toujours debout."""
+    from PySide6.QtCore import Qt
+
+    ecran.show()
+    session.auto_place_empty_cells()
+    ecran.advance()                       # pages validées
+    ecran.advance()                       # taille validée
+    assert ecran._list.item(ecran._row_of(2)).flags() & Qt.ItemIsEnabled
+
+    ecran._show(0)
+    session.set_layout(paper="A6")        # on change d'avis
+    session.set_layout(cols=3, rows=3)    # et la grille ne tient plus
+    assert not ecran._ready(1), "la pastille, elle, le dit"
+    assert ecran._list.item(ecran._row_of(2)).flags() & Qt.ItemIsEnabled
 
 
 def test_nothing_is_ready_before_the_user_says_so(session, ecran):

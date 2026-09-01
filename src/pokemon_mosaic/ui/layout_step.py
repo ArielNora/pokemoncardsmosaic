@@ -56,7 +56,14 @@ SUB_TAB_BOOST = 0
 FAMILY_ROW = -1
 
 
-def state_icon(ready: bool, palette) -> QIcon:
+# Ce qui reste de la pastille sur un onglet encore verrouillé. Qt éteint le
+# libellé d'une ligne désactivée, mais pas une icône que nous dessinons
+# nous-mêmes : à pleine intensité, elle réclamait l'attention pour une partie
+# sur laquelle on ne peut rien.
+LOCKED_OPACITY = 0.35
+
+
+def state_icon(ready: bool, palette, locked: bool = False) -> QIcon:
     """Une coche verte, ou un point d'exclamation ambré.
 
     Dessinée plutôt que prise à un thème d'icônes : celui-ci n'existe ni sur
@@ -68,6 +75,8 @@ def state_icon(ready: bool, palette) -> QIcon:
     pixmap.fill(Qt.transparent)
     painter = QPainter(pixmap)
     painter.setRenderHint(QPainter.Antialiasing)
+    if locked:
+        painter.setOpacity(LOCKED_OPACITY)
     painter.setPen(QColor(colours["ok"] if ready else colours["warning"]))
     police = painter.font()
     police.setPointSize(BADGE - 6)
@@ -237,6 +246,22 @@ class LayoutStep(QWidget):
         """Validée par l'utilisateur, **et** toujours valide."""
         return position in self._validated and self._tabs[position].is_valid()
 
+    def _reachable(self, position: int) -> bool:
+        """Toutes les parties d'avant ont-elles été validées au moins une fois ?
+
+        ⚠️ **Le parcours se fait dans l'ordre.** Sauter d'un clic à l'onglet des
+        écarts sans avoir vu les pages ni la grille, c'est régler la taille des
+        cartes pour un papier qu'on n'a pas choisi ; les onglets qui suivent
+        dépendent de ce que ceux d'avant décident, et rien à l'écran ne le
+        disait.
+
+        Une seule visite validée suffit, **définitivement** : on revient en
+        arrière autant qu'on veut, et changer d'avis ne referme rien. C'est
+        `_ready` — donc la pastille — qui dit si la partie tient toujours
+        debout ; le verrou, lui, ne sert qu'au premier passage.
+        """
+        return all(rang in self._validated for rang in range(position))
+
     def _family_positions(self) -> range:
         """Les onglets que l'intitulé « Grille » chapeaute."""
         return range(1, len(self._tabs))
@@ -260,7 +285,16 @@ class LayoutStep(QWidget):
             # quatre espaces dans le libellé, qui décalaient le texte sans
             # décaler l'onglet.
             item.setText(self._tabs[position].title())
-            item.setIcon(state_icon(self._ready(position), palette))
+            accessible = self._reachable(position)
+            item.setIcon(state_icon(self._ready(position), palette,
+                                    locked=not accessible))
+            item.setFlags(Qt.ItemIsEnabled | Qt.ItemIsSelectable if accessible
+                          else Qt.NoItemFlags)
+            # Un onglet grisé sans un mot laisserait chercher la panne : on dit
+            # ce qui l'ouvre.
+            item.setToolTip("" if accessible else self.tr(
+                "Cliquez « Suivant » sur les parties précédentes pour ouvrir "
+                "celle-ci."))
         self.advance_state_changed.emit()
 
     # --- Navigation -------------------------------------------------------
@@ -285,7 +319,14 @@ class LayoutStep(QWidget):
         self._refresh_badges()
 
     def _show(self, position: int) -> None:
-        """Affiche un onglet, en dépliant la famille s'il s'y trouve."""
+        """Affiche un onglet, en dépliant la famille s'il s'y trouve.
+
+        ⚠️ Un onglet encore **verrouillé** ne s'affiche pas : `setCurrentRow`
+        n'a aucun effet sur une ligne désactivée. Le seul chemin qui y mène,
+        `advance`, valide la partie et rafraîchit les pastilles — donc ouvre la
+        suivante — avant d'appeler ceci. Un futur « aller à l'onglet X » devra
+        faire de même, sous peine de ne rien faire, sans erreur.
+        """
         if position in self._family_positions() and self._collapsed:
             self._toggle_family()
         self._list.setCurrentRow(self._row_of(position))
