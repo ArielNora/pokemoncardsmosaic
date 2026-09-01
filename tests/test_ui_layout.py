@@ -1805,6 +1805,49 @@ def test_changing_the_grid_puts_every_piece_back(session, emplacement):
     assert session.panel_offsets == {}, "les déplacements devaient être défaits"
 
 
+def test_centring_puts_each_piece_in_the_middle_of_its_sheet(session,
+                                                            emplacement):
+    """Le geste inverse du glissement : d'un clic, au milieu."""
+    session.set_layout(paper="A4", cols=5, rows=4, panels=2)
+    emplacement._center.click()
+
+    for index in range(session.panel_count()):
+        if not session.panel_carries_cards(index):
+            continue
+        libre = session.panel_free_mm(index)
+        assert session.panel_position_mm(index) == pytest.approx(
+            (libre[0] / 2, libre[1] / 2)), index
+    assert session.panels_are_centred()
+
+
+def test_a_sheet_without_cards_is_left_alone(session, emplacement):
+    """⚠️ Une feuille qui ne porte aucune carte n'a rien à centrer, et lui
+    inventer une position la ferait compter parmi les feuilles déplacées."""
+    session.set_layout(paper="A4", cols=2, rows=2, panels=3)
+    vides = [index for index in range(session.panel_count())
+             if not session.panel_carries_cards(index)]
+    assert vides, "il faut une feuille vide pour éprouver la règle"
+
+    emplacement._center.click()
+    assert not (set(vides) & set(session.panel_offsets))
+
+
+def test_the_centring_button_says_when_there_is_nothing_to_do(session,
+                                                              emplacement):
+    # Deux feuilles : la seconde ne porte qu'une colonne, et a donc de la
+    # place à sa droite. Sur une feuille pleine à ras bord, le placement par
+    # défaut **est** déjà le centre, et le bouton n'a rien à proposer.
+    session.set_layout(paper="A4", cols=5, rows=4, panels=2)
+    assert emplacement._center.isEnabled(), "calé à gauche, donc pas centré"
+
+    emplacement._center.click()
+    assert not emplacement._center.isEnabled()
+    assert "centrés" in emplacement._status.text()
+
+    session.move_panel(1, 0.0, 0.0)
+    assert emplacement._center.isEnabled()
+
+
 def test_the_placement_tab_says_what_it_carries(session, emplacement):
     assert "défaut" in emplacement._status.text()
     assert not emplacement._reset.isEnabled()

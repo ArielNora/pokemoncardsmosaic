@@ -66,14 +66,6 @@ seule provenance. Voir `docs/IMAGES.md`.
 
 ## Dettes ouvertes
 
-- **Le bouton « centrer » de l'onglet d'emplacement** reste à écrire. Le
-  déplacement au glissement est **fait** (2026-09-02) : on tire la mosaïque
-  dans sa feuille, chaque feuille portant son morceau. Ce qui manque est le
-  geste inverse — poser un morceau au **milieu** de sa feuille d'un clic. Le
-  bouton « Remettre en place » ramène aux emplacements par défaut, calés à
-  gauche et centrés en hauteur ; « centrer » les centrerait aussi
-  horizontalement.
-
 - **Aucun poster n'a encore été fabriqué avec les 441 cartes.** `output/` date
   du 19 août et porte les 281 anciennes cartes encadrées. Ce n'est pas une dette
   technique mais une vérification manquante — et c'est le but du projet.

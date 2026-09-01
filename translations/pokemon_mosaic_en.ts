@@ -1048,15 +1048,15 @@
         <translation>Remove a row of sheets</translation>
     </message>
     <message>
-        <location filename="../src/pokemon_mosaic/ui/page_preview.py" line="532"/>
+        <location filename="../src/pokemon_mosaic/ui/page_preview.py" line="530"/>
         <source>carte réelle
 %1 × %2 cm</source>
         <translation>real card
 %1 × %2 cm</translation>
     </message>
     <message>
-        <location filename="../src/pokemon_mosaic/ui/page_preview.py" line="564"/>
-        <location filename="../src/pokemon_mosaic/ui/page_preview.py" line="579"/>
+        <location filename="../src/pokemon_mosaic/ui/page_preview.py" line="562"/>
+        <location filename="../src/pokemon_mosaic/ui/page_preview.py" line="577"/>
         <source>%1 cm</source>
         <translation>%1 cm</translation>
     </message>
@@ -1188,30 +1188,52 @@
         <translation>Grid placement</translation>
     </message>
     <message>
-        <location filename="../src/pokemon_mosaic/ui/layout_tabs.py" line="879"/>
+        <location filename="../src/pokemon_mosaic/ui/layout_tabs.py" line="882"/>
         <source>Cliquez dans la mosaïque et tirez pour la déplacer. Chaque feuille porte son morceau et le déplace pour son compte : un morceau ne passe jamais sur la feuille voisine, sans quoi une coupe tomberait en pleine carte.</source>
         <translation>Click inside the mosaic and drag to move it. Each sheet carries its own piece and moves it independently: a piece never crosses onto the neighbouring sheet, which would put a cut through a card.</translation>
     </message>
     <message>
-        <location filename="../src/pokemon_mosaic/ui/layout_tabs.py" line="884"/>
+        <location filename="../src/pokemon_mosaic/ui/layout_tabs.py" line="887"/>
+        <source>Centrer</source>
+        <translation>Centre</translation>
+    </message>
+    <message>
+        <location filename="../src/pokemon_mosaic/ui/layout_tabs.py" line="889"/>
+        <source>Pose chaque morceau au milieu de sa feuille, dans les deux sens. Les feuilles sans carte sont laissées de côté.</source>
+        <translation>Puts every piece in the middle of its sheet, both ways. Sheets without cards are left alone.</translation>
+    </message>
+    <message>
+        <location filename="../src/pokemon_mosaic/ui/layout_tabs.py" line="892"/>
         <source>Remettre en place</source>
         <translation>Put back</translation>
     </message>
     <message>
-        <location filename="../src/pokemon_mosaic/ui/layout_tabs.py" line="886"/>
+        <location filename="../src/pokemon_mosaic/ui/layout_tabs.py" line="894"/>
         <source>Ramène tous les morceaux à leur emplacement par défaut : calés à gauche, centrés en hauteur.</source>
         <translation>Brings every piece back to its default spot: flush left, vertically centred.</translation>
     </message>
+    <message>
+        <location filename="../src/pokemon_mosaic/ui/layout_tabs.py" line="908"/>
+        <source>Les morceaux sont centrés dans leur feuille.</source>
+        <translation>Every piece is centred in its sheet.</translation>
+    </message>
     <message numerus="yes">
-        <location filename="../src/pokemon_mosaic/ui/layout_tabs.py" line="900"/>
-        <source>&lt;b&gt;%n&lt;/b&gt; feuille(s) déplacée(s) à la main.</source>
+        <location filename="../src/pokemon_mosaic/ui/layout_tabs.py" line="910"/>
+        <source>&lt;b&gt;%n&lt;/b&gt; feuille(s) déplacée(s).</source>
         <translation>
+            <numerusform>&lt;b&gt;%n&lt;/b&gt; sheet moved.</numerusform>
+            <numerusform>&lt;b&gt;%n&lt;/b&gt; sheets moved.</numerusform>
+        </translation>
+    </message>
+    <message numerus="yes">
+        <source>&lt;b&gt;%n&lt;/b&gt; feuille(s) déplacée(s) à la main.</source>
+        <translation type="vanished">
             <numerusform>&lt;b&gt;%n&lt;/b&gt; sheet moved by hand.</numerusform>
             <numerusform>&lt;b&gt;%n&lt;/b&gt; sheets moved by hand.</numerusform>
         </translation>
     </message>
     <message>
-        <location filename="../src/pokemon_mosaic/ui/layout_tabs.py" line="903"/>
+        <location filename="../src/pokemon_mosaic/ui/layout_tabs.py" line="912"/>
         <source>Les morceaux sont à leur emplacement par défaut.</source>
         <translation>Every piece is at its default spot.</translation>
     </message>

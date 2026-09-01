@@ -267,6 +267,43 @@ class Session(QObject):
             return
         self.set_layout(panel_offsets={**self.panel_offsets, index: borne})
 
+    def center_panels(self) -> None:
+        """Pose chaque morceau au milieu de sa feuille.
+
+        ⚠️ **Les feuilles vides sont laissées de côté.** Une feuille qui ne
+        porte aucune carte — la dernière, quand la grille s'arrête avant — n'a
+        rien à centrer, et lui inventer une position la ferait compter parmi
+        les feuilles déplacées.
+        """
+        places = {}
+        for index in range(self.panel_count()):
+            if not self.panel_carries_cards(index):
+                continue
+            libre = self.panel_free_mm(index)
+            places[index] = (libre[0] / 2, libre[1] / 2)
+        if places != self.panel_offsets:
+            self.set_layout(panel_offsets=places)
+
+    def panels_are_centred(self) -> bool:
+        """Vrai si chaque morceau est déjà au milieu de sa feuille."""
+        for index in range(self.panel_count()):
+            if not self.panel_carries_cards(index):
+                continue
+            libre = self.panel_free_mm(index)
+            pose = self.panel_position_mm(index)
+            if (abs(pose[0] - libre[0] / 2) > 0.05
+                    or abs(pose[1] - libre[1] / 2) > 0.05):
+                return False
+        return True
+
+    def panel_carries_cards(self, index: int) -> bool:
+        """Cette feuille porte-t-elle au moins une carte ?"""
+        geometrie = self.panel_geometry()
+        ligne, colonne = divmod(index, max(1, self.panels))
+        return bool(cards_on_panel(self.cols, geometrie.per_panel, colonne)
+                    and cards_on_panel(self.rows, geometrie.rows_per_panel,
+                                       ligne))
+
     def panel_geometry(self):
         """La géométrie des cartes pour la mise en page courante."""
         aspect = 713 / 984

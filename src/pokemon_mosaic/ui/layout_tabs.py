@@ -843,11 +843,14 @@ class PlacementTab(LayoutTab):
     def _build(self) -> None:
         self._hint = QLabel()
         self._hint.setWordWrap(True)
+        self._center = QPushButton()
+        self._center.clicked.connect(self._session.center_panels)
         self._reset = QPushButton()
         self._reset.clicked.connect(self._put_back)
 
         haut = QHBoxLayout()
         haut.addWidget(self._hint, 1)
+        haut.addWidget(self._center)
         haut.addWidget(self._reset)
         bandeau = QWidget()
         bandeau.setLayout(haut)
@@ -881,6 +884,11 @@ class PlacementTab(LayoutTab):
                     "un morceau ne passe jamais sur la feuille voisine, sans "
                     "quoi une coupe tomberait en pleine carte.")
         )
+        self._center.setText(self.tr("Centrer"))
+        self._center.setToolTip(
+            self.tr("Pose chaque morceau au milieu de sa feuille, dans les deux "
+                    "sens. Les feuilles sans carte sont laissées de côté.")
+        )
         self._reset.setText(self.tr("Remettre en place"))
         self._reset.setToolTip(
             self.tr("Ramène tous les morceaux à leur emplacement par défaut : "
@@ -894,15 +902,20 @@ class PlacementTab(LayoutTab):
             self._session.set_layout(panel_offsets={})
 
     def refresh(self) -> None:
-        deplaces = len(self._session.panel_offsets)
-        if deplaces:
-            role, texte = "ok", self.tr(
-                "<b>%n</b> feuille(s) déplacée(s) à la main.", "", deplaces)
+        session = self._session
+        deplaces = len(session.panel_offsets)
+        # Relevé **une fois** : chaque appel relit la géométrie de toutes les
+        # feuilles, et ce panneau se rafraîchit à chaque pixel d'un glissement.
+        centres = session.panels_are_centred()
+        if centres:
+            texte = self.tr("Les morceaux sont centrés dans leur feuille.")
+        elif deplaces:
+            texte = self.tr("<b>%n</b> feuille(s) déplacée(s).", "", deplaces)
         else:
-            role, texte = "ok", self.tr(
-                "Les morceaux sont à leur emplacement par défaut.")
-        theme.mark(self._status, role)
+            texte = self.tr("Les morceaux sont à leur emplacement par défaut.")
+        theme.mark(self._status, "ok")
         self._status.setText(texte)
         self._reset.setEnabled(bool(deplaces))
+        self._center.setEnabled(not centres)
         self._preview.refresh()
         self.state_changed.emit()
