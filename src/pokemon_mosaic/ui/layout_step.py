@@ -437,9 +437,23 @@ class LayoutStep(QWidget):
     # --- Ce que la fenêtre demande ---------------------------------------
 
     def can_advance(self) -> bool:
-        """La partie affichée laisse-t-elle passer à la suivante ?"""
+        """Le parcours laisse-t-il passer à la suite ?
+
+        ⚠️ **Pas seulement la partie affichée.** Une partie déjà validée qui
+        casse — la grille agrandie déborde des pages, une carte de plus fait
+        sauter le compte — bloque le bouton **où qu'on soit**, et sa croix
+        rouge dans la colonne dit laquelle. Sans cela, on revenait en arrière,
+        on cassait quelque chose, on repartait par un onglet plus loin, et l'on
+        quittait l'étape avec une mise en page impossible.
+
+        Les parties **pas encore validées** ne comptent pas : au premier
+        passage elles sont toutes en attente, et les exiger fermerait le
+        chemin qui mène justement à elles.
+        """
         position = self._current_tab()
-        return position >= 0 and self._tabs[position].is_valid()
+        if position < 0 or not self._tabs[position].is_valid():
+            return False
+        return all(self._tabs[rang].is_valid() for rang in self._validated)
 
     def advance(self) -> bool:
         """Valide la partie affichée et passe à la suivante.
@@ -450,7 +464,7 @@ class LayoutStep(QWidget):
         les parties, puis change d'étape.
         """
         position = self._current_tab()
-        if position < 0 or not self._tabs[position].is_valid():
+        if not self.can_advance():
             return True                     # rien ne bouge, mais on garde le clic
         self._validated.add(position)
         self._refresh_badges()

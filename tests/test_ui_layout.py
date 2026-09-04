@@ -640,6 +640,38 @@ def test_an_incomplete_grid_blocks_the_way(session, ecran):
     assert ecran.can_advance()
 
 
+def test_a_validated_part_that_breaks_blocks_the_button_everywhere(session,
+                                                                   ecran):
+    """⚠️ On revenait en arrière, on cassait quelque chose, on repartait par un
+    onglet plus loin, et l'on quittait l'étape avec une mise en page
+    impossible : « Suivant » ne regardait que la partie affichée."""
+    ecran.show()
+    session.auto_place_empty_cells()
+    ecran.advance()                        # les pages sont validées
+    ecran.advance()                        # la taille aussi
+    assert ecran.can_advance()
+
+    ecran._show(0)                         # on revient aux pages
+    assert ecran.can_advance()
+    session.set_layout(cols=6, rows=6)     # des cases vides à placer
+    assert not ecran._tabs[1].is_valid()
+    assert not ecran.can_advance(), "une partie validée cassée bloque partout"
+
+    session.auto_place_empty_cells()
+    assert ecran.can_advance()
+
+
+def test_the_parts_ahead_do_not_block_the_first_pass(session, ecran):
+    """⚠️ Les exiger fermerait le chemin qui mène justement à elles : au premier
+    passage, la grille par défaut ne tient presque jamais, et l'on n'aurait pas
+    même pu atteindre l'onglet où la corriger."""
+    ecran.show()
+    session.set_layout(cols=2, rows=2)     # la grille suivante ne tient pas
+    assert not ecran._tabs[1].is_valid()
+    assert ecran._current_tab() == 0
+    assert ecran.can_advance(), "on doit pouvoir aller la corriger"
+
+
 def test_the_other_parts_never_block(session, ecran):
     """Format, orientation et finesse ont toujours une valeur acceptable : rien
     n'y est à compléter."""
@@ -678,6 +710,67 @@ def test_an_exact_grid_is_green_without_any_hole(session, ecran):
     session.set_layout(cols=4, rows=5)        # 20 cases pour 20 cartes
     assert grille._status.property("role") == "ok"
     assert session.empty_cells() == []
+
+
+def test_cards_outside_the_pages_get_their_own_red_line(session, ecran):
+    """⚠️ La place sur le papier appartient à l'onglet des tailles, qui la
+    règle ; mais c'est en agrandissant la grille qu'on la fait déborder, et
+    l'onglet où l'on agrandit ne peut pas se taire sur ce qu'il vient de
+    casser. Les deux sujets parlent donc en même temps."""
+    grille = ecran._tabs[1]
+    session.set_layout(paper="A5", cols=4, rows=5, card_width_mm=None)
+    session.auto_place_empty_cells()
+    assert grille.is_valid()
+    assert "sortent des pages" not in grille._status.text()
+
+    # Une carte figée trop grande : la grille déborde, le compte reste bon.
+    session.set_layout(card_width_mm=90.0)
+    assert "sortent des pages" in grille._status.text()
+    assert grille._status.property("role") == "error"
+    assert not grille.is_valid(), "la phrase est bloquante"
+
+    # Et les deux sujets se disent ensemble.
+    session.set_layout(cols=2, rows=2)          # 4 cases pour 20 cartes
+    texte = grille._status.text()
+    assert "ne tiennent pas dans la grille" in texte
+    assert "sortent des pages" in texte
+    assert texte.count("<br>") == 1, "deux phrases, une par sujet"
+
+
+def test_each_sentence_keeps_its_own_colour(session, ecran):
+    """⚠️ Une seule teinte pour tout le bloc peignait en rouge « la grille a
+    exactement autant de cases que de cartes », qui est pourtant une bonne
+    nouvelle : les deux sujets sont indépendants."""
+    from pokemon_mosaic.ui import theme
+
+    grille = ecran._tabs[1]
+    couleurs = theme.colours(ecran.palette())
+    session.set_layout(paper="A5", cols=4, rows=5, card_width_mm=90.0)
+    session.auto_place_empty_cells()
+
+    texte = grille._status.text()
+    assert couleurs["ok"] in texte, "le compte des cases reste une bonne nouvelle"
+    assert couleurs["error"] in texte
+
+
+def test_the_sentences_are_repainted_when_the_mode_changes(qt_app, session,
+                                                           ecran):
+    """⚠️ Une phrase d'état porte sa teinte **en clair dans son HTML** : posée
+    dans un mode, elle y reste. C'est la même famille de défaut que l'aura et
+    les pastilles."""
+    from pokemon_mosaic.ui import theme
+
+    grille = ecran._tabs[1]
+    session.set_layout(cols=4, rows=5)
+    session.auto_place_empty_cells()
+
+    qt_app.setPalette(theme.qt_palette(False))
+    qt_app.processEvents()
+    assert theme.LIGHT["ok"] in grille._status.text()
+
+    qt_app.setPalette(theme.qt_palette(True))
+    qt_app.processEvents()
+    assert theme.DARK["ok"] in grille._status.text()
 
 
 def test_five_suggestions_are_offered(session, ecran):

@@ -6,7 +6,7 @@ de leur contenu — ajouter un panneau se fait en l'écrivant ici et en l'ajouta
 à la liste, sans toucher à la navigation.
 """
 
-from PySide6.QtCore import Qt, Signal
+from PySide6.QtCore import QEvent, Qt, Signal
 from PySide6.QtWidgets import (
     QCheckBox,
     QHBoxLayout,
@@ -79,6 +79,17 @@ class LayoutTab(QWidget):
 
     def retranslate_ui(self) -> None:
         pass
+
+    def changeEvent(self, event) -> None:
+        """Suit la bascule clair/sombre.
+
+        ⚠️ **Les couleurs écrites dans le texte ne suivent rien.** Une phrase
+        d'état porte sa teinte en clair dans son HTML : posée dans un mode, elle
+        y reste. Ce qui se relit au dessin, lui, bascule tout seul.
+        """
+        super().changeEvent(event)
+        if event.type() == QEvent.PaletteChange:
+            self.refresh()
 
 
 class GridSizeTab(LayoutTab):
@@ -326,11 +337,29 @@ class GridSizeTab(LayoutTab):
 
     def is_valid(self) -> bool:
         fit = self._session.grid_fit()
-        return fit.surplus == 0 and self._session.missing_empty_cells() == 0
+        return (fit.surplus == 0 and self._session.missing_empty_cells() == 0
+                and self._fits_the_pages())
+
+    def _fits_the_pages(self) -> bool:
+        """La grille tient-elle sur les feuilles, à la taille de carte courante ?
+
+        ⚠️ **La question se pose ici aussi.** Elle appartient à l'onglet des
+        tailles, qui la règle ; mais c'est en agrandissant la grille qu'on la
+        fait déborder, et l'onglet où l'on agrandit ne peut pas se taire sur ce
+        qu'il vient de casser.
+        """
+        session = self._session
+        return grid_fits(session.panels, session.cols, session.rows,
+                         session.panel_geometry(), session.panel_rows)
 
     def _update_status(self) -> None:
-        """Une ligne, une couleur : rouge on ne passe pas, jaune il reste à
-        faire, vert c'est prêt."""
+        """Ce qui reste à faire, une phrase par sujet.
+
+        Rouge on ne passe pas, ambre il reste à faire, vert c'est prêt. Deux
+        sujets peuvent parler en même temps : le nombre de cases d'un côté, la
+        place sur le papier de l'autre — agrandir la grille pour loger toutes
+        les cartes est précisément ce qui la fait sortir des pages.
+        """
         session = self._session
         fit = session.grid_fit()
         reste = session.missing_empty_cells()
@@ -348,8 +377,20 @@ class GridSizeTab(LayoutTab):
         else:
             role, texte = "ok", self.tr(
                 "La grille a exactement autant de cases que de cartes retenues.")
-        theme.mark(self._status, role)
-        self._status.setText(texte)
+        lignes = [(role, texte)]
+        if not self._fits_the_pages():
+            lignes.append(("error", self.tr(
+                "Des cartes sortent des pages : réduisez la grille, ajoutez une "
+                "feuille, ou diminuez la taille des cartes à l'onglet suivant.")))
+        # ⚠️ **Chaque phrase garde sa couleur.** Une seule teinte pour tout le
+        # bloc peignait en rouge « la grille a exactement autant de cases que de
+        # cartes », qui est pourtant une bonne nouvelle : les deux sujets sont
+        # indépendants, et le second n'a pas à salir le premier.
+        couleurs = theme.colours(self.palette())
+        theme.mark(self._status, "error" if any(r == "error" for r, _ in lignes)
+                   else role)
+        self._status.setText("<br>".join(
+            f'<span style="color:{couleurs[r]}">{t}</span>' for r, t in lignes))
         self._auto_place.setEnabled(reste > 0)
         self._clear_place.setEnabled(bool(session.empty_cells()))
 
