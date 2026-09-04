@@ -345,6 +345,89 @@ def test_the_extension_buttons_need_an_extension_selected(step, tmp_path):
     assert not ecran._include_folder.isEnabled()
 
 
+# --- Quitter l'étape ------------------------------------------------------
+
+def test_you_cannot_leave_without_cards(step):
+    ecran, _ = step
+    assert not ecran.can_advance()
+
+
+def test_you_cannot_leave_while_the_cards_are_still_arriving(step, tmp_path,
+                                                             monkeypatch):
+    """⚠️ Les cartes arrivent par lots : dès le premier, le jeu n'est plus vide
+    et le bouton s'allumait, alors que la moitié des extensions manquait. On
+    passait à l'étape suivante pour y dimensionner une grille sur un nombre de
+    cartes qui montait derrière — et la grille proposée au premier passage ne se
+    propose qu'une fois."""
+    ecran, session = step
+    monkeypatch.setattr("pokemon_mosaic.ui.cards_step.start_loading",
+                        lambda *a, **k: ("fil", "ouvrier"))
+    jeu = card_set_in(tmp_path, {"a1": ["x", "y"]})
+
+    ecran.load(str(tmp_path))
+    session.start_loading(str(tmp_path))
+    session.append_cards(jeu.cards)          # premier lot arrivé
+    assert session.total_cards == 2
+    assert not ecran.can_advance(), "le chargement n'est pas fini"
+
+    ecran._on_loaded(jeu)
+    assert ecran.can_advance()
+
+
+def test_a_failed_load_does_not_leave_the_screen_locked(step, tmp_path,
+                                                        monkeypatch):
+    """Un échec laisse les cartes précédentes : on doit pouvoir repartir."""
+    ecran, session = step
+    charge(ecran, session, tmp_path, {"a1": ["x"]})
+    monkeypatch.setattr("pokemon_mosaic.ui.cards_step.start_loading",
+                        lambda *a, **k: ("fil", "ouvrier"))
+
+    ecran.load(str(tmp_path))
+    assert not ecran.can_advance()
+    ecran._on_failed("dossier illisible")
+    assert ecran.can_advance()
+
+
+def test_a_download_in_progress_holds_the_step_too(step, tmp_path, monkeypatch):
+    """Il se termine par un chargement, et les cartes qu'il apporte
+    remplaceront celles qu'on voit."""
+    ecran, session = step
+    charge(ecran, session, tmp_path, {"a1": ["x"]})
+    monkeypatch.setattr("pokemon_mosaic.ui.cards_step.start_download",
+                        lambda *a, **k: ("fil", "ouvrier"))
+
+    ecran._start_download(str(tmp_path))
+    assert not ecran.can_advance()
+    ecran._end_download()
+    assert ecran.can_advance()
+
+
+def test_the_window_is_told_when_the_step_locks(step, tmp_path, monkeypatch):
+    """Rien ne rallumerait « Suivant » sans ce signal : la fenêtre ne relit
+    l'état que lorsqu'on l'en prévient.
+
+    ⚠️ Et elle doit le relire **une fois l'écran occupé** : prévenue trop tôt,
+    elle lisait un écran qui ne l'était pas encore, et le bouton restait allumé
+    pour toute la durée du travail — plus rien ne venant le relire jusqu'au
+    bout."""
+    ecran, session = step
+    charge(ecran, session, tmp_path, {"a1": ["x"]})
+    monkeypatch.setattr("pokemon_mosaic.ui.cards_step.start_loading",
+                        lambda *a, **k: ("fil", "ouvrier"))
+    monkeypatch.setattr("pokemon_mosaic.ui.cards_step.start_download",
+                        lambda *a, **k: ("fil", "ouvrier"))
+    vus = []
+    ecran.advance_state_changed.connect(lambda: vus.append(ecran.can_advance()))
+
+    ecran.load(str(tmp_path))
+    assert vus and vus[-1] is False, "le chargement n'a pas été annoncé occupé"
+
+    ecran._on_loaded(card_set_in(tmp_path, {"a1": ["x"]}))
+    vus.clear()
+    ecran._start_download(str(tmp_path))
+    assert vus and vus[-1] is False, "le téléchargement non plus"
+
+
 def test_the_extensions_are_grouped_by_series(step, tmp_path):
     """⚠️ « A1 », « A1a » et la promo A sont la **série A** : c'est ainsi qu'on
     cherche une extension — par série d'abord. Vingt dossiers à plat

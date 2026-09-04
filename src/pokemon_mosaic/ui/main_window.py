@@ -138,6 +138,7 @@ class MainWindow(QMainWindow):
         # changer d'écran, et se grise tant que la partie affichée n'est pas en
         # état. Sans ce signal, il resterait figé sur son dernier état connu.
         self._layout_step.advance_state_changed.connect(self._update_navigation)
+        self._cards_step.advance_state_changed.connect(self._update_navigation)
         self._stack.addWidget(self._layout_step)
         self._settings_step = SettingsStep(self._session)
         self._stack.addWidget(self._settings_step)

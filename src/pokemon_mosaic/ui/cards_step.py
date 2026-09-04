@@ -56,11 +56,20 @@ class CardsStep(QWidget):
     # Émis quand le dossier de cartes change : la fenêtre le mémorise.
     folder_changed = Signal(str)
 
+    # Émis quand « Suivant » doit être réévalué par la fenêtre.
+    advance_state_changed = Signal()
+
     def __init__(self, session: Session, parent=None):
         super().__init__(parent)
         self._session = session
         self._thread = None
         self._worker = None
+        # ⚠️ **Un drapeau, et non l'état du fil.** On ne lâche pas la référence
+        # d'un `QThread` qui n'a pas fini — Qt abandonne le processus —, et
+        # `isRunning()` peut être encore vrai à l'instant où le chargement
+        # s'annonce terminé : le bouton serait resté éteint, plus rien ne venant
+        # le rallumer.
+        self._loading = False
         self._download_thread = None
         self._download_worker = None
         # Dossier visé par le téléchargement en cours, à charger une fois qu'il
@@ -343,6 +352,9 @@ class CardsStep(QWidget):
         # cible. Le bouton de l'état vide, lui, en demande un.
         self._update_catalogue.setEnabled(bool(self._session.data_dir))
         self._update_catalogue.setVisible(garni)
+        # La fenêtre décide de « Suivant » : ce qui vient de changer peut
+        # l'autoriser comme le lui retirer.
+        self.advance_state_changed.emit()
 
     def _show_warnings(self, card_set) -> None:
         """Dit ce que le chargement a trouvé d'anormal, et pourquoi ça compte."""
@@ -386,7 +398,28 @@ class CardsStep(QWidget):
         if directory:
             self.load(directory)
 
+    def can_advance(self) -> bool:
+        """On ne quitte pas cet écran sans cartes, ni pendant qu'il en charge.
+
+        ⚠️ **Ni pendant.** Les cartes arrivent par lots : dès le premier, le jeu
+        n'est plus vide et le bouton s'allumait, alors que la moitié des
+        extensions manquait encore. On passait à l'étape suivante pour y
+        dimensionner une grille sur un nombre de cartes qui montait derrière —
+        et la grille proposée au premier passage, elle, ne se propose qu'une
+        fois.
+        """
+        return bool(self._session.total_cards) and not self._busy()
+
+    def _busy(self) -> bool:
+        """Un chargement ou un téléchargement est-il en cours ?
+
+        Le téléchargement compte : il se termine par un chargement, et les
+        cartes qu'il apporte remplaceront celles qu'on voit.
+        """
+        return self._loading or self._download_thread is not None
+
     def load(self, directory: str) -> None:
+        self._loading = True
         self._progress.show()
         self._progress.setRange(0, 0)  # indéterminé le temps de lire les en-têtes
         self._choose_folder.setEnabled(False)
@@ -402,6 +435,7 @@ class CardsStep(QWidget):
             self._on_loaded, self._on_failed,
             strip_size=self._session.strip_size,
         )
+        self.advance_state_changed.emit()
 
     # --- Téléchargement ---------------------------------------------------
 
@@ -442,6 +476,11 @@ class CardsStep(QWidget):
             self, directory, self._on_download_progress, self._on_surveyed,
             self._on_downloaded, self._on_download_failed,
             self._on_download_cancelled)
+        # ⚠️ **Après** l'affectation du fil : prévenue avant, la fenêtre relisait
+        # un écran qui ne se disait pas encore occupé, et « Suivant » restait
+        # allumé pour toute la durée du téléchargement — plus rien ne venant le
+        # relire jusqu'à la fin.
+        self.advance_state_changed.emit()
 
     def _cancel_download(self) -> None:
         if self._download_worker is not None:
@@ -527,6 +566,7 @@ class CardsStep(QWidget):
         self._session.append_cards(cards)
 
     def _on_loaded(self, card_set) -> None:
+        self._loading = False
         self._progress.hide()
         self._choose_folder.setEnabled(True)
         self._awaiting_first_batch = False
@@ -543,6 +583,7 @@ class CardsStep(QWidget):
         )
 
     def _on_failed(self, message: str) -> None:
+        self._loading = False
         self._progress.hide()
         self._choose_folder.setEnabled(True)
         # Rien n'a été vidé : la sélection et les liens précédents sont intacts.

@@ -272,9 +272,9 @@ def test_the_folded_family_answers_for_its_tabs(session, ecran):
     for position in (1, 2, 3):
         ecran._validated.add(position)
     ecran._refresh_badges()
-    from pokemon_mosaic.ui.layout_step import state_icon
+    from pokemon_mosaic.ui.layout_step import READY, state_icon
 
-    attendu = state_icon(True, ecran.palette()).pixmap(22, 22).toImage()
+    attendu = state_icon(READY, ecran.palette()).pixmap(22, 22).toImage()
     assert plie.icon().pixmap(22, 22).toImage() == attendu
 
 
@@ -385,7 +385,9 @@ def test_a_locked_tab_does_not_wave_its_badge(session, ecran):
 
     ecran.show()
     verrouille = ecran._list.item(ecran._row_of(2)).icon().pixmap(22, 22).toImage()
-    ouvert = state_icon(False, ecran.palette()).pixmap(22, 22).toImage()
+    from pokemon_mosaic.ui.layout_step import PENDING
+
+    ouvert = state_icon(PENDING, ecran.palette()).pixmap(22, 22).toImage()
     assert verrouille != ouvert
 
     ecran.advance()
@@ -428,6 +430,47 @@ def test_going_back_and_changing_your_mind_never_locks_again(session, ecran):
     assert ecran._list.item(ecran._row_of(2)).flags() & Qt.ItemIsEnabled
 
 
+def test_a_blocked_tab_wears_a_red_cross(session, ecran):
+    """⚠️ **La croix est réservée à ce qui bloque.** Une partie qu'on n'a pas
+    encore validée est ambre — pas encore fait n'est pas une faute —, et ne
+    passe au rouge que si son contenu ne tient pas debout."""
+    from PySide6.QtGui import QColor
+
+    from pokemon_mosaic.ui import theme
+    from pokemon_mosaic.ui.layout_step import (
+        BLOCKED,
+        PENDING,
+        READY,
+        STATE_SIGNS,
+    )
+
+    ecran.show()
+    couleurs = theme.colours(ecran.palette())
+
+    # Au premier passage, rien n'est fait mais rien ne bloque.
+    session.auto_place_empty_cells()
+    assert ecran._state(1) == PENDING
+    assert ecran._list.item(ecran._row_of(1)).foreground().color().name() \
+        == QColor(couleurs[PENDING]).name()
+
+    # Des cases vides à placer : la grille ne laisse pas passer.
+    session.set_layout(cols=6, rows=6)
+    assert session.missing_empty_cells() > 0
+    assert ecran._state(1) == BLOCKED
+    assert ecran._list.item(ecran._row_of(1)).foreground().color().name() \
+        == QColor(couleurs[BLOCKED]).name()
+
+    # Et des cartes qui ne tiennent pas dans les pages, à l'onglet des tailles.
+    session.set_layout(paper="A2", cols=11, rows=13, card_width_mm=63.0)
+    assert ecran._state(2) == BLOCKED
+
+    session.set_layout(card_width_mm=None)
+    session.auto_place_empty_cells()
+    ecran.advance()
+    assert ecran._state(0) == READY
+    assert STATE_SIGNS[BLOCKED] == "✕"
+
+
 def test_nothing_is_ready_before_the_user_says_so(session, ecran):
     """Une partie n'est prête qu'une fois validée : au premier passage, elles
     portent toutes l'avertissement."""
@@ -468,6 +511,60 @@ def test_a_validated_part_that_breaks_loses_its_tick(session, ecran):
 
     session.set_layout(cols=2, rows=2)       # 4 cases pour 20 cartes
     assert not ecran._ready(1)
+
+
+def test_every_way_of_resizing_the_grid_clears_the_holes(session, ecran):
+    """⚠️ Les cases vides sont posées **sur une grille donnée** : sur une autre,
+    elles tombent à des endroits qui ne veulent plus rien dire, quand elles n'en
+    sortent pas carrément. On vérifie les quatre chemins qui redimensionnent."""
+    from PySide6.QtCore import Qt
+    from PySide6.QtWidgets import QListWidgetItem
+
+    grille = ecran._tabs[1]
+    ecran.show()
+
+    def pose():
+        session.set_layout(cols=6, rows=5)   # 30 cases pour 20 cartes
+        session.auto_place_empty_cells()
+        assert session.empty_cells(), "il faut des trous pour éprouver la règle"
+
+    # 1. Les champs de l'onglet.
+    pose()
+    grille._cols.setValue(7)
+    assert session.empty_cells() == []
+
+    # 2. Une proposition appliquée au double-clic.
+    pose()
+    grille._apply_suggestion(grille._suggestions.item(0))
+    assert session.empty_cells() == []
+
+    # 3. Une forme proposée par l'onglet des tailles.
+    pose()
+    item = QListWidgetItem("")
+    item.setData(Qt.UserRole, (4, 5))
+    ecran._tabs[2]._apply_shape(item)
+    assert session.empty_cells() == []
+
+    # 4. La grille proposée d'office au premier passage.
+    pose()
+    grille._auto_fit_pending = True
+    grille._auto_fit()
+    assert (session.cols, session.rows) != (6, 5)
+    assert session.empty_cells() == []
+
+
+def test_the_holes_survive_what_does_not_touch_the_grid(session, ecran):
+    """Changer de papier, de feuille ou de taille de carte ne déplace aucune
+    case : les effacer serait une punition."""
+    session.set_layout(cols=6, rows=5)
+    session.auto_place_empty_cells()
+    poses = session.empty_cells()
+
+    session.set_layout(paper="A3")
+    session.set_layout(panels=2)
+    session.set_layout(card_width_mm=30.0)
+    session.set_layout(card_gap_mm=2.0)
+    assert session.empty_cells() == poses
 
 
 def test_an_incomplete_grid_blocks_the_way(session, ecran):

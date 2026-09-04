@@ -63,26 +63,35 @@ FAMILY_ROW = -1
 LOCKED_OPACITY = 0.35
 
 
-def state_icon(ready: bool, palette, locked: bool = False) -> QIcon:
-    """Une coche verte, ou un point d'exclamation ambré.
+# Les trois états d'une partie, et ce qui les dit : le rôle de couleur du thème
+# et le signe dessiné. ⚠️ **La croix rouge est réservée à ce qui bloque** — des
+# cartes qui ne tiennent pas dans les pages, des cases vides pas toutes posées.
+# L'ambre dit « pas encore fait », ce qui n'est pas une faute : au premier
+# passage, tout est ambre, et un écran de croix rouges accueillerait
+# l'utilisateur comme un formulaire raté.
+BLOCKED, PENDING, READY = "error", "warning", "ok"
+STATE_SIGNS = {BLOCKED: "✕", PENDING: "!", READY: "✓"}
+
+
+def state_icon(state: str, palette, locked: bool = False) -> QIcon:
+    """La pastille d'une partie : croix rouge, point ambré ou coche verte.
 
     Dessinée plutôt que prise à un thème d'icônes : celui-ci n'existe ni sur
     macOS ni sur Windows, et la couleur doit de toute façon venir de nos deux
     palettes pour rester lisible dans les deux modes.
     """
-    colours = theme.colours(palette)
     pixmap = QPixmap(BADGE, BADGE)
     pixmap.fill(Qt.transparent)
     painter = QPainter(pixmap)
     painter.setRenderHint(QPainter.Antialiasing)
     if locked:
         painter.setOpacity(LOCKED_OPACITY)
-    painter.setPen(QColor(colours["ok"] if ready else colours["warning"]))
+    painter.setPen(QColor(theme.colours(palette)[state]))
     police = painter.font()
     police.setPointSize(BADGE - 6)
     police.setBold(True)
     painter.setFont(police)
-    painter.drawText(pixmap.rect(), Qt.AlignCenter, "✓" if ready else "!")
+    painter.drawText(pixmap.rect(), Qt.AlignCenter, STATE_SIGNS[state])
     painter.end()
     return QIcon(pixmap)
 
@@ -246,6 +255,31 @@ class LayoutStep(QWidget):
         """Validée par l'utilisateur, **et** toujours valide."""
         return position in self._validated and self._tabs[position].is_valid()
 
+    def _state(self, position: int) -> str:
+        """L'état d'une partie : bloquée, en attente, ou prête.
+
+        ⚠️ **Bloquée n'est pas « pas encore faite ».** Une partie qu'on n'a pas
+        validée est ambre ; elle ne passe au rouge que si son contenu ne tient
+        pas debout — des cartes hors des pages, des cases vides pas toutes
+        posées. Sans cette distinction, le premier passage montrait un écran
+        entier d'alertes pour un travail simplement pas encore fait.
+        """
+        if not self._tabs[position].is_valid():
+            return BLOCKED
+        return READY if position in self._validated else PENDING
+
+    def _family_state(self) -> str:
+        """Ce que la famille repliée dit de ses trois onglets.
+
+        Le pire l'emporte : une croix rouge cachée sous un groupe replié serait
+        exactement ce qu'on ne veut pas rater.
+        """
+        etats = [self._state(position) for position in self._family_positions()]
+        for etat in (BLOCKED, PENDING):
+            if etat in etats:
+                return etat
+        return READY
+
     def _reachable(self, position: int) -> bool:
         """Toutes les parties d'avant ont-elles été validées au moins une fois ?
 
@@ -275,19 +309,22 @@ class LayoutStep(QWidget):
                 item.setText(f"{chevron} " + self.tr("Grille"))
                 # Repliée, la famille répond pour ses trois onglets : sans cela,
                 # ce qui reste à faire disparaîtrait avec eux.
-                item.setIcon(
-                    state_icon(all(self._ready(p) for p in self._family_positions()),
-                               palette)
-                    if self._collapsed else QIcon()
-                )
+                etat = self._family_state()
+                item.setIcon(state_icon(etat, palette) if self._collapsed
+                             else QIcon())
+                item.setForeground(QColor(theme.colours(palette)[etat]))
                 continue
             # Le retrait est **géométrique** — voir `SubTabDelegate` — et non
             # quatre espaces dans le libellé, qui décalaient le texte sans
             # décaler l'onglet.
             item.setText(self._tabs[position].title())
             accessible = self._reachable(position)
-            item.setIcon(state_icon(self._ready(position), palette,
-                                    locked=not accessible))
+            etat = self._state(position)
+            item.setIcon(state_icon(etat, palette, locked=not accessible))
+            # ⚠️ **Le libellé prend la couleur de l'état.** La pastille seule
+            # tient sur vingt-deux pixels au bord de la colonne : sur un écran
+            # large, l'œil est à l'autre bout et ne la croise pas.
+            item.setForeground(QColor(theme.colours(palette)[etat]))
             item.setFlags(Qt.ItemIsEnabled | Qt.ItemIsSelectable if accessible
                           else Qt.NoItemFlags)
             # Un onglet grisé sans un mot laisserait chercher la panne : on dit
