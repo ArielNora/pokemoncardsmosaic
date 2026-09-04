@@ -33,6 +33,77 @@ def palette_pour(fond: str) -> QPalette:
     return palette
 
 
+def test_a_transparent_background_says_nothing_of_the_mode(qt_app):
+    """⚠️ Une feuille de style qui pose `background: transparent` fait porter au
+    widget un `Window` noir d'alpha nul : sa clarté vaut zéro, et le mode clair
+    se lisait **sombre** — les onglets sortaient teintés pour l'autre mode."""
+    from PySide6.QtGui import QColor, QPalette
+
+    from pokemon_mosaic.ui import theme
+
+    qt_app.setPalette(theme.qt_palette(False))
+    invisible = QPalette()
+    invisible.setColor(QPalette.Window, QColor(0, 0, 0, 0))
+    assert not theme.is_dark(invisible)
+
+    qt_app.setPalette(theme.qt_palette(True))
+    assert theme.is_dark(invisible)
+
+
+def test_a_tinted_tab_keeps_its_text_readable():
+    """⚠️ Le cadre d'un onglet emprunte la couleur de son état : le texte, lui,
+    reste celui du mode. On vérifie qu'il tient sur les trois fonds teintés,
+    sélectionné compris — une teinte trop franche ferait un bandeau coloré où le
+    noir ou le blanc se perdrait."""
+    from pokemon_mosaic.ui import theme
+
+    for mode, table, palette_table in (("light", theme.LIGHT, theme.PALETTE_LIGHT),
+                                       ("dark", theme.DARK, theme.PALETTE_DARK)):
+        palette = theme.qt_palette(mode == "dark")
+        for role in ("error", "warning", "ok"):
+            for selection in (False, True):
+                fond, contour, _ = theme.tab_box(role, palette, selection)
+                assert contraste(palette_table["text"], fond) >= 4.5, (
+                    mode, role, selection, fond)
+                # Le contour doit aussi se détacher du fond de la fenêtre.
+                assert contraste(contour, palette_table["window"]) >= 3.0, (
+                    mode, role, contour)
+                assert fond != table[role], "la teinte pure ferait un aplat"
+
+
+def test_the_state_badge_stands_out_on_its_tinted_tab():
+    """La pastille est le seul signe non textuel de l'état : elle se pose sur le
+    fond teinté du même état, celui-là même qui la tire vers lui. Seuil des
+    éléments non textuels, 3:1."""
+    from pokemon_mosaic.ui import theme
+
+    for mode, table in (("light", theme.LIGHT), ("dark", theme.DARK)):
+        palette = theme.qt_palette(mode == "dark")
+        for role in ("error", "warning", "ok"):
+            for selection in (False, True):
+                fond, _, _ = theme.tab_box(role, palette, selection)
+                assert contraste(table[role], fond) >= 3.0, (
+                    mode, role, selection, fond)
+
+
+def test_the_tint_is_stronger_on_the_border_than_on_the_fill():
+    """Le contour porte la couleur, le fond la rappelle."""
+    from pokemon_mosaic.ui import theme
+
+    assert theme.TAB_BORDER > theme.TAB_FILL
+    assert theme.TAB_BORDER_ON > theme.TAB_FILL_ON
+
+
+def test_mixing_stays_between_the_two_colours():
+    from pokemon_mosaic.ui import theme
+
+    assert theme.mix("#000000", "#ffffff", 0.0) == "#000000"
+    assert theme.mix("#000000", "#ffffff", 1.0) == "#ffffff"
+    assert theme.mix("#000000", "#ffffff", 0.5) == "#808080"
+    # Bornée : une part hors [0, 1] rendrait une couleur hors des deux.
+    assert theme.mix("#000000", "#ffffff", 5.0) == "#ffffff"
+
+
 # --- Les deux tables décrivent les mêmes rôles ----------------------------
 
 def test_both_schemes_define_exactly_the_same_roles():

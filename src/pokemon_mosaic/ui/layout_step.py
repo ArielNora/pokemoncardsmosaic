@@ -11,7 +11,7 @@ que son contenu tient toujours debout. Revenir en arrière ne défait donc rien,
 mais changer un réglage jusqu'à le rendre invalide rallume l'avertissement.
 """
 
-from PySide6.QtCore import QSize, Qt, Signal
+from PySide6.QtCore import QRectF, QSize, Qt, Signal
 from PySide6.QtGui import QColor, QIcon, QPainter, QPen, QPixmap
 from PySide6.QtWidgets import (
     QAbstractItemView,
@@ -19,6 +19,7 @@ from PySide6.QtWidgets import (
     QListWidget,
     QListWidgetItem,
     QStackedWidget,
+    QStyle,
     QStyledItemDelegate,
     QStyleOptionViewItem,
     QWidget,
@@ -45,9 +46,12 @@ SUB_TAB_INDENT = 26
 # Le tronc qui les relie, dans l'espace ainsi libéré, et son épaisseur.
 TRUNK_X = 9
 TRUNK_WIDTH = 2
-# La marge basse que la feuille de style pose sous chaque onglet. Le tronc
-# s'arrête au bas du **dessin** du dernier, pas au bas de sa ligne.
+# Les marges que la feuille de style pose autour de chaque onglet. Le tronc
+# s'arrête au bas du **dessin** du dernier, pas au bas de sa ligne, et le cadre
+# se peint dedans.
 BOX_BOTTOM_MARGIN = 8
+BOX_SIDE_MARGIN = 2
+BOX_RADIUS = 7
 # Ce que leur libellé gagne sur la police de l'interface. Les seconds rangs n'y
 # gagnent rien : c'est ce qui les distingue au premier coup d'œil.
 TAB_BOOST = 2
@@ -96,20 +100,49 @@ def state_icon(state: str, palette, locked: bool = False) -> QIcon:
     return QIcon(pixmap)
 
 
-class SubTabDelegate(QStyledItemDelegate):
-    """Rétrécit les onglets de second rang par la gauche.
+class TabDelegate(QStyledItemDelegate):
+    """Dessine le cadre d'un onglet, et rétrécit ceux du second rang.
 
     Un `QListView` donne à chaque ligne toute la largeur de sa vue, et une
-    feuille de style ne sait pas viser une ligne en particulier : c'est au
-    dessin qu'on reprend la place, en rognant le rectangle avant de le confier
-    au style. Le clic, lui, porte toujours sur la ligne entière — viser le
+    feuille de style ne sait pas viser une ligne en particulier : ni le retrait
+    du second rang, ni la couleur d'état de chacun ne peuvent venir d'elle.
+    C'est donc ici qu'on peint le fond et le contour, et qu'on reprend la place
+    à gauche. Le clic, lui, porte toujours sur la ligne entière — viser le
     retrait plutôt que l'onglet ne doit pas rester sans effet.
     """
 
     def paint(self, painter, option, index) -> None:
+        # Copiée : la vue réutilise la sienne d'une ligne à l'autre, et ce
+        # qu'on y change déborderait sur les suivantes.
+        option = QStyleOptionViewItem(option)
         if index.data(Qt.UserRole + 1):
-            option = QStyleOptionViewItem(option)
             option.rect = option.rect.adjusted(SUB_TAB_INDENT, 0, 0, 0)
+
+        etat = index.data(Qt.UserRole + 2)
+        if etat:
+            selection = bool(option.state & QStyle.State_Selected)
+            verrouille = not (option.state & QStyle.State_Enabled)
+            fond, contour, epaisseur = theme.tab_box(
+                etat, option.palette, selection, verrouille)
+            # Le survol reprend le fond de la sélection sans son trait épais :
+            # la feuille de style le donnait, et le retirer aurait supprimé le
+            # seul signe qu'une ligne est cliquable.
+            if option.state & QStyle.State_MouseOver and not selection:
+                fond = theme.tab_box(etat, option.palette, True, verrouille)[0]
+            cadre = QRectF(option.rect.adjusted(
+                BOX_SIDE_MARGIN, 0, -BOX_SIDE_MARGIN, -BOX_BOTTOM_MARGIN))
+            painter.save()
+            painter.setRenderHint(QPainter.Antialiasing)
+            painter.setBrush(QColor(fond))
+            painter.setPen(QPen(QColor(contour), epaisseur))
+            painter.drawRoundedRect(cadre.adjusted(
+                epaisseur / 2, epaisseur / 2, -epaisseur / 2, -epaisseur / 2),
+                BOX_RADIUS, BOX_RADIUS)
+            painter.restore()
+            # ⚠️ **La sélection est déjà dite par le cadre.** Laissée au style,
+            # elle repeindrait le fond en bleu par-dessus, et l'onglet ouvert
+            # serait le seul à ne plus montrer son état.
+            option.state &= ~QStyle.State_Selected
         super().paint(painter, option, index)
 
 
@@ -176,7 +209,7 @@ class LayoutStep(QWidget):
         self._rows: list[int] = []
 
         self._list = TabList()
-        self._list.setItemDelegate(SubTabDelegate(self._list))
+        self._list.setItemDelegate(TabDelegate(self._list))
         self._list.setFixedWidth(TAB_WIDTH)
         self._list.setIconSize(QSize(BADGE, BADGE))
         self._list.setWordWrap(True)
@@ -309,22 +342,24 @@ class LayoutStep(QWidget):
                 item.setText(f"{chevron} " + self.tr("Grille"))
                 # Repliée, la famille répond pour ses trois onglets : sans cela,
                 # ce qui reste à faire disparaîtrait avec eux.
-                etat = self._family_state()
-                item.setIcon(state_icon(etat, palette) if self._collapsed
-                             else QIcon())
-                item.setForeground(QColor(theme.colours(palette)[etat]))
+                # ⚠️ L'intitulé de famille ne prend **pas** de cadre coloré :
+                # il n'est pas une destination, et un cadre en ferait un
+                # quatrième onglet. Sa pastille, repliée, dit l'état des siens.
+                item.setIcon(state_icon(self._family_state(), palette)
+                             if self._collapsed else QIcon())
                 continue
-            # Le retrait est **géométrique** — voir `SubTabDelegate` — et non
+            # Le retrait est **géométrique** — voir `TabDelegate` — et non
             # quatre espaces dans le libellé, qui décalaient le texte sans
             # décaler l'onglet.
             item.setText(self._tabs[position].title())
             accessible = self._reachable(position)
             etat = self._state(position)
             item.setIcon(state_icon(etat, palette, locked=not accessible))
-            # ⚠️ **Le libellé prend la couleur de l'état.** La pastille seule
-            # tient sur vingt-deux pixels au bord de la colonne : sur un écran
-            # large, l'œil est à l'autre bout et ne la croise pas.
-            item.setForeground(QColor(theme.colours(palette)[etat]))
+            # ⚠️ **Le cadre porte la couleur, pas le texte.** La pastille seule
+            # tient sur vingt-deux pixels au bord de la colonne, et sur un écran
+            # large l'œil est à l'autre bout ; un libellé coloré, lui, perdait
+            # le contraste que le mode lui donne. Le délégué lit cet état.
+            item.setData(Qt.UserRole + 2, etat)
             item.setFlags(Qt.ItemIsEnabled | Qt.ItemIsSelectable if accessible
                           else Qt.NoItemFlags)
             # Un onglet grisé sans un mot laisserait chercher la panne : on dit

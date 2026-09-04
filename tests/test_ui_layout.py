@@ -434,9 +434,8 @@ def test_a_blocked_tab_wears_a_red_cross(session, ecran):
     """⚠️ **La croix est réservée à ce qui bloque.** Une partie qu'on n'a pas
     encore validée est ambre — pas encore fait n'est pas une faute —, et ne
     passe au rouge que si son contenu ne tient pas debout."""
-    from PySide6.QtGui import QColor
+    from PySide6.QtCore import Qt
 
-    from pokemon_mosaic.ui import theme
     from pokemon_mosaic.ui.layout_step import (
         BLOCKED,
         PENDING,
@@ -445,20 +444,18 @@ def test_a_blocked_tab_wears_a_red_cross(session, ecran):
     )
 
     ecran.show()
-    couleurs = theme.colours(ecran.palette())
+
+    def etat_affiche(position):
+        return ecran._list.item(ecran._row_of(position)).data(Qt.UserRole + 2)
 
     # Au premier passage, rien n'est fait mais rien ne bloque.
     session.auto_place_empty_cells()
-    assert ecran._state(1) == PENDING
-    assert ecran._list.item(ecran._row_of(1)).foreground().color().name() \
-        == QColor(couleurs[PENDING]).name()
+    assert ecran._state(1) == PENDING and etat_affiche(1) == PENDING
 
     # Des cases vides à placer : la grille ne laisse pas passer.
     session.set_layout(cols=6, rows=6)
     assert session.missing_empty_cells() > 0
-    assert ecran._state(1) == BLOCKED
-    assert ecran._list.item(ecran._row_of(1)).foreground().color().name() \
-        == QColor(couleurs[BLOCKED]).name()
+    assert ecran._state(1) == BLOCKED and etat_affiche(1) == BLOCKED
 
     # Et des cartes qui ne tiennent pas dans les pages, à l'onglet des tailles.
     session.set_layout(paper="A2", cols=11, rows=13, card_width_mm=63.0)
@@ -467,8 +464,56 @@ def test_a_blocked_tab_wears_a_red_cross(session, ecran):
     session.set_layout(card_width_mm=None)
     session.auto_place_empty_cells()
     ecran.advance()
-    assert ecran._state(0) == READY
+    assert ecran._state(0) == READY and etat_affiche(0) == READY
     assert STATE_SIGNS[BLOCKED] == "✕"
+
+
+def test_the_state_colours_the_frame_not_the_words(session, ecran):
+    """⚠️ **Le cadre porte la couleur, pas le texte.** Un libellé coloré perdait
+    le contraste que le mode lui donne ; le fond et le contour, eux, ne font que
+    teinter le gris de départ — et le contour plus fort que le fond."""
+    from pokemon_mosaic.ui import theme
+    from pokemon_mosaic.ui.layout_step import BLOCKED, PENDING
+
+    palette = ecran.palette()
+    ecran.show()
+    # Le libellé garde la couleur du mode, quel que soit l'état.
+    for position in range(4):
+        item = ecran._list.item(ecran._row_of(position))
+        assert not item.foreground().color().isValid() or \
+            item.foreground().color() == palette.text().color()
+
+    attendu = theme.tab_box(BLOCKED, palette)
+    autre = theme.tab_box(PENDING, palette)
+    assert attendu[0] != autre[0] and attendu[1] != autre[1]
+
+    # Le contour emprunte plus à l'état que le fond : on compare leur distance
+    # au gris de départ.
+    from PySide6.QtGui import QColor
+
+    depart = QColor(theme.colours(palette)["button_bg"])
+    bord = QColor(theme.colours(palette)["button_border"])
+    fond, contour, _ = attendu
+
+    def ecart(a, b):
+        return (abs(a.red() - b.red()) + abs(a.green() - b.green())
+                + abs(a.blue() - b.blue()))
+
+    teinte = QColor(theme.colours(palette)[BLOCKED])
+    assert (ecart(QColor(contour), bord) / max(1, ecart(teinte, bord))
+            > ecart(QColor(fond), depart) / max(1, ecart(teinte, depart)))
+
+
+def test_a_locked_tab_stays_grey(session, ecran):
+    """Sa couleur dirait un état sur lequel on ne peut rien."""
+    from pokemon_mosaic.ui import theme
+    from pokemon_mosaic.ui.layout_step import BLOCKED
+
+    palette = ecran.palette()
+    couleurs = theme.colours(palette)
+    fond, contour, _ = theme.tab_box(BLOCKED, palette, locked=True)
+    assert (fond, contour) == (couleurs["button_off_bg"],
+                               couleurs["button_off_border"])
 
 
 def test_nothing_is_ready_before_the_user_says_so(session, ecran):
@@ -1244,17 +1289,21 @@ def test_the_width_dimension_always_has_room_below_the_sheet(qt_app, session):
 
 def test_the_selected_tab_label_stays_legible(qt_app):
     """Le libellé de l'onglet actif se lit sur un fond que nous posons : il ne
-    suit plus la palette de sélection de Qt, donc il se vérifie."""
+    suit plus la palette de sélection de Qt, donc il se vérifie.
+
+    Le fond de l'onglet ouvert est maintenant celui de son **état**, teinté à
+    partir du gris de départ : c'est `test_ui_theme` qui le mesure pour les
+    trois états et les deux modes. Ne reste ici que le rappel du lien.
+    """
     from test_ui_theme import contraste
 
     from pokemon_mosaic.ui import theme
 
-    assert contraste(theme.PALETTE_LIGHT["text"], theme.LIGHT["tab_on_bg"]) >= 4.5
-    assert contraste(theme.PALETTE_DARK["text"], theme.DARK["tab_on_bg"]) >= 4.5
-    assert contraste(theme.LIGHT["tab_on_border"],
-                     theme.PALETTE_LIGHT["window"]) >= 3.0
-    assert contraste(theme.DARK["tab_on_border"],
-                     theme.PALETTE_DARK["window"]) >= 3.0
+    for mode, palette_table in (("light", theme.PALETTE_LIGHT),
+                                ("dark", theme.PALETTE_DARK)):
+        palette = theme.qt_palette(mode == "dark")
+        fond, _, _ = theme.tab_box("ok", palette, selected=True)
+        assert contraste(palette_table["text"], fond) >= 4.5, mode
 
 
 # --- Ajouter et retirer des feuilles depuis l'aperçu ------------------------

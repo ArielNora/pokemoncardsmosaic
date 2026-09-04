@@ -15,7 +15,8 @@ n'a donc qu'un seul endroit à toucher, au lieu d'aller réveiller chaque widget
 """
 
 from PySide6.QtCore import QEvent, QObject, Qt, QTimer
-from PySide6.QtGui import QPalette
+from PySide6.QtGui import QColor, QPalette
+from PySide6.QtWidgets import QApplication
 
 # Chaque rôle vaut dans les deux modes. Contraste vérifié par les tests : au
 # moins 4,5:1 pour tout ce qui porte du texte, le seuil de lisibilité courant.
@@ -43,8 +44,6 @@ LIGHT = {
     "button_off_border": "#d6d6d6",
     "bar_bg": "#f4f4f4",
     "bar_border": "#c8c8c8",
-    "tab_on_bg": "#dce8f6",
-    "tab_on_border": "#3573b9",
 }
 
 DARK = {
@@ -67,8 +66,6 @@ DARK = {
     "button_off_border": "#464646",
     "bar_bg": "#323232",
     "bar_border": "#4d4d4d",
-    "tab_on_bg": "#33465c",
-    "tab_on_border": "#5f9ada",
 }
 
 # Les rôles que Qt, lui, connaît. On les pose nous-mêmes plutôt que de laisser
@@ -106,12 +103,69 @@ def is_dark(palette: QPalette) -> bool:
     Déduit de la **clarté du fond** plutôt que de `QStyleHints.colorScheme()` :
     celle-ci rend `Unknown` dès qu'il n'y a pas de thème de plateforme — hors
     écran, par exemple —, et il faudrait alors deviner quand même.
+
+    ⚠️ **Un fond transparent ne dit rien du mode.** Une feuille de style qui
+    pose `background: transparent` fait porter au widget un `Window` noir
+    d'alpha nul : sa clarté vaut zéro, et le mode clair se lisait sombre. On
+    retombe alors sur la palette de l'application, qui est celle qu'on a posée.
     """
-    return palette.color(QPalette.Window).lightness() < 128
+    couleur = palette.color(QPalette.Window)
+    if couleur.alpha() == 0:
+        application = QApplication.instance()
+        if application is not None:
+            couleur = application.palette().color(QPalette.Window)
+    return couleur.lightness() < 128
 
 
 def colours(palette: QPalette) -> dict:
     return DARK if is_dark(palette) else LIGHT
+
+
+def mix(base: str, other: str, part: float) -> str:
+    """`part` de `other` versé dans `base`, en hexadécimal.
+
+    De quoi teinter un fond sans quitter le mode : la couleur d'un état posée
+    telle quelle ferait un aplat vif au milieu d'une fenêtre sombre, et le texte
+    n'y tiendrait plus. Diluée, elle **colore** sans repeindre.
+    """
+    fond, teinte = QColor(base), QColor(other)
+    part = max(0.0, min(1.0, part))
+    return QColor(
+        round(fond.red() + (teinte.red() - fond.red()) * part),
+        round(fond.green() + (teinte.green() - fond.green()) * part),
+        round(fond.blue() + (teinte.blue() - fond.blue()) * part),
+    ).name()
+
+
+# Ce qu'un onglet emprunte à la couleur de son état : peu pour le fond, beaucoup
+# pour le contour. ⚠️ **Le contour porte la couleur, le fond la rappelle** — un
+# fond aussi franc que le trait ferait un bandeau coloré où le texte, noir ou
+# blanc selon le mode, perdrait son contraste.
+# ⚠️ **Les parts sont mesurées, pas choisies à l'œil.** À 34 % sur l'onglet
+# ouvert, la pastille rouge tombait à 2,6:1 sur son propre fond rouge — sous le
+# seuil de 3:1 des éléments non textuels. À 24 % elle tient à 3,1:1, et le fond
+# de l'onglet ouvert reste **le double** de celui des autres : c'est le contour,
+# plein et plus épais, qui dit surtout la sélection.
+TAB_FILL, TAB_BORDER = 0.12, 0.70
+TAB_FILL_ON, TAB_BORDER_ON = 0.24, 1.0
+
+
+def tab_box(state: str, palette: QPalette, selected: bool = False,
+            locked: bool = False) -> tuple[str, str, float]:
+    """Fond, contour et épaisseur du cadre d'un onglet, selon son état.
+
+    Verrouillé, l'onglet garde le gris des choses inertes : sa couleur dirait
+    un état sur lequel on ne peut rien.
+    """
+    c = colours(palette)
+    if locked:
+        return c["button_off_bg"], c["button_off_border"], 1.0
+    teinte = c[state]
+    if selected:
+        return (mix(c["button_bg"], teinte, TAB_FILL_ON),
+                mix(c["button_border"], teinte, TAB_BORDER_ON), 2.0)
+    return (mix(c["button_bg"], teinte, TAB_FILL),
+            mix(c["button_border"], teinte, TAB_BORDER), 1.4)
 
 
 def qt_palette(dark: bool) -> QPalette:
@@ -256,20 +310,18 @@ QListWidget[role="tabs"] {{
 /* ⚠️ La marge basse est reprise par `layout_step.BOX_BOTTOM_MARGIN` : le trait
    qui relie les onglets de second rang s'arrête au bas du dessin du dernier, et
    non au bas de sa ligne. La changer ici sans l'y changer le ferait dépasser. */
+/* ⚠️ **Ni fond ni contour ici** : c'est `layout_step.TabDelegate` qui les
+   dessine, chaque onglet portant la couleur de son état — une feuille de style
+   ne sait pas viser une ligne en particulier. Ne restent que les mesures, qui
+   ne peignent rien, et la couleur du texte : noire ou blanche selon le mode,
+   dans tous les états. */
 QListWidget[role="tabs"]::item {{
-    background: {c["button_bg"]};
-    border: 1px solid {c["button_border"]};
-    border-radius: 7px;
+    background: transparent;
+    border: none;
     padding: 14px 12px;
     margin: 0px 2px 8px 2px;
 }}
-QListWidget[role="tabs"]::item:hover {{
-    background: {c["button_hover_bg"]};
-    border-color: {c["button_hover_border"]};
-}}
 QListWidget[role="tabs"]::item:selected {{
-    background: {c["tab_on_bg"]};
-    border: 2px solid {c["tab_on_border"]};
     color: palette(text);
 }}
 
