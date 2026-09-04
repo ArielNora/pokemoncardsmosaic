@@ -26,7 +26,6 @@ from ..layout import (
     best_grid_shapes,
     grid_fits,
     grid_geometry,
-    mm_to_pixels,
     suggest_grids,
 )
 from ..optimize import check_links_fit
@@ -39,10 +38,6 @@ from .session import Session
 SUGGESTION_COUNT = 5
 # Les formes de grille qui tiendraient, quand la taille de carte est figée.
 SHAPE_COUNT = 6
-
-# En deçà, la marge vide occupe plus de place que les cartes : la mise en page
-# mérite d'être dite, même si elle reste parfaitement valide.
-MIN_SHEET_COVERAGE = 0.75
 
 # Ce que la ligne d'état gagne sur la police de l'interface.
 STATUS_BOOST = 3
@@ -527,17 +522,6 @@ class PaperTab(LayoutTab):
             .replace("%4", f"{hauteur / 10:.1f}")
         )
 
-        # La mosaïque n'est pas dessinée ici, mais c'est bien cette surface
-        # qu'elle couvrira : le blanc qui reste se compte en feuilles achetées.
-        aspect = card_aspect(session)
-        geometrie = grid_geometry(
-            paper, session.panels, session.cols, session.rows, aspect,
-            session.dpi, session.card_width_mm, session.card_gap_mm,
-            session.panel_rows)
-        total_w = geometrie.span(session.cols)
-        total_h = (geometrie.card_h * session.rows
-                   + max(0, session.rows - 1) * geometrie.gap)
-
         # Un lien qui déborde de la grille ne se verrait sinon qu'au lancement
         # du calcul, bien après le choix de la mise en page.
         try:
@@ -546,27 +530,12 @@ class PaperTab(LayoutTab):
         except ValueError as error:
             warnings.append(str(error))
 
-        # ⚠️ **La part de papier réellement couverte, dite sans la juger.** Le
-        # message conseillait d'allonger la grille pour mieux remplir : depuis
-        # qu'ajouter une feuille veut dire « avoir plus de place », ce blanc est
-        # l'état normal, et l'onglet précédent l'annonce comme tel. Deux écrans
-        # disaient le contraire du même blanc, et le conseil poussait à défaire
-        # ce que le « + » venait de faire. On donne le chiffre, et ce qu'il
-        # coûte à l'impression — la décision reste à l'utilisateur.
-        sheet_px = (mm_to_pixels(largeur, session.dpi)
-                    * mm_to_pixels(hauteur, session.dpi))
-        coverage = total_w * total_h / sheet_px if sheet_px else 1.0
-        if coverage < MIN_SHEET_COVERAGE:
-            warnings.append(
-                self.tr("La mosaïque couvre %1 % du papier : le reste sortira "
-                        "blanc de l'imprimante. C'est normal si vous avez ajouté "
-                        "des feuilles pour avoir de la place ; sinon, une grille "
-                        "plus large ou moins de feuilles la rempliraient mieux.")
-                .replace("%1", f"{coverage * 100:.0f}")
-            )
-
-        # Le poids de l'image en mégapixels est parti avec la finesse : il se
-        # dit à l'export, où elle se choisit, et avec le chiffre de mémoire.
+        # ⚠️ **Plus un mot sur la part de papier couverte.** Le message donnait
+        # le pourcentage et prévenait que le reste sortirait blanc. Il disait
+        # vrai, mais il s'affichait dès qu'on ajoutait une feuille — c'est-à-dire
+        # au moment précis où l'on demande de la place —, et il fallait le lire
+        # à chaque fois pour n'en rien faire. Ce que la mosaïque couvre se voit
+        # d'ailleurs sur le dessin, et se règle aux onglets « Grille ».
         self._warnings.setText("\n".join(warnings))
 
 

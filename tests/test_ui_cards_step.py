@@ -315,6 +315,19 @@ def test_the_extension_buttons_say_what_they_act_on(step):
     assert "extension" in ecran._exclude_folder.text()
 
 
+def choisir(ecran, *dossiers):
+    """Sélectionne des extensions par leur nom, où qu'elles soient dans l'arbre."""
+    ecran._folders.clearSelection()
+    for nom in dossiers:
+        ecran._folder_items[nom].setSelected(True)
+
+
+def choisir_serie(ecran, lettre):
+    """Sélectionne la ligne d'une série, qui vaut toutes ses extensions."""
+    ecran._folders.clearSelection()
+    ecran._series_items[lettre].setSelected(True)
+
+
 def test_the_extension_buttons_need_an_extension_selected(step, tmp_path):
     """Actifs sans sélection, ils ne faisaient rien : le clic partait dans le
     vide et l'utilisateur croyait à une panne."""
@@ -324,12 +337,73 @@ def test_the_extension_buttons_need_an_extension_selected(step, tmp_path):
     assert not ecran._include_folder.isEnabled()
     assert not ecran._exclude_folder.isEnabled()
 
-    ecran._folders.setCurrentRow(0)
+    choisir(ecran, "a1")
     assert ecran._include_folder.isEnabled()
     assert ecran._exclude_folder.isEnabled()
 
     ecran._folders.clearSelection()
     assert not ecran._include_folder.isEnabled()
+
+
+def test_the_extensions_are_grouped_by_series(step, tmp_path):
+    """⚠️ « A1 », « A1a » et la promo A sont la **série A** : c'est ainsi qu'on
+    cherche une extension — par série d'abord. Vingt dossiers à plat
+    obligeaient à lire chaque nom pour savoir où l'on en était."""
+    ecran, session = step
+    charge(ecran, session, tmp_path,
+           {"a1-puissance-genetique": ["x"], "a3b-la-clairiere-d-evoli": ["y"],
+            "promo-a-promo-a": ["z"], "b1-mega-ascension": ["w"]})
+
+    assert set(ecran._series_items) == {"A", "B"}
+    serie_a = ecran._series_items["A"]
+    assert serie_a.childCount() == 3, "la promo A rejoint la série A"
+    assert "3" in serie_a.text(0), "la série compte ses cartes"
+    assert ecran._series_items["B"].childCount() == 1
+
+
+def test_the_series_stay_in_order_whatever_the_loading_order(step):
+    """⚠️ Les dossiers arrivent dans l'ordre où le système les rend — `os.walk`
+    ne trie pas les répertoires. Une série découverte plus tard se posait alors
+    sous une série qui lui succède."""
+    ecran, _ = step
+    for serie in ("C", "A", "B"):
+        ecran._series_item(serie).setText(0, "Série " + serie)
+    ecran._folder_item("mes-cartes", None).setText(0, "mes-cartes")
+    ecran._series_item("B0").setText(0, "Série B0")
+
+    rangs = [ecran._folders.topLevelItem(i).text(0)
+             for i in range(ecran._folders.topLevelItemCount())]
+    assert rangs == ["Série A", "Série B", "Série B0", "Série C", "mes-cartes"]
+
+
+def test_a_hand_picked_folder_joins_no_series(step, tmp_path):
+    """Un dossier choisi à la main ne suit aucune convention de nommage : il se
+    pose tel quel plutôt que d'inventer un groupe."""
+    from PySide6.QtCore import Qt
+
+    ecran, session = step
+    charge(ecran, session, tmp_path, {"mes-cartes": ["x"], "a1-truc": ["y"]})
+
+    assert set(ecran._series_items) == {"A"}
+    racines = [ecran._folders.topLevelItem(i).data(0, Qt.UserRole)
+               for i in range(ecran._folders.topLevelItemCount())]
+    assert "mes-cartes" in racines
+
+
+def test_selecting_a_series_targets_all_its_extensions(step, tmp_path):
+    """Une série se clique comme une extension, et vaut toutes les siennes."""
+    ecran, session = step
+    charge(ecran, session, tmp_path,
+           {"a1-truc": ["x", "y"], "promo-a-promo-a": ["z"],
+            "b1-machin": ["w"]})
+
+    choisir_serie(ecran, "A")
+    assert ecran._selected_folders() == {"a1-truc", "promo-a-promo-a"}
+    assert ecran._gallery.visible_count() == 3
+    assert ecran._include_folder.isEnabled()
+
+    ecran._exclude_folder.click()
+    assert session.selected_count == 1, "seule la carte de la série B reste"
 
 
 def test_the_folder_list_scrolls_by_pixel(step):
@@ -511,7 +585,7 @@ def test_the_search_and_the_folder_filter_add_up(step, tmp_path):
     ecran._search.setText("pikachu")
     assert ecran._gallery.visible_count() == 2
 
-    ecran._folders.setCurrentRow(0)          # a1 seul
+    choisir(ecran, "a1")
     assert ecran._gallery.visible_count() == 1
 
 
@@ -602,7 +676,7 @@ def test_selecting_a_folder_also_narrows_the_bulk_buttons(step, tmp_path):
     ecran, session = step
     charge(ecran, session, tmp_path, {"a1": ["x", "y"], "a2": ["z"]})
 
-    ecran._folders.setCurrentRow(0)
+    choisir(ecran, "a1")
     assert "2" in ecran._include_all.text()
 
     ecran._include_all.click()          # a1 seul

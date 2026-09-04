@@ -741,15 +741,13 @@ def test_the_paper_tab_says_nothing_of_the_resolution(ecran):
     assert "DPI" not in papier._warnings.text()
 
 
-def test_a_mostly_empty_sheet_is_reported_without_being_judged(session, ecran):
-    """⚠️ Le message conseillait d'allonger la grille pour mieux remplir. Depuis
-    qu'ajouter une feuille veut dire « avoir plus de place », ce blanc est
-    l'état normal, et l'onglet précédent l'annonce comme tel : deux écrans
-    disaient le contraire du même blanc."""
+def test_the_paper_tab_says_nothing_of_the_white_that_remains(session, ecran):
+    """⚠️ Le message donnait la part de papier couverte et prévenait que le
+    reste sortirait blanc. Il disait vrai, mais s'affichait dès qu'on ajoutait
+    une feuille — au moment précis où l'on demande de la place — et il fallait
+    le lire à chaque fois pour n'en rien faire."""
     session.set_layout(panels=3, cols=6, rows=5)
-    texte = ecran._tabs[0]._warnings.text()
-    assert "%" in texte and "blanc" in texte
-    assert "normal si vous avez ajouté des feuilles" in texte
+    assert ecran._tabs[0]._warnings.text() == ""
 
 
 def test_a_grid_that_follows_the_sheet_says_nothing(session, ecran):
@@ -1743,18 +1741,6 @@ def test_the_paper_tab_only_talks_about_paper(session, ecran):
     assert "px" not in resume and "carte" not in resume.lower()
     assert "21.0 × 29.7 cm" in resume, resume
     assert "42.0 × 29.7 cm" in resume, "la surface totale suit les feuilles"
-
-
-def test_the_covered_share_counts_the_gaps(session, ecran):
-    """La mosaïque n'est pas dessinée ici, mais c'est bien cette surface
-    qu'elle couvrira : les écarts en font partie, et le blanc qui reste se
-    compte en feuilles achetées."""
-    session.set_layout(cols=5, rows=4, paper="A4", panels=2,
-                       card_width_mm=30.0, card_gap_mm=0.0)
-    serre = ecran._tabs[0]._warnings.text()
-    session.set_layout(card_gap_mm=5.0)
-    assert ecran._tabs[0]._warnings.text() != serre
-    assert "%" in serre
 
 
 def test_the_shapes_list_only_opens_on_demand(cartes):

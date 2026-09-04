@@ -9,13 +9,13 @@ from PySide6.QtWidgets import (
     QHBoxLayout,
     QLabel,
     QLineEdit,
-    QListWidget,
-    QListWidgetItem,
     QProgressBar,
     QPushButton,
     QSizePolicy,
     QSplitter,
     QStackedWidget,
+    QTreeWidget,
+    QTreeWidgetItem,
     QVBoxLayout,
     QWidget,
 )
@@ -84,8 +84,18 @@ class CardsStep(QWidget):
     # --- Construction -----------------------------------------------------
 
     def _build(self) -> None:
+        # Les lignes déjà posées, par série et par dossier : l'arbre se remplit
+        # au fur et à mesure du chargement, sans être reconstruit.
+        self._series_items: dict[str, QTreeWidgetItem] = {}
+        self._folder_items: dict[str, QTreeWidgetItem] = {}
         self._folder_label = QLabel()
-        self._folders = QListWidget()
+        # ⚠️ **Un arbre, et non plus une liste.** Les extensions se rangent par
+        # série — « A1 », « A1a » et la promo A sont la série A —, et c'est
+        # ainsi qu'on les cherche : par série d'abord, extension ensuite. Vingt
+        # dossiers à plat obligeaient à lire chaque nom pour savoir où l'on en
+        # était. Sélectionner une série vise toutes ses extensions.
+        self._folders = QTreeWidget()
+        self._folders.setHeaderHidden(True)
         self._folders.setSelectionMode(QAbstractItemView.ExtendedSelection)
         # Au pixel et non par ligne entière : au trackpad, le mode par élément
         # saute une extension au moindre geste au lieu de la découvrir.
@@ -579,28 +589,60 @@ class CardsStep(QWidget):
 
     def _fill_folders(self) -> None:
         self._folders.clear()
+        self._series_items = {}
+        self._folder_items = {}
         self._refresh_folder_counts()
 
     def _refresh_folder_counts(self) -> None:
         """Ajoute les dossiers au fur et à mesure de leur arrivée.
 
-        On n'efface pas la liste : la sélection de l'utilisateur, donc le filtre
+        On n'efface pas l'arbre : la sélection de l'utilisateur, donc le filtre
         en cours, doit survivre à l'arrivée d'un nouveau dossier.
         """
-        known = {self._folders.item(row).data(Qt.UserRole)
-                 for row in range(self._folders.count())}
-        for folder in self._session.folders():
-            count = len(self._session.indices_in_folder(folder))
-            if folder in known:
-                for row in range(self._folders.count()):
-                    item = self._folders.item(row)
-                    if item.data(Qt.UserRole) == folder:
-                        item.setText(f"{folder}  ({count})")
-                        break
-                continue
-            item = QListWidgetItem(f"{folder}  ({count})")
-            item.setData(Qt.UserRole, folder)
-            self._folders.addItem(item)
+        for serie, dossiers in self._session.folders_by_series():
+            parent = self._series_item(serie)
+            total = 0
+            for folder in dossiers:
+                count = len(self._session.indices_in_folder(folder))
+                total += count
+                self._folder_item(folder, parent).setText(
+                    0, f"{folder}  ({count})")
+            if parent is not None:
+                parent.setText(0, self.tr("Série %1  (%2)")
+                               .replace("%1", serie).replace("%2", str(total)))
+
+    def _series_item(self, serie: str):
+        """La ligne d'une série, créée à sa première extension.
+
+        `None` pour les dossiers sans série : un dossier choisi à la main ne
+        suit aucune convention de nommage, et se pose donc à la racine.
+        """
+        if not serie:
+            return None
+        if serie not in self._series_items:
+            # ⚠️ **Insérée à sa place, non ajoutée à la fin.** Les dossiers
+            # arrivent dans l'ordre où le système les rend — `os.walk` ne trie
+            # pas les répertoires —, si bien qu'une série découverte plus tard
+            # se serait posée sous une série qui lui succède. Les séries
+            # occupent ainsi toujours les premiers rangs, dans l'ordre, et les
+            # dossiers sans série restent à la suite.
+            rang = sum(1 for autre in self._series_items if autre < serie)
+            item = QTreeWidgetItem()
+            self._folders.insertTopLevelItem(rang, item)
+            police = item.font(0)
+            police.setBold(True)
+            item.setFont(0, police)
+            item.setExpanded(True)
+            self._series_items[serie] = item
+        return self._series_items[serie]
+
+    def _folder_item(self, folder: str, parent):
+        if folder not in self._folder_items:
+            item = (QTreeWidgetItem(parent) if parent is not None
+                    else QTreeWidgetItem(self._folders))
+            item.setData(0, Qt.UserRole, folder)
+            self._folder_items[folder] = item
+        return self._folder_items[folder]
 
     def _invert_selection(self) -> None:
         """Les cartes affichées changent de camp, chacune la sienne."""
@@ -625,12 +667,22 @@ class CardsStep(QWidget):
 
         Actifs sans sélection, ils ne faisaient rien : le clic partait dans le
         vide et l'utilisateur croyait à une panne."""
-        vise = bool(self._session.total_cards and self._folders.selectedItems())
+        vise = bool(self._session.total_cards and self._selected_folders())
         self._include_folder.setEnabled(vise)
         self._exclude_folder.setEnabled(vise)
 
     def _selected_folders(self):
-        return {item.data(Qt.UserRole) for item in self._folders.selectedItems()}
+        """Les dossiers visés, une série valant toutes ses extensions."""
+        dossiers = set()
+        for item in self._folders.selectedItems():
+            propre = item.data(0, Qt.UserRole)
+            if propre:
+                dossiers.add(propre)
+            for rang in range(item.childCount()):
+                enfant = item.child(rang).data(0, Qt.UserRole)
+                if enfant:
+                    dossiers.add(enfant)
+        return dossiers
 
     def _filtering(self) -> bool:
         return bool(self._selected_folders() or self._search.text().strip())

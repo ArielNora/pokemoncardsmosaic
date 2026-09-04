@@ -12,7 +12,7 @@
 <context>
     <name>CardSizeTab</name>
     <message>
-        <location filename="../src/pokemon_mosaic/ui/layout_tabs.py" line="592"/>
+        <location filename="../src/pokemon_mosaic/ui/layout_tabs.py" line="561"/>
         <source>Taille des cartes et écarts</source>
         <translation>Card size and gaps</translation>
     </message>
@@ -21,12 +21,12 @@
         <translation type="vanished">Card width</translation>
     </message>
     <message>
-        <location filename="../src/pokemon_mosaic/ui/layout_tabs.py" line="695"/>
+        <location filename="../src/pokemon_mosaic/ui/layout_tabs.py" line="664"/>
         <source>automatique</source>
         <translation>automatic</translation>
     </message>
     <message>
-        <location filename="../src/pokemon_mosaic/ui/layout_tabs.py" line="697"/>
+        <location filename="../src/pokemon_mosaic/ui/layout_tabs.py" line="666"/>
         <source>La plus grande taille qui fasse tenir la grille, recalculée à chaque changement.</source>
         <translation>The largest size that lets the grid fit, recomputed on every change.</translation>
     </message>
@@ -35,17 +35,17 @@
         <translation type="vanished">Gap between cards</translation>
     </message>
     <message>
-        <location filename="../src/pokemon_mosaic/ui/layout_tabs.py" line="700"/>
+        <location filename="../src/pokemon_mosaic/ui/layout_tabs.py" line="669"/>
         <source>Taille d&apos;une vraie carte</source>
         <translation>Real card size</translation>
     </message>
     <message>
-        <location filename="../src/pokemon_mosaic/ui/layout_tabs.py" line="702"/>
+        <location filename="../src/pokemon_mosaic/ui/layout_tabs.py" line="671"/>
         <source>Fixe la largeur à %1 mm, celle d&apos;une carte qu&apos;on tient en main. Ne touche à rien d&apos;autre.</source>
         <translation>Sets the width to %1 mm, that of a card you hold in your hand. Touches nothing else.</translation>
     </message>
     <message>
-        <location filename="../src/pokemon_mosaic/ui/layout_tabs.py" line="706"/>
+        <location filename="../src/pokemon_mosaic/ui/layout_tabs.py" line="675"/>
         <source>Grilles qui tiendraient</source>
         <translation>Grids that would fit</translation>
     </message>
@@ -54,28 +54,28 @@
         <translation type="vanished">Double-click to apply. Ranked by how many cards they place, then by how far they stray from the current grid.</translation>
     </message>
     <message>
-        <location filename="../src/pokemon_mosaic/ui/layout_tabs.py" line="693"/>
+        <location filename="../src/pokemon_mosaic/ui/layout_tabs.py" line="662"/>
         <source>Largeur d&apos;une carte (mm)</source>
         <translation>Card width (mm)</translation>
     </message>
     <message>
-        <location filename="../src/pokemon_mosaic/ui/layout_tabs.py" line="694"/>
+        <location filename="../src/pokemon_mosaic/ui/layout_tabs.py" line="663"/>
         <source>Écart entre cartes (mm)</source>
         <translation>Gap between cards (mm)</translation>
     </message>
     <message>
-        <location filename="../src/pokemon_mosaic/ui/layout_tabs.py" line="707"/>
-        <location filename="../src/pokemon_mosaic/ui/layout_tabs.py" line="771"/>
+        <location filename="../src/pokemon_mosaic/ui/layout_tabs.py" line="676"/>
+        <location filename="../src/pokemon_mosaic/ui/layout_tabs.py" line="740"/>
         <source>Double-cliquez pour appliquer</source>
         <translation>Double-click to apply</translation>
     </message>
     <message>
-        <location filename="../src/pokemon_mosaic/ui/layout_tabs.py" line="758"/>
+        <location filename="../src/pokemon_mosaic/ui/layout_tabs.py" line="727"/>
         <source>pile poil</source>
         <translation>exact fit</translation>
     </message>
     <message numerus="yes">
-        <location filename="../src/pokemon_mosaic/ui/layout_tabs.py" line="760"/>
+        <location filename="../src/pokemon_mosaic/ui/layout_tabs.py" line="729"/>
         <source>%n case(s) vide(s)</source>
         <translation>
             <numerusform>%n blank cell</numerusform>
@@ -83,7 +83,7 @@
         </translation>
     </message>
     <message numerus="yes">
-        <location filename="../src/pokemon_mosaic/ui/layout_tabs.py" line="762"/>
+        <location filename="../src/pokemon_mosaic/ui/layout_tabs.py" line="731"/>
         <source>%n carte(s) en trop</source>
         <translation>
             <numerusform>%n card too many</numerusform>
@@ -91,17 +91,17 @@
         </translation>
     </message>
     <message>
-        <location filename="../src/pokemon_mosaic/ui/layout_tabs.py" line="772"/>
+        <location filename="../src/pokemon_mosaic/ui/layout_tabs.py" line="741"/>
         <source>Aucune grille ne tiendrait à cette taille de carte.</source>
         <translation>No grid would fit at this card size.</translation>
     </message>
     <message>
-        <location filename="../src/pokemon_mosaic/ui/layout_tabs.py" line="804"/>
+        <location filename="../src/pokemon_mosaic/ui/layout_tabs.py" line="773"/>
         <source>Cartes de &lt;b&gt;%1 × %2 mm&lt;/b&gt;, %3 par feuille. La grille tient.</source>
         <translation>Cards of &lt;b&gt;%1 × %2 mm&lt;/b&gt;, %3 per sheet. The grid fits.</translation>
     </message>
     <message numerus="yes">
-        <location filename="../src/pokemon_mosaic/ui/layout_tabs.py" line="811"/>
+        <location filename="../src/pokemon_mosaic/ui/layout_tabs.py" line="780"/>
         <source>À &lt;b&gt;%1 mm&lt;/b&gt;, la grille %2 × %3 ne tient pas sur %n feuille(s) : elle en logerait &lt;b&gt;%4 × %5&lt;/b&gt;.</source>
         <translation>
             <numerusform>At &lt;b&gt;%1 mm&lt;/b&gt;, the %2 × %3 grid does not fit on %n sheet: it would hold &lt;b&gt;%4 × %5&lt;/b&gt;.</numerusform>
@@ -112,22 +112,22 @@
 <context>
     <name>CardsStep</name>
     <message>
-        <location filename="../src/pokemon_mosaic/ui/cards_step.py" line="254"/>
+        <location filename="../src/pokemon_mosaic/ui/cards_step.py" line="264"/>
         <source>Dossiers</source>
         <translation>Folders</translation>
     </message>
     <message>
-        <location filename="../src/pokemon_mosaic/ui/cards_step.py" line="651"/>
+        <location filename="../src/pokemon_mosaic/ui/cards_step.py" line="695"/>
         <source>Tout inclure</source>
         <translation>Include all</translation>
     </message>
     <message>
-        <location filename="../src/pokemon_mosaic/ui/cards_step.py" line="652"/>
+        <location filename="../src/pokemon_mosaic/ui/cards_step.py" line="696"/>
         <source>Tout exclure</source>
         <translation>Exclude all</translation>
     </message>
     <message>
-        <location filename="../src/pokemon_mosaic/ui/cards_step.py" line="258"/>
+        <location filename="../src/pokemon_mosaic/ui/cards_step.py" line="268"/>
         <source>Choisir le dossier de cartes…</source>
         <translation>Choose card folder…</translation>
     </message>
@@ -144,52 +144,52 @@
         <translation type="vanished">Exclude</translation>
     </message>
     <message>
-        <location filename="../src/pokemon_mosaic/ui/cards_step.py" line="257"/>
+        <location filename="../src/pokemon_mosaic/ui/cards_step.py" line="267"/>
         <source>Afficher tous les dossiers</source>
         <translation>Show all folders</translation>
     </message>
     <message>
-        <location filename="../src/pokemon_mosaic/ui/cards_step.py" line="259"/>
+        <location filename="../src/pokemon_mosaic/ui/cards_step.py" line="269"/>
         <source>Mettre à jour le catalogue</source>
         <translation>Update the card list</translation>
     </message>
     <message>
-        <location filename="../src/pokemon_mosaic/ui/cards_step.py" line="261"/>
+        <location filename="../src/pokemon_mosaic/ui/cards_step.py" line="271"/>
         <source>Relit la liste des cartes publiée et récupère celles qui manquent au dossier.</source>
         <translation>Re-reads the published card list and fetches whatever the folder is missing.</translation>
     </message>
     <message>
-        <location filename="../src/pokemon_mosaic/ui/cards_step.py" line="263"/>
+        <location filename="../src/pokemon_mosaic/ui/cards_step.py" line="273"/>
         <source>Annuler</source>
         <translation>Cancel</translation>
     </message>
     <message>
-        <location filename="../src/pokemon_mosaic/ui/cards_step.py" line="266"/>
+        <location filename="../src/pokemon_mosaic/ui/cards_step.py" line="276"/>
         <source>Les illustrations ne sont pas fournies avec l&apos;application. Téléchargez-les, ou désignez un dossier qui les contient déjà.</source>
         <translation>The artwork does not ship with the application. Download it, or point to a folder that already holds it.</translation>
     </message>
     <message>
-        <location filename="../src/pokemon_mosaic/ui/cards_step.py" line="269"/>
+        <location filename="../src/pokemon_mosaic/ui/cards_step.py" line="279"/>
         <source>Télécharger les cartes…</source>
         <translation>Download the cards…</translation>
     </message>
     <message>
-        <location filename="../src/pokemon_mosaic/ui/cards_step.py" line="270"/>
+        <location filename="../src/pokemon_mosaic/ui/cards_step.py" line="280"/>
         <source>J&apos;ai déjà les cartes : choisir le dossier…</source>
         <translation>I already have the cards: choose the folder…</translation>
     </message>
     <message>
-        <location filename="../src/pokemon_mosaic/ui/cards_step.py" line="273"/>
+        <location filename="../src/pokemon_mosaic/ui/cards_step.py" line="283"/>
         <source>Cliquez une carte pour l&apos;inclure ou l&apos;exclure. Sélectionnez un dossier pour n&apos;afficher que ses cartes.</source>
         <translation>Click a card to include or exclude it. Select a folder to show only its cards.</translation>
     </message>
     <message>
-        <location filename="../src/pokemon_mosaic/ui/cards_step.py" line="276"/>
+        <location filename="../src/pokemon_mosaic/ui/cards_step.py" line="286"/>
         <source>Rechercher une carte par nom…</source>
         <translation>Search a card by name…</translation>
     </message>
     <message numerus="yes">
-        <location filename="../src/pokemon_mosaic/ui/cards_step.py" line="354"/>
+        <location filename="../src/pokemon_mosaic/ui/cards_step.py" line="364"/>
         <source>, et %n autre(s) format(s)</source>
         <translation>
             <numerusform>, and %n other size</numerusform>
@@ -197,62 +197,62 @@
         </translation>
     </message>
     <message>
-        <location filename="../src/pokemon_mosaic/ui/cards_step.py" line="357"/>
+        <location filename="../src/pokemon_mosaic/ui/cards_step.py" line="367"/>
         <source>%1 carte(s) ne sont pas au format %2 : %3. Elles seront étirées à ce format, ce qui déforme l&apos;illustration et fausse les couleurs de bord dont l&apos;assemblage se sert.</source>
         <translation>%1 card(s) are not %2: %3. They will be stretched to that size, which distorts the artwork and skews the edge colours the assembly relies on.</translation>
     </message>
     <message>
-        <location filename="../src/pokemon_mosaic/ui/cards_step.py" line="364"/>
+        <location filename="../src/pokemon_mosaic/ui/cards_step.py" line="374"/>
         <source>%1 fichier(s) illisibles, ignorés : %2</source>
         <translation>%1 unreadable file(s), skipped: %2</translation>
     </message>
     <message>
-        <location filename="../src/pokemon_mosaic/ui/cards_step.py" line="374"/>
+        <location filename="../src/pokemon_mosaic/ui/cards_step.py" line="384"/>
         <source>Dossier contenant les cartes</source>
         <translation>Folder containing the cards</translation>
     </message>
     <message>
-        <location filename="../src/pokemon_mosaic/ui/cards_step.py" line="383"/>
+        <location filename="../src/pokemon_mosaic/ui/cards_step.py" line="393"/>
         <source>Chargement des cartes…</source>
         <translation>Loading cards…</translation>
     </message>
     <message>
-        <location filename="../src/pokemon_mosaic/ui/cards_step.py" line="411"/>
+        <location filename="../src/pokemon_mosaic/ui/cards_step.py" line="421"/>
         <source>Où déposer les cartes</source>
         <translation>Where to put the cards</translation>
     </message>
     <message>
-        <location filename="../src/pokemon_mosaic/ui/cards_step.py" line="430"/>
+        <location filename="../src/pokemon_mosaic/ui/cards_step.py" line="440"/>
         <source>Lecture du catalogue…</source>
         <translation>Reading the card list…</translation>
     </message>
     <message>
-        <location filename="../src/pokemon_mosaic/ui/cards_step.py" line="440"/>
+        <location filename="../src/pokemon_mosaic/ui/cards_step.py" line="450"/>
         <source>Arrêt demandé…</source>
         <translation>Stopping…</translation>
     </message>
     <message>
-        <location filename="../src/pokemon_mosaic/ui/cards_step.py" line="444"/>
+        <location filename="../src/pokemon_mosaic/ui/cards_step.py" line="454"/>
         <source>Le dossier est déjà complet.</source>
         <translation>The folder is already complete.</translation>
     </message>
     <message>
-        <location filename="../src/pokemon_mosaic/ui/cards_step.py" line="449"/>
+        <location filename="../src/pokemon_mosaic/ui/cards_step.py" line="459"/>
         <source>%1 carte(s) à récupérer, %2 Mo…</source>
         <translation>%1 card(s) to fetch, %2 MB…</translation>
     </message>
     <message>
-        <location filename="../src/pokemon_mosaic/ui/cards_step.py" line="457"/>
+        <location filename="../src/pokemon_mosaic/ui/cards_step.py" line="467"/>
         <source>Téléchargement : %1</source>
         <translation>Downloading: %1</translation>
     </message>
     <message>
-        <location filename="../src/pokemon_mosaic/ui/cards_step.py" line="477"/>
+        <location filename="../src/pokemon_mosaic/ui/cards_step.py" line="487"/>
         <source>%1 échec(s), dont %2 : %3</source>
         <translation>%1 failure(s), including %2: %3</translation>
     </message>
     <message numerus="yes">
-        <location filename="../src/pokemon_mosaic/ui/cards_step.py" line="482"/>
+        <location filename="../src/pokemon_mosaic/ui/cards_step.py" line="492"/>
         <source>%n carte(s) récupérée(s).</source>
         <translation>
             <numerusform>%n card fetched.</numerusform>
@@ -260,7 +260,7 @@
         </translation>
     </message>
     <message numerus="yes">
-        <location filename="../src/pokemon_mosaic/ui/cards_step.py" line="490"/>
+        <location filename="../src/pokemon_mosaic/ui/cards_step.py" line="500"/>
         <source>Téléchargement interrompu — %n carte(s) récupérée(s).</source>
         <translation>
             <numerusform>Download stopped — %n card fetched.</numerusform>
@@ -268,12 +268,12 @@
         </translation>
     </message>
     <message>
-        <location filename="../src/pokemon_mosaic/ui/cards_step.py" line="500"/>
+        <location filename="../src/pokemon_mosaic/ui/cards_step.py" line="510"/>
         <source>Téléchargement impossible : %1</source>
         <translation>Download failed: %1</translation>
     </message>
     <message numerus="yes">
-        <location filename="../src/pokemon_mosaic/ui/cards_step.py" line="532"/>
+        <location filename="../src/pokemon_mosaic/ui/cards_step.py" line="542"/>
         <source>%n carte(s) chargée(s).</source>
         <translation>
             <numerusform>%n card loaded.</numerusform>
@@ -281,17 +281,22 @@
         </translation>
     </message>
     <message>
-        <location filename="../src/pokemon_mosaic/ui/cards_step.py" line="542"/>
+        <location filename="../src/pokemon_mosaic/ui/cards_step.py" line="552"/>
         <source>Échec du chargement : %1</source>
         <translation>Loading failed: %1</translation>
     </message>
     <message>
-        <location filename="../src/pokemon_mosaic/ui/cards_step.py" line="571"/>
+        <location filename="../src/pokemon_mosaic/ui/cards_step.py" line="581"/>
         <source>Arrêt en cours : le chargement ne répond pas encore.</source>
         <translation>Stopping: the loading is not responding yet.</translation>
     </message>
+    <message>
+        <location filename="../src/pokemon_mosaic/ui/cards_step.py" line="611"/>
+        <source>Série %1  (%2)</source>
+        <translation>Series %1  (%2)</translation>
+    </message>
     <message numerus="yes">
-        <location filename="../src/pokemon_mosaic/ui/cards_step.py" line="647"/>
+        <location filename="../src/pokemon_mosaic/ui/cards_step.py" line="691"/>
         <source>Inclure les %n affichée(s)</source>
         <translation>
             <numerusform>Include the %n shown</numerusform>
@@ -299,7 +304,7 @@
         </translation>
     </message>
     <message numerus="yes">
-        <location filename="../src/pokemon_mosaic/ui/cards_step.py" line="649"/>
+        <location filename="../src/pokemon_mosaic/ui/cards_step.py" line="693"/>
         <source>Exclure les %n affichée(s)</source>
         <translation>
             <numerusform>Exclude the %n shown</numerusform>
@@ -307,22 +312,22 @@
         </translation>
     </message>
     <message>
-        <location filename="../src/pokemon_mosaic/ui/cards_step.py" line="656"/>
+        <location filename="../src/pokemon_mosaic/ui/cards_step.py" line="700"/>
         <source>Inverser</source>
         <translation>Invert</translation>
     </message>
     <message>
-        <location filename="../src/pokemon_mosaic/ui/cards_step.py" line="658"/>
+        <location filename="../src/pokemon_mosaic/ui/cards_step.py" line="702"/>
         <source>Les cartes affichées changent de camp : les incluses sortent, les exclues rentrent.</source>
         <translation>The shown cards swap sides: the included ones drop out, the excluded ones come back.</translation>
     </message>
     <message>
-        <location filename="../src/pokemon_mosaic/ui/cards_step.py" line="661"/>
+        <location filename="../src/pokemon_mosaic/ui/cards_step.py" line="705"/>
         <source>Toutes les cartes changent de camp : les incluses sortent, les exclues rentrent.</source>
         <translation>Every card swaps sides: the included ones drop out, the excluded ones come back.</translation>
     </message>
     <message numerus="yes">
-        <location filename="../src/pokemon_mosaic/ui/cards_step.py" line="699"/>
+        <location filename="../src/pokemon_mosaic/ui/cards_step.py" line="743"/>
         <source>%n carte(s) trouvée(s)</source>
         <translation>
             <numerusform>%n card found</numerusform>
@@ -330,33 +335,33 @@
         </translation>
     </message>
     <message>
-        <location filename="../src/pokemon_mosaic/ui/cards_step.py" line="264"/>
-        <location filename="../src/pokemon_mosaic/ui/cards_step.py" line="685"/>
+        <location filename="../src/pokemon_mosaic/ui/cards_step.py" line="274"/>
+        <location filename="../src/pokemon_mosaic/ui/cards_step.py" line="729"/>
         <source>Aucune carte chargée</source>
         <translation>No cards loaded</translation>
     </message>
     <message>
-        <location filename="../src/pokemon_mosaic/ui/cards_step.py" line="255"/>
+        <location filename="../src/pokemon_mosaic/ui/cards_step.py" line="265"/>
         <source>Inclure l&apos;extension</source>
         <translation>Include the set</translation>
     </message>
     <message>
-        <location filename="../src/pokemon_mosaic/ui/cards_step.py" line="256"/>
+        <location filename="../src/pokemon_mosaic/ui/cards_step.py" line="266"/>
         <source>Exclure l&apos;extension</source>
         <translation>Exclude the set</translation>
     </message>
     <message>
-        <location filename="../src/pokemon_mosaic/ui/cards_step.py" line="687"/>
+        <location filename="../src/pokemon_mosaic/ui/cards_step.py" line="731"/>
         <source>%1 cartes retenues sur %2</source>
         <translation>%1 of %2 cards kept</translation>
     </message>
     <message>
-        <location filename="../src/pokemon_mosaic/ui/cards_step.py" line="693"/>
+        <location filename="../src/pokemon_mosaic/ui/cards_step.py" line="737"/>
         <source>filtré sur %1</source>
         <translation>filtered on %1</translation>
     </message>
     <message numerus="yes">
-        <location filename="../src/pokemon_mosaic/ui/cards_step.py" line="695"/>
+        <location filename="../src/pokemon_mosaic/ui/cards_step.py" line="739"/>
         <source>filtré sur %n dossiers</source>
         <translation>
             <numerusform>filtered on %n folder</numerusform>
@@ -491,52 +496,52 @@
 <context>
     <name>GridSizeTab</name>
     <message>
-        <location filename="../src/pokemon_mosaic/ui/layout_tabs.py" line="118"/>
+        <location filename="../src/pokemon_mosaic/ui/layout_tabs.py" line="113"/>
         <source>Taille et cases vides</source>
         <translation>Size and blank cells</translation>
     </message>
     <message>
-        <location filename="../src/pokemon_mosaic/ui/layout_tabs.py" line="273"/>
+        <location filename="../src/pokemon_mosaic/ui/layout_tabs.py" line="268"/>
         <source>Colonnes</source>
         <translation>Columns</translation>
     </message>
     <message>
-        <location filename="../src/pokemon_mosaic/ui/layout_tabs.py" line="274"/>
+        <location filename="../src/pokemon_mosaic/ui/layout_tabs.py" line="269"/>
         <source>Lignes</source>
         <translation>Rows</translation>
     </message>
     <message>
-        <location filename="../src/pokemon_mosaic/ui/layout_tabs.py" line="275"/>
+        <location filename="../src/pokemon_mosaic/ui/layout_tabs.py" line="270"/>
         <source>Recommandations de grilles</source>
         <translation>Grid recommendations</translation>
     </message>
     <message>
-        <location filename="../src/pokemon_mosaic/ui/layout_tabs.py" line="276"/>
+        <location filename="../src/pokemon_mosaic/ui/layout_tabs.py" line="271"/>
         <source>Double-cliquez pour appliquer</source>
         <translation>Double-click to apply</translation>
     </message>
     <message>
-        <location filename="../src/pokemon_mosaic/ui/layout_tabs.py" line="277"/>
+        <location filename="../src/pokemon_mosaic/ui/layout_tabs.py" line="272"/>
         <source>Placer les vides automatiquement</source>
         <translation>Place the blanks automatically</translation>
     </message>
     <message>
-        <location filename="../src/pokemon_mosaic/ui/layout_tabs.py" line="279"/>
+        <location filename="../src/pokemon_mosaic/ui/layout_tabs.py" line="274"/>
         <source>Répartit régulièrement les cases vides qui manquent, sans défaire celles que vous avez posées.</source>
         <translation>Spreads the missing blank cells evenly, without undoing the ones you placed.</translation>
     </message>
     <message>
-        <location filename="../src/pokemon_mosaic/ui/layout_tabs.py" line="282"/>
+        <location filename="../src/pokemon_mosaic/ui/layout_tabs.py" line="277"/>
         <source>Tout retirer</source>
         <translation>Remove them all</translation>
     </message>
     <message>
-        <location filename="../src/pokemon_mosaic/ui/layout_tabs.py" line="320"/>
+        <location filename="../src/pokemon_mosaic/ui/layout_tabs.py" line="315"/>
         <source>pile poil</source>
         <translation>exact fit</translation>
     </message>
     <message numerus="yes">
-        <location filename="../src/pokemon_mosaic/ui/layout_tabs.py" line="322"/>
+        <location filename="../src/pokemon_mosaic/ui/layout_tabs.py" line="317"/>
         <source>%n case(s) vide(s)</source>
         <translation>
             <numerusform>%n blank cell</numerusform>
@@ -544,7 +549,7 @@
         </translation>
     </message>
     <message numerus="yes">
-        <location filename="../src/pokemon_mosaic/ui/layout_tabs.py" line="324"/>
+        <location filename="../src/pokemon_mosaic/ui/layout_tabs.py" line="319"/>
         <source>%n carte(s) en trop</source>
         <translation>
             <numerusform>%n card too many</numerusform>
@@ -552,7 +557,7 @@
         </translation>
     </message>
     <message numerus="yes">
-        <location filename="../src/pokemon_mosaic/ui/layout_tabs.py" line="344"/>
+        <location filename="../src/pokemon_mosaic/ui/layout_tabs.py" line="339"/>
         <source>&lt;b&gt;%n&lt;/b&gt; carte(s) ne tiennent pas dans la grille : agrandissez-la, ou retirez-les à l&apos;étape précédente.</source>
         <translation>
             <numerusform>&lt;b&gt;%n&lt;/b&gt; card does not fit in the grid: enlarge it, or drop it at the previous step.</numerusform>
@@ -560,7 +565,7 @@
         </translation>
     </message>
     <message numerus="yes">
-        <location filename="../src/pokemon_mosaic/ui/layout_tabs.py" line="348"/>
+        <location filename="../src/pokemon_mosaic/ui/layout_tabs.py" line="343"/>
         <source>Il reste &lt;b&gt;%n&lt;/b&gt; case(s) vide(s) à placer : cliquez dans la grille pour choisir où.</source>
         <translation>
             <numerusform>&lt;b&gt;%n&lt;/b&gt; blank cell left to place: click in the grid to choose where.</numerusform>
@@ -568,7 +573,7 @@
         </translation>
     </message>
     <message numerus="yes">
-        <location filename="../src/pokemon_mosaic/ui/layout_tabs.py" line="352"/>
+        <location filename="../src/pokemon_mosaic/ui/layout_tabs.py" line="347"/>
         <source>Les &lt;b&gt;%n&lt;/b&gt; case(s) vide(s) sont placées.</source>
         <translation>
             <numerusform>The &lt;b&gt;%n&lt;/b&gt; blank cell is placed.</numerusform>
@@ -576,7 +581,7 @@
         </translation>
     </message>
     <message>
-        <location filename="../src/pokemon_mosaic/ui/layout_tabs.py" line="355"/>
+        <location filename="../src/pokemon_mosaic/ui/layout_tabs.py" line="350"/>
         <source>La grille a exactement autant de cases que de cartes retenues.</source>
         <translation>The grid has exactly as many cells as selected cards.</translation>
     </message>
@@ -1064,32 +1069,32 @@
 <context>
     <name>PaperTab</name>
     <message>
-        <location filename="../src/pokemon_mosaic/ui/layout_tabs.py" line="461"/>
+        <location filename="../src/pokemon_mosaic/ui/layout_tabs.py" line="456"/>
         <source>Format de la feuille</source>
         <translation>Sheet format</translation>
     </message>
     <message>
-        <location filename="../src/pokemon_mosaic/ui/layout_tabs.py" line="462"/>
+        <location filename="../src/pokemon_mosaic/ui/layout_tabs.py" line="457"/>
         <source>Format</source>
         <translation>Format</translation>
     </message>
     <message>
-        <location filename="../src/pokemon_mosaic/ui/layout_tabs.py" line="463"/>
+        <location filename="../src/pokemon_mosaic/ui/layout_tabs.py" line="458"/>
         <source>Largeur (cm)</source>
         <translation>Width (cm)</translation>
     </message>
     <message>
-        <location filename="../src/pokemon_mosaic/ui/layout_tabs.py" line="464"/>
+        <location filename="../src/pokemon_mosaic/ui/layout_tabs.py" line="459"/>
         <source>Hauteur (cm)</source>
         <translation>Height (cm)</translation>
     </message>
     <message>
-        <location filename="../src/pokemon_mosaic/ui/layout_tabs.py" line="468"/>
+        <location filename="../src/pokemon_mosaic/ui/layout_tabs.py" line="463"/>
         <source>Choisissez le format de la feuille, et appuyez sur les boutons + ou − pour ajouter ou enlever des feuilles.</source>
         <translation>Choose the sheet format, then press the + or − buttons to add or remove sheets.</translation>
     </message>
     <message numerus="yes">
-        <location filename="../src/pokemon_mosaic/ui/layout_tabs.py" line="522"/>
+        <location filename="../src/pokemon_mosaic/ui/layout_tabs.py" line="517"/>
         <source>%n feuille(s) de %1 × %2 cm — surface totale de %3 × %4 cm.</source>
         <translation>
             <numerusform>%n sheet of %1 × %2 cm — total surface %3 × %4 cm.</numerusform>
@@ -1097,7 +1102,7 @@
         </translation>
     </message>
     <message>
-        <location filename="../src/pokemon_mosaic/ui/layout_tabs.py" line="376"/>
+        <location filename="../src/pokemon_mosaic/ui/layout_tabs.py" line="371"/>
         <source>Pages</source>
         <translation>Pages</translation>
     </message>
@@ -1106,7 +1111,7 @@
         <translation type="vanished">Print format</translation>
     </message>
     <message>
-        <location filename="../src/pokemon_mosaic/ui/layout_tabs.py" line="465"/>
+        <location filename="../src/pokemon_mosaic/ui/layout_tabs.py" line="460"/>
         <source>Paysage</source>
         <translation>Landscape</translation>
     </message>
@@ -1131,9 +1136,8 @@
         <translation type="vanished">%1 DPI exceeds the useful maximum (%2 DPI for this format): cards will be enlarged without gaining detail.</translation>
     </message>
     <message>
-        <location filename="../src/pokemon_mosaic/ui/layout_tabs.py" line="561"/>
         <source>La mosaïque couvre %1 % du papier : le reste sortira blanc de l&apos;imprimante. C&apos;est normal si vous avez ajouté des feuilles pour avoir de la place ; sinon, une grille plus large ou moins de feuilles la rempliraient mieux.</source>
-        <translation>The mosaic covers %1 % of the paper: the rest will come out of the printer blank. That is expected if you added sheets for room; otherwise a wider grid or fewer sheets would fill it better.</translation>
+        <translation type="vanished">The mosaic covers %1 % of the paper: the rest will come out of the printer blank. That is expected if you added sheets for room; otherwise a wider grid or fewer sheets would fill it better.</translation>
     </message>
     <message>
         <source>Image de %1 Mpx : l&apos;export demandera beaucoup de mémoire.</source>
@@ -1183,42 +1187,42 @@
 <context>
     <name>PlacementTab</name>
     <message>
-        <location filename="../src/pokemon_mosaic/ui/layout_tabs.py" line="841"/>
+        <location filename="../src/pokemon_mosaic/ui/layout_tabs.py" line="810"/>
         <source>Emplacement de la grille</source>
         <translation>Grid placement</translation>
     </message>
     <message>
-        <location filename="../src/pokemon_mosaic/ui/layout_tabs.py" line="882"/>
+        <location filename="../src/pokemon_mosaic/ui/layout_tabs.py" line="851"/>
         <source>Cliquez dans la mosaïque et tirez pour la déplacer. Chaque feuille porte son morceau et le déplace pour son compte : un morceau ne passe jamais sur la feuille voisine, sans quoi une coupe tomberait en pleine carte.</source>
         <translation>Click inside the mosaic and drag to move it. Each sheet carries its own piece and moves it independently: a piece never crosses onto the neighbouring sheet, which would put a cut through a card.</translation>
     </message>
     <message>
-        <location filename="../src/pokemon_mosaic/ui/layout_tabs.py" line="887"/>
+        <location filename="../src/pokemon_mosaic/ui/layout_tabs.py" line="856"/>
         <source>Centrer</source>
         <translation>Centre</translation>
     </message>
     <message>
-        <location filename="../src/pokemon_mosaic/ui/layout_tabs.py" line="889"/>
+        <location filename="../src/pokemon_mosaic/ui/layout_tabs.py" line="858"/>
         <source>Pose chaque morceau au milieu de sa feuille, dans les deux sens. Les feuilles sans carte sont laissées de côté.</source>
         <translation>Puts every piece in the middle of its sheet, both ways. Sheets without cards are left alone.</translation>
     </message>
     <message>
-        <location filename="../src/pokemon_mosaic/ui/layout_tabs.py" line="892"/>
+        <location filename="../src/pokemon_mosaic/ui/layout_tabs.py" line="861"/>
         <source>Remettre en place</source>
         <translation>Put back</translation>
     </message>
     <message>
-        <location filename="../src/pokemon_mosaic/ui/layout_tabs.py" line="894"/>
+        <location filename="../src/pokemon_mosaic/ui/layout_tabs.py" line="863"/>
         <source>Ramène tous les morceaux à leur emplacement par défaut : calés à gauche, centrés en hauteur.</source>
         <translation>Brings every piece back to its default spot: flush left, vertically centred.</translation>
     </message>
     <message>
-        <location filename="../src/pokemon_mosaic/ui/layout_tabs.py" line="911"/>
+        <location filename="../src/pokemon_mosaic/ui/layout_tabs.py" line="880"/>
         <source>Les morceaux sont centrés dans leur feuille.</source>
         <translation>Every piece is centred in its sheet.</translation>
     </message>
     <message numerus="yes">
-        <location filename="../src/pokemon_mosaic/ui/layout_tabs.py" line="913"/>
+        <location filename="../src/pokemon_mosaic/ui/layout_tabs.py" line="882"/>
         <source>&lt;b&gt;%n&lt;/b&gt; feuille(s) déplacée(s).</source>
         <translation>
             <numerusform>&lt;b&gt;%n&lt;/b&gt; sheet moved.</numerusform>
@@ -1233,7 +1237,7 @@
         </translation>
     </message>
     <message>
-        <location filename="../src/pokemon_mosaic/ui/layout_tabs.py" line="915"/>
+        <location filename="../src/pokemon_mosaic/ui/layout_tabs.py" line="884"/>
         <source>Les morceaux sont à leur emplacement par défaut.</source>
         <translation>Every piece is at its default spot.</translation>
     </message>

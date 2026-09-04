@@ -5,6 +5,7 @@ préviennent par signaux. Rien n'est recalculé en double d'un écran à l'autre
 """
 
 import os
+import re
 from dataclasses import replace as dataclass_replace
 
 from PySide6.QtCore import QObject, Signal
@@ -25,6 +26,22 @@ from ..layout import (
 from ..links import DEFAULT_LINKS, Link, LinkLibrary, resolve_links
 from ..optimize import StopConditions
 from ..presets import LinkRef, Preset
+
+# ⚠️ **La série se lit dans le nom du dossier.** Le miroir les nomme
+# « a1-puissance-genetique », « a3b-la-clairiere-d-evoli », « promo-a-promo-a » :
+# la lettre de tête est la série, et les promos d'une série portent la même. Rien
+# d'autre ne la donne — le catalogue ne connaît que des extensions.
+_SERIE = re.compile(r"^(?:promo-)?([a-z])(?=\d|-|$)", re.IGNORECASE)
+
+
+def series_of(folder: str) -> str:
+    """La série d'un dossier d'extension, ou `""` s'il n'en annonce aucune.
+
+    Un dossier choisi à la main ne suit aucune convention : il ne rejoint alors
+    aucun groupe, et se lit tel quel dans la liste.
+    """
+    trouve = _SERIE.match(os.path.basename(folder))
+    return trouve.group(1).upper() if trouve else ""
 
 
 class Session(QObject):
@@ -236,6 +253,19 @@ class Session(QObject):
     def folders(self) -> list[str]:
         """Dossiers rencontrés, en chemin relatif à la racine, triés."""
         return sorted(set(self._folder_of.values()))
+
+    def folders_by_series(self) -> list[tuple[str, list[str]]]:
+        """Les dossiers groupés par série, dans l'ordre d'affichage.
+
+        Les dossiers sans série viennent en dernier, sous une clé vide : ils
+        n'ont pas de groupe et se posent tels quels.
+        """
+        groupes: dict[str, list[str]] = {}
+        for folder in self.folders():
+            groupes.setdefault(series_of(folder), []).append(folder)
+        nommees = sorted((nom, dossiers) for nom, dossiers in groupes.items()
+                         if nom)
+        return nommees + ([("", groupes[""])] if "" in groupes else [])
 
     def indices_in_folder(self, folder: str) -> list[int]:
         return [i for i, f in self._folder_of.items() if f == folder]
