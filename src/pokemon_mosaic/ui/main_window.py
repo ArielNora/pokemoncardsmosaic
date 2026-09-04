@@ -3,9 +3,11 @@
 import os
 from pathlib import Path
 
-from PySide6.QtCore import QSettings, QStandardPaths, Qt
+from PySide6.QtCore import QEvent, QSettings, QStandardPaths, Qt
+from PySide6.QtGui import QColor
 from PySide6.QtWidgets import (
     QComboBox,
+    QGraphicsDropShadowEffect,
     QHBoxLayout,
     QLabel,
     QMainWindow,
@@ -17,6 +19,7 @@ from PySide6.QtWidgets import (
 )
 
 from ..paths import APP_NAME
+from . import theme
 from .cards_step import CardsStep
 from .i18n import LANGUAGES, LanguageManager
 from .layout_step import LayoutStep
@@ -24,6 +27,14 @@ from .presets_bar import PresetsBar
 from .run_step import RunStep
 from .session import Session
 from .settings_step import SettingsStep
+
+# L'aura du bouton « Suivant » : son rayon, son opacité, et la place à lui
+# laisser autour. ⚠️ **Le rouge est plus discret que le vert** : il accompagne le
+# premier passage sur chaque écran, et le voir aussi vif que l'invitation à
+# continuer donnerait au parcours l'air d'une suite d'erreurs.
+GLOW_RADIUS, GLOW_ALPHA = 26, 220
+GLOW_RADIUS_WAITING, GLOW_ALPHA_WAITING = 16, 130
+GLOW_ROOM = 10
 
 
 class PlaceholderStep(QWidget):
@@ -153,6 +164,13 @@ class MainWindow(QMainWindow):
 
         self._back = QPushButton()
         self._next = QPushButton()
+        # ⚠️ **Une aura, et non un fond coloré.** Le bouton garde l'apparence
+        # d'un bouton : c'est autour de lui que se lit son état, sans quoi il
+        # faudrait deux boutons de couleurs différentes selon le moment. Qt ne
+        # connaît pas `box-shadow` ; l'effet, lui, se pose sur le widget.
+        self._next_glow = QGraphicsDropShadowEffect(self._next)
+        self._next_glow.setOffset(0, 0)
+        self._next.setGraphicsEffect(self._next_glow)
         self._back.clicked.connect(lambda: self._go(self._stack.currentIndex() - 1))
         self._next.clicked.connect(self._on_next)
 
@@ -166,6 +184,10 @@ class MainWindow(QMainWindow):
         self._language_box.currentIndexChanged.connect(self._on_language_picked)
 
         bottom = QHBoxLayout()
+        # L'aura déborde du bouton : sans cette marge, elle serait rognée par le
+        # bord de la fenêtre et par le bouton voisin.
+        bottom.setContentsMargins(0, GLOW_ROOM, 0, GLOW_ROOM)
+        bottom.setSpacing(GLOW_ROOM)
         bottom.addWidget(self._language_label)
         bottom.addWidget(self._language_box)
         bottom.addStretch(1)
@@ -232,10 +254,45 @@ class MainWindow(QMainWindow):
         if avancable and peut is not None:
             avancable = peut()
         self._next.setEnabled(avancable)
+        self._update_glow(avancable, current < self._stack.count() - 1)
         for position, label in enumerate(self._step_labels):
             font = label.font()
             font.setBold(position == current)
             label.setFont(font)
+
+    def _update_glow(self, ready: bool, has_next: bool) -> None:
+        """L'aura du bouton « Suivant » : verte quand il est prêt, rouge sinon.
+
+        ⚠️ **Rien du tout à la dernière étape.** Le bouton y est éteint parce
+        qu'il n'y a plus d'écran après, et non parce qu'il manque quelque
+        chose : une aura rouge y accuserait un travail qui est fini.
+
+        Le rouge est **moins fort** que le vert. Il dit « il reste à faire »,
+        pas « c'est cassé », et il accompagne le premier passage sur chaque
+        écran — le voir aussi vif que l'invitation à continuer donnerait à tout
+        le parcours l'air d'une suite d'erreurs.
+        """
+        colours = theme.colours(self.palette())
+        if not has_next:
+            self._next_glow.setEnabled(False)
+            return
+        self._next_glow.setEnabled(True)
+        couleur = QColor(colours["ok"] if ready else colours["error"])
+        couleur.setAlpha(GLOW_ALPHA if ready else GLOW_ALPHA_WAITING)
+        self._next_glow.setColor(couleur)
+        self._next_glow.setBlurRadius(GLOW_RADIUS if ready
+                                      else GLOW_RADIUS_WAITING)
+
+    def changeEvent(self, event) -> None:
+        """Suit la bascule clair/sombre du système.
+
+        ⚠️ **Une couleur figée dans un effet ne suit rien.** Tout ce qui se lit
+        au moment du dessin change de mode tout seul ; l'aura, elle, garde la
+        teinte qu'on lui a posée — verte foncée sur une fenêtre devenue claire.
+        """
+        super().changeEvent(event)
+        if event.type() == QEvent.PaletteChange:
+            self._update_navigation()
 
     # Nombre de tentatives de fermeture avant de passer outre un fil bloqué.
     CLOSE_ATTEMPTS = 2

@@ -271,6 +271,58 @@ def test_next_unlocks_as_soon_as_cards_arrive(fenetre, tmp_path):
     assert w._next.isEnabled()
 
 
+def test_the_next_button_glows_green_when_it_is_ready(fenetre, tmp_path):
+    """L'état du bouton se lit **autour** de lui : coloré, il cesserait de
+    ressembler à un bouton."""
+    from pokemon_mosaic.ui import theme
+
+    w, session = fenetre
+    couleurs = theme.colours(w.palette())
+
+    # Sans carte, il manque quelque chose : rouge, et plus discret.
+    assert w._next_glow.isEnabled()
+    assert w._next_glow.color().name() == couleurs["error"]
+    attente = (w._next_glow.color().alpha(), w._next_glow.blurRadius())
+
+    session.set_cards(card_set_in(tmp_path, {"s": ["a"]}), str(tmp_path))
+    session.cards_loaded.emit()
+
+    assert w._next.isEnabled()
+    assert w._next_glow.color().name() == couleurs["ok"]
+    pret = (w._next_glow.color().alpha(), w._next_glow.blurRadius())
+    assert pret > attente, "le rouge doit rester moins fort que le vert"
+
+
+def test_the_aura_follows_a_change_of_mode(fenetre, qt_app):
+    """⚠️ Une couleur figée dans un effet ne suit rien : tout ce qui se lit au
+    moment du dessin change de mode tout seul, l'aura garde la teinte qu'on lui
+    a posée — verte foncée sur une fenêtre devenue claire."""
+    from pokemon_mosaic.ui import theme
+
+    w, _ = fenetre
+    qt_app.setPalette(theme.qt_palette(True))
+    qt_app.processEvents()          # l'événement de palette est posté
+    sombre = w._next_glow.color().name()
+    qt_app.setPalette(theme.qt_palette(False))
+    qt_app.processEvents()
+    clair = w._next_glow.color().name()
+
+    assert sombre == theme.DARK["error"]
+    assert clair == theme.LIGHT["error"]
+
+
+def test_the_last_step_has_no_aura_at_all(fenetre, tmp_path):
+    """⚠️ Le bouton y est éteint parce qu'il n'y a plus d'écran après, et non
+    parce qu'il manque quelque chose : une aura rouge y accuserait un travail
+    qui est fini."""
+    w, session = fenetre
+    session.set_cards(card_set_in(tmp_path, {"s": ["a"]}), str(tmp_path))
+    w._stack.setCurrentIndex(w._stack.count() - 1)
+
+    assert not w._next.isEnabled()
+    assert not w._next_glow.isEnabled()
+
+
 def test_the_folder_is_remembered_across_launches(fenetre, tmp_path):
     from pokemon_mosaic.ui.main_window import MainWindow
 

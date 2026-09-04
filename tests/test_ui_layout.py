@@ -504,6 +504,23 @@ def test_the_state_colours_the_frame_not_the_words(session, ecran):
             > ecart(QColor(fond), depart) / max(1, ecart(teinte, depart)))
 
 
+def test_the_badges_are_repainted_when_the_mode_changes(qt_app, session, ecran):
+    """⚠️ Une pastille est une **image posée** : peinte une fois avec la couleur
+    du mode d'alors, elle reste ambre foncé sur une fenêtre devenue sombre. Le
+    cadre, lui, se relit à chaque dessin et suit tout seul."""
+    from pokemon_mosaic.ui import theme
+
+    ecran.show()
+    qt_app.setPalette(theme.qt_palette(False))
+    qt_app.processEvents()
+    clair = ecran._list.item(0).icon().pixmap(22, 22).toImage()
+
+    qt_app.setPalette(theme.qt_palette(True))
+    qt_app.processEvents()
+    sombre = ecran._list.item(0).icon().pixmap(22, 22).toImage()
+    assert clair != sombre, "la pastille est restée dans l'autre mode"
+
+
 def test_a_locked_tab_stays_grey(session, ecran):
     """Sa couleur dirait un état sur lequel on ne peut rien."""
     from pokemon_mosaic.ui import theme

@@ -11,7 +11,7 @@ que son contenu tient toujours debout. Revenir en arrière ne défait donc rien,
 mais changer un réglage jusqu'à le rendre invalide rallume l'avertissement.
 """
 
-from PySide6.QtCore import QRectF, QSize, Qt, Signal
+from PySide6.QtCore import QEvent, QRectF, QSize, Qt, Signal
 from PySide6.QtGui import QColor, QIcon, QPainter, QPen, QPixmap
 from PySide6.QtWidgets import (
     QAbstractItemView,
@@ -276,6 +276,17 @@ class LayoutStep(QWidget):
 
     def _row_of(self, position: int) -> int:
         return self._rows.index(position)
+
+    def changeEvent(self, event) -> None:
+        """Suit la bascule clair/sombre : les pastilles sont des images posées.
+
+        Le cadre d'un onglet se relit à chaque dessin et change de mode tout
+        seul ; la pastille, elle, a été peinte une fois avec la couleur du mode
+        d'alors.
+        """
+        super().changeEvent(event)
+        if event.type() == QEvent.PaletteChange:
+            self._refresh_badges()
 
     def retranslate_ui(self) -> None:
         for tab in self._tabs:
