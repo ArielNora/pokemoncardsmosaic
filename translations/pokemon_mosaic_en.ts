@@ -1026,37 +1026,37 @@
 <context>
     <name>PagePreview</name>
     <message>
-        <location filename="../src/pokemon_mosaic/ui/page_preview.py" line="106"/>
+        <location filename="../src/pokemon_mosaic/ui/page_preview.py" line="114"/>
         <source>Ajouter une feuille à droite</source>
         <translation>Add a sheet on the right</translation>
     </message>
     <message>
-        <location filename="../src/pokemon_mosaic/ui/page_preview.py" line="107"/>
+        <location filename="../src/pokemon_mosaic/ui/page_preview.py" line="115"/>
         <source>Ajouter une ligne de feuilles</source>
         <translation>Add a row of sheets</translation>
     </message>
     <message>
-        <location filename="../src/pokemon_mosaic/ui/page_preview.py" line="109"/>
-        <location filename="../src/pokemon_mosaic/ui/page_preview.py" line="143"/>
+        <location filename="../src/pokemon_mosaic/ui/page_preview.py" line="117"/>
+        <location filename="../src/pokemon_mosaic/ui/page_preview.py" line="151"/>
         <source>Retirer une feuille</source>
         <translation>Remove a sheet</translation>
     </message>
     <message>
-        <location filename="../src/pokemon_mosaic/ui/page_preview.py" line="111"/>
-        <location filename="../src/pokemon_mosaic/ui/page_preview.py" line="147"/>
+        <location filename="../src/pokemon_mosaic/ui/page_preview.py" line="119"/>
+        <location filename="../src/pokemon_mosaic/ui/page_preview.py" line="155"/>
         <source>Retirer une ligne de feuilles</source>
         <translation>Remove a row of sheets</translation>
     </message>
     <message>
-        <location filename="../src/pokemon_mosaic/ui/page_preview.py" line="530"/>
+        <location filename="../src/pokemon_mosaic/ui/page_preview.py" line="586"/>
         <source>carte réelle
 %1 × %2 cm</source>
         <translation>real card
 %1 × %2 cm</translation>
     </message>
     <message>
-        <location filename="../src/pokemon_mosaic/ui/page_preview.py" line="562"/>
-        <location filename="../src/pokemon_mosaic/ui/page_preview.py" line="577"/>
+        <location filename="../src/pokemon_mosaic/ui/page_preview.py" line="618"/>
+        <location filename="../src/pokemon_mosaic/ui/page_preview.py" line="633"/>
         <source>%1 cm</source>
         <translation>%1 cm</translation>
     </message>
@@ -1213,12 +1213,12 @@
         <translation>Brings every piece back to its default spot: flush left, vertically centred.</translation>
     </message>
     <message>
-        <location filename="../src/pokemon_mosaic/ui/layout_tabs.py" line="908"/>
+        <location filename="../src/pokemon_mosaic/ui/layout_tabs.py" line="911"/>
         <source>Les morceaux sont centrés dans leur feuille.</source>
         <translation>Every piece is centred in its sheet.</translation>
     </message>
     <message numerus="yes">
-        <location filename="../src/pokemon_mosaic/ui/layout_tabs.py" line="910"/>
+        <location filename="../src/pokemon_mosaic/ui/layout_tabs.py" line="913"/>
         <source>&lt;b&gt;%n&lt;/b&gt; feuille(s) déplacée(s).</source>
         <translation>
             <numerusform>&lt;b&gt;%n&lt;/b&gt; sheet moved.</numerusform>
@@ -1233,7 +1233,7 @@
         </translation>
     </message>
     <message>
-        <location filename="../src/pokemon_mosaic/ui/layout_tabs.py" line="912"/>
+        <location filename="../src/pokemon_mosaic/ui/layout_tabs.py" line="915"/>
         <source>Les morceaux sont à leur emplacement par défaut.</source>
         <translation>Every piece is at its default spot.</translation>
     </message>

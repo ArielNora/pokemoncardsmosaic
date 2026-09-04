@@ -13,9 +13,17 @@ from PySide6.QtCore import QPointF, QRect, QRectF, Qt, Signal
 from PySide6.QtGui import QBrush, QColor, QPainter, QPen
 from PySide6.QtWidgets import QPushButton, QWidget
 
-from ..layout import MM_PER_INCH, REAL_CARD_MM
+from ..layout import MM_PER_INCH, REAL_CARD_MM, cards_on_panel
 from . import theme
-from .wireframe import CARD_EDGE, CARD_FILL, EMPTY_EDGE, EMPTY_FILL
+from .wireframe import (
+    CARD_EDGE,
+    CARD_FILL,
+    EMPTY_EDGE,
+    EMPTY_FILL,
+    badge_rect,
+    draw_badge,
+    draw_cut,
+)
 
 # Place réservée aux cotes, en pixels écran : la flèche, sa tête, et le nombre
 # sous elle. Trop juste, la largeur se retrouvait coupée par le bas du cadre.
@@ -410,19 +418,7 @@ class PagePreview(QWidget):
         if self._show_grid:
             self._draw_grid(painter, feuille)
 
-        # Les coupes entre panneaux : la feuille dessinée est leur somme, dans
-        # les deux sens.
-        session = self._session
-        if session.panels > 1 or session.panel_rows > 1:
-            painter.setPen(QPen(encre, 1, Qt.DashLine))
-            for panneau in range(1, session.panels):
-                x = feuille.left() + feuille.width() * panneau / session.panels
-                painter.drawLine(QPointF(x, feuille.top()),
-                                 QPointF(x, feuille.bottom()))
-            for ligne in range(1, session.panel_rows):
-                y = feuille.top() + feuille.height() * ligne / session.panel_rows
-                painter.drawLine(QPointF(feuille.left(), y),
-                                 QPointF(feuille.right(), y))
+        self._draw_cuts(painter, feuille, encre)
 
         sheet = self._sheet_mm()
         painter.setBrush(Qt.NoBrush)
@@ -431,6 +427,66 @@ class PagePreview(QWidget):
         self._cote_verticale(painter, feuille, sheet[1])
         self._draw_standard(painter, carte, etiquette, encre, colours)
         painter.end()
+
+    def _draw_cuts(self, painter, feuille: QRectF, encre) -> None:
+        """Les coupes entre feuilles, et le numéro de chacune.
+
+        ⚠️ **Deux tons.** Un trait unique tiré dans la couleur du texte passait
+        en blanc sur une mosaïque bleu très clair : on ne voyait plus où le
+        poster se coupe, c'est-à-dire la seule chose que ce dessin a à dire de
+        plus qu'une image du résultat.
+        """
+        session = self._session
+        if session.panel_count() <= 1:
+            return
+        for panneau in range(1, session.panels):
+            x = feuille.left() + feuille.width() * panneau / session.panels
+            draw_cut(painter, QPointF(x, feuille.top()),
+                     QPointF(x, feuille.bottom()))
+        for ligne in range(1, session.panel_rows):
+            y = feuille.top() + feuille.height() * ligne / session.panel_rows
+            draw_cut(painter, QPointF(feuille.left(), y),
+                     QPointF(feuille.right(), y))
+        self._draw_numbers(painter, feuille, encre)
+
+    def _draw_numbers(self, painter, feuille: QRectF, encre) -> None:
+        """Le numéro de chaque feuille, celui-là même que porte son fichier.
+
+        C'est au raboutage qu'il sert : quinze feuilles étalées sur une table
+        ne disent pas d'elles-mêmes laquelle va où.
+        """
+        session = self._session
+        largeur = feuille.width() / max(1, session.panels)
+        hauteur = feuille.height() / max(1, session.panel_rows)
+        for index in range(session.panel_count()):
+            if not session.panel_carries_cards(index):
+                continue
+            ligne, colonne = divmod(index, max(1, session.panels))
+            page = QRectF(feuille.left() + colonne * largeur,
+                          feuille.top() + ligne * hauteur, largeur, hauteur)
+            rect, sur_mosaique = badge_rect(page, self._piece_rect(index, page))
+            draw_badge(painter, rect, str(index + 1), encre, sur_mosaique)
+
+    def _piece_rect(self, index: int, page: QRectF) -> QRectF:
+        """Le morceau de mosaïque que porte une feuille, à l'écran."""
+        session = self._session
+        geometrie = session.panel_geometry()
+        ligne, colonne = divmod(index, max(1, session.panels))
+        paper_w, paper_h = session.paper_mm()
+        en_mm = MM_PER_INCH / session.dpi
+        vers_x = page.width() / paper_w if paper_w else 0.0
+        vers_y = page.height() / paper_h if paper_h else 0.0
+        pose = session.panel_position_mm(index)
+        combien_c = cards_on_panel(session.cols, geometrie.per_panel, colonne)
+        combien_l = cards_on_panel(session.rows, geometrie.rows_per_panel, ligne)
+
+        def etendue(combien, taille):
+            return (combien * taille + max(0, combien - 1) * geometrie.gap) * en_mm
+
+        return QRectF(page.left() + pose[0] * vers_x,
+                      page.top() + pose[1] * vers_y,
+                      etendue(combien_c, geometrie.card_w) * vers_x,
+                      etendue(combien_l, geometrie.card_h) * vers_y)
 
     def grid_cells(self, feuille: QRectF) -> list[tuple[int, int, QRectF]] | None:
         """Chaque case de la mosaïque, avec son rectangle à l'écran.

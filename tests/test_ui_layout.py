@@ -999,19 +999,27 @@ def test_an_empty_cell_is_filled_red_not_merely_outlined(qt_app, session):
         f"le centre de la case vide n'est pas rouge : {centre.name()}"
 
 
-def test_the_cut_line_is_not_the_colour_of_a_hole(qt_app):
-    """⚠️ Le trait de coupe valait #c85a5a et le remplissage des trous #d05a5a :
-    huit d'écart sur 765, là où une case vide et une carte en ont 315. La coupe
-    passait pour une colonne de trous."""
-    from pokemon_mosaic.ui.wireframe import CARD_FILL, CUT_LINE, EMPTY_FILL
+def test_the_cut_stands_out_on_everything_it_crosses(qt_app):
+    """⚠️ Un seul trait ne pouvait pas convenir partout : tiré dans la couleur
+    du texte, il passait en blanc sur une mosaïque bleu très clair. Les deux
+    tons sont la convention des repères d'imprimerie — l'un des deux ressort
+    quel que soit le fond, cases vides comprises."""
+    from pokemon_mosaic.ui.wireframe import (
+        CARD_FILL,
+        CUT_OVER,
+        CUT_UNDER,
+        EMPTY_FILL,
+        PAPER,
+    )
 
     def ecart(a, b):
         return (abs(a.red() - b.red()) + abs(a.green() - b.green())
                 + abs(a.blue() - b.blue()))
 
     reference = ecart(EMPTY_FILL, CARD_FILL)
-    assert ecart(EMPTY_FILL, CUT_LINE) > reference / 2, \
-        "la coupe se confond avec les cases vides"
+    for fond in (CARD_FILL, EMPTY_FILL, PAPER):
+        lisible = max(ecart(fond, CUT_UNDER), ecart(fond, CUT_OVER))
+        assert lisible > reference, f"la coupe se perd sur {fond.name()}"
 
 
 # --- L'onglet du format : la mosaïque posée dessus --------------------------
@@ -1348,6 +1356,75 @@ def test_a_card_wider_than_the_sheet_never_fits(session):
     assert not grid_fits(1, 1, 1, g)
 
 
+def test_the_cut_is_drawn_in_two_tones_over_the_mosaic(session, ecran):
+    """⚠️ Le trait passait dans la couleur du texte — blanc sur une mosaïque
+    bleu très clair. On vérifie qu'il reste, sur la mosaïque elle-même, un ton
+    clair **et** un ton sombre le long de la coupe."""
+    from PySide6.QtGui import QColor
+
+    papier = ecran._tabs[1]                  # la mosaïque y est dessinée
+    papier.resize(700, 560)
+    papier.show()
+    session.set_layout(paper="A4", cols=8, rows=8, panels=2, panel_rows=1)
+    papier._preview.refresh()
+
+    pixmap = papier._preview.grab()
+    image, ratio = pixmap.toImage(), pixmap.devicePixelRatio()
+    feuille = papier._preview.rects()[0]
+    x = feuille.center().x()
+    tons = [QColor(image.pixel(int(x * ratio), int(y * ratio))).lightness()
+            for y in range(int(feuille.top()) + 8, int(feuille.bottom()) - 8)]
+    assert max(tons) > 230, "il manque le ton clair"
+    assert min(tons) < 60, "il manque le ton sombre"
+
+
+def test_each_sheet_carries_its_number(session, ecran):
+    """Quinze feuilles étalées sur une table ne disent pas d'elles-mêmes
+    laquelle va où : le numéro est celui du nom de fichier."""
+    from PySide6.QtGui import QColor
+
+    onglet = ecran._tabs[1]
+    onglet.resize(700, 560)
+    onglet.show()
+
+    def sombres():
+        pixmap = onglet._preview.grab()
+        image, ratio = pixmap.toImage(), pixmap.devicePixelRatio()
+        feuille = onglet._preview.rects()[0]
+        return sum(
+            1
+            for x in range(int(feuille.left()) + 2, int(feuille.left()) + 40, 2)
+            for y in range(int(feuille.top()) + 2, int(feuille.top()) + 30, 2)
+            if QColor(image.pixel(int(x * ratio), int(y * ratio))).lightness() < 80
+        )
+
+    session.set_layout(paper="A4", cols=8, rows=8, panels=1, panel_rows=1)
+    onglet._preview.refresh()
+    seule = sombres()
+
+    session.set_layout(panels=2)
+    onglet._preview.refresh()
+    assert sombres() > seule, "une seule feuille n'a pas de numéro à porter"
+
+
+def test_the_number_steps_aside_when_the_sheet_has_a_margin(session, ecran):
+    """Le morceau ne remplit presque jamais la feuille : le numéro se glisse
+    dans ce qui reste plutôt que de couvrir une carte."""
+    from PySide6.QtCore import QRectF
+
+    from pokemon_mosaic.ui.wireframe import badge_rect
+
+    feuille = QRectF(0, 0, 300, 400)
+    au_large = QRectF(0, 0, 300, 300)        # 100 px libres dessous
+    rect, sur_mosaique = badge_rect(feuille, au_large)
+    assert not sur_mosaique
+    assert not rect.intersects(au_large)
+
+    plein = QRectF(0, 0, 300, 400)           # la feuille est pleine
+    rect, sur_mosaique = badge_rect(feuille, plein)
+    assert sur_mosaique, "sans marge, le numéro prend un fond"
+
+
 # --- L'écran montre ce que l'imprimante fera --------------------------------
 
 def test_the_screen_and_the_export_place_each_piece_at_the_same_spot(
@@ -1442,10 +1519,11 @@ def test_the_drawn_columns_restart_on_each_sheet(qt_app, session):
     par_feuille = vue._per_panel
 
     # La première colonne de la seconde feuille tombe pile sur son bord.
-    assert vue.column_offset(par_feuille, geometrie) == pytest.approx(feuille_w)
+    assert vue.cell_origin(0, par_feuille, geometrie)[0] == pytest.approx(
+        feuille_w)
     # Et aucune colonne ne chevauche la coupe.
     for col in range(session.cols):
-        gauche = vue.column_offset(col, geometrie)
+        gauche = vue.cell_origin(0, col, geometrie)[0]
         assert not (gauche < feuille_w < gauche + card_w), col
 
 
@@ -1462,9 +1540,57 @@ def test_clicks_still_land_on_the_right_cell_across_sheets(qt_app, session):
     scale, _, _, (card_w, card_h) = vue._geometry
     gx, gy = vue._grid_origin(vue._geometry)
     for col in (0, vue._per_panel - 1, vue._per_panel, session.cols - 1):
-        x = gx + (vue.column_offset(col, vue._geometry) + card_w / 2) * scale
-        y = gy + card_h * scale * 1.5
+        origine = vue.cell_origin(1, col, vue._geometry)
+        x = gx + (origine[0] + card_w / 2) * scale
+        y = gy + (origine[1] + card_h / 2) * scale
         assert vue.cell_at(x, y) == (1, col), col
+
+
+def test_the_wireframe_follows_a_moved_piece(qt_app, session):
+    """⚠️ **Le fil de fer ignorait les déplacements.** Après avoir tiré un
+    morceau, la vue d'exécution montrait la mosaïque à sa place d'origine et
+    l'imprimante l'écrivait ailleurs — l'aperçu qui ment, une quatrième fois."""
+    from pokemon_mosaic.ui.wireframe import WireframeView
+
+    session.set_layout(paper="A4", cols=5, rows=4, panels=2, dpi=300)
+    vue = WireframeView(session)
+    vue.resize(600, 400)
+    vue.grab()
+    par_feuille = vue._per_panel
+    avant = vue.cell_origin(0, par_feuille, vue._geometry)
+
+    session.move_panel(1, 40.0, 0.0)
+    vue.grab()
+    apres = vue.cell_origin(0, par_feuille, vue._geometry)
+    assert apres[0] - avant[0] == pytest.approx(40.0, abs=0.5)
+
+    # Et le clic suit le dessin, sans quoi on creuserait une autre case.
+    scale, _, _, (card_w, card_h) = vue._geometry
+    gx, gy = vue._grid_origin(vue._geometry)
+    x = gx + (apres[0] + card_w / 2) * scale
+    y = gy + (apres[1] + card_h / 2) * scale
+    assert vue.cell_at(x, y) == (0, par_feuille)
+
+
+def test_the_wireframe_reads_each_piece_once_per_paint(qt_app, session):
+    """⚠️ Le lire case par case coûtait une géométrie de grille **complète par
+    case** : mesuré, 1,07 s pour dessiner une grille de 200×200 et autant pour
+    y placer un clic. On relève les places une fois par calcul de géométrie."""
+    from pokemon_mosaic.ui.wireframe import WireframeView
+
+    session.set_layout(paper="A4", cols=12, rows=12, panels=2, dpi=300)
+    vue = WireframeView(session)
+    vue.resize(600, 400)
+
+    appels = []
+    vrai = session.panel_position_mm
+    session.panel_position_mm = lambda index: appels.append(index) or vrai(index)
+    vue.grab()
+    vue.cell_at(300, 200)
+    session.panel_position_mm = vrai
+
+    assert len(appels) <= session.panel_count(), (
+        f"{len(appels)} lectures pour {session.panel_count()} feuilles")
 
 
 def test_clicks_land_right_across_sheet_rows_too(qt_app, session):
@@ -1483,8 +1609,9 @@ def test_clicks_land_right_across_sheet_rows_too(qt_app, session):
     par_feuille = vue._rows_per_panel
     assert 1 <= par_feuille < session.rows, "les lignes se répartissent"
     for row in (0, par_feuille - 1, par_feuille, session.rows - 1):
-        x = gx + card_w * scale * 1.5
-        y = gy + (vue.row_offset(row, vue._geometry) + card_h / 2) * scale
+        origine = vue.cell_origin(row, 1, vue._geometry)
+        x = gx + (origine[0] + card_w / 2) * scale
+        y = gy + (origine[1] + card_h / 2) * scale
         assert vue.cell_at(x, y) == (row, 1), row
 
 
