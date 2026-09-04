@@ -2043,6 +2043,45 @@ def test_the_gap_shrinks_the_cards_in_automatic(session, cartes):
     assert cartes._width.value() < sans
 
 
+def test_a_shape_that_leaves_cards_out_says_where_the_way_out_is(session,
+                                                                 cartes):
+    """⚠️ Une proposition qui laisse des cartes dehors n'en est pas vraiment
+    une : elle reste dans la liste, c'est la meilleure à cette taille de carte,
+    mais l'appliquer amputerait le poster. La sortie est ailleurs — dans le
+    nombre de feuilles —, et rien ne le disait."""
+    # Une carte à sa taille réelle : une A4 n'en loge que neuf, aucune des
+    # propositions ne peut placer les vingt.
+    session.set_layout(paper="A4", cols=4, rows=5, panels=1, card_width_mm=63.0)
+    cartes._show_shapes.click()
+    assert "en trop" in cartes._shapes.item(0).text()
+    assert cartes._shapes_warning.isVisibleTo(cartes)
+    assert "feuilles" in cartes._shapes_warning.text()
+    assert cartes._shapes_warning.property("role") == "warning"
+    assert cartes._shapes_warning.font().bold()
+
+    # Assez de place : la meilleure proposition les loge toutes, et
+    # l'avertissement s'en va.
+    session.set_layout(card_width_mm=None)
+    cartes._show_shapes.click()
+    assert "pile poil" in cartes._shapes.item(0).text()
+    assert not cartes._shapes_warning.isVisibleTo(cartes)
+
+
+def test_the_warning_ignores_the_smaller_shapes_below_the_best(session, cartes):
+    """⚠️ **Toutes, et non « au moins une ».** Les propositions sont classées
+    par nombre de cartes placées : dès qu'une seule les loge toutes, elle est en
+    tête, et les plus petites qui suivent en laissent forcément dehors.
+    Avertir sur l'une d'elles reviendrait à avertir presque toujours."""
+    session.set_layout(paper="A4", cols=4, rows=5, panels=1, card_width_mm=None)
+    cartes._show_shapes.click()
+
+    formes = [cartes._shapes.item(rang).text()
+              for rang in range(cartes._shapes.count())]
+    assert any("en trop" in forme for forme in formes), \
+        "il faut une petite forme dans la liste pour éprouver la règle"
+    assert not cartes._shapes_warning.isVisibleTo(cartes)
+
+
 def test_the_gap_is_in_millimetres_like_everything_else(cartes):
     """La même unité que la carte et la feuille, seule mesurable sur le poster
     imprimé. L'unité est dans l'intitulé : le champ n'est plus une boîte à

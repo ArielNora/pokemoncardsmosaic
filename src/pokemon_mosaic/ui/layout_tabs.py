@@ -665,12 +665,24 @@ class CardSizeTab(LayoutTab):
         entete.addWidget(self._shapes_hint)
         entete.addStretch(1)
 
+        # ⚠️ **Sous la liste, et pas au-dessus.** L'avertissement ne se lit
+        # qu'après avoir vu les propositions : c'est en les lisant qu'on
+        # découvre que la meilleure laisse encore des cartes dehors.
+        self._shapes_warning = QLabel()
+        self._shapes_warning.setWordWrap(True)
+        theme.mark(self._shapes_warning, "warning")
+        gras = self._shapes_warning.font()
+        gras.setBold(True)
+        self._shapes_warning.setFont(gras)
+        self._shapes_warning.hide()
+
         self._shapes_box = QWidget()
         formes = QVBoxLayout(self._shapes_box)
         formes.setContentsMargins(0, 0, 0, 0)
         formes.setSpacing(2)
         formes.addLayout(entete)
         formes.addWidget(self._shapes)
+        formes.addWidget(self._shapes_warning)
 
         haut = QHBoxLayout()
         haut.setSpacing(16)
@@ -715,6 +727,9 @@ class CardSizeTab(LayoutTab):
         )
         self._show_shapes.setText(self.tr("Grilles qui tiendraient"))
         self._shapes_hint.setText(self.tr("Double-cliquez pour appliquer"))
+        self._shapes_warning.setText(
+            self.tr("Ajoutez des feuilles pour qu'aucune carte ne reste en trop.")
+        )
         self._preview.retranslate_ui()
         self.refresh()
 
@@ -777,6 +792,22 @@ class CardSizeTab(LayoutTab):
         # la liste vide était alors un rectangle noir sans explication.
         trouve = self._shapes.count() > 0
         self._shapes.setVisible(trouve)
+        # ⚠️ **Quand aucune proposition ne loge toutes les cartes.** Elles
+        # restent dans la liste — ce sont les meilleures à cette taille de carte
+        # —, mais les appliquer amputerait le poster, et rien ne le disait : la
+        # sortie est ailleurs, dans le nombre de feuilles.
+        #
+        # ⚠️ **Toutes, et non « au moins une ».** Les propositions sont classées
+        # par nombre de cartes placées : dès qu'une seule les loge toutes, elle
+        # est en tête, et les plus petites qui suivent en laissent forcément
+        # dehors. Avertir sur l'une d'elles reviendrait à avertir presque
+        # toujours, y compris quand le premier choix tombe pile poil.
+        def laisse_des_cartes(rang: int) -> bool:
+            cols, rows = self._shapes.item(rang).data(Qt.UserRole)
+            return cols * rows < session.selected_count
+
+        self._shapes_warning.setVisible(trouve and all(
+            laisse_des_cartes(rang) for rang in range(self._shapes.count())))
         self._shapes_hint.setText(
             self.tr("Double-cliquez pour appliquer") if trouve
             else self.tr("Aucune grille ne tiendrait à cette taille de carte.")
