@@ -1,4 +1,4 @@
-"""Étape 2 — les paramètres, une décision par onglet.
+"""Étape 2 : les paramètres, une décision par onglet.
 
 Un seul formulaire portait tout : dimensions, format, orientation, finesse,
 panneaux, cases vides. Rien ne disait par quoi commencer, ni ce que chaque
@@ -79,7 +79,7 @@ LOCKED_OPACITY = 0.35
 
 
 # Les trois états d'une partie, et ce qui les dit : le rôle de couleur du thème
-# et le signe dessiné. ⚠️ **La croix rouge est réservée à ce qui bloque** — des
+# et le signe dessiné. ⚠️ **La croix rouge est réservée à ce qui bloque**, des
 # cartes qui ne tiennent pas dans les pages, des cases vides pas toutes posées.
 # L'ambre dit « pas encore fait », ce qui n'est pas une faute : au premier
 # passage, tout est ambre, et un écran de croix rouges accueillerait
@@ -118,7 +118,7 @@ class TabDelegate(QStyledItemDelegate):
     feuille de style ne sait pas viser une ligne en particulier : ni le retrait
     du second rang, ni la couleur d'état de chacun ne peuvent venir d'elle.
     C'est donc ici qu'on peint le fond et le contour, et qu'on reprend la place
-    à gauche. Le clic, lui, porte toujours sur la ligne entière — viser le
+    à gauche. Le clic, lui, porte toujours sur la ligne entière, viser le
     retrait plutôt que l'onglet ne doit pas rester sans effet.
     """
 
@@ -342,7 +342,7 @@ class LayoutStep(QWidget):
 
         ⚠️ **Bloquée n'est pas « pas encore faite ».** Une partie qu'on n'a pas
         validée est ambre ; elle ne passe au rouge que si son contenu ne tient
-        pas debout — des cartes hors des pages, des cases vides pas toutes
+        pas debout : des cartes hors des pages, des cases vides pas toutes
         posées. Sans cette distinction, le premier passage montrait un écran
         entier d'alertes pour un travail simplement pas encore fait.
         """
@@ -373,7 +373,7 @@ class LayoutStep(QWidget):
 
         Une seule visite validée suffit, **définitivement** : on revient en
         arrière autant qu'on veut, et changer d'avis ne referme rien. C'est
-        `_ready` — donc la pastille — qui dit si la partie tient toujours
+        `_ready`, donc la pastille, qui dit si la partie tient toujours
         debout ; le verrou, lui, ne sert qu'au premier passage.
         """
         return all(rang in self._validated for rang in range(position))
@@ -412,7 +412,7 @@ class LayoutStep(QWidget):
                 item.setIcon(state_icon(self._family_state(cle), palette)
                              if cle in self._collapsed else QIcon())
                 continue
-            # Le retrait est **géométrique** — voir `TabDelegate` — et non
+            # Le retrait est **géométrique** : voir `TabDelegate`, et non
             # quatre espaces dans le libellé, qui décalaient le texte sans
             # décaler l'onglet.
             item.setText(self._tabs[position].title())
@@ -478,8 +478,8 @@ class LayoutStep(QWidget):
 
         ⚠️ Un onglet encore **verrouillé** ne s'affiche pas : `setCurrentRow`
         n'a aucun effet sur une ligne désactivée. Le seul chemin qui y mène,
-        `advance`, valide la partie et rafraîchit les pastilles — donc ouvre la
-        suivante — avant d'appeler ceci. Un futur « aller à l'onglet X » devra
+        `advance`, valide la partie et rafraîchit les pastilles, donc ouvre la
+        suivante, avant d'appeler ceci. Un futur « aller à l'onglet X » devra
         faire de même, sous peine de ne rien faire, sans erreur.
         """
         cle = self._family_of(position)
@@ -513,8 +513,8 @@ class LayoutStep(QWidget):
         """Le parcours laisse-t-il passer à la suite ?
 
         ⚠️ **Pas seulement la partie affichée.** Une partie déjà validée qui
-        casse — la grille agrandie déborde des pages, une carte de plus fait
-        sauter le compte — bloque le bouton **où qu'on soit**, et sa croix
+        casse : la grille agrandie déborde des pages, une carte de plus fait
+        sauter le compte, bloque le bouton **où qu'on soit**, et sa croix
         rouge dans la colonne dit laquelle. Sans cela, on revenait en arrière,
         on cassait quelque chose, on repartait par un onglet plus loin, et l'on
         quittait l'étape avec une mise en page impossible.
@@ -531,8 +531,8 @@ class LayoutStep(QWidget):
     def advance(self) -> bool:
         """Valide la partie affichée et passe à la suivante.
 
-        Rend vrai si l'écran a consommé le clic — il restait une partie à
-        traiter —, faux s'il faut maintenant quitter l'étape. C'est ce qui
+        Rend vrai si l'écran a consommé le clic, il restait une partie à
+        traiter, faux s'il faut maintenant quitter l'étape. C'est ce qui
         permet à la fenêtre de garder un seul bouton « Suivant » : il déroule
         les parties, puis change d'étape.
         """

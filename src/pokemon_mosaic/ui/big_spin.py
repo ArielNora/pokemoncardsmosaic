@@ -3,7 +3,7 @@
 Les deux dimensions de la grille sont la décision de l'onglet, et une paire de
 `QSpinBox` de vingt pixels de haut ne le disait pas. Ici le nombre occupe la
 place qui lui revient, les deux flèches sont assez grandes pour être visées
-sans précision, et l'intitulé se lit au-dessus plutôt qu'à côté — deux colonnes
+sans précision, et l'intitulé se lit au-dessus plutôt qu'à côté, deux colonnes
 côte à côte se lisent alors de haut en bas, sans chercher quelle étiquette va
 avec quel champ.
 
@@ -12,7 +12,7 @@ sept clics.
 
 Deux variantes, la même présentation : `BigSpin` pour un entier, `BigFloatSpin`
 pour une longueur en millimètres. Les réglages qui comptent autant que les
-dimensions — largeur d'une carte, écart entre deux — se montrent de la même
+dimensions : largeur d'une carte, écart entre deux, se montrent de la même
 façon qu'elles, sous peine de passer pour des détails.
 """
 
@@ -167,7 +167,7 @@ class BigFloatSpin(_BigSpinBase):
     """Une longueur, écrite avec ses décimales.
 
     Pas de `QDoubleValidator` : il suit la langue du système, et refuserait le
-    point décimal sur une machine française — ou la virgule sur une autre. On
+    point décimal sur une machine française, ou la virgule sur une autre. On
     relit soi-même, en acceptant les deux.
     """
 

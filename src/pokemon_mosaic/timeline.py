@@ -2,7 +2,7 @@
 
 Un snapshot n'est **pas une image** mais la grille d'indices qui la décrit : ~600
 octets au lieu de plusieurs mégaoctets. On peut donc en garder des milliers sans
-purge, et reconstruire l'image à la demande — 5 ms depuis les vignettes, largement
+purge, et reconstruire l'image à la demande, 5 ms depuis les vignettes, largement
 sous le budget de 16 ms d'une image à 60 par seconde.
 
 La cadence se compte en **échanges retenus**, pas en tentatives : le taux
@@ -36,7 +36,7 @@ class Snapshot:
 class Timeline:
     """Les snapshots d'une exécution, cadencés par échanges retenus.
 
-    `every` est le nombre d'échanges retenus entre deux clichés — mais il **s'adapte
+    `every` est le nombre d'échanges retenus entre deux clichés, mais il **s'adapte
     tout seul**, car on ne sait pas à l'avance combien d'échanges seront retenus : une
     descente stricte en accepte ~800 sur un million de tentatives, un recuit simulé
     ~73 000. À cadence fixe, le second produirait 7 348 clichés indiscernables deux à
@@ -52,7 +52,7 @@ class Timeline:
     snapshots: list[Snapshot] = field(default_factory=list)
     # Dégradation moyenne mesurée sur la grille **de départ**, à la première
     # passe. Une prolongation la réutilise au lieu de remesurer : mesurer sur une
-    # grille déjà optimisée donne une valeur bien plus haute — température ×3,6 —,
+    # grille déjà optimisée donne une valeur bien plus haute, température ×3,6,
     # parce qu'un échange au hasard y dégrade davantage le score. Remettre ainsi
     # le recuit à chaud défait une partie du travail acquis.
     #
@@ -151,7 +151,7 @@ class Timeline:
         self._next_at = self.snapshots[-1].accepted + self.every
 
     def best(self) -> Snapshot | None:
-        """Le cliché au meilleur score — pas forcément le dernier avec un recuit."""
+        """Le cliché au meilleur score : pas forcément le dernier avec un recuit."""
         return min(self.snapshots, key=lambda s: s.score, default=None)
 
     def summary(self) -> str:
@@ -159,7 +159,7 @@ class Timeline:
             return "Aucun snapshot."
         first, last = self.snapshots[0], self.snapshots[-1]
         return (
-            f"{len(self.snapshots)} snapshots, {self.nbytes / 1024:.1f} Ko au total — "
+            f"{len(self.snapshots)} snapshots, {self.nbytes / 1024:.1f} Ko au total, "
             f"score {first.score:.0f} -> {last.score:.0f} "
             f"sur {last.iteration:,} itérations"
         )

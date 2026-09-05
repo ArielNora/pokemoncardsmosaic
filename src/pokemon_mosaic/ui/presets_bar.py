@@ -32,7 +32,7 @@ class PresetsBar(QWidget):
         self._build()
         # ⚠️ Sans cela « Enregistrer… » reste grisé après le chargement : il ne
         # se réévaluait qu'au changement de préréglage dans la liste, geste
-        # impossible tant qu'on n'en a aucun — le tout premier préréglage était
+        # impossible tant qu'on n'en a aucun : le tout premier préréglage était
         # donc définitivement impossible à créer. Même défaut que « Suivant »,
         # corrigé au même endroit dans `main_window`.
         session.cards_loaded.connect(self._update_buttons)
@@ -145,7 +145,7 @@ class PresetsBar(QWidget):
             # On applique quand même : un préréglage doit survivre à la
             # disparition d'une carte, et le dire vaut mieux que le taire.
             self.status_message.emit(
-                self.tr("Préréglage « %1 » chargé — %n carte(s) introuvable(s).",
+                self.tr("Préréglage « %1 » chargé : %n carte(s) introuvable(s).",
                         "", len(missing)).replace("%1", name)
             )
         else:

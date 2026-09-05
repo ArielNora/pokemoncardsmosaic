@@ -36,7 +36,7 @@ def palette_pour(fond: str) -> QPalette:
 def test_a_transparent_background_says_nothing_of_the_mode(qt_app):
     """⚠️ Une feuille de style qui pose `background: transparent` fait porter au
     widget un `Window` noir d'alpha nul : sa clarté vaut zéro, et le mode clair
-    se lisait **sombre** — les onglets sortaient teintés pour l'autre mode."""
+    se lisait **sombre** : les onglets sortaient teintés pour l'autre mode."""
     from PySide6.QtGui import QColor, QPalette
 
     from pokemon_mosaic.ui import theme
@@ -53,7 +53,7 @@ def test_a_transparent_background_says_nothing_of_the_mode(qt_app):
 def test_a_tinted_tab_keeps_its_text_readable():
     """⚠️ Le cadre d'un onglet emprunte la couleur de son état : le texte, lui,
     reste celui du mode. On vérifie qu'il tient sur les trois fonds teintés,
-    sélectionné compris — une teinte trop franche ferait un bandeau coloré où le
+    sélectionné compris : une teinte trop franche ferait un bandeau coloré où le
     noir ou le blanc se perdrait."""
     from pokemon_mosaic.ui import theme
 
@@ -108,7 +108,7 @@ def test_mixing_stays_between_the_two_colours():
 
 def test_both_schemes_define_exactly_the_same_roles():
     """Un rôle présent d'un seul côté produirait une feuille de style trouée
-    dans l'autre mode — sans erreur, la couleur retombant sur le défaut de Qt."""
+    dans l'autre mode : sans erreur, la couleur retombant sur le défaut de Qt."""
     assert set(theme.LIGHT) == set(theme.DARK)
 
 
@@ -163,7 +163,7 @@ def test_a_light_window_selects_the_light_table():
 
 
 def test_the_scheme_is_read_from_the_palette_not_the_style_hints(qt_app):
-    """`QStyleHints.colorScheme()` rend `Unknown` sans thème de plateforme —
+    """`QStyleHints.colorScheme()` rend `Unknown` sans thème de plateforme,
     hors écran, par exemple. La clarté du fond, elle, est toujours lisible."""
     from PySide6.QtCore import Qt
 
@@ -309,7 +309,7 @@ def test_a_disabled_button_loses_the_pointing_cursor(qt_app):
 
 def test_the_stylesheet_gives_buttons_a_hover_state():
     """C'est ce qui manquait : le style natif de macOS dessine exactement les
-    mêmes pixels survolé ou non — mesuré, 0 sur 3600."""
+    mêmes pixels survolé ou non : mesuré, 0 sur 3600."""
     feuille = theme.stylesheet(palette_pour("#1e1e1e"))
     assert "QPushButton:hover" in feuille
     assert theme.DARK["button_hover_bg"] in feuille

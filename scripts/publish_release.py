@@ -4,7 +4,7 @@
 Une archive par extension, plus `cards.json`. Le dépôt ne versionne aucune
 image : le miroir est le seul endroit d'où le projet les sert, et le catalogue
 est publié **avec** les archives pour que l'application n'ait pas à en embarquer
-une copie — elle le télécharge, et sait du même coup ce qui a été ajouté.
+une copie : elle le télécharge, et sait du même coup ce qui a été ajouté.
 
     uv run python scripts/publish_release.py --dry-run   # prépare, ne publie pas
     uv run python scripts/publish_release.py
@@ -37,7 +37,7 @@ DEFAULT_MANIFEST = "cards.json"
 DEFAULT_IMAGES = os.path.join("data", "pokemoncards")
 # Dépôt et balise viennent du paquet : c'est ce que l'application connaît, et
 # publier ailleurs la laisserait sans miroir. Le dépôt est **dédié**, public,
-# sans code ni historique — un signalement ne viserait que lui.
+# sans code ni historique : un signalement ne viserait que lui.
 DEFAULT_REPO = MIRROR_REPO
 TAG = MIRROR_TAG
 
@@ -128,7 +128,7 @@ def gh_available() -> str | None:
     if result.returncode != 0:
         return ("`gh` n'est connecté à aucun compte. Lancez `gh auth login` "
                 "vous-même, et répondez **non** à « Authenticate Git with your "
-                "GitHub credentials? » — voir l'avertissement en tête de ce "
+                "GitHub credentials? » : voir l'avertissement en tête de ce "
                 "fichier.")
     return None
 
@@ -155,7 +155,7 @@ def publish(repo: str, out: str, mirror: dict, notes: str,
                     "--repo", repo, "--clobber"]
     else:
         commande = ["gh", "release", "create", TAG, *archives, "--repo", repo,
-                    "--title", f"Illustrations — manifeste v{MANIFEST_VERSION}",
+                    "--title", f"Illustrations : manifeste v{MANIFEST_VERSION}",
                     "--notes-file", notes_path]
     print("  " + " ".join(commande[:4])
           + f" … ({len(archives) - 1} archives + le catalogue)")

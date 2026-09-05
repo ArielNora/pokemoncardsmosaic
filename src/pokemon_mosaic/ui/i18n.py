@@ -2,7 +2,7 @@
 
 Les textes sont écrits en français dans le code et traduits vers l'anglais par des
 fichiers Qt (`translations/*.qm`). Sans fichier de traduction chargé, l'interface
-reste donc en français — le comportement voulu par défaut.
+reste donc en français : le comportement voulu par défaut.
 
 Chaque widget expose une méthode `retranslate_ui()` que l'on rappelle après un
 changement de langue : Qt ne réévalue pas `tr()` tout seul.

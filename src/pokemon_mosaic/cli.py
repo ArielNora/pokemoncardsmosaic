@@ -99,8 +99,8 @@ def main(argv=None) -> int:
         return 1
 
     thumb_mb = sum(c.thumbnail.nbytes for c in cards) / 1024 / 1024
-    print(f"{len(cards)} cartes chargées en {time.time() - start:.1f} s "
-          f"— vignettes {cards.thumb_size[0]}x{cards.thumb_size[1]}, {thumb_mb:.0f} Mo "
+    print(f"{len(cards)} cartes chargées en {time.time() - start:.1f} s"
+          f", vignettes {cards.thumb_size[0]}x{cards.thumb_size[1]}, {thumb_mb:.0f} Mo "
           f"(pleine résolution : {cards.full_size[0]}x{cards.full_size[1]})")
 
     # Un lien n'est retenu que si toutes ses cartes ont été trouvées.
@@ -109,7 +109,7 @@ def main(argv=None) -> int:
     if missing:
         print(f"Lien ignoré, carte(s) introuvable(s) : {', '.join(missing)}")
     print(f"{len(links)} lien(s) actif(s)"
-          f"{' — ordre libre' if args.free_order else ''}")
+          f"{' : ordre libre' if args.free_order else ''}")
 
     # Grille explicite : les cases excédentaires deviennent des cases vides figées,
     # réparties régulièrement.

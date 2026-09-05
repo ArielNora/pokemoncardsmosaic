@@ -23,7 +23,7 @@ def print_image_properties(image_path: str) -> bool:
             print("-" * 30)
         return True
     except FileNotFoundError:
-        print(f"Erreur : fichier introuvable — {image_path}")
+        print(f"Erreur : fichier introuvable, {image_path}")
     except OSError as e:
         print(f"Erreur de lecture de l'image : {e}")
     return False
@@ -39,7 +39,7 @@ def resize_and_save(
     """Réduit une image et l'enregistre.
 
     Si `percent` est différent de 100, il prime sur `new_width`/`new_height`.
-    Renvoie False si l'écriture a échoué — un disque plein ne doit pas passer
+    Renvoie False si l'écriture a échoué, un disque plein ne doit pas passer
     pour un succès auprès d'un script qui enchaîne.
     """
     try:
@@ -54,10 +54,10 @@ def resize_and_save(
 
             resized = img.resize((new_width, new_height), Image.Resampling.LANCZOS)
             resized.save(output_path)
-            print(f"Enregistré : {output_path} — nouvelle taille {resized.size}")
+            print(f"Enregistré : {output_path}, nouvelle taille {resized.size}")
         return True
     except FileNotFoundError:
-        print(f"Erreur : fichier d'entrée introuvable — {input_path}")
+        print(f"Erreur : fichier d'entrée introuvable, {input_path}")
     except OSError as e:
         print(f"Erreur de redimensionnement : {e}")
     return False

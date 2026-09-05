@@ -30,7 +30,7 @@ from ..presets import LinkRef, Preset
 # ⚠️ **La série se lit dans le nom du dossier.** Le miroir les nomme
 # « a1-puissance-genetique », « a3b-la-clairiere-d-evoli », « promo-a-promo-a » :
 # la lettre de tête est la série, et les promos d'une série portent la même. Rien
-# d'autre ne la donne — le catalogue ne connaît que des extensions.
+# d'autre ne la donne : le catalogue ne connaît que des extensions.
 _SERIE = re.compile(r"^(?:promo-)?([a-z])(?=\d|-|$)", re.IGNORECASE)
 
 
@@ -50,7 +50,7 @@ class Session(QObject):
     # Liste explicite des réglages d'algorithme. Valider par `hasattr` accepterait
     # tout attribut de QObject ou de mise en page : `set_algorithm(dpi=600)`
     # passerait et émettrait `algorithm_changed`, alors que l'aperçu fil de fer
-    # n'écoute que `layout_changed` — il n'aurait jamais connaissance du changement.
+    # n'écoute que `layout_changed` : il n'aurait jamais connaissance du changement.
     ALGORITHM_SETTINGS = frozenset({
         "iterations", "snapshot_every", "empty_colour",
         "stop_on_stagnation", "stagnation_iterations",
@@ -80,7 +80,7 @@ class Session(QObject):
         # ⚠️ **Les dimensions sont la vérité, le nom en découle.** La feuille se
         # saisit aussi au centimètre près : un format hors catalogue n'a pas de
         # nom, et `paper` vaut alors la chaîne vide. Les deux ne peuvent pas
-        # diverger — `set_layout` recalcule toujours l'un depuis l'autre.
+        # diverger : `set_layout` recalcule toujours l'un depuis l'autre.
         # Toujours en portrait : c'est `landscape` qui décide de l'orientation,
         # et stocker la feuille déjà tournée ferait deux façons de dire pareil.
         self.paper_size_mm: tuple[float, float] = PAPER_FORMATS_MM["A2"]
@@ -102,7 +102,7 @@ class Session(QObject):
         # grande qui fasse tenir la grille, recalculée à chaque changement.
         # Une valeur la fige, et c'est alors à la grille de s'y adapter.
         self.card_width_mm: float | None = None
-        # Écart entre deux cartes, en millimètres — la même unité que la carte
+        # Écart entre deux cartes, en millimètres, la même unité que la carte
         # et la feuille, seule mesurable sur le poster imprimé.
         self.card_gap_mm: float = 0.0
         # Liste ordonnée, pas un ensemble : le rang sert à savoir quel trou céder
@@ -111,7 +111,7 @@ class Session(QObject):
         self._empty_cells: list[tuple[int, int]] = []
 
         # Réglages d'algorithme (étape 3), séparés en « de base » et « avancés ».
-        # De base : ce qui se décide par intention.
+        # De base, ce qui se décide par intention.
         self.iterations = 1_000_000
         self.snapshot_every = 10
         self.empty_colour = (255, 255, 255)
@@ -119,7 +119,7 @@ class Session(QObject):
         self.stagnation_iterations = 50_000
         self.stop_on_time = False
         self.time_budget = 60.0
-        # Avancés : ce qui exige de comprendre le fonctionnement interne.
+        # Avancés, ce qui exige de comprendre le fonctionnement interne.
         self.use_annealing = True
         self.acceptance = 0.5
         self.strip_size = DEFAULT_STRIP_SIZE
@@ -179,7 +179,7 @@ class Session(QObject):
         self.cards_loaded.emit()
 
     def set_cards(self, card_set: CardSet, data_dir: str) -> None:
-        """Chargement en un bloc, sans progression — utile aux tests."""
+        """Chargement en un bloc, sans progression, utile aux tests."""
         self.start_loading(data_dir)
         self.append_cards(list(card_set))
         self.finish_loading(card_set)
@@ -211,7 +211,7 @@ class Session(QObject):
 
         ⚠️ Deux appels à `set_excluded`, un par sens, ne conviendraient pas : il
         ne prévient que si le **nombre** d'exclues a changé, et une inversion
-        peut le laisser identique — dix cartes dedans, dix dehors. L'écran ne se
+        peut le laisser identique : dix cartes dedans, dix dehors. L'écran ne se
         repeindrait pas alors que tout a changé de camp.
         """
         avant = set(self._excluded)
@@ -301,7 +301,7 @@ class Session(QObject):
         """Pose chaque morceau au milieu de sa feuille.
 
         ⚠️ **Les feuilles vides sont laissées de côté.** Une feuille qui ne
-        porte aucune carte — la dernière, quand la grille s'arrête avant — n'a
+        porte aucune carte : la dernière, quand la grille s'arrête avant, n'a
         rien à centrer, et lui inventer une position la ferait compter parmi
         les feuilles déplacées.
         """
@@ -377,7 +377,7 @@ class Session(QObject):
         """Où se pose ce bout de grille quand on n'y a pas touché.
 
         Calé à gauche, et centré en hauteur tant qu'il n'y a qu'une ligne de
-        feuilles — la même règle qu'à l'export, d'où la lecture de la place
+        feuilles : la même règle qu'à l'export, d'où la lecture de la place
         libre plutôt qu'un calcul refait à côté.
         """
         if self.panel_rows > 1:
@@ -429,7 +429,7 @@ class Session(QObject):
     def _settle_paper(self, changes: dict) -> dict:
         """Accorde le nom du format et les dimensions, quel que soit le donné.
 
-        ⚠️ Un nom **inconnu** — un préréglage écrit à la main — ne laisse ni le
+        ⚠️ Un nom **inconnu**, un préréglage écrit à la main, ne laisse ni le
         nom ni des dimensions fausses : on garde la feuille en place et le nom
         qui lui revient. Sans cela, la session portait un format que l'export
         refusait de traduire, et l'erreur ne sortait qu'à l'écriture du fichier.
@@ -462,7 +462,7 @@ class Session(QObject):
         d'office, quitte à la remplacer ensuite : la grille s'ouvrait donc déjà
         trouée, à des endroits que personne n'avait choisis, et rien ne disait
         qu'on pouvait les déplacer. C'est désormais un geste de l'utilisateur,
-        que l'étape 2 compte et réclame avant de laisser passer — la répartition
+        que l'étape 2 compte et réclame avant de laisser passer, la répartition
         régulière reste offerte, mais sur un bouton.
 
         Le résultat est écrêté au quota courant : la sélection a pu changer
@@ -477,7 +477,7 @@ class Session(QObject):
         au seul affichage laissait des cases hors quota stockées mais jamais
         dessinées : cliquer l'une d'elles la retirait d'une liste invisible au
         lieu de poser un trou, et le clic était avalé sans le moindre retour.
-        Mesuré — cinq trous posés puis quatre cartes réintégrées, un seul trou
+        Mesuré : cinq trous posés puis quatre cartes réintégrées, un seul trou
         affiché, et un clic sur une case apparemment pleine sans aucun effet.
 
         L'ordre est conservé : c'est lui qui désigne le trou qui cède sa place
@@ -542,7 +542,7 @@ class Session(QObject):
         ⚠️ **Le quota borne la pose, il ne chasse rien.** Poser au-delà en
         évinçant les plus anciennes ferait courir les trous derrière le curseur
         au lieu d'en poser : on ignore la suite du trajet. Un clic isolé, lui,
-        passe toujours par `toggle_empty_cell` et garde son éviction — c'est
+        passe toujours par `toggle_empty_cell` et garde son éviction, c'est
         ainsi qu'on déplace un trou quand la grille est déjà complète.
         """
         placed = self._placed()

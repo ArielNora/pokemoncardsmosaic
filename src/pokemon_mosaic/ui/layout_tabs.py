@@ -2,7 +2,7 @@
 
 Chacun est autonome : il sait dire son titre, si ce qu'il contient est en état
 d'être validé, et se rafraîchir. L'écran qui les héberge n'a donc rien à savoir
-de leur contenu — ajouter un panneau se fait en l'écrivant ici et en l'ajoutant
+de leur contenu : ajouter un panneau se fait en l'écrivant ici et en l'ajoutant
 à la liste, sans toucher à la navigation.
 """
 
@@ -93,7 +93,7 @@ class LayoutTab(QWidget):
 
 
 class GridSizeTab(LayoutTab):
-    """Les seules dimensions de la grille — pas un mot du format d'impression.
+    """Les seules dimensions de la grille : pas un mot du format d'impression.
 
     Le format ne se décide qu'au panneau suivant, et le mêler ici obligeait à
     tout arbitrer d'un coup : combien de cartes par ligne, sur quelle feuille,
@@ -105,7 +105,7 @@ class GridSizeTab(LayoutTab):
         super().__init__(parent)
         self._session = session
         self._updating = False
-        # Vrai tant que la grille n'a pas été choisie — ni à la main, ni par une
+        # Vrai tant que la grille n'a pas été choisie, ni à la main, ni par une
         # proposition, ni par un préréglage. Le premier passage sur cet onglet
         # l'ajuste alors au nombre de cartes retenues, puis se désarme.
         self._auto_fit_pending = True
@@ -238,7 +238,7 @@ class GridSizeTab(LayoutTab):
 
         # ⚠️ **La mosaïque se regarde dans les pages**, comme sur tous les
         # onglets de la famille : une grille sans papier ne disait pas si elle y
-        # tenait. C'est donc dedans qu'on clique — ou qu'on glisse — pour poser
+        # tenait. C'est donc dedans qu'on clique, ou qu'on glisse, pour poser
         # les cases vides.
         self._preview = PagePreview(self._session)
         self._preview.set_show_grid(True)
@@ -329,7 +329,7 @@ class GridSizeTab(LayoutTab):
             else:
                 note = self.tr("%n carte(s) en trop", "", -delta)
             item = QListWidgetItem(
-                f"{suggestion.cols} × {suggestion.rows}  —  {note}")
+                f"{suggestion.cols} × {suggestion.rows} : {note}")
             item.setData(Qt.UserRole, (suggestion.cols, suggestion.rows))
             self._suggestions.addItem(item)
 
@@ -357,7 +357,7 @@ class GridSizeTab(LayoutTab):
 
         Rouge on ne passe pas, ambre il reste à faire, vert c'est prêt. Deux
         sujets peuvent parler en même temps : le nombre de cases d'un côté, la
-        place sur le papier de l'autre — agrandir la grille pour loger toutes
+        place sur le papier de l'autre : agrandir la grille pour loger toutes
         les cartes est précisément ce qui la fait sortir des pages.
         """
         session = self._session
@@ -415,7 +415,7 @@ class PaperTab(LayoutTab):
         # ⚠️ **Trois champs pour une seule feuille.** Le format nommé est une
         # commodité, pas la définition : la feuille se décrit par ses deux
         # côtés, et un nom n'existe que pour sept d'entre elles. Les deux
-        # dimensions sont donc modifiables, et le nom suit ce qu'elles disent —
+        # dimensions sont donc modifiables, et le nom suit ce qu'elles disent,
         # rien à quoi il corresponde, et le champ montre une croix.
         self._paper = BigChoice(list(PAPER_FORMATS_MM))
         self._paper.value_changed.connect(self._on_format_chosen)
@@ -433,7 +433,7 @@ class PaperTab(LayoutTab):
         self._landscape = QCheckBox()
         self._landscape.toggled.connect(self._on_landscape_toggled)
         # ⚠️ **La finesse n'est plus ici.** Elle ne décide de rien qui se voie
-        # sur cet écran — tout s'y mesure en millimètres — et la demander au
+        # sur cet écran : tout s'y mesure en millimètres, et la demander au
         # début obligeait à trancher une question d'impression avant d'avoir
         # posé la mosaïque. Elle se choisit à l'export, devant le fichier
         # qu'elle pèse.
@@ -552,10 +552,10 @@ class PaperTab(LayoutTab):
         # cartes et de la mosaïque : ni l'une ni l'autre ne se règle ici, ni ne
         # se voit depuis que la grille n'y est plus dessinée, et un format hors
         # catalogue laissait un trou là où le nom devait aller. Ce que cet
-        # onglet décide, c'est une surface — c'est elle qu'il chiffre.
+        # onglet décide, c'est une surface : c'est elle qu'il chiffre.
         largeur, hauteur = session.sheet_mm()
         self._summary.setText(
-            self.tr("%n feuille(s) de %1 × %2 cm — surface totale de %3 × %4 cm.",
+            self.tr("%n feuille(s) de %1 × %2 cm : surface totale de %3 × %4 cm.",
                     "", session.panel_count())
             .replace("%1", f"{paper[0] / 10:.1f}")
             .replace("%2", f"{paper[1] / 10:.1f}")
@@ -573,8 +573,8 @@ class PaperTab(LayoutTab):
 
         # ⚠️ **Plus un mot sur la part de papier couverte.** Le message donnait
         # le pourcentage et prévenait que le reste sortirait blanc. Il disait
-        # vrai, mais il s'affichait dès qu'on ajoutait une feuille — c'est-à-dire
-        # au moment précis où l'on demande de la place —, et il fallait le lire
+        # vrai, mais il s'affichait dès qu'on ajoutait une feuille, c'est-à-dire
+        # au moment précis où l'on demande de la place, et il fallait le lire
         # à chaque fois pour n'en rien faire. Ce que la mosaïque couvre se voit
         # d'ailleurs sur le dessin, et se règle aux onglets « Grille ».
         self._warnings.setText("\n".join(warnings))
@@ -585,7 +585,7 @@ class CardSizeTab(LayoutTab):
 
     Tant que l'utilisateur n'y touche pas, la taille reste **automatique** : la
     plus grande qui fasse tenir la grille, recalculée à chaque changement. Dès
-    qu'il la fixe, le rapport s'inverse — c'est à la grille de s'y adapter, et
+    qu'il la fixe, le rapport s'inverse, c'est à la grille de s'y adapter, et
     l'écran le dit avec de quoi la corriger.
     """
 
@@ -605,8 +605,8 @@ class CardSizeTab(LayoutTab):
 
     def _build(self) -> None:
         # ⚠️ **Les mêmes champs que les dimensions de la grille.** Ce sont deux
-        # réglages du même ordre — ce qu'on met dans la case, après la taille de
-        # la grille —, et deux `QDoubleSpinBox` de vingt pixels les faisaient
+        # réglages du même ordre : ce qu'on met dans la case, après la taille de
+        # la grille, et deux `QDoubleSpinBox` de vingt pixels les faisaient
         # passer pour des détails d'un formulaire.
         self._width = BigFloatSpin(1.0, 2000.0, step=1.0)
         self._width.value_changed.connect(self._on_form_changed)
@@ -785,16 +785,16 @@ class CardSizeTab(LayoutTab):
                 note = self.tr("%n case(s) vide(s)", "", delta)
             else:
                 note = self.tr("%n carte(s) en trop", "", -delta)
-            item = QListWidgetItem(f"{cols} × {rows}  —  {note}")
+            item = QListWidgetItem(f"{cols} × {rows} : {note}")
             item.setData(Qt.UserRole, (cols, rows))
             self._shapes.addItem(item)
-        # Aucune forme ne tient parfois — une carte de 2 000 mm sur un A5 — et
+        # Aucune forme ne tient parfois : une carte de 2 000 mm sur un A5, et
         # la liste vide était alors un rectangle noir sans explication.
         trouve = self._shapes.count() > 0
         self._shapes.setVisible(trouve)
         # ⚠️ **Quand aucune proposition ne loge toutes les cartes.** Elles
-        # restent dans la liste — ce sont les meilleures à cette taille de carte
-        # —, mais les appliquer amputerait le poster, et rien ne le disait : la
+        # restent dans la liste, ce sont les meilleures à cette taille de
+        # carte, mais les appliquer amputerait le poster, et rien ne le disait : la
         # sortie est ailleurs, dans le nombre de feuilles.
         #
         # ⚠️ **Toutes, et non « au moins une ».** Les propositions sont classées

@@ -5,8 +5,8 @@ n'avait pourtant rien de plus à décider : ce sont des **paramètres**, comme l
 papier et la grille, et les séparer obligeait à traverser une étape entière pour
 revenir changer une durée.
 
-Deux onglets, et une division claire : ce qu'on **voit** d'un côté — l'épaisseur
-des bandes de bord se montre —, ce qu'on ne peut qu'**expliquer** de l'autre.
+Deux onglets, et une division claire : ce qu'on **voit** d'un côté, l'épaisseur
+des bandes de bord se montre, ce qu'on ne peut qu'**expliquer** de l'autre.
 Aucun de ces réglages ne bloque quoi que ce soit : ils ont tous une valeur qui
 marche, et l'utilisateur n'a pas à y toucher pour lancer un calcul.
 """
@@ -50,7 +50,7 @@ class SearchTab(LayoutTab):
 
     Seule de tous les réglages de l'algorithme à se **voir** : la bande mesurée
     se dessine sur une carte, et une petite grille d'essai montre ce que
-    l'appariement donne à cette épaisseur. Les autres n'ont rien à montrer —
+    l'appariement donne à cette épaisseur. Les autres n'ont rien à montrer,
     on ne dessine pas un nombre d'itérations.
     """
 
@@ -136,7 +136,7 @@ class AdvancedTab(LayoutTab):
     """Les réglages qu'on ne peut pas montrer, chacun sous son explication.
 
     ⚠️ **Le texte fait partie du réglage.** « Tolérance d'acceptation : 0,30 »
-    ne dit rien à personne — pas même à qui a écrit le programme, six mois
+    ne dit rien à personne : pas même à qui a écrit le programme, six mois
     après. Chaque champ est donc précédé de ce qu'il est, de ce à quoi il sert
     et de ce qu'il change, chiffres mesurés à l'appui.
     """
@@ -285,7 +285,7 @@ class AdvancedTab(LayoutTab):
             "essaie environ 127 000 par seconde en descente stricte, 120 000 au "
             "recuit. ⚠️ Le gain ne suit pas : les mille premières itérations "
             "effacent déjà près d'un tiers de ce qu'on peut gagner, et la courbe "
-            "s'aplatit ensuite — 56 % du score de départ effacés à 50 000 "
+            "s'aplatit ensuite : 56 % du score de départ effacés à 50 000 "
             "itérations, 61 % à un million. Multiplier la durée par vingt ne "
             "rapporte donc que quelques points."))
 
@@ -303,7 +303,7 @@ class AdvancedTab(LayoutTab):
         self._labels["acceptance"].setText(self.tr("Tolérance d'acceptation"))
         self._notes["acceptance"].setText(self.tr(
             "Au recuit seulement : la proportion d'échanges dégradants acceptés "
-            "au démarrage. Elle tombe d'elle-même au fil du calcul — mesuré, "
+            "au démarrage. Elle tombe d'elle-même au fil du calcul, mesuré, "
             "19 % au départ et 0,3 % à la fin. Trop basse, le recuit se comporte "
             "comme une descente stricte ; trop haute, il brasse longtemps sans "
             "converger. En descente stricte, le champ n'a aucun effet et reste "
@@ -327,7 +327,7 @@ class AdvancedTab(LayoutTab):
         self._notes["score"].setText(self.tr(
             "Arrête dès que le score descend sous cette valeur. ⚠️ Le score n'a "
             "pas d'échelle absolue : il dépend du nombre de cartes <b>et</b> de "
-            "l'épaisseur des bandes — la même grille vaut 621,7 avec une bande "
+            "l'épaisseur des bandes : la même grille vaut 621,7 avec une bande "
             "de 0,10 et 552,0 avec 0,30. Une valeur relevée sur un calcul "
             "précédent ne vaut donc que pour les mêmes réglages."))
 
@@ -385,7 +385,7 @@ class AdvancedTab(LayoutTab):
     def _push_back_clamped(self) -> None:
         """Renvoie à la session ce que les champs ont réellement accepté.
 
-        Un préréglage écrit à la main peut porter une valeur hors bornes — le
+        Un préréglage écrit à la main peut porter une valeur hors bornes, le
         format est du JSON, et la spec assume qu'on le retouche. Le champ
         l'écrête pour l'afficher ; sans ce retour, la session garderait la
         valeur d'origine et le formulaire annoncerait un calcul différent de
@@ -422,12 +422,12 @@ class AdvancedTab(LayoutTab):
         gain = estimated_gain(session.iterations, annealing)
         low, high = estimated_snapshots(session.iterations,
                                         session.snapshot_every, annealing)
-        texte = (self.tr("Durée estimée : %1  —  gain attendu : environ %2 %  —  "
+        texte = (self.tr("Durée estimée : %1, gain attendu : environ %2 %, "
                          "timeline : entre %3 et %4 clichés")
                  .replace("%1", format_duration(seconds))
                  .replace("%2", f"{gain * 100:.0f}")
                  .replace("%3", str(low)).replace("%4", str(high)))
         if high < USEFUL_SNAPSHOTS:
-            texte += "  —  " + self.tr("trop peu pour naviguer, resserrez la "
+            texte += ", " + self.tr("trop peu pour naviguer, resserrez la "
                                        "cadence")
         self._projection.setText(texte)

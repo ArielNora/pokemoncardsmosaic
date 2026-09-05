@@ -2,7 +2,7 @@
 
 Le calcul dure plusieurs secondes et doit rester interruptible : il vit donc dans
 un QThread, et communique par signaux. La grille est modifiée sur place par
-`optimize_grid`, mais les clichés de la timeline en sont des copies — c'est
+`optimize_grid`, mais les clichés de la timeline en sont des copies, c'est
 seulement eux que l'interface lit, jamais la grille en cours de modification.
 """
 
@@ -106,7 +106,7 @@ def _check_resumable(grid, cards, session) -> None:
 
     Les cartes retenues sont renumérotées de 0 à n-1 à chaque préparation : si la
     sélection ou la grille a changé depuis le calcul d'origine, les indices de
-    l'ancienne grille désignent d'autres cartes. Rien ne planterait — le poster
+    l'ancienne grille désignent d'autres cartes. Rien ne planterait : le poster
     serait simplement composé de cartes que l'utilisateur n'a pas choisies.
     """
     if grid.shape != (session.rows, session.cols):

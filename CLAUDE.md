@@ -9,26 +9,26 @@
    Un commit petit peut reporter sa revue au suivant, **jamais au-delà de deux
    commits**. Et lancer la revue veut dire l'invoquer réellement : relire son
    propre diff et passer `ruff` n'est pas une revue.
-2. `ruff` et `pytest` passent — le hook `pre-commit` le refuse sinon.
+2. `ruff` et `pytest` passent, sinon le hook `pre-commit` refuse le commit.
 
-## `/verif-code` — plus rare, plus large
+## `/verif-code`, plus rare et plus large
 
 Audit en lecture seule d'un **périmètre** : un dossier, une liste de fichiers,
 ou les deux. Complémentaire de `/code-review`, qui ne regarde que le diff.
 
-**Cadence : tous les 3 ou 4 commits**, ou après un gros volume de changements —
+**Cadence : tous les 3 ou 4 commits**, ou après un gros volume de changements,
 seuil nettement plus haut que celui de `/code-review`. À lancer **juste avant un
 commit**, comme la revue.
 
 **Pas sur tout le projet d'un coup** : une invocation par grosse partie. Les
 découpages qui ont du sens ici :
 
-- la chaîne d'acquisition — `scripts/` + `src/pokemon_mosaic/artwork.py`
-- le cœur de calcul — `optimize.py`, `annealing.py`, `timeline.py`,
+- la chaîne d'acquisition : `scripts/` + `src/pokemon_mosaic/artwork.py`
+- le cœur de calcul : `optimize.py`, `annealing.py`, `timeline.py`,
   `scoring.py`, `control.py`
-- l'état et les données — `cards.py`, `presets.py`, `links.py`, `layout.py`,
+- l'état et les données : `cards.py`, `presets.py`, `links.py`, `layout.py`,
   `grid.py`, `export.py`
-- l'interface — `src/pokemon_mosaic/ui/`
+- l'interface : `src/pokemon_mosaic/ui/`
 
 **L'enchaînement se fait d'un bout à l'autre, sans rien demander** :
 
@@ -42,7 +42,7 @@ Ses constats se vérifient un par un, comme ceux de toute revue.
 
 ## Lancer les tests
 
-**Fichier par fichier**, pas en un bloc — la machine de l'utilisateur est juste
+**Fichier par fichier**, pas en un bloc : la machine de l'utilisateur est juste
 en mémoire :
 
 ```bash
@@ -67,6 +67,17 @@ Le hook s'active une fois par clone :
 git config core.hooksPath .githooks
 ```
 
+## Écriture des textes
+
+**Aucun tiret cadratin.** Ni «» ni « – », nulle part : textes de l'interface,
+traductions, commentaires, docstrings, messages de commit, documents du dépôt,
+réponses dans la conversation. La ponctuation ordinaire dit la même chose :
+deux-points pour annoncer, virgule pour incise, parenthèses pour l'aparté, point
+pour couper.
+
+Le trait d'union « - » reste normal dans les mots composés, et le tiret d'une
+liste Markdown n'est pas concerné.
+
 ## Granularité des commits
 
 **Un commit par intention, pas par session de travail.** Les premiers commits du
@@ -76,7 +87,7 @@ relu ou bissecté utilement.
 ## Revue complète
 
 Aux grandes étapes (fin de l'interface, avant l'empaquetage), l'utilisateur lance
-lui-même une revue complète du code. Ses constats sont à **vérifier un par un** —
+lui-même une revue complète du code. Ses constats sont à **vérifier un par un**,
 une revue peut se tromper. Reproduire avant de corriger, puis verrouiller par un
 test de non-régression.
 
@@ -111,20 +122,20 @@ test de non-régression.
 
 ## Documents
 
-- `SPEC.md` — définition du projet et journal des décisions. À tenir à jour.
-- `TODO.md` — évolutions reportées après la v1.
+- `SPEC.md` : définition du projet et journal des décisions. À tenir à jour.
+- `TODO.md` : évolutions reportées après la v1.
 
 ### Toute spécification s'écrit, sur-le-champ
 
-**Ajout, modification ou suppression d'une spécification — sur n'importe quelle
-partie : technologie, interface, algorithme, format de données, règle métier —
+**Ajout, modification ou suppression d'une spécification, sur n'importe quelle
+partie (technologie, interface, algorithme, format de données, règle métier),
 s'écrit immédiatement, sans attendre qu'on le demande.**
 
 Dans `SPEC.md` §10, une ligne datée au journal des décisions. Dans `TODO.md`
 quand c'est reporté. Et dans la mémoire de l'assistant, avec le **pourquoi**.
 
 Une conversation disparaît. Une spécification qui n'existe que dans l'échange
-est perdue au compactage, et sera réinventée différemment — ou pire, on codera
+est perdue au compactage, et sera réinventée différemment, ou pire, on codera
 contre une règle abandonnée.
 
 Écrire la **raison** autant que la règle, et noter ce que la décision **écarte** :

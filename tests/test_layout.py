@@ -141,8 +141,8 @@ def test_empty_cells_never_line_up_in_columns(rows, cols, count):
     assert len(cells) == len(set(cells)) == count
 
     # Référence : le nombre de colonnes distinctes qu'on obtiendrait en plaçant les
-    # trous au hasard. On ne peut pas exiger mieux — avec 24 trous sur 24 colonnes,
-    # les collisions sont inévitables — mais l'aliasing en donnait 4 fois moins.
+    # trous au hasard. On ne peut pas exiger mieux : avec 24 trous sur 24 colonnes,
+    # les collisions sont inévitables, mais l'aliasing en donnait 4 fois moins.
     expected = cols * (1 - (1 - 1 / cols) ** count)
     distinct_columns = len({c for _, c in cells})
     assert distinct_columns >= 0.6 * expected, (
@@ -369,7 +369,7 @@ def test_load_cards_settles_on_a_real_card_size(tmp_path):
     734×1024 et 717×1050 donnaient 717×1024, que personne ne portait, et toutes
     les cartes s'en trouvaient déformées de 2,3 %.
 
-    À égalité de fréquence — ici une carte de chaque taille — c'est la plus
+    À égalité de fréquence, ici une carte de chaque taille, c'est la plus
     petite surface qui l'emporte : mieux vaut réduire qu'agrandir.
     """
     from pokemon_mosaic.cards import load_cards
@@ -439,7 +439,7 @@ def test_the_output_folder_is_not_guessed_once_packaged(monkeypatch):
 
 def test_the_shape_search_stays_instant():
     """⚠️ Sans plafond, une carte d'un millimètre sur cinq A0 à 1200 DPI donnait
-    des centaines de milliers de candidats à trier sur le fil de l'interface —
+    des centaines de milliers de candidats à trier sur le fil de l'interface,
     mesuré, 4,3 secondes de fenêtre figée."""
     import time
 

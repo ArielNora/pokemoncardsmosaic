@@ -5,7 +5,7 @@ cartes disponibles. On remplit les cases en y faisant glisser une illustration.
 
 Composer un rectangle en posant les cartes plutôt qu'en ordonnant une liste :
 sur un 3×3, « la septième » ne dit rien, alors que la case le dit tout de suite.
-Le rectangle grandit par ses bords, et ne peut être validé que **plein** — un
+Le rectangle grandit par ses bords, et ne peut être validé que **plein**, un
 lien est un rectangle sans trou, et une case vide n'a pas de sens à donner à
 l'optimiseur.
 """
@@ -157,11 +157,11 @@ class LinkDialog(QDialog):
         card = self._session.card_set[index]
         # Le dossier lève l'ambiguïté entre deux cartes homonymes de séries
         # différentes.
-        text = f"{card.name}  —  {self._session.folder_of(index)}"
+        text = f"{card.name} : {self._session.folder_of(index)}"
         if self._session.is_excluded(index):
             # Un lien portant sur une carte retirée ne s'appliquera jamais : mieux
             # vaut le voir au moment de le composer qu'après une exécution entière.
-            text += "  " + self.tr("(carte exclue)")
+            text += " " + self.tr("(carte exclue)")
         return text
 
     def _fill_folders(self) -> None:

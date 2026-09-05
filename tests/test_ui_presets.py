@@ -152,7 +152,7 @@ def test_the_window_offers_the_bar_and_a_directory(qt_app, tmp_path, session):
 
 def test_saving_unlocks_as_soon_as_cards_arrive(qt_app, tmp_path):
     """« Enregistrer… » ne se réévaluait qu'au changement de préréglage dans la
-    liste — geste impossible tant qu'on n'en a aucun. Le tout premier préréglage
+    liste : geste impossible tant qu'on n'en a aucun. Le tout premier préréglage
     était donc définitivement impossible à créer."""
     from pokemon_mosaic.ui.presets_bar import PresetsBar
     from pokemon_mosaic.ui.session import Session

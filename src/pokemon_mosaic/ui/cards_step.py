@@ -1,4 +1,4 @@
-"""Étape 1 — choix des cartes qui composeront la mosaïque."""
+"""Étape 1 : choix des cartes qui composeront la mosaïque."""
 
 import os
 
@@ -40,7 +40,7 @@ def proposed_cards_dir() -> str:
     """Où proposer de déposer les cartes.
 
     `QStandardPaths` sait localiser « Images » dans la langue et l'arborescence
-    de l'utilisateur, sur les trois systèmes — inutile d'écrire une règle par
+    de l'utilisateur, sur les trois systèmes, inutile d'écrire une règle par
     plateforme. Un dossier visible et sauvegardé, plutôt qu'un recoin de données
     applicatives que personne ne va voir.
     """
@@ -65,7 +65,7 @@ class CardsStep(QWidget):
         self._thread = None
         self._worker = None
         # ⚠️ **Un drapeau, et non l'état du fil.** On ne lâche pas la référence
-        # d'un `QThread` qui n'a pas fini — Qt abandonne le processus —, et
+        # d'un `QThread` qui n'a pas fini : Qt abandonne le processus, et
         # `isRunning()` peut être encore vrai à l'instant où le chargement
         # s'annonce terminé : le bouton serait resté éteint, plus rien ne venant
         # le rallumer.
@@ -99,8 +99,8 @@ class CardsStep(QWidget):
         self._folder_items: dict[str, QTreeWidgetItem] = {}
         self._folder_label = QLabel()
         # ⚠️ **Un arbre, et non plus une liste.** Les extensions se rangent par
-        # série — « A1 », « A1a » et la promo A sont la série A —, et c'est
-        # ainsi qu'on les cherche : par série d'abord, extension ensuite. Vingt
+        # série : « A1 », « A1a » et la promo A sont la série A, et c'est
+        # ainsi qu'on les cherche, par série d'abord, extension ensuite. Vingt
         # dossiers à plat obligeaient à lire chaque nom pour savoir où l'on en
         # était. Sélectionner une série vise toutes ses extensions.
         self._folders = QTreeWidget()
@@ -112,7 +112,7 @@ class CardsStep(QWidget):
         # ⚠️ **Marge de défilement automatique nulle.** Qt en réserve seize
         # pixels *à l'intérieur* de la vue : cliquer l'extension à demi coupée du
         # bas tombe forcément dedans, et tant que le bouton reste enfoncé la
-        # liste dévale jusqu'en bas — mesuré, 210 crans sur 242. À zéro, la bande
+        # liste dévale jusqu'en bas : mesuré, 210 crans sur 242. À zéro, la bande
         # sensible passe hors de la vue : le clic ne déclenche plus rien, et
         # glisser *sous* la liste pour prolonger une sélection continue de faire
         # défiler. Couper `setAutoScroll` supprimerait aussi ce second geste.
@@ -352,7 +352,7 @@ class CardsStep(QWidget):
         # cible. Le bouton de l'état vide, lui, en demande un.
         self._update_catalogue.setEnabled(bool(self._session.data_dir))
         self._update_catalogue.setVisible(garni)
-        # La fenêtre décide de « Suivant » : ce qui vient de changer peut
+        # La fenêtre décide de « Suivant », ce qui vient de changer peut
         # l'autoriser comme le lui retirer.
         self.advance_state_changed.emit()
 
@@ -404,7 +404,7 @@ class CardsStep(QWidget):
         ⚠️ **Ni pendant.** Les cartes arrivent par lots : dès le premier, le jeu
         n'est plus vide et le bouton s'allumait, alors que la moitié des
         extensions manquait encore. On passait à l'étape suivante pour y
-        dimensionner une grille sur un nombre de cartes qui montait derrière —
+        dimensionner une grille sur un nombre de cartes qui montait derrière,
         et la grille proposée au premier passage, elle, ne se propose qu'une
         fois.
         """
@@ -444,7 +444,7 @@ class CardsStep(QWidget):
 
         Le dossier proposé est créé avant d'ouvrir le dialogue : celui-ci ne sait
         pas se placer dans un dossier qui n'existe pas, et retomberait sur le
-        dernier emplacement visité — ce qui ferait perdre la proposition.
+        dernier emplacement visité, ce qui ferait perdre la proposition.
         """
         propose = proposed_cards_dir()
         try:
@@ -478,7 +478,7 @@ class CardsStep(QWidget):
             self._on_download_cancelled)
         # ⚠️ **Après** l'affectation du fil : prévenue avant, la fenêtre relisait
         # un écran qui ne se disait pas encore occupé, et « Suivant » restait
-        # allumé pour toute la durée du téléchargement — plus rien ne venant le
+        # allumé pour toute la durée du téléchargement, plus rien ne venant le
         # relire jusqu'à la fin.
         self.advance_state_changed.emit()
 
@@ -536,7 +536,7 @@ class CardsStep(QWidget):
         dossier = self._download_dir
         self._end_download()
         self.status_message.emit(
-            self.tr("Téléchargement interrompu — %n carte(s) récupérée(s).",
+            self.tr("Téléchargement interrompu : %n carte(s) récupérée(s).",
                     "", ecrites))
         # Ce qui est arrivé est bon : chaque image a été vérifiée avant écriture.
         # Le dossier est simplement incomplet, et une relance le complètera.
@@ -662,8 +662,8 @@ class CardsStep(QWidget):
             return None
         if serie not in self._series_items:
             # ⚠️ **Insérée à sa place, non ajoutée à la fin.** Les dossiers
-            # arrivent dans l'ordre où le système les rend — `os.walk` ne trie
-            # pas les répertoires —, si bien qu'une série découverte plus tard
+            # arrivent dans l'ordre où le système les rend, `os.walk` ne trie
+            # pas les répertoires, si bien qu'une série découverte plus tard
             # se serait posée sous une série qui lui succède. Les séries
             # occupent ainsi toujours les premiers rangs, dans l'ordre, et les
             # dossiers sans série restent à la suite.
@@ -692,12 +692,12 @@ class CardsStep(QWidget):
             self._session.invert_excluded(cartes)
 
     def _set_all(self, excluded: bool) -> None:
-        """Agit sur les cartes affichées — filtre par extension et recherche compris.
+        """Agit sur les cartes affichées : filtre par extension et recherche compris.
 
         Elles portaient auparavant sur tout le jeu chargé. Sans recherche c'était
         sans danger : les boutons « Inclure l'extension » couvraient le besoin
         ciblé. Avec elle, chercher « dracaufeu » puis cliquer « Tout exclure »
-        effaçait la sélection entière — mesuré, 40 cartes exclues au lieu de 10.
+        effaçait la sélection entière : mesuré, 40 cartes exclues au lieu de 10.
         """
         cartes = self._gallery.visible_cards()
         if cartes:
@@ -783,12 +783,12 @@ class CardsStep(QWidget):
         folders = self._selected_folders()
         if len(folders) == 1:
             # Un seul dossier : son nom est plus parlant qu'un décompte.
-            text += "  —  " + self.tr("filtré sur %1").replace("%1", next(iter(folders)))
+            text += ", " + self.tr("filtré sur %1").replace("%1", next(iter(folders)))
         elif folders:
-            text += "  —  " + self.tr("filtré sur %n dossiers", "", len(folders))
+            text += ", " + self.tr("filtré sur %n dossiers", "", len(folders))
         # Une recherche qui ne rend rien doit se lire dans le compteur : une
         # galerie vide sans explication passe pour un chargement raté.
         if self._search.text().strip():
-            text += "  —  " + self.tr("%n carte(s) trouvée(s)", "",
+            text += ", " + self.tr("%n carte(s) trouvée(s)", "",
                                       self._gallery.visible_count())
         self._count.setText(text)

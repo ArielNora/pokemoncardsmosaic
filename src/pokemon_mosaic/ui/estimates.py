@@ -1,6 +1,6 @@
 """Projections chiffrées affichées à côté des réglages sans aperçu visuel.
 
-Certains réglages n'ont rien à montrer — on ne dessine pas un nombre d'itérations.
+Certains réglages n'ont rien à montrer, on ne dessine pas un nombre d'itérations.
 On peut en revanche annoncer leur conséquence, ce qui reste plus utile qu'un champ
 nu. Voir SPEC.md §5.
 
@@ -74,7 +74,7 @@ def estimated_snapshots(iterations: int, every: int, annealing: bool,
         return (low, high)
 
     # L'élagage se déclenche dès que le compte AVANT élagage dépasse le plafond,
-    # donc dès que la borne haute le dépasse — pas seulement quand la borne basse
+    # donc dès que la borne haute le dépasse, pas seulement quand la borne basse
     # le dépasse. Dans cette zone, la timeline jette un cliché sur deux et tombe
     # sous la borne basse brute : le plancher doit descendre avec elle.
     if high > maximum:

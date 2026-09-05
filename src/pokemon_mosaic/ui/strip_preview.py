@@ -64,7 +64,7 @@ class StripPreview(QWidget):
     def _key(self):
         """Ce dont dépend réellement l'aperçu : l'épaisseur et les cartes retenues.
 
-        Comparer cette clé évite de reconstruire pour un réglage sans rapport —
+        Comparer cette clé évite de reconstruire pour un réglage sans rapport,
         `algorithm_changed` part aussi pour le nombre d'itérations ou les seuils
         d'arrêt, qui ne changent rien à ce qui est montré.
         """
@@ -122,7 +122,7 @@ class StripPreview(QWidget):
         try:
             # `select_cards` plutôt que `subset` seul : c'est le point d'entrée
             # que le code désigne comme le seul sûr, et cet aperçu est le premier
-            # usage en production — donc celui qui fera référence.
+            # usage en production, donc celui qui fera référence.
             subset, _ = select_cards(cards, indices)
             distances = EdgeDistances(subset.cards)
             grid = build_initial_grid(

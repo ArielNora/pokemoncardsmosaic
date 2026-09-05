@@ -15,7 +15,7 @@ WHITE = (255, 255, 255)
 def calculate_grid_dims(n: int) -> tuple[int, int]:
     """Renvoie (colonnes, lignes) : la paire de facteurs de `n` la plus proche du carré.
 
-    Garantit zéro case vide et zéro carte perdue — mais la forme dépend entièrement
+    Garantit zéro case vide et zéro carte perdue, mais la forme dépend entièrement
     de la factorisation de `n`, ce qui la rend très instable :
 
         279 cartes ->  31 x 9
@@ -42,7 +42,7 @@ def render_grid(
     """Assemble les cartes selon `grid` et renvoie l'image.
 
     Par défaut, l'assemblage se fait à partir des vignettes déjà en mémoire, ce qui
-    prend quelques millisecondes — c'est ce qui permet le défilement fluide de la
+    prend quelques millisecondes : c'est ce qui permet le défilement fluide de la
     timeline. Avec `full_resolution`, chaque carte est relue depuis le disque à sa
     taille d'origine : bien plus lent, réservé à l'export.
     """

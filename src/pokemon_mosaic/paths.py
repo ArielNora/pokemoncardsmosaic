@@ -1,4 +1,4 @@
-"""Où trouver les ressources et les données — en source comme une fois empaqueté.
+"""Où trouver les ressources et les données, en source comme une fois empaqueté.
 
 Trois chemins étaient déduits de `__file__` par remontée de dossiers parents.
 La déduction est juste tant que le code vit dans l'arborescence du dépôt, et
@@ -19,7 +19,7 @@ def frozen() -> bool:
 
 
 def resource_dir() -> Path:
-    """Racine des ressources en lecture seule — traductions, et rien d'autre.
+    """Racine des ressources en lecture seule, traductions, et rien d'autre.
 
     ⚠️ `sys._MEIPASS` et non `Path(sys.executable).parent` : le second pointe sur
     `Contents/MacOS`, où PyInstaller ne déplie rien.
@@ -32,7 +32,7 @@ def resource_dir() -> Path:
 def user_data_dir() -> Path:
     """Où l'application range ce qui appartient à l'utilisateur.
 
-    Depuis le dépôt, c'est `data/` — le dossier de travail habituel. Une fois
+    Depuis le dépôt, c'est `data/` : le dossier de travail habituel. Une fois
     installée, écrire à côté de l'exécutable est impossible : un `.app` vit dans
     `/Applications`, en lecture seule pour l'utilisateur courant.
     """
@@ -60,7 +60,7 @@ def output_dir() -> Path | None:
 
     L'interface graphique ne passe pas par ici : son dialogue d'export propose
     `QStandardPaths.PicturesLocation`, que le système sait localiser dans la
-    langue et l'arborescence de l'utilisateur — c'est justement ce qu'un chemin
+    langue et l'arborescence de l'utilisateur, c'est justement ce qu'un chemin
     écrit à la main ne sait pas faire.
     """
     return None if frozen() else resource_dir() / "output"

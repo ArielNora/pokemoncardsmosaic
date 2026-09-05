@@ -90,9 +90,9 @@ class RotationHelp(QDialog):
             "placements possibles."))
         self._row_label.setText(self.tr("Sur une ligne, l'ordre s'inverse :"))
         self._square_label.setText(self.tr(
-            "Sur un carré, chaque carte va dans le coin opposé — ce n'est pas "
+            "Sur un carré, chaque carte va dans le coin opposé, ce n'est pas "
             "un effet miroir :"))
         self._shape_note.setText(self.tr(
             "La forme ne change jamais : un 3 × 2 pivoté reste un 3 × 2. "
-            "Gardez l'ordre imposé quand le sens porte quelque chose — une "
+            "Gardez l'ordre imposé quand le sens porte quelque chose, une "
             "lignée d'évolution, ou une paire qui se lit dans un sens."))

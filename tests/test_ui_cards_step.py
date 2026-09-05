@@ -1,7 +1,7 @@
 """Tests de l'étape 1 : l'écran d'accueil, le téléchargement, les avertissements.
 
 Rien ici ne touche au réseau : `downloader` est nourri par un faux miroir. Les
-vignettes sont minuscules — l'écran ne teste ni la taille ni le contenu des
+vignettes sont minuscules : l'écran ne teste ni la taille ni le contenu des
 images, seulement ce qu'il en dit.
 """
 
@@ -75,8 +75,8 @@ def test_no_warning_on_a_homogeneous_set(step, tmp_path):
 
 
 def test_an_odd_size_says_how_many_which_and_why_it_matters(step, tmp_path):
-    """Le nombre seul ne suffit pas : c'est la conséquence — étirement, donc
-    couleurs de bord faussées — qui dit à l'utilisateur s'il doit agir."""
+    """Le nombre seul ne suffit pas : c'est la conséquence, étirement, donc
+    couleurs de bord faussées, qui dit à l'utilisateur s'il doit agir."""
     from pokemon_mosaic.cards import SizeWarning
 
     ecran, _ = step
@@ -94,7 +94,7 @@ def test_an_odd_size_says_how_many_which_and_why_it_matters(step, tmp_path):
 def test_unreadable_files_are_listed_too(step, tmp_path):
     ecran, _ = step
     jeu = card_set_in(tmp_path, {"s": ["a"]})
-    jeu.unreadable = ["casse.webp — illisible"]
+    jeu.unreadable = ["casse.webp : illisible"]
     ecran._show_warnings(jeu)
 
     assert "casse.webp" in ecran._warnings.text()
@@ -262,7 +262,7 @@ def test_next_is_locked_while_no_card_is_loaded(fenetre):
 
 
 def test_next_unlocks_as_soon_as_cards_arrive(fenetre, tmp_path):
-    """Il ne se réévaluait qu'au changement d'écran — qu'on ne peut plus faire
+    """Il ne se réévaluait qu'au changement d'écran, qu'on ne peut plus faire
     puisqu'il est justement grisé."""
     w, session = fenetre
     session.set_cards(card_set_in(tmp_path, {"s": ["a"]}), str(tmp_path))
@@ -296,7 +296,7 @@ def test_the_next_button_glows_green_when_it_is_ready(fenetre, tmp_path):
 def test_the_aura_follows_a_change_of_mode(fenetre, qt_app):
     """⚠️ Une couleur figée dans un effet ne suit rien : tout ce qui se lit au
     moment du dessin change de mode tout seul, l'aura garde la teinte qu'on lui
-    a posée — verte foncée sur une fenêtre devenue claire."""
+    a posée : verte foncée sur une fenêtre devenue claire."""
     from pokemon_mosaic.ui import theme
 
     w, _ = fenetre
@@ -362,7 +362,7 @@ def test_a_remembered_folder_that_vanished_is_not_proposed(fenetre, tmp_path):
 
 def charge(ecran, session, tmp_path, layout):
     """Rejoue le vrai enchaînement de chargement, celui qui remplit la liste
-    des dossiers — `set_cards` seul ne l'émet pas."""
+    des dossiers : `set_cards` seul ne l'émet pas."""
     jeu = card_set_in(tmp_path, layout)
     session.start_loading(str(tmp_path))
     session.append_cards(jeu.cards)
@@ -419,7 +419,7 @@ def test_you_cannot_leave_while_the_cards_are_still_arriving(step, tmp_path,
     """⚠️ Les cartes arrivent par lots : dès le premier, le jeu n'est plus vide
     et le bouton s'allumait, alors que la moitié des extensions manquait. On
     passait à l'étape suivante pour y dimensionner une grille sur un nombre de
-    cartes qui montait derrière — et la grille proposée au premier passage ne se
+    cartes qui montait derrière, et la grille proposée au premier passage ne se
     propose qu'une fois."""
     ecran, session = step
     monkeypatch.setattr("pokemon_mosaic.ui.cards_step.start_loading",
@@ -470,7 +470,7 @@ def test_the_window_is_told_when_the_step_locks(step, tmp_path, monkeypatch):
 
     ⚠️ Et elle doit le relire **une fois l'écran occupé** : prévenue trop tôt,
     elle lisait un écran qui ne l'était pas encore, et le bouton restait allumé
-    pour toute la durée du travail — plus rien ne venant le relire jusqu'au
+    pour toute la durée du travail, plus rien ne venant le relire jusqu'au
     bout."""
     ecran, session = step
     charge(ecran, session, tmp_path, {"a1": ["x"]})
@@ -492,7 +492,7 @@ def test_the_window_is_told_when_the_step_locks(step, tmp_path, monkeypatch):
 
 def test_the_extensions_are_grouped_by_series(step, tmp_path):
     """⚠️ « A1 », « A1a » et la promo A sont la **série A** : c'est ainsi qu'on
-    cherche une extension — par série d'abord. Vingt dossiers à plat
+    cherche une extension, par série d'abord. Vingt dossiers à plat
     obligeaient à lire chaque nom pour savoir où l'on en était."""
     ecran, session = step
     charge(ecran, session, tmp_path,
@@ -507,7 +507,7 @@ def test_the_extensions_are_grouped_by_series(step, tmp_path):
 
 
 def test_the_series_stay_in_order_whatever_the_loading_order(step):
-    """⚠️ Les dossiers arrivent dans l'ordre où le système les rend — `os.walk`
+    """⚠️ Les dossiers arrivent dans l'ordre où le système les rend, `os.walk`
     ne trie pas les répertoires. Une série découverte plus tard se posait alors
     sous une série qui lui succède."""
     ecran, _ = step
@@ -581,7 +581,7 @@ def test_the_bulk_buttons_sit_on_the_gallery(step, tmp_path):
 
 def test_the_bulk_buttons_clear_the_scrollbar(step, tmp_path):
     """Sans contourner sa largeur, ils passent dessous dès que la galerie
-    déborde — et le bouton du bas devient inatteignable."""
+    déborde, et le bouton du bas devient inatteignable."""
     ecran, session = step
     charge(ecran, session, tmp_path, {"a1": [str(i) for i in range(60)]})
     ecran._gallery.resize(300, 200)
@@ -604,7 +604,7 @@ def maintenir(liste, vers_le_bas: int, duree: float = 0.6):
 
     Le petit mouvement est indispensable : c'est lui qui met la vue en sélection
     glissée et arme la minuterie de défilement automatique. Sans lui, on ne
-    reproduit rien — ce qui m'avait fait conclure à tort que le défaut n'existait
+    reproduit rien, ce qui m'avait fait conclure à tort que le défaut n'existait
     pas.
     """
     import time
@@ -847,7 +847,7 @@ def test_the_bulk_buttons_stay_inside_the_gallery_once_relabelled(step, tmp_path
 def test_clicking_a_card_leaves_no_highlight_behind(step, tmp_path):
     """La sélection ne sert qu'à désigner un lot avant de le basculer. Posée,
     elle surlignait la carte en bleu comme du texte attrapé à la souris,
-    par-dessus le seul signal qui compte — l'inclusion, dite par l'opacité.
+    par-dessus le seul signal qui compte, l'inclusion, dite par l'opacité.
 
     ⚠️ Un vrai clic, et non l'appel du slot : c'est `mousePressEvent` qui pose
     la sélection, et `clicked` ne part qu'au relâché. Appeler le slot à la main
@@ -916,7 +916,7 @@ def test_inverting_respects_the_filter(step, tmp_path):
 def test_inverting_repaints_even_when_the_count_is_unchanged(step, tmp_path):
     """Deux `set_excluded`, un par sens, ne préviendraient pas : le signal ne
     part que si le **nombre** d'exclues a changé, et une inversion peut le
-    laisser identique — deux cartes dedans, deux dehors."""
+    laisser identique : deux cartes dedans, deux dehors."""
     ecran, session = step
     charge(ecran, session, tmp_path, {"a1": ["x", "y", "z", "w"]})
     session.set_excluded([0, 1], True)

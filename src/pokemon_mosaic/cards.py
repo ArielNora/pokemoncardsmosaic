@@ -135,7 +135,7 @@ class CardSet:
                        thumb_size=self.thumb_size)
 
     def recalculate_features(self, strip_size: float) -> None:
-        """Recalcule toutes les signatures — utilisé par l'aperçu temps réel.
+        """Recalcule toutes les signatures : utilisé par l'aperçu temps réel.
 
         Mesuré à ~46 ms pour 280 cartes sur vignettes à 25 %, contre 713 ms en
         pleine résolution. C'est ce qui rend le réglage interactif.
@@ -163,7 +163,7 @@ class CardSet:
 def iter_image_paths(root_dir: str, exclude: Sequence[str] = ()) -> Iterator[str]:
     """Parcourt récursivement les fichiers image, en ordre stable.
 
-    L'ordre est trié pour que deux chargements successifs donnent les mêmes indices —
+    L'ordre est trié pour que deux chargements successifs donnent les mêmes indices,
     condition nécessaire pour que les préréglages restent valides d'une session à
     l'autre.
     """
@@ -192,7 +192,7 @@ def load_cards(
     Deux passes : la première ne lit que les en-têtes pour trouver la plus petite
     taille commune (Pillow donne `.size` sans décoder les pixels) ; la seconde décode
     et réduit directement à la taille de vignette. Les images pleine résolution ne
-    sont donc jamais toutes en mémoire — 35 Mo au lieu de 562 Mo.
+    sont donc jamais toutes en mémoire : 35 Mo au lieu de 562 Mo.
 
     `on_folder` est appelé dès qu'un dossier est entièrement traité, avec son
     chemin et ses cartes. Cela permet à une interface d'afficher les extensions les
@@ -201,7 +201,7 @@ def load_cards(
 
     `check_cancelled` est appelé à chaque fichier, dans les **deux** passes. Il
     n'a rien à renvoyer : à charge pour l'appelant de lever s'il veut interrompre.
-    Le couvrir dès la première passe importe — elle est purement séquentielle et
+    Le couvrir dès la première passe importe, elle est purement séquentielle et
     peut durer sur une arborescence fournie ou un disque réseau, laissant sinon
     un fil impossible à arrêter.
 
@@ -216,7 +216,7 @@ def load_cards(
     if not paths:
         return CardSet(cards=[], full_size=(0, 0), thumb_size=(0, 0))
 
-    # Passe 1 — en-têtes seulement, pour établir le format commun.
+    # Passe 1 : en-têtes seulement, pour établir le format commun.
     sizes: Counter = Counter()
     readable: list[str] = []
     unreadable: list[str] = []
@@ -232,7 +232,7 @@ def load_cards(
             # produirait une ligne de 200 caractères là où le nom du fichier
             # suffit à le retrouver.
             raison = str(e).replace(path, os.path.basename(path))
-            unreadable.append(f"{os.path.basename(path)} — {raison}")
+            unreadable.append(f"{os.path.basename(path)} : {raison}")
             continue
         readable.append(path)
         sizes[size] += 1
@@ -245,7 +245,7 @@ def load_cards(
     # minimales prises séparément. Ces deux minima donnaient un couple que
     # personne ne portait : trois fichiers en 734×1024, 717×1050 et 734×1024
     # produisaient un `full_size` de 717×1024, de rapport d'aspect étranger aux
-    # trois, et **toutes** les cartes étaient déformées de 2,3 % — sans un mot.
+    # trois, et **toutes** les cartes étaient déformées de 2,3 %, sans un mot.
     # Le défaut s'est produit le 2026-08-22 avec deux fichiers retouchés à la
     # main. Le format retenu est désormais celui d'une carte réelle, et les
     # écarts se signalent au lieu d'être absorbés.
@@ -258,7 +258,7 @@ def load_cards(
     min_w, min_h = full_size
     thumb_size = (max(1, round(min_w * scale)), max(1, round(min_h * scale)))
 
-    # Passe 2 — décodage et réduction directe à la taille de vignette.
+    # Passe 2 : décodage et réduction directe à la taille de vignette.
     # BOX est une moyenne de blocs : c'est exactement l'opération qui justifie de
     # calculer les signatures sur les vignettes plutôt qu'en pleine résolution.
     cards: list[Card] = []

@@ -117,7 +117,7 @@ def test_a_path_climbing_out_of_the_output_folder_is_refused(tmp_path, relatif):
 def test_an_absolute_path_is_neutralised_not_refused(tmp_path):
     """Le chemin est **découpé sur `/` puis rejoint sous la racine** : la barre
     de tête ne devient qu'un fragment vide, sans effet. Refuser serait aussi
-    correct, mais ce test dit ce que le code fait — et prouve qu'un `/etc/passwd`
+    correct, mais ce test dit ce que le code fait, et prouve qu'un `/etc/passwd`
     au manifeste retombe dans le dossier de sortie."""
     assert (mirror.target_path(str(tmp_path), "/absolu.webp")
             == str(tmp_path / "absolu.webp"))

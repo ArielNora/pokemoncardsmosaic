@@ -8,7 +8,7 @@ probabilité `exp(-Δ / T)`, où la température `T` décroît au fil du calcul.
 La difficulté pratique est que `T` s'exprime dans l'unité du score, qui n'a aucun sens
 pour l'utilisateur. D'où la **calibration automatique** : on échantillonne des échanges
 au hasard pour mesurer l'ordre de grandeur des dégradations, et on en déduit une
-température de départ. L'utilisateur ne règle qu'une chose lisible — la proportion de
+température de départ. L'utilisateur ne règle qu'une chose lisible, la proportion de
 coups dégradants acceptés au début.
 """
 
@@ -57,8 +57,8 @@ class Annealing:
         dépendant du remplissage : à 3 % de cases occupées, la probabilité que
         les deux tirages tombent juste est d'une sur mille, et les 400 essais
         n'en retenaient aucun. La fonction rendait alors une constante sans
-        rapport avec l'échelle du score, et le recuit — accepter `exp(-Δ/T)`
-        avec T = 1 et Δ ≈ 250 — dégénérait en descente stricte sans le dire.
+        rapport avec l'échelle du score, et le recuit, accepter `exp(-Δ/T)`
+        avec T = 1 et Δ ≈ 250 : dégénérait en descente stricte sans le dire.
 
         Mesuré avant correction : à 10 % de remplissage, trois tirages sur cinq
         tombaient sur le repli, les deux autres s'écartant d'un facteur 1,6.

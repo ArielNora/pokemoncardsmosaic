@@ -6,7 +6,7 @@ lire « la septième » ne dit rien, alors que voir la case le dit tout de suite
 
 La grille grandit par ses bords. Un « + » au-dessus ajoute une rangée, un « + »
 à droite ajoute une colonne, et un « − » apparaît en regard de chaque rangée et
-de chaque colonne dès qu'il y en a plus d'une — on ne peut jamais supprimer la
+de chaque colonne dès qu'il y en a plus d'une, on ne peut jamais supprimer la
 dernière, ni dépasser trois.
 """
 
@@ -30,7 +30,7 @@ from . import theme
 from .gallery import numpy_to_pixmap
 
 # Type de contenu propre au projet plutôt que du texte brut : une chaîne venue
-# d'ailleurs — un nom de fichier lâché depuis le Finder — serait sinon prise
+# d'ailleurs : un nom de fichier lâché depuis le Finder, serait sinon prise
 # pour un indice de carte.
 CARD_MIME = "application/x-pokemon-mosaic-card"
 
@@ -66,7 +66,7 @@ class CardPalette(QListWidget):
 
     Une **grille de vignettes**, sans nom écrit : sur quatre cent quarante et une
     cartes, une liste d'une carte par ligne oblige à faire défiler sans fin, et
-    le nom occupe la place de ce qu'on cherche vraiment — l'illustration. Le nom
+    le nom occupe la place de ce qu'on cherche vraiment, l'illustration. Le nom
     revient en infobulle, au survol prolongé.
 
     `QListWidget` sait déjà glisser, mais son format natif décrit une ligne de
@@ -177,7 +177,7 @@ class CardCell(QFrame):
 
         ⚠️ **L'événement est accepté**, et non laissé filer vers le parent.
         `QWidget::mousePressEvent` l'ignore par défaut : la case ne capturerait
-        alors pas la souris, et les mouvements suivants iraient au parent — le
+        alors pas la souris, et les mouvements suivants iraient au parent, le
         glissement d'une case vers une autre ne partirait jamais depuis une vraie
         souris. Les tests ne le voyaient pas : `QTest.mouseMove` livre
         l'événement au widget visé, court-circuitant la capture.
@@ -223,7 +223,7 @@ class LinkGrid(QWidget):
     def __init__(self, parent=None):
         super().__init__(parent)
         # Contenu logique, indexé [ligne][colonne]. La disposition Qt en est
-        # reconstruite ; l'inverse — lire les widgets pour connaître l'état —
+        # reconstruite ; l'inverse : lire les widgets pour connaître l'état,
         # rendrait toute modification dépendante de l'ordre de destruction.
         self._cards: list[list[int | None]] = [[None]]
         self._thumbnails: dict[int, np.ndarray] = {}
@@ -248,7 +248,7 @@ class LinkGrid(QWidget):
 
     @property
     def shape(self) -> tuple[int, int]:
-        """La forme, en (colonnes, lignes) — la convention de tout le projet."""
+        """La forme, en (colonnes, lignes) : la convention de tout le projet."""
         return (self.cols, self.rows)
 
     def cards(self) -> list[int | None]:

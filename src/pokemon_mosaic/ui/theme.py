@@ -2,7 +2,7 @@
 
 Qt adapte déjà tout seul `Window`, `Text`, `Base` et le reste : l'application
 suit le mode du système sans qu'on écrive une ligne. Ce qui manque à sa palette,
-c'est une notion d'**avertissement** et d'**erreur** — il n'existe pas de rôle
+c'est une notion d'**avertissement** et d'**erreur**, il n'existe pas de rôle
 pour ça. Chercher une teinte unique qui tienne sur du blanc **et** sur du
 quasi-noir donne un compromis médiocre des deux côtés : c'est précisément la
 raison d'être des thèmes sombres.
@@ -27,12 +27,12 @@ from PySide6.QtWidgets import QApplication
 LIGHT = {
     "warning": "#8a5a00",           # ambre foncé, sur fond clair
     "error": "#a03030",
-    "ok": "#1b6b2a",                # 5,7:1 — #2e7d32 n'atteignait que 4,5:1
+    "ok": "#1b6b2a",                # 5,7:1, #2e7d32 n'atteignait que 4,5:1
     "banner_bg": "#fff8e1",
     "banner_fg": "#5a4500",
     "banner_border": "#e0c060",
     "cell_border": "#666666",
-    "empty_border": "#828282",   # 3,2:1 — #999 n'atteignait que 2,5:1
+    "empty_border": "#828282",   # 3,2:1, #999 n'atteignait que 2,5:1
     "empty_text": "#6e6e6e",
     "empty_bg": "#e4e4e4",
     "button_bg": "#fbfbfb",
@@ -101,8 +101,8 @@ def is_dark(palette: QPalette) -> bool:
     """Le mode sombre est-il actif ?
 
     Déduit de la **clarté du fond** plutôt que de `QStyleHints.colorScheme()` :
-    celle-ci rend `Unknown` dès qu'il n'y a pas de thème de plateforme — hors
-    écran, par exemple —, et il faudrait alors deviner quand même.
+    celle-ci rend `Unknown` dès qu'il n'y a pas de thème de plateforme, hors
+    écran, par exemple, et il faudrait alors deviner quand même.
 
     ⚠️ **Un fond transparent ne dit rien du mode.** Une feuille de style qui
     pose `background: transparent` fait porter au widget un `Window` noir
@@ -138,11 +138,11 @@ def mix(base: str, other: str, part: float) -> str:
 
 
 # Ce qu'un onglet emprunte à la couleur de son état : peu pour le fond, beaucoup
-# pour le contour. ⚠️ **Le contour porte la couleur, le fond la rappelle** — un
+# pour le contour. ⚠️ **Le contour porte la couleur, le fond la rappelle**, un
 # fond aussi franc que le trait ferait un bandeau coloré où le texte, noir ou
 # blanc selon le mode, perdrait son contraste.
 # ⚠️ **Les parts sont mesurées, pas choisies à l'œil.** À 34 % sur l'onglet
-# ouvert, la pastille rouge tombait à 2,6:1 sur son propre fond rouge — sous le
+# ouvert, la pastille rouge tombait à 2,6:1 sur son propre fond rouge, sous le
 # seuil de 3:1 des éléments non textuels. À 24 % elle tient à 3,1:1, et le fond
 # de l'onglet ouvert reste **le double** de celui des autres : c'est le contour,
 # plein et plus épais, qui dit surtout la sélection.
@@ -204,8 +204,8 @@ _SYSTEM_PALETTE: QPalette | None = None
 def remember_system(app) -> None:
     """Retient la palette du système, avant que nous ne posions la nôtre.
 
-    ⚠️ Sans elle, le repli de `system_is_dark` relit `app.palette()` — devenue
-    **la nôtre** dès le premier `apply` — et confirme donc toujours le mode
+    ⚠️ Sans elle, le repli de `system_is_dark` relit `app.palette()` : devenue
+    **la nôtre** dès le premier `apply`, et confirme donc toujours le mode
     courant. Sur un bureau où `colorScheme()` rend `Unknown`, une bascule en
     cours d'exécution ne pouvait plus être détectée : l'application restait
     définitivement dans le mode où elle avait démarré.
@@ -225,7 +225,7 @@ def system_is_dark(app) -> bool:
     """Le système est-il en mode sombre ?
 
     `colorScheme()` d'abord, qui est la réponse directe et suit les bascules.
-    À défaut — certains bureaux, et le mode hors écran, ne répondent pas — la
+    À défaut : certains bureaux, et le mode hors écran, ne répondent pas, la
     clarté du fond que le système avait posé **avant** notre palette.
     """
     from PySide6.QtCore import Qt
@@ -270,7 +270,7 @@ QLineEdit[role="search"] {{ padding: 5px 7px; }}
    Une règle `:hover` isolée fait dessiner cet état-là par la feuille pendant que
    les autres restent natifs : le bouton change de forme en passant dessus, ce
    qui est pire que pas de survol du tout. En les décrivant en entier, on assume
-   leur apparence — et le survol devient une simple variation de la même.
+   leur apparence, et le survol devient une simple variation de la même.
    Le texte, lui, reste `palette(button-text)` : il suit le système. */
 QPushButton, QToolButton {{
     background: {c["button_bg"]};
@@ -290,7 +290,7 @@ QPushButton:disabled, QToolButton:disabled {{
     border-color: {c["button_off_border"]};
 }}
 
-/* Les boutons minuscules posés sur un dessin — ajouter, retirer une feuille.
+/* Les boutons minuscules posés sur un dessin, ajouter, retirer une feuille.
    Le calage ordinaire des boutons leur mange toute leur largeur : sur trente
    pixels, douze de marge de chaque côté ne laissent rien au signe. */
 QPushButton[role="mini"] {{
@@ -311,7 +311,7 @@ QListWidget[role="tabs"] {{
    qui relie les onglets de second rang s'arrête au bas du dessin du dernier, et
    non au bas de sa ligne. La changer ici sans l'y changer le ferait dépasser. */
 /* ⚠️ **Ni fond ni contour ici** : c'est `layout_step.TabDelegate` qui les
-   dessine, chaque onglet portant la couleur de son état — une feuille de style
+   dessine, chaque onglet portant la couleur de son état, une feuille de style
    ne sait pas viser une ligne en particulier. Ne restent que les mesures, qui
    ne peignent rien, et la couleur du texte : noire ou blanche selon le mode,
    dans tous les états. */
@@ -357,19 +357,19 @@ def follow_system(app) -> None:
 
 
 def mark(widget, role: str) -> None:
-    """Attribue un rôle à un widget, et le fait repeindre — **descendants
+    """Attribue un rôle à un widget, et le fait repeindre, **descendants
     compris**.
 
     Qt n'évalue les sélecteurs de propriété qu'au « polish » : changer la
     propriété ensuite ne repeint rien tant qu'on ne le lui demande pas.
 
     Les descendants sont repolis aussi. La feuille porte des règles qui les
-    visent — `QFrame[role="cell-empty"] QLabel` —, donc leur style dépend d'une
+    visent : `QFrame[role="cell-empty"] QLabel`, donc leur style dépend d'une
     propriété que l'ancêtre porte, et Qt ne les repolit pas de lui-même.
 
     Aujourd'hui l'effet visible est le même sans ce parcours : une case remplie
     n'affiche aucun texte, donc sa couleur ne se voit pas. C'est un accident de
-    la mise en forme actuelle, pas une garantie — afficher un jour le nom sous
+    la mise en forme actuelle, pas une garantie, afficher un jour le nom sous
     la vignette suffirait à faire ressortir le style de l'état précédent.
     """
     from PySide6.QtWidgets import QWidget
@@ -388,8 +388,8 @@ class ClickableCursor(QObject):
     une quarantaine, répartis sur cinq écrans et trois dialogues, et en oublier
     un ne se verrait pas.
 
-    Le curseur est un signal que la feuille de style ne sait pas donner — Qt
-    n'admet pas de propriété `cursor` — et il vient **en plus** du survol coloré,
+    Le curseur est un signal que la feuille de style ne sait pas donner, Qt
+    n'admet pas de propriété `cursor`, et il vient **en plus** du survol coloré,
     pas à sa place.
     """
 

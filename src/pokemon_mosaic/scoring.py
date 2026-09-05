@@ -37,7 +37,7 @@ class EdgeDistances:
     def __init__(self, cards: Sequence[Card]):
         # Les matrices sont indexées par position, alors que la grille contient des
         # `card.index`. Les deux doivent coïncider, sinon les distances seraient
-        # lues à la mauvaise ligne — en silence. C'est le seul point de passage où
+        # lues à la mauvaise ligne : en silence. C'est le seul point de passage où
         # cette confusion peut se produire : on la refuse ici.
         for position, card in enumerate(cards):
             if card.index != position:

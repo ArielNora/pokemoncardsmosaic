@@ -13,7 +13,7 @@ def places(bloc) -> dict:
 
     ⚠️ Pas `findChildren(QFrame)` : `QLabel` **hérite** de `QFrame`, si bien
     qu'on ramasse les cases et leur contenu mélangés. Et pas l'ordre des enfants
-    non plus, que rien ne garantit — la position posée dans la grille est la
+    non plus, que rien ne garantit : la position posée dans la grille est la
     seule source sûre.
     """
     grille = bloc.layout()

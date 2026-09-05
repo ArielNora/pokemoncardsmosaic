@@ -337,7 +337,7 @@ def box_edges(image, ratio, teinte, y) -> tuple[int, int]:
 def test_the_small_tabs_are_narrower_on_their_left_only(ecran):
     """⚠️ Le retrait est **géométrique** : quatre espaces dans le libellé
     décalaient le texte sans décaler l'onglet, qui gardait toute la largeur.
-    Le bord droit reste aligné sur les primaires — décalé des deux côtés, le
+    Le bord droit reste aligné sur les primaires, décalé des deux côtés, le
     second rang aurait flotté au milieu de la colonne."""
     from pokemon_mosaic.ui.layout_step import SUB_TAB_INDENT
 
@@ -490,7 +490,7 @@ def test_going_back_and_changing_your_mind_never_locks_again(session, ecran):
 
 def test_a_blocked_tab_wears_a_red_cross(session, ecran):
     """⚠️ **La croix est réservée à ce qui bloque.** Une partie qu'on n'a pas
-    encore validée est ambre — pas encore fait n'est pas une faute —, et ne
+    encore validée est ambre : pas encore fait n'est pas une faute, et ne
     passe au rouge que si son contenu ne tient pas debout."""
     from PySide6.QtCore import Qt
 
@@ -529,7 +529,7 @@ def test_a_blocked_tab_wears_a_red_cross(session, ecran):
 def test_the_state_colours_the_frame_not_the_words(session, ecran):
     """⚠️ **Le cadre porte la couleur, pas le texte.** Un libellé coloré perdait
     le contraste que le mode lui donne ; le fond et le contour, eux, ne font que
-    teinter le gris de départ — et le contour plus fort que le fond."""
+    teinter le gris de départ, et le contour plus fort que le fond."""
     from pokemon_mosaic.ui import theme
     from pokemon_mosaic.ui.layout_step import BLOCKED, PENDING
 
@@ -986,7 +986,7 @@ def test_the_two_sides_are_the_sheet_as_printed(session, ecran):
 def test_an_unknown_paper_falls_back_instead_of_lying(session, ecran):
     """Un préréglage écrit à la main peut porter un format inconnu : sans
     retour, la session garderait une valeur qui ferait échouer l'export.
-    La correction est désormais dans la session — elle ne dépend plus de
+    La correction est désormais dans la session, elle ne dépend plus de
     l'écran, qui pouvait n'avoir jamais été ouvert."""
     session.set_layout(paper="A4")
     session.set_layout(paper="B3")
@@ -1043,8 +1043,8 @@ def test_no_warning_when_the_link_fits(qt_app, session):
 
 
 def test_the_paper_tab_says_nothing_of_the_resolution(ecran):
-    """⚠️ La finesse ne change rien de visible ici — tout s'y mesure en
-    millimètres — et la demander d'abord obligeait à trancher une question
+    """⚠️ La finesse ne change rien de visible ici, tout s'y mesure en
+    millimètres, et la demander d'abord obligeait à trancher une question
     d'impression avant d'avoir posé la mosaïque. Elle est passée à l'export."""
     papier = ecran._tabs[0]
     assert not hasattr(papier, "_dpi")
@@ -1054,7 +1054,7 @@ def test_the_paper_tab_says_nothing_of_the_resolution(ecran):
 def test_the_paper_tab_says_nothing_of_the_white_that_remains(session, ecran):
     """⚠️ Le message donnait la part de papier couverte et prévenait que le
     reste sortirait blanc. Il disait vrai, mais s'affichait dès qu'on ajoutait
-    une feuille — au moment précis où l'on demande de la place — et il fallait
+    une feuille, au moment précis où l'on demande de la place, et il fallait
     le lire à chaque fois pour n'en rien faire."""
     session.set_layout(panels=3, cols=6, rows=5)
     assert ecran._tabs[0]._warnings.text() == ""
@@ -1068,7 +1068,7 @@ def test_a_grid_that_follows_the_sheet_says_nothing(session, ecran):
 def test_a_click_on_a_cell_hidden_by_the_quota_still_lands(session, tmp_path):
     """⚠️ Les cases hors quota restaient stockées sans être dessinées : cliquer
     l'une d'elles la retirait d'une liste invisible au lieu de poser un trou, et
-    le clic était avalé sans le moindre retour. Mesuré — cinq trous posés puis
+    le clic était avalé sans le moindre retour. Mesuré : cinq trous posés puis
     quatre cartes réintégrées, un seul trou affiché, clic sans aucun effet."""
     session.set_layout(cols=5, rows=5)
     session.auto_place_empty_cells()
@@ -1226,7 +1226,7 @@ def test_a_gesture_that_starts_outside_the_grid_does_nothing(session, grille):
 
 
 def test_the_right_button_paints_nothing(session, grille):
-    """⚠️ Un clic droit — le réflexe pour chercher un menu contextuel — basculait
+    """⚠️ Un clic droit : le réflexe pour chercher un menu contextuel, basculait
     une case, et le moindre mouvement en posait toute une rangée. Mesuré : six
     cases vides posées par un glissement que personne n'avait voulu."""
     from PySide6.QtCore import QEvent, QPointF, Qt
@@ -1310,7 +1310,7 @@ def test_an_empty_cell_is_filled_red_not_merely_outlined(qt_app, session):
 def test_the_cut_stands_out_on_everything_it_crosses(qt_app):
     """⚠️ Un seul trait ne pouvait pas convenir partout : tiré dans la couleur
     du texte, il passait en blanc sur une mosaïque bleu très clair. Les deux
-    tons sont la convention des repères d'imprimerie — l'un des deux ressort
+    tons sont la convention des repères d'imprimerie, l'un des deux ressort
     quel que soit le fond, cases vides comprises."""
     from pokemon_mosaic.ui.wireframe import (
         CARD_FILL,
@@ -1334,7 +1334,7 @@ def test_the_cut_stands_out_on_everything_it_crosses(qt_app):
 
 def test_the_standard_is_never_covered_by_the_sheet(qt_app, session):
     """⚠️ L'étiquette était centrée sur la seule carte : dès que celle-ci se
-    réduisait — un A1, un A0 —, le texte débordait des deux côtés et passait
+    réduisait : un A1, un A0, le texte débordait des deux côtés et passait
     sous la feuille."""
     from pokemon_mosaic.layout import PAPER_FORMATS_MM
     from pokemon_mosaic.ui.page_preview import GAP, PagePreview
@@ -1435,7 +1435,7 @@ def test_no_tab_label_is_cut_off(qt_app, ecran):
 
 def test_the_width_dimension_always_has_room_below_the_sheet(qt_app, session):
     """⚠️ La feuille était centrée dans le cadre entier : la moitié de la
-    réserve partait vers le haut, où elle ne sert à rien. Mesuré — 37 px laissés
+    réserve partait vers le haut, où elle ne sert à rien. Mesuré : 37 px laissés
     sous la feuille pour une cote qui en réclame 42, et le « 42 cm » coupé."""
     from pokemon_mosaic.layout import PAPER_FORMATS_MM
     from pokemon_mosaic.ui.page_preview import BOTTOM_ROOM, PagePreview
@@ -1623,7 +1623,7 @@ def test_the_orientation_moved_to_the_paper_tab(session, ecran):
 
 
 def test_a_cut_never_falls_on_a_card_whatever_the_grid(session):
-    """⚠️ La règle qui tient tout, vue depuis la mise en page de l'écran —
+    """⚠️ La règle qui tient tout, vue depuis la mise en page de l'écran,
     **dans les deux sens** depuis que les feuilles se posent aussi en lignes."""
     from pokemon_mosaic.layout import grid_geometry, mm_to_pixels, paper_size_mm
 
@@ -1670,7 +1670,7 @@ def test_a_card_wider_than_the_sheet_never_fits(session):
 
 
 def test_the_cut_is_drawn_in_two_tones_over_the_mosaic(session, ecran):
-    """⚠️ Le trait passait dans la couleur du texte — blanc sur une mosaïque
+    """⚠️ Le trait passait dans la couleur du texte, blanc sur une mosaïque
     bleu très clair. On vérifie qu'il reste, sur la mosaïque elle-même, un ton
     clair **et** un ton sombre le long de la coupe."""
     from PySide6.QtGui import QColor
@@ -1744,7 +1744,7 @@ def test_the_screen_and_the_export_place_each_piece_at_the_same_spot(
         qt_app, session):
     """⚠️ **La leçon déjà payée deux fois** : tout aperçu d'un résultat imprimé
     doit placer ses cartes là où l'export les écrira. L'écran lit
-    `panel_position_mm`, l'export son propre plan — on vérifie qu'ils tombent
+    `panel_position_mm`, l'export son propre plan, on vérifie qu'ils tombent
     d'accord, déplacement ou non, y compris quand la grille déborde de sa
     feuille."""
     import numpy as np
@@ -1772,7 +1772,7 @@ def test_the_screen_and_the_export_place_each_piece_at_the_same_spot(
         paper_w, paper_h = session.paper_mm()
         en_mm = MM_PER_INCH / session.dpi
 
-        # D'abord tel quel — c'est le placement **par défaut** qu'on compare —,
+        # D'abord tel quel : c'est le placement **par défaut** qu'on compare,
         # puis une feuille déplacée à la main.
         for bouger in (False, True):
             if bouger:
@@ -1796,7 +1796,7 @@ def test_the_screen_and_the_export_place_each_piece_at_the_same_spot(
 
 def test_the_previews_use_the_printing_resolution(qt_app, session):
     """⚠️ Le dessin tournait à 72 dpi et l'export à celle des réglages : les
-    arrondis en pixels ne donnaient pas le même nombre de cartes par feuille —
+    arrondis en pixels ne donnaient pas le même nombre de cartes par feuille,
     49 161 combinaisons en désaccord sur les sept formats."""
     from pokemon_mosaic.export import PosterSettings, plan_poster
     from pokemon_mosaic.ui.wireframe import WireframeView
@@ -1862,7 +1862,7 @@ def test_clicks_still_land_on_the_right_cell_across_sheets(qt_app, session):
 def test_the_wireframe_follows_a_moved_piece(qt_app, session):
     """⚠️ **Le fil de fer ignorait les déplacements.** Après avoir tiré un
     morceau, la vue d'exécution montrait la mosaïque à sa place d'origine et
-    l'imprimante l'écrivait ailleurs — l'aperçu qui ment, une quatrième fois."""
+    l'imprimante l'écrivait ailleurs : l'aperçu qui ment, une quatrième fois."""
     from pokemon_mosaic.ui.wireframe import WireframeView
 
     session.set_layout(paper="A4", cols=5, rows=4, panels=2, dpi=300)
@@ -2076,7 +2076,7 @@ def test_a_size_where_nothing_fits_says_so(session, cartes):
 
 def test_the_shapes_that_would_fit_are_listed_on_demand(session, cartes):
     """⚠️ **La liste reste après qu'on a choisi.** Elle s'effaçait dès que la
-    grille tenait — c'est-à-dire juste après un double-clic —, et comparer deux
+    grille tenait, c'est-à-dire juste après un double-clic, et comparer deux
     propositions demandait de rouvrir la liste entre chacune."""
     session.set_layout(cols=11, rows=13, paper="A2")
     cartes._real_card.click()
@@ -2106,8 +2106,8 @@ def test_a_shape_that_leaves_cards_out_says_where_the_way_out_is(session,
                                                                  cartes):
     """⚠️ Une proposition qui laisse des cartes dehors n'en est pas vraiment
     une : elle reste dans la liste, c'est la meilleure à cette taille de carte,
-    mais l'appliquer amputerait le poster. La sortie est ailleurs — dans le
-    nombre de feuilles —, et rien ne le disait."""
+    mais l'appliquer amputerait le poster. La sortie est ailleurs : dans le
+    nombre de feuilles, et rien ne le disait."""
     # Une carte à sa taille réelle : une A4 n'en loge que neuf, aucune des
     # propositions ne peut placer les vingt.
     session.set_layout(paper="A4", cols=4, rows=5, panels=1, card_width_mm=63.0)

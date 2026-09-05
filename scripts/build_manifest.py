@@ -5,22 +5,22 @@
     uv run python scripts/build_manifest.py --check     # signale sans écrire
 
 Le catalogue **décrit le miroir, il ne le remplit pas**. Les illustrations
-entrent dans `data/pokemoncards/` par un dépôt manuel — chacun les obtient comme
-il l'entend — et ce script se contente de dire ce qui s'y trouve : identifiant,
+entrent dans `data/pokemoncards/` par un dépôt manuel, chacun les obtient comme
+il l'entend, et ce script se contente de dire ce qui s'y trouve : identifiant,
 extension, numéro, rareté, noms, poids et empreinte.
 
 Il **conserve les métadonnées déjà connues**. Une carte déjà décrite garde sa
 rareté et ses noms, quel que soit son fichier ; seuls le poids et l'empreinte
 sont recalculés. Une carte nouvelle est déduite de son chemin autant que
-possible, et ce qui ne se déduit pas — rareté, noms — est signalé à remplir à la
+possible, et ce qui ne se déduit pas, rareté, noms, est signalé à remplir à la
 main. Rien n'est inventé en silence.
 
 Enchaînement d'une mise à jour :
 
 1. déposer les nouvelles illustrations dans `data/pokemoncards/<extension>/` ;
-2. `build_manifest.py` — le catalogue est mis à jour, les trous sont nommés ;
+2. `build_manifest.py` : le catalogue est mis à jour, les trous sont nommés ;
 3. compléter rareté et noms dans `cards.json` ;
-4. `publish_release.py` — archives et catalogue partent au miroir.
+4. `publish_release.py` : archives et catalogue partent au miroir.
 """
 
 import argparse
@@ -45,7 +45,7 @@ EXTENSION = ".webp"
 # `a1-227-bulbizarre.webp` : code d'extension, numéro, puis le nom en clair, qui
 # ne sert qu'à la lisibilité et n'est pas relu.
 #
-# ⚠️ Le code peut lui-même contenir un tiret — `promo-a-009-pikachu` —, d'où
+# ⚠️ Le code peut lui-même contenir un tiret, `promo-a-009-pikachu`, d'où
 # `[a-z0-9-]+?` et non `[a-z0-9]+` : la première version rejetait les 28 cartes
 # promo comme « hors convention ». Le quantificateur est **paresseux** pour que
 # le premier groupe de chiffres rencontré soit pris pour le numéro.
@@ -106,7 +106,7 @@ def derive(relative: str, dossiers: dict) -> dict:
     # ⚠️ L'identifiant garde les chiffres **tels qu'écrits**, zéros de tête
     # compris : `A1-227` mais `PROMO-A-009`. Passer par `int()` produirait
     # `PROMO-A-9`, qui ne correspond à rien. Le nom de fichier ayant été
-    # engendré depuis l'identifiant, le relire ainsi le reconstitue exactement —
+    # engendré depuis l'identifiant, le relire ainsi le reconstitue exactement,
     # vérifié sur les 441 cartes.
     return {
         "id": f"{jeu}-{numero}",
@@ -192,9 +192,9 @@ def main(argv=None) -> int:
     print(f"{len(produit['cards'])} cartes dans {args.images}/ "
           f"({ancien} au catalogue précédent)")
     for relatif, raison in nouvelles:
-        print(f"  + {relatif} — à compléter : {raison}")
+        print(f"  + {relatif} : à compléter : {raison}")
     for relatif in disparues:
-        print(f"  - {relatif} — décrite au catalogue, absente du dossier")
+        print(f"  - {relatif} : décrite au catalogue, absente du dossier")
 
     incompletes = [card for card in produit["cards"] if trous(card)]
     if incompletes:

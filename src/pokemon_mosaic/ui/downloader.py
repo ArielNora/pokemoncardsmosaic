@@ -2,11 +2,11 @@
 
 Même raison d'être que `loader.py` : le faire dans le fil principal figerait la
 fenêtre, Qt ne redessinant rien tant que sa boucle d'événements est occupée. Ici
-l'attente se compte en dizaines de secondes et non en quelques-unes — 56 Mo sur
-une ligne ordinaire —, donc le besoin est plus fort encore.
+l'attente se compte en dizaines de secondes et non en quelques-unes, 56 Mo sur
+une ligne ordinaire, donc le besoin est plus fort encore.
 
 Le travailleur enchaîne deux temps : le **catalogue**, puis les **archives**. Ce
-découpage n'est pas cosmétique — récupérer le catalogue seul suffit à dire
+découpage n'est pas cosmétique : récupérer le catalogue seul suffit à dire
 combien de cartes manquent, ce qui permet de répondre « rien à faire » sans
 avoir rien téléchargé de lourd.
 """
@@ -30,7 +30,7 @@ class CardDownloader(QObject):
     progress = Signal(int, int, str)
     # Le catalogue est là : (cartes manquantes, octets à télécharger)
     surveyed = Signal(int, int)
-    # (cartes écrites, échecs) — `échecs` est une liste de (quoi, pourquoi)
+    # (cartes écrites, échecs) : `échecs` est une liste de (quoi, pourquoi)
     finished = Signal(int, list)
     failed = Signal(str)
     # Émis à la place de `finished` quand l'utilisateur a interrompu : sans lui,
@@ -95,7 +95,7 @@ def start_download(parent, directory, on_progress, on_surveyed, on_finished,
     """Lance un téléchargement et renvoie (thread, worker) à garder en vie.
 
     Qt détruit un QThread dont plus personne ne détient de référence, ce qui
-    interromprait le téléchargement en silence — d'où le renvoi du couple.
+    interromprait le téléchargement en silence, d'où le renvoi du couple.
     """
     thread = QThread(parent)
     worker = CardDownloader(directory, workers=workers)

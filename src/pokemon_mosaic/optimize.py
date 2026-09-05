@@ -186,14 +186,14 @@ def optimize_grid(
     Sans `annealing`, c'est une **descente stricte** : aucun coup dégradant n'est
     jamais accepté, ce qui fait plafonner le résultat dans un minimum local. Avec
     `annealing`, un coup dégradant passe parfois, avec une probabilité qui décroît au
-    fil du calcul — et la **meilleure grille rencontrée** est restituée à la fin,
+    fil du calcul, et la **meilleure grille rencontrée** est restituée à la fin,
     puisque l'état courant peut être moins bon qu'un état traversé plus tôt.
 
     `grid` est modifiée sur place.
 
     `control` permet d'interrompre ou de suspendre le calcul depuis un autre fil.
     Il est consulté au même rythme que les seuils d'arrêt, soit toutes les 1000
-    tentatives — environ 8 ms au débit mesuré.
+    tentatives : environ 8 ms au débit mesuré.
     """
     links = links or {}
     rng = rng or random
@@ -226,7 +226,7 @@ def optimize_grid(
     iteration = -1  # défini même si `iterations` vaut 0
     started = time.monotonic()
     # On mémorise le compteur de pause à l'entrée et on ne retranche que le delta.
-    # Un même contrôle peut resservir — c'est même ce que fera la prolongation —
+    # Un même contrôle peut resservir : c'est même ce que fera la prolongation,
     # et retrancher son cumul rendrait la durée de cette exécution-ci négative.
     paused_at_start = control.paused_seconds if control is not None else 0.0
 
@@ -254,7 +254,7 @@ def optimize_grid(
         # Ordre voulu : une température imposée prime sur tout ; sinon on repart
         # de la dégradation mesurée à la première passe, et on ne mesure à
         # nouveau qu'à défaut. Mesurer sur une grille déjà optimisée surestime la
-        # température — ×3,6 — et remet le recuit à chaud.
+        # température : ×3,6, et remet le recuit à chaud.
         #
         # La conversion en température se refait **à chaque passe**, avec le taux
         # d'acceptation courant : l'utilisateur qui juge le recuit trop timide et
@@ -269,7 +269,7 @@ def optimize_grid(
             if penalty is None:
                 # Aucune dégradation mesurable veut dire aucune couture : les
                 # cartes sont trop dispersées pour se toucher, le score vaut 0 et
-                # il n'y a rien à optimiser. Vérifié — 12 cartes dans 20×20
+                # il n'y a rien à optimiser. Vérifié : 12 cartes dans 20×20
                 # donnent 0 couture. La valeur retenue est alors sans effet.
                 temperature_0 = 1.0
             else:
@@ -370,8 +370,8 @@ def optimize_grid(
 
     # Cliché final imposé. Sans lui, la timeline s'arrêterait avant la fin : le recuit
     # accepte beaucoup à chaud et presque plus à froid, donc les derniers échanges
-    # n'atteignent jamais le seuil de cadence. L'état finalement retenu — celui que
-    # l'utilisateur voudra exporter — serait absent de la timeline.
+    # n'atteignent jamais le seuil de cadence. L'état finalement retenu,
+    # celui que l'utilisateur voudra exporter, serait absent de la timeline.
     if timeline is not None:
         timeline.record(
             grid, base_iteration + iteration + 1, base_accepted + accepted,
@@ -401,7 +401,7 @@ def _try_move(
     """Tente de déplacer un objet vers la zone cible, en testant les orientations.
 
     Un lien sans ordre imposé est essayé dans les deux sens, et le meilleur est
-    retenu — c'est ce qui double le nombre de placements possibles.
+    retenu : c'est ce qui double le nombre de placements possibles.
 
     Renvoie le delta de score si le déplacement est retenu, sinon None.
     """
@@ -453,7 +453,7 @@ def build_initial_grid(
     """Pose les cases vides, puis les blocs imposés, puis les cartes libres.
 
     `shape` est (colonnes, lignes). Sans `shape`, la grille est déduite de la
-    factorisation du nombre de cartes — comportement de la ligne de commande.
+    factorisation du nombre de cartes : comportement de la ligne de commande.
     """
     rng = rng or random
     cols, rows = shape or calculate_grid_dims(len(cards))
@@ -476,7 +476,7 @@ def build_initial_grid(
 
     # S'il manque des cases vides pour combler la grille, on complète par la
     # répartition régulière. Sans cela, les trous surnuméraires apparaîtraient là
-    # où le remplissage ligne par ligne s'arrête — agglutinés dans le coin bas
+    # où le remplissage ligne par ligne s'arrête, agglutinés dans le coin bas
     # droit, à rebours de la dispersion que distribute_empty_cells construit.
     missing = capacity - len(cards)
     if missing > 0:
@@ -491,7 +491,7 @@ def build_initial_grid(
     # Un lien désignant une carte absente signale presque toujours un
     # sous-ensemble construit sans traduire les liens. Sans ce contrôle, l'indice
     # pointerait sur une autre carte et la grille collerait deux cartes que
-    # l'utilisateur n'a jamais liées — sans erreur, avec un score plausible.
+    # l'utilisateur n'a jamais liées : sans erreur, avec un score plausible.
     known = {card.index for card in cards}
     for group in groups:
         unknown = [index for index in group.cards if index not in known]
@@ -503,7 +503,7 @@ def build_initial_grid(
             )
 
     # Premier emplacement qui convient, balayé en ordre de lecture. Un placement
-    # plus malin — les plus gros blocs d'abord, par exemple — n'aurait de sens
+    # plus malin : les plus gros blocs d'abord, par exemple, n'aurait de sens
     # que dans une grille encombrée ; ici les blocs sont peu nombreux et petits
     # devant la grille, et une recherche exhaustive coûterait plus qu'elle ne
     # rapporte. L'échec, lui, est signalé plutôt que contourné.
@@ -526,7 +526,7 @@ def build_initial_grid(
         if not placed:
             # Sans cette erreur, le bloc serait abandonné en silence : ses cartes
             # repartiraient comme cartes libres, le lien serait rompu, et l'échec
-            # ne referait surface qu'au contrôle d'intégrité — avec un message
+            # ne referait surface qu'au contrôle d'intégrité, avec un message
             # conseillant d'utiliser build_initial_grid, qu'on vient d'appeler.
             raise ValueError(
                 f"Le lien {group.cards} ({width}×{height}) ne trouve pas "
@@ -558,7 +558,7 @@ def select_cards(
     Appeler `CardSet.subset()` seul renumérote les cartes sans toucher aux liens :
     un lien sur les cartes 2 et 3 continue de dire « 2 et 3 », qui désignent
     désormais d'autres cartes. La grille colle alors deux cartes que l'utilisateur
-    n'a jamais liées — sans exception, avec un score et une image plausibles.
+    n'a jamais liées : sans exception, avec un score et une image plausibles.
 
     Aucune vérification d'indices ne peut détecter cette confusion, puisque les
     indices fautifs restent dans les bornes. D'où cette fonction : faire les deux

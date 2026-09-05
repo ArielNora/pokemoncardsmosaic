@@ -150,7 +150,7 @@ def suggest_grids(
     ⚠️ `panels` ne contraint plus le nombre de colonnes. Il l'obligeait à être
     divisible, pour que la coupe tombe sur un bord de carte ; plusieurs feuilles
     ne sont désormais qu'une façon d'avoir plus de place, et la coupe tombe où
-    elle tombe — c'est du papier qu'on raboute.
+    elle tombe : c'est du papier qu'on raboute.
 
     Classement : d'abord les grilles dont le nombre de cases est proche du nombre de
     cartes, puis celles qui ajustent le mieux le format.
@@ -159,8 +159,8 @@ def suggest_grids(
     5 % près, et cela ne laissait passer que des grilles **carrées** : une carte
     fait 0,725 de rapport, une feuille A 0,707, si bien que la grille idéale a
     toujours autant de lignes que de colonnes à 2,5 % près. Vingt cartes n'ont
-    alors aucune grille de vingt cases — 4×5 s'écarte de 18 % du format et
-    tombait —, et l'on proposait 4×4 en abandonnant quatre cartes, ou 5×5 en
+    alors aucune grille de vingt cases : 4×5 s'écarte de 18 % du format et
+    tombait, et l'on proposait 4×4 en abandonnant quatre cartes, ou 5×5 en
     laissant cinq trous. Même chose sur 133 cartes : 11×12 en loge 132, contre
     144 pour le meilleur carré.
 
@@ -258,7 +258,7 @@ def card_pixel_size(
 
     # `floor` et non `round` : arrondir vers le haut ferait dépasser la largeur
     # totale (cols × card_w) de celle de la feuille, la marge deviendrait négative
-    # et le poster serait rogné — jusqu'à cols/2 pixels de chaque côté. On préfère
+    # et le poster serait rogné : jusqu'à cols/2 pixels de chaque côté. On préfère
     # au plus un pixel de blanc supplémentaire.
     card_w = math.floor(card_w)
     return (max(1, card_w), max(1, math.floor(card_w / card_aspect)))
@@ -270,7 +270,7 @@ class GridGeometry:
 
     `per_panel` est le nombre de cartes que porte **une** feuille en largeur,
     `rows_per_panel` en hauteur : ce sont eux qui garantissent qu'une coupe tombe
-    entre deux cartes, chaque feuille repartant de son propre bord — celui de
+    entre deux cartes, chaque feuille repartant de son propre bord, celui de
     gauche pour les colonnes, celui du haut pour les lignes.
     """
 
@@ -322,12 +322,12 @@ def grid_geometry(
 
     `card_width_mm` à `None` demande la **plus grande** carte qui fasse tenir la
     grille : c'est le réglage automatique, tant que l'utilisateur n'a pas choisi
-    de taille. Une valeur la fige, et c'est alors à la grille de s'y adapter —
+    de taille. Une valeur la fige, et c'est alors à la grille de s'y adapter,
     l'écran le dit et propose de la corriger.
 
     ⚠️ **C'est la carte qui se plie à la feuille, pas l'inverse.** Exiger que le
     nombre de colonnes se divise par le nombre de feuilles interdisait des
-    grilles parfaitement bonnes — 21 colonnes sur 2 feuilles — pour une raison
+    grilles parfaitement bonnes : 21 colonnes sur 2 feuilles, pour une raison
     qui n'était pas la leur. On pose plutôt un nombre **entier** de cartes par
     feuille : la coupe tombe alors sur un bord de carte par construction.
     """
@@ -391,7 +391,7 @@ def clamp_offset_mm(
 ) -> tuple[float, float]:
     """Borne la position d'un bout de grille à ce qui reste de sa feuille.
 
-    ⚠️ **La même fonction des deux côtés** — l'écran qui laisse glisser et
+    ⚠️ **La même fonction des deux côtés**, l'écran qui laisse glisser et
     l'export qui écrit. Un bout de grille qui sortirait de sa feuille ferait
     tomber la coupe en pleine carte, et un préréglage écrit à la main suffirait
     à l'obtenir si seul l'écran bornait.
@@ -411,7 +411,7 @@ def grid_fits(
 
     Dans les deux sens : les colonnes se répartissent sur les feuilles côte à
     côte, les lignes sur les feuilles superposées. Ni le papier ni la finesse
-    n'y entrent — la géométrie porte déjà ce qu'une feuille loge.
+    n'y entrent : la géométrie porte déjà ce qu'une feuille loge.
     """
     return (geometry.per_panel * panels >= cols
             and geometry.rows_per_panel * max(1, panel_rows) >= rows)
@@ -428,7 +428,7 @@ def best_grid_shapes(
     """Les grilles qui tiennent, classées par intérêt, à géométrie figée.
 
     Classement, dans cet ordre : d'abord celles qui **placent le plus de
-    cartes** — une grille qui en laisse dehors est un poster amputé —, puis
+    cartes** : une grille qui en laisse dehors est un poster amputé, puis
     celles dont le nombre de cases s'écarte le moins de la grille actuelle, en
     trop comme en moins. On ne cherche donc pas la plus grande grille possible,
     mais la plus proche de ce que l'utilisateur avait en tête.
@@ -438,7 +438,7 @@ def best_grid_shapes(
     """
     # ⚠️ **Plafonné.** Sans borne, une carte d'un millimètre sur cinq A0 à
     # 1200 DPI donne des centaines de milliers de candidats à trier sur le fil
-    # de l'interface — mesuré, 4,3 secondes de fenêtre figée. Les champs de
+    # de l'interface : mesuré, 4,3 secondes de fenêtre figée. Les champs de
     # grille s'arrêtent de toute façon à `MAX_GRID_SIDE` : au-delà, rien n'est
     # applicable.
     max_cols = min(MAX_GRID_SIDE, geometry.per_panel * panels)

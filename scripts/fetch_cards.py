@@ -9,7 +9,7 @@ Le miroir est la seule provenance : le projet ne va chercher aucune image sur un
 site tiers. Relancer la commande ne récupère que ce qui manque ou ne correspond
 plus à son empreinte, l'opération est donc reprenable.
 
-C'est le même code que le bouton « Télécharger les cartes » de l'application —
+C'est le même code que le bouton « Télécharger les cartes » de l'application,
 `src/pokemon_mosaic/mirror.py`. Ce script n'existe que pour s'en servir sans
 ouvrir la fenêtre.
 """
@@ -81,8 +81,8 @@ def main(argv=None) -> int:
         return 1
 
     cards = manifest["cards"]
-    print(f"{len(cards)} cartes ({sum(c['bytes'] for c in cards) / 1e6:.1f} Mo) "
-          f"— catalogue du {manifest.get('generated_at', '?')}")
+    print(f"{len(cards)} cartes ({sum(c['bytes'] for c in cards) / 1e6:.1f} Mo)"
+          f", catalogue du {manifest.get('generated_at', '?')}")
 
     if args.check:
         return check(manifest, args.output)
@@ -100,7 +100,7 @@ def main(argv=None) -> int:
 
     def avancement(faits, total, jeu):
         part = 100 * faits / total if total else 100
-        print(f"  {part:3.0f} % — {jeu}", flush=True)
+        print(f"  {part:3.0f} %, {jeu}", flush=True)
 
     try:
         tally, failures = fetch_mirror(manifest, args.output, args.workers,
@@ -115,7 +115,7 @@ def main(argv=None) -> int:
     if failures:
         print(f"\n{len(failures)} échec(s) :", file=sys.stderr)
         for path, message in failures[:15]:
-            print(f"  {path} — {message}", file=sys.stderr)
+            print(f"  {path} : {message}", file=sys.stderr)
         print("Relancer la commande reprendra où elle s'est arrêtée.",
               file=sys.stderr)
         return 1

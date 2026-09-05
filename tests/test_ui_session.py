@@ -230,7 +230,7 @@ def no_background_thread(monkeypatch):
 
     `CardsStep.load` démarre un vrai QThread. Laissé en vie, il survit à la fin du
     test et Qt abandonne le processus (« QThread: Destroyed while thread is still
-    running ») — une suite qui plante par intermittence. Ces tests n'ont besoin que
+    running ») : une suite qui plante par intermittence. Ces tests n'ont besoin que
     de la logique de bascule, pas du chargement.
     """
     from pokemon_mosaic.ui import cards_step
@@ -319,11 +319,11 @@ def test_the_warnings_reach_the_session_card_set(qt_app, tmp_path):
 
     charge = card_set_in(tmp_path, {"s": ["a", "b"]})
     charge.odd_sizes = [SizeWarning(size=(717, 1000), count=1)]
-    charge.unreadable = ["casse.webp — illisible"]
+    charge.unreadable = ["casse.webp : illisible"]
 
     session = Session()
     session.set_cards(charge, str(tmp_path))
 
     assert session.card_set.has_warnings
     assert session.card_set.odd_sizes[0].size == (717, 1000)
-    assert session.card_set.unreadable == ["casse.webp — illisible"]
+    assert session.card_set.unreadable == ["casse.webp : illisible"]

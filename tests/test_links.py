@@ -191,7 +191,7 @@ def _card_set(n):
 
 def test_a_link_wider_than_the_grid_is_reported_at_construction():
     """Le bloc était abandonné en silence : ses cartes repartaient libres, le lien
-    était rompu, et l'échec ne refaisait surface qu'au contrôle d'intégrité — avec
+    était rompu, et l'échec ne refaisait surface qu'au contrôle d'intégrité, avec
     un message conseillant d'appeler build_initial_grid, qu'on venait d'appeler."""
     cards_set = _card_set(6)
     library = LinkLibrary()
@@ -276,7 +276,7 @@ def test_subset_provides_the_mapping_needed_to_remap():
 
 def test_remapped_links_stick_the_cards_the_user_actually_chose():
     """Le cas silencieux : sans traduction, le lien (2, 3) désignait après
-    renumérotation les cartes 5 et 6 — score plausible, image plausible, et les
+    renumérotation les cartes 5 et 6 : score plausible, image plausible, et les
     deux cartes voulues ailleurs."""
     cards_set = _named_card_set(10)
     library = LinkLibrary()

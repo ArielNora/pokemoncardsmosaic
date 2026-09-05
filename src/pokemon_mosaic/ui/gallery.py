@@ -67,7 +67,7 @@ class CardGalleryModel(QAbstractListModel):
         """Restreint l'affichage aux cartes dont le nom contient `needle`.
 
         Sans casse ni accents : les noms de fichiers sont déjà normalisés par
-        `artwork.slug()`, mais ce qu'on tape ne l'est pas — chercher « Mustébouée »
+        `artwork.slug()`, mais ce qu'on tape ne l'est pas, chercher « Mustébouée »
         au clavier ne doit pas rendre une galerie vide.
         """
         self._needle = _fold(needle)
@@ -230,7 +230,7 @@ class CardGallery(QListView):
         # ⚠️ **La sélection est un outil de passage, pas un état à montrer.**
         # Elle ne sert qu'à désigner un lot avant de le basculer ; la laisser
         # posée surlignait la carte en bleu comme du texte attrapé à la souris,
-        # par-dessus le seul signal qui compte vraiment ici — l'inclusion, dite
+        # par-dessus le seul signal qui compte vraiment ici, l'inclusion, dite
         # par l'opacité. Le rectangle de sélection, lui, garde son surlignage :
         # il ne passe pas par ce slot, `clicked` ne partant pas sur un glissé.
         self.clearSelection()

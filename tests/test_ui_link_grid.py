@@ -217,7 +217,7 @@ def test_a_cell_reports_the_drop_with_its_own_coordinates(qt_app):
     case.dropped.connect(lambda r, c, i: recus.append((r, c, i)))
     # ⚠️ La charge est gardée dans une variable : `QDropEvent` n'en prend qu'un
     # pointeur, et un `QMimeData` temporaire est collecté avant que Qt ne le
-    # lise — segmentation fault, pas exception.
+    # lise : segmentation fault, pas exception.
     charge = card_mime(8)
     case.dropEvent(QDropEvent(QPoint(1, 1), Qt.CopyAction, charge,
                               Qt.LeftButton, Qt.NoModifier))
@@ -279,7 +279,7 @@ def test_clicking_a_removal_button_does_not_crash(grille):
     """Le bouton « − » déclenche la reconstruction qui le détruit : c'est le cas
     classique du widget supprimé depuis son propre gestionnaire de signal.
     `deleteLater` diffère la destruction à la boucle d'événements, ce qui le rend
-    sûr — mais rien ne le prouve tant qu'on appelle `remove_row` directement.
+    sûr, mais rien ne le prouve tant qu'on appelle `remove_row` directement.
     """
     from PySide6.QtWidgets import QApplication, QPushButton
 
@@ -328,7 +328,7 @@ def test_a_fresh_cell_looks_like_a_cleared_one(qt_app):
 def test_the_palette_is_a_grid_that_only_hands_cards_out(qt_app):
     """Une grille, et non une liste : quatre cent quarante et une cartes une par
     ligne obligent à faire défiler sans fin. `DragOnly` et `Static` parce qu'on
-    tire **vers** l'éditeur — la palette n'a pas d'ordre propre à réarranger."""
+    tire **vers** l'éditeur : la palette n'a pas d'ordre propre à réarranger."""
     from PySide6.QtWidgets import QListWidget
 
     from pokemon_mosaic.ui.link_grid import CardPalette
@@ -438,7 +438,7 @@ def test_a_filled_cell_captures_the_mouse(qt_app):
     """`QWidget::mousePressEvent` ignore l'événement par défaut : la case ne
     capturerait pas la souris et les mouvements suivants iraient au parent, si
     bien que le glissement d'une case à l'autre ne partirait jamais d'une vraie
-    souris. `QTest.mouseMove` ne le montre pas — il livre l'événement au widget
+    souris. `QTest.mouseMove` ne le montre pas : il livre l'événement au widget
     visé, en court-circuitant la capture."""
     from PySide6.QtCore import QPointF, Qt
     from PySide6.QtGui import QMouseEvent

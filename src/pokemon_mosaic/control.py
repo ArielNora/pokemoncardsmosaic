@@ -2,7 +2,7 @@
 
 L'optimisation est une boucle serrée qui tourne plusieurs secondes dans un fil de
 fond. Pour que l'utilisateur puisse l'arrêter ou la suspendre, elle consulte
-périodiquement cet objet — il n'y a pas d'autre moyen d'interrompre une boucle
+périodiquement cet objet : il n'y a pas d'autre moyen d'interrompre une boucle
 Python sans risque.
 
 Sans dépendance à Qt : le cœur reste utilisable et testable sans interface.

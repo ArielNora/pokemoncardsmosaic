@@ -1,4 +1,4 @@
-"""Vue d'exécution — l'image se construit, la timeline se remplit."""
+"""Vue d'exécution : l'image se construit, la timeline se remplit."""
 
 import os
 
@@ -33,7 +33,7 @@ ZOOM_CEILING = 8.0
 
 # Rendre un cliché coûte 56 ms sur une grille 17×17 : recopie des vignettes, puis
 # réduction lissée de 12,6 Mpx. À raison d'un rendu par cliché, l'affichage
-# demanderait 3,9 s de fil principal là où le calcul en prend 1,6 — l'interface
+# demanderait 3,9 s de fil principal là où le calcul en prend 1,6, l'interface
 # accumulerait du retard et le résultat n'apparaîtrait que bien après la fin.
 # On borne donc la cadence : les clichés sont tous enregistrés, seul l'affichage
 # est limité.
@@ -83,7 +83,7 @@ class RunStep(QWidget):
         # position qui en résulte.
         self._adjusting = False
         # Longueur de la timeline au dernier cliché reçu, pour repérer un
-        # élagage — le seul événement qui la fasse diminuer.
+        # élagage : le seul événement qui la fasse diminuer.
         self._last_count = 0
         self._pending_index: int | None = None
         # Point de l'image à ramener au centre après le prochain rendu, posé par
@@ -106,7 +106,7 @@ class RunStep(QWidget):
         session.layout_changed.connect(self._update_resume_buttons)
         # L'épaisseur des bandes entre dans la signature de reprise : sans ce
         # rafraîchissement, les boutons resteraient actifs après un changement
-        # de réglage, et cliquer dessus ne ferait rien — `_extend_run` sort
+        # de réglage, et cliquer dessus ne ferait rien, `_extend_run` sort
         # aussitôt sur `can_resume()`.
         session.algorithm_changed.connect(self._update_resume_buttons)
 
@@ -117,7 +117,7 @@ class RunStep(QWidget):
         self._image.setAlignment(Qt.AlignCenter)
 
         # Zone défilante : une image zoomée dépasse la fenêtre, il faut pouvoir
-        # la parcourir. `setWidgetResizable(False)` est indispensable — vrai, le
+        # la parcourir. `setWidgetResizable(False)` est indispensable, vrai, le
         # label serait étiré à la taille du cadre et l'image rognée sans barres.
         self._scroll = ImageView()
         self._scroll.setWidget(self._image)
@@ -270,7 +270,7 @@ class RunStep(QWidget):
 
         L'épaisseur des bandes en fait partie pour une autre raison : elle
         recalcule les signatures, donc les distances, donc **l'échelle du
-        score**. Mesuré — la même grille vaut 621,7 avec une bande de 0,10 et
+        score**. Mesuré : la même grille vaut 621,7 avec une bande de 0,10 et
         552,0 avec 0,30, soit 11 % d'écart. Prolonger sans le prendre en compte
         mêlait deux métriques dans une seule timeline, et la courbe montrait une
         chute soudaine alors qu'aucune carte n'avait bougé.
@@ -300,7 +300,7 @@ class RunStep(QWidget):
         """Vrai si un calcul terminé peut être repris tel quel.
 
         Un export en cours compte comme occupé : c'est cette méthode, et elle
-        seule, qui décide de l'état des boutons — les griser à part la ferait
+        seule, qui décide de l'état des boutons, les griser à part la ferait
         diverger de ce qu'ils montrent.
         """
         return (bool(self._timeline)
@@ -344,7 +344,7 @@ class RunStep(QWidget):
     # --- Export -----------------------------------------------------------
 
     def current_grid(self):
-        """Grille du cliché affiché — c'est elle que l'export écrit."""
+        """Grille du cliché affiché : c'est elle que l'export écrit."""
         if not self._timeline:
             return None
         index = max(0, min(len(self._timeline) - 1, self._slider.value()))
@@ -370,7 +370,7 @@ class RunStep(QWidget):
         self._cancel_export.show()
         # Un seul panneau n'a aucune étape intermédiaire à annoncer : une barre
         # figée à 0 % pendant plusieurs secondes se lit comme un export bloqué.
-        # Indéterminée, elle dit la seule chose vraie — que ça travaille.
+        # Indéterminée, elle dit la seule chose vraie, que ça travaille.
         # ⚠️ **Toutes les feuilles**, lignes comprises : compter les seules
         # colonnes laissait la barre indéterminée pour un poster de deux
         # feuilles superposées, et la bornait à trois quand il y en avait six.
@@ -442,7 +442,7 @@ class RunStep(QWidget):
         # ⚠️ Les deux fils sont traités jusqu'au bout, quoi qu'il arrive. Sortir
         # dès le premier échec laissait le fil d'export **actif** derrière soi :
         # la fenêtre se fermait, son parent était détruit, et Qt abandonnait le
-        # processus — précisément le crash que cette méthode existe pour éviter.
+        # processus : précisément le crash que cette méthode existe pour éviter.
         # Vérifié : avec un calcul qui s'obstine, le fil d'export ne recevait ni
         # `quit()` ni `wait()`.
         recalcitrants = []
@@ -487,8 +487,8 @@ class RunStep(QWidget):
         # ⚠️ **L'élagage fait baisser le maximum.** La timeline se divise par
         # deux dès 70 clichés : Qt écrête alors la position courante et émet
         # `valueChanged`. Sans ce garde, `_on_slider_moved` en déduisait que
-        # l'utilisateur était revenu en butée et rebasculait en suivi du direct
-        # — mesuré, curseur 45 ramené à 44 et l'image se remettant à défiler
+        # l'utilisateur était revenu en butée et rebasculait en suivi du direct,
+        # mesuré, curseur 45 ramené à 44 et l'image se remettant à défiler
         # sous ses yeux, précisément ce que la ligne suivante veut éviter.
         self._adjusting = True
         try:
@@ -503,7 +503,7 @@ class RunStep(QWidget):
         elif count < self._last_count:
             # ⚠️ L'élagage **renumérote** : la case du curseur ne désigne plus
             # le même cliché. Sans ce rendu, l'écran garderait l'image
-            # précédente sous une étiquette qui a changé — et l'export, qui lit
+            # précédente sous une étiquette qui a changé, et l'export, qui lit
             # `current_grid()`, écrirait la grille du nouveau cliché, différente
             # de ce que l'utilisateur regarde. Mesuré : index 20 passé de
             # l'itération 20 à l'itération 40, image inchangée.
@@ -529,7 +529,7 @@ class RunStep(QWidget):
         self._thread = self._worker = None
         self._update_buttons(running=False)
         self._summary.setText(
-            self.tr("Score %1 → %2 (%3 % de gain) — arrêt : %4")
+            self.tr("Score %1 → %2 (%3 % de gain), arrêt : %4")
             .replace("%1", f"{result.initial_score:.0f}")
             .replace("%2", f"{result.final_score:.0f}")
             .replace("%3", f"{result.gain * 100:.1f}")
@@ -549,7 +549,7 @@ class RunStep(QWidget):
     def _on_slider_moved(self, value: int) -> None:
         if self._timeline is None:
             return
-        # Revenir sur le dernier cliché remet en mode « suivre le direct » —
+        # Revenir sur le dernier cliché remet en mode « suivre le direct »,
         # mais seulement si c'est bien l'utilisateur qui l'y a mis.
         if not self._adjusting:
             self._following = value >= len(self._timeline) - 1
@@ -786,7 +786,9 @@ class RunStep(QWidget):
 
     def _update_position(self) -> None:
         if not self._timeline:
-            self._position.setText("—")
+            # Un tiret tenait lieu de « rien » ; il ne se lit pas, et la règle
+            # d'écriture l'exclut. Le mot le dit.
+            self._position.setText(self.tr("aucun cliché"))
             return
         self._position.setText(
             self.tr("cliché %1 / %2")

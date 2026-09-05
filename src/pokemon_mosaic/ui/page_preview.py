@@ -2,7 +2,7 @@
 
 « A2 » ne dit rien à personne. Un rectangle coté en centimètres le dit déjà
 mieux, mais un rectangle seul n'a pas d'échelle : sur un écran, un A6 et un A0
-sont le même dessin. D'où l'étalon — une carte Pokémon à ses dimensions
+sont le même dessin. D'où l'étalon : une carte Pokémon à ses dimensions
 réelles, dans le même rapport que la feuille. C'est elle qui donne la taille,
 parce que c'est le seul objet des deux que l'on ait déjà tenu en main.
 
@@ -141,7 +141,7 @@ class PagePreview(QWidget):
     def _sync_minus_buttons(self) -> None:
         """Un bouton de retrait par feuille, jamais quand il n'en reste qu'une.
 
-        Ils font tous la même chose — les feuilles sont identiques —, mais un
+        Ils font tous la même chose : les feuilles sont identiques, mais un
         seul bouton pour l'ensemble ne dirait pas **où** l'on retire : posé sous
         chaque colonne et à gauche de chaque ligne, il se lit comme la feuille
         qu'il enlève.
@@ -307,13 +307,13 @@ class PagePreview(QWidget):
     # --- Géométrie --------------------------------------------------------
 
     def _sheet_mm(self) -> tuple[float, float]:
-        """La feuille entière, panneaux compris — dans les deux sens."""
+        """La feuille entière, panneaux compris, dans les deux sens."""
         return self._session.sheet_mm()
 
     def _top_room(self) -> float:
         """Ce qu'il faut garder au-dessus de la feuille.
 
-        L'étiquette de l'étalon, ou le bouton qui ajoute une ligne — le plus
+        L'étiquette de l'étalon, ou le bouton qui ajoute une ligne, le plus
         encombrant des deux. Sans cette réserve, le bouton se dessinait
         au-dessus du cadre et disparaissait.
         """
@@ -337,7 +337,7 @@ class PagePreview(QWidget):
         """Place que prend l'étalon : sa carte, ou son texte s'il est plus large.
 
         Sur un A0 la carte ne fait plus que quelques pixels de large, et son
-        étiquette débordait alors sur la feuille — le texte se lisait par-dessus
+        étiquette débordait alors sur la feuille, le texte se lisait par-dessus
         le papier, ou disparaissait sous lui.
         """
         return max(self._label_width(), REAL_CARD_MM[0] * scale)
@@ -347,7 +347,7 @@ class PagePreview(QWidget):
 
         ⚠️ La colonne de droite n'a pas une largeur connue d'avance : c'est la
         carte quand elle est grande, son étiquette quand la carte se réduit. On
-        résout donc les deux cas et on garde le plus petit facteur — celui-là
+        résout donc les deux cas et on garde le plus petit facteur, celui-là
         tient dans les deux, où le calcul en un seul passage débordait dès que
         l'étalon devenait plus étroit que son texte.
         """
@@ -516,7 +516,7 @@ class PagePreview(QWidget):
         gap_y = geometrie.gap * en_mm * vers_y
         paper_w, paper_h = session.paper_mm()
 
-        # ⚠️ **Où chaque bout de grille se pose, la session seule le sait** —
+        # ⚠️ **Où chaque bout de grille se pose, la session seule le sait**,
         # calé à gauche, centré en hauteur sur une seule ligne de feuilles, ou
         # là où l'utilisateur l'a tiré. Le recalculer ici en donnerait une
         # seconde version, qui finirait par diverger de celle de l'export.
@@ -592,8 +592,8 @@ class PagePreview(QWidget):
         """L'étalon et son étiquette, dans leur colonne, à droite de la feuille.
 
         ⚠️ **La colonne est large du plus large des deux.** L'étiquette était
-        centrée sur la seule carte : dès que celle-ci se réduisait — un A1, un
-        A0 —, le texte débordait des deux côtés et passait sous la feuille.
+        centrée sur la seule carte : dès que celle-ci se réduisait, un A1, un
+        A0, le texte débordait des deux côtés et passait sous la feuille.
 
         Elle est à **gauche** depuis que la droite revient au bouton d'ajout :
         les feuilles s'ajoutent de ce côté-là, et l'étalon aurait été poussé

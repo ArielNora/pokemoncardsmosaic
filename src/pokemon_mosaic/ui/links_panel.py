@@ -1,7 +1,7 @@
 """Bibliothèque de liens : la liste, et de quoi la modifier.
 
 Un lien garde des cartes côte à côte horizontalement. La case à cocher l'active
-ou le désactive sans le supprimer — un lien est un travail durable, on ne le perd
+ou le désactive sans le supprimer : un lien est un travail durable, on ne le perd
 pas parce qu'on essaie une mise en page sans lui. Voir SPEC.md §3.
 """
 
@@ -163,7 +163,7 @@ class LinksPanel(QWidget):
         """Ouvre le dialogue et renvoie le lien composé, ou None si annulé.
 
         Le dialogue est détruit explicitement : parenté au panneau, Qt le garde
-        sinon en vie après sa fermeture, avec une vignette par carte à bord —
+        sinon en vie après sa fermeture, avec une vignette par carte à bord,
         environ 1,6 Mo par ouverture sur un jeu de 280 cartes.
         """
         dialog = LinkDialog(self._session, link=link, parent=self)

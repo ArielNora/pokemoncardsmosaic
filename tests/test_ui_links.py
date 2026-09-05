@@ -107,7 +107,7 @@ def test_default_links_resolve_against_the_loaded_folder(session):
     missing = session.apply_default_links()
     assert missing == []
     # solgaleo=0, lunala=1, necrozma=2, entei=3, raikou=4, puis la lignée
-    # jungko=5, massko=6, arcko=7 — l'ordre de chargement.
+    # jungko=5, massko=6, arcko=7 : l'ordre de chargement.
     assert [link.cards for link in session.links] == [(0, 1), (3, 4), (5, 6, 7)]
 
 

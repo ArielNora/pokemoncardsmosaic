@@ -1,7 +1,7 @@
 """Aperçu fil de fer de la mise en page.
 
-Montre la disposition et les proportions du résultat — feuille, marges, contours
-des cartes, coupes entre panneaux — **sans les images**, comme demandé : on juge
+Montre la disposition et les proportions du résultat, feuille, marges, contours
+des cartes, coupes entre panneaux : **sans les images**, comme demandé : on juge
 ici de la géométrie, pas du contenu.
 """
 
@@ -23,8 +23,8 @@ EMPTY_FILL = QColor(208, 90, 90)
 EMPTY_EDGE = QColor(150, 45, 45)
 # ⚠️ **La coupe se dessine en deux tons.** Un seul trait la rendait invisible :
 # tiré dans la couleur du texte, il passait en blanc sur une mosaïque bleu très
-# clair, et en sombre sur le papier sombre. Deux traits superposés — un plein
-# clair, un pointillé sombre par-dessus — sont la convention des repères
+# clair, et en sombre sur le papier sombre. Deux traits superposés : un plein
+# clair, un pointillé sombre par-dessus, sont la convention des repères
 # d'imprimerie, et l'un des deux ressort quel que soit le fond, dans les deux
 # modes de l'application.
 CUT_UNDER = QColor(255, 255, 255)
@@ -57,7 +57,7 @@ def badge_rect(feuille: QRectF, morceau: QRectF) -> tuple[QRectF, bool]:
     ⚠️ **Dans la marge quand il y en a une.** Le morceau de grille ne remplit
     presque jamais toute la feuille : le numéro se glisse dans ce qui reste,
     plutôt que de couvrir une carte. Quand la feuille est pleine à ras bord, il
-    ne reste que la mosaïque — et le numéro prend alors un fond, faute de quoi
+    ne reste que la mosaïque, et le numéro prend alors un fond, faute de quoi
     il se lirait sur des cartes de toutes les couleurs.
     """
     large, haut = BADGE_SIZE
@@ -134,8 +134,8 @@ class WireframeView(QWidget):
     def _grid_only_layout(self):
         """Géométrie quand il n'y a pas de feuille : la grille remplit le cadre.
 
-        On garde la même structure de quadruplet que l'autre cas — feuille et
-        grille confondues — pour que le dessin, le clic et le calcul d'origine
+        On garde la même structure de quadruplet que l'autre cas, feuille et
+        grille confondues : pour que le dessin, le clic et le calcul d'origine
         n'aient pas à savoir dans quel mode ils tournent.
         """
         session = self._session
@@ -170,8 +170,8 @@ class WireframeView(QWidget):
         #
         # ⚠️ **À la résolution de la session, jamais à une autre.** Le dessin
         # tournait à 72 dpi et l'export à celle des réglages : les arrondis en
-        # pixels ne donnaient pas le même nombre de cartes par feuille — 49 161
-        # combinaisons en désaccord sur les sept formats —, et l'on jugeait la
+        # pixels ne donnaient pas le même nombre de cartes par feuille, 49 161
+        # combinaisons en désaccord sur les sept formats, et l'on jugeait la
         # mise en page sur un dessin qui n'était pas celui du poster.
         geometrie = grid_geometry(
             (paper_w, paper_h), session.panels, session.cols, session.rows,
@@ -205,7 +205,7 @@ class WireframeView(QWidget):
         dessin montrait une carte à cheval sur une coupe que le poster n'a pas.
 
         ⚠️ **Et le morceau de chaque feuille se déplace.** Où il se pose, la
-        session seule le sait — calé à gauche, centré en hauteur, ou là où
+        session seule le sait : calé à gauche, centré en hauteur, ou là où
         l'utilisateur l'a tiré. Le fil de fer l'ignorait : après un déplacement,
         la vue d'exécution montrait la mosaïque à sa place d'origine et
         l'imprimante l'écrivait ailleurs.
@@ -226,7 +226,7 @@ class WireframeView(QWidget):
     def _grid_origin(self, geometry):
         """Coin haut-gauche du dessin : le papier, ou la grille seule.
 
-        Le calage — à gauche, centré en hauteur, ou déplacé à la main — est
+        Le calage, à gauche, centré en hauteur ou déplacé à la main, est
         porté par `cell_origin`, qui le lit dans la session. Le recalculer ici
         en donnerait une seconde version, qui finirait par diverger.
         """
@@ -258,7 +258,7 @@ class WireframeView(QWidget):
         # ⚠️ **Un fond par morceau, pas un grand rectangle.** La mosaïque n'est
         # plus d'un seul tenant : chaque feuille repart de son coin et son
         # morceau se déplace. Un rectangle englobant peignait du blanc là où il
-        # n'y a aucune carte — une bande de papier en travers de la coupe.
+        # n'y a aucune carte : une bande de papier en travers de la coupe.
         painter.setBrush(QBrush(PAPER))
         painter.setPen(Qt.NoPen)
         if self._show_paper:
@@ -338,8 +338,8 @@ class WireframeView(QWidget):
         Basculer case par case ferait clignoter tout ce sur quoi on repasse :
         un aller-retour du curseur défaisait ce que l'aller venait de poser.
 
-        ⚠️ **Le bouton gauche seul.** Sans ce filtre, un clic droit — le réflexe
-        pour chercher un menu contextuel — basculait une case, et le moindre
+        ⚠️ **Le bouton gauche seul.** Sans ce filtre, un clic droit, le réflexe
+        pour chercher un menu contextuel, basculait une case, et le moindre
         mouvement en posait toute une rangée. Mesuré : six cases vides posées
         par un glissement au bouton droit que personne n'avait voulu.
         """
@@ -387,8 +387,8 @@ class WireframeView(QWidget):
         # donnerait la colonne 0 au lieu d'être rejeté. On écarte d'abord.
         if x < gx or y < gy:
             return None
-        # Ni les colonnes ni les lignes ne sont à pas constant — chaque feuille
-        # repart de son coin et son morceau se déplace —, donc on cherche la
+        # Ni les colonnes ni les lignes ne sont à pas constant, chaque feuille
+        # repart de son coin et son morceau se déplace, donc on cherche la
         # case qui contient le point plutôt que de diviser.
         for row in range(self._session.rows):
             for col in range(self._session.cols):

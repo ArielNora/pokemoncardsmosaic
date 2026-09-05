@@ -42,8 +42,23 @@
     </message>
     <message>
         <location filename="../src/pokemon_mosaic/ui/algorithm_tabs.py" line="284"/>
-        <source>Le nombre d&apos;échanges de cartes que l&apos;assemblage tentera. Il en essaie environ 127 000 par seconde en descente stricte, 120 000 au recuit. ⚠️ Le gain ne suit pas : les mille premières itérations effacent déjà près d&apos;un tiers de ce qu&apos;on peut gagner, et la courbe s&apos;aplatit ensuite — 56 % du score de départ effacés à 50 000 itérations, 61 % à un million. Multiplier la durée par vingt ne rapporte donc que quelques points.</source>
-        <translation>How many card swaps the assembly will attempt. It tries about 127,000 per second in strict descent, 120,000 with annealing. ⚠️ The gain does not follow: the first thousand iterations already erase nearly a third of what can be gained, and the curve flattens afterwards — 56% of the starting score erased at 50,000 iterations, 61% at a million. Running twenty times longer therefore buys only a few points.</translation>
+        <source>Le nombre d&apos;échanges de cartes que l&apos;assemblage tentera. Il en essaie environ 127 000 par seconde en descente stricte, 120 000 au recuit. ⚠️ Le gain ne suit pas : les mille premières itérations effacent déjà près d&apos;un tiers de ce qu&apos;on peut gagner, et la courbe s&apos;aplatit ensuite : 56 % du score de départ effacés à 50 000 itérations, 61 % à un million. Multiplier la durée par vingt ne rapporte donc que quelques points.</source>
+        <translation>How many card swaps the assembly will attempt. It tries about 127,000 per second in strict descent, 120,000 with annealing. ⚠️ The gain does not follow: the first thousand iterations already erase nearly a third of what can be gained, and the curve flattens afterwards, 56% of the starting score erased at 50,000 iterations, 61% at a million. Running twenty times longer therefore buys only a few points.</translation>
+    </message>
+    <message>
+        <location filename="../src/pokemon_mosaic/ui/algorithm_tabs.py" line="305"/>
+        <source>Au recuit seulement : la proportion d&apos;échanges dégradants acceptés au démarrage. Elle tombe d&apos;elle-même au fil du calcul, mesuré, 19 % au départ et 0,3 % à la fin. Trop basse, le recuit se comporte comme une descente stricte ; trop haute, il brasse longtemps sans converger. En descente stricte, le champ n&apos;a aucun effet et reste éteint.</source>
+        <translation>Annealing only: the share of worsening swaps accepted at the start. It falls on its own as the run goes, measured, 19% at the start and 0.3% at the end. Too low, annealing behaves like strict descent; too high, it churns for a long time without converging. In strict descent the field has no effect and stays off.</translation>
+    </message>
+    <message>
+        <location filename="../src/pokemon_mosaic/ui/algorithm_tabs.py" line="328"/>
+        <source>Arrête dès que le score descend sous cette valeur. ⚠️ Le score n&apos;a pas d&apos;échelle absolue : il dépend du nombre de cartes &lt;b&gt;et&lt;/b&gt; de l&apos;épaisseur des bandes : la même grille vaut 621,7 avec une bande de 0,10 et 552,0 avec 0,30. Une valeur relevée sur un calcul précédent ne vaut donc que pour les mêmes réglages.</source>
+        <translation>Stops as soon as the score falls below this value. ⚠️ The score has no absolute scale: it depends on the number of cards &lt;b&gt;and&lt;/b&gt; on the strip thickness, the same grid scores 621.7 with a 0.10 strip and 552.0 with 0.30. A value noted from an earlier run therefore only holds for the same settings.</translation>
+    </message>
+    <message>
+        <location filename="../src/pokemon_mosaic/ui/algorithm_tabs.py" line="425"/>
+        <source>Durée estimée : %1, gain attendu : environ %2 %, timeline : entre %3 et %4 clichés</source>
+        <translation>Estimated duration: %1, expected gain: about %2%, timeline: between %3 and %4 snapshots</translation>
     </message>
     <message>
         <location filename="../src/pokemon_mosaic/ui/algorithm_tabs.py" line="292"/>
@@ -59,11 +74,6 @@
         <location filename="../src/pokemon_mosaic/ui/algorithm_tabs.py" line="303"/>
         <source>Tolérance d&apos;acceptation</source>
         <translation>Acceptance tolerance</translation>
-    </message>
-    <message>
-        <location filename="../src/pokemon_mosaic/ui/algorithm_tabs.py" line="305"/>
-        <source>Au recuit seulement : la proportion d&apos;échanges dégradants acceptés au démarrage. Elle tombe d&apos;elle-même au fil du calcul — mesuré, 19 % au départ et 0,3 % à la fin. Trop basse, le recuit se comporte comme une descente stricte ; trop haute, il brasse longtemps sans converger. En descente stricte, le champ n&apos;a aucun effet et reste éteint.</source>
-        <translation>Annealing only: the share of worsening swaps accepted at the start. It falls on its own as the run goes — measured, 19% at the start and 0.3% at the end. Too low, annealing behaves like strict descent; too high, it churns for a long time without converging. In strict descent the field has no effect and stays off.</translation>
     </message>
     <message>
         <location filename="../src/pokemon_mosaic/ui/algorithm_tabs.py" line="312"/>
@@ -91,11 +101,6 @@
         <translation>Stop on score reached</translation>
     </message>
     <message>
-        <location filename="../src/pokemon_mosaic/ui/algorithm_tabs.py" line="328"/>
-        <source>Arrête dès que le score descend sous cette valeur. ⚠️ Le score n&apos;a pas d&apos;échelle absolue : il dépend du nombre de cartes &lt;b&gt;et&lt;/b&gt; de l&apos;épaisseur des bandes — la même grille vaut 621,7 avec une bande de 0,10 et 552,0 avec 0,30. Une valeur relevée sur un calcul précédent ne vaut donc que pour les mêmes réglages.</source>
-        <translation>Stops as soon as the score falls below this value. ⚠️ The score has no absolute scale: it depends on the number of cards &lt;b&gt;and&lt;/b&gt; on the strip thickness — the same grid scores 621.7 with a 0.10 strip and 552.0 with 0.30. A value noted from an earlier run therefore only holds for the same settings.</translation>
-    </message>
-    <message>
         <location filename="../src/pokemon_mosaic/ui/algorithm_tabs.py" line="334"/>
         <source>Clichés de la timeline</source>
         <translation>Timeline snapshots</translation>
@@ -104,11 +109,6 @@
         <location filename="../src/pokemon_mosaic/ui/algorithm_tabs.py" line="336"/>
         <source>Un cliché est gardé tous les N échanges &lt;b&gt;retenus&lt;/b&gt;, pour pouvoir revenir en arrière dans le calcul et choisir un état plutôt qu&apos;un autre. Resserrer la cadence donne une timeline plus fine et occupe plus de mémoire ; l&apos;élargir peut ne laisser que deux ou trois états à comparer.</source>
         <translation>One snapshot is kept every N &lt;b&gt;kept&lt;/b&gt; swaps, so you can go back through the run and pick one state rather than another. Tightening the pace gives a finer timeline and uses more memory; loosening it may leave only two or three states to compare.</translation>
-    </message>
-    <message>
-        <location filename="../src/pokemon_mosaic/ui/algorithm_tabs.py" line="425"/>
-        <source>Durée estimée : %1  —  gain attendu : environ %2 %  —  timeline : entre %3 et %4 clichés</source>
-        <translation>Estimated duration: %1  —  expected gain: about %2%  —  timeline: between %3 and %4 snapshots</translation>
     </message>
     <message>
         <location filename="../src/pokemon_mosaic/ui/algorithm_tabs.py" line="431"/>
@@ -132,10 +132,6 @@
         <translation>Card size and gaps</translation>
     </message>
     <message>
-        <source>Largeur d&apos;une carte</source>
-        <translation type="vanished">Card width</translation>
-    </message>
-    <message>
         <location filename="../src/pokemon_mosaic/ui/layout_tabs.py" line="717"/>
         <source>automatique</source>
         <translation>automatic</translation>
@@ -144,10 +140,6 @@
         <location filename="../src/pokemon_mosaic/ui/layout_tabs.py" line="719"/>
         <source>La plus grande taille qui fasse tenir la grille, recalculée à chaque changement.</source>
         <translation>The largest size that lets the grid fit, recomputed on every change.</translation>
-    </message>
-    <message>
-        <source>Écart entre cartes</source>
-        <translation type="vanished">Gap between cards</translation>
     </message>
     <message>
         <location filename="../src/pokemon_mosaic/ui/layout_tabs.py" line="722"/>
@@ -163,10 +155,6 @@
         <location filename="../src/pokemon_mosaic/ui/layout_tabs.py" line="728"/>
         <source>Grilles qui tiendraient</source>
         <translation>Grids that would fit</translation>
-    </message>
-    <message>
-        <source>Double-cliquez pour appliquer. Classées par nombre de cartes placées, puis par écart à la grille actuelle.</source>
-        <translation type="vanished">Double-click to apply. Ranked by how many cards they place, then by how far they stray from the current grid.</translation>
     </message>
     <message>
         <location filename="../src/pokemon_mosaic/ui/layout_tabs.py" line="715"/>
@@ -250,18 +238,6 @@
         <location filename="../src/pokemon_mosaic/ui/cards_step.py" line="277"/>
         <source>Choisir le dossier de cartes…</source>
         <translation>Choose card folder…</translation>
-    </message>
-    <message>
-        <source>Cliquez une carte pour l&apos;inclure ou l&apos;exclure. Sélectionnez-en plusieurs pour les basculer d&apos;un coup.</source>
-        <translation type="vanished">Click a card to include or exclude it. Select several to toggle them at once.</translation>
-    </message>
-    <message>
-        <source>Inclure</source>
-        <translation type="vanished">Include</translation>
-    </message>
-    <message>
-        <source>Exclure</source>
-        <translation type="vanished">Exclude</translation>
     </message>
     <message>
         <location filename="../src/pokemon_mosaic/ui/cards_step.py" line="276"/>
@@ -379,14 +355,6 @@
             <numerusform>%n cards fetched.</numerusform>
         </translation>
     </message>
-    <message numerus="yes">
-        <location filename="../src/pokemon_mosaic/ui/cards_step.py" line="539"/>
-        <source>Téléchargement interrompu — %n carte(s) récupérée(s).</source>
-        <translation>
-            <numerusform>Download stopped — %n card fetched.</numerusform>
-            <numerusform>Download stopped — %n cards fetched.</numerusform>
-        </translation>
-    </message>
     <message>
         <location filename="../src/pokemon_mosaic/ui/cards_step.py" line="549"/>
         <source>Téléchargement impossible : %1</source>
@@ -469,6 +437,14 @@
         <location filename="../src/pokemon_mosaic/ui/cards_step.py" line="275"/>
         <source>Exclure l&apos;extension</source>
         <translation>Exclude the set</translation>
+    </message>
+    <message numerus="yes">
+        <location filename="../src/pokemon_mosaic/ui/cards_step.py" line="539"/>
+        <source>Téléchargement interrompu : %n carte(s) récupérée(s).</source>
+        <translation>
+            <numerusform>Download interrupted: %n card retrieved.</numerusform>
+            <numerusform>Download interrupted: %n cards retrieved.</numerusform>
+        </translation>
     </message>
     <message>
         <location filename="../src/pokemon_mosaic/ui/cards_step.py" line="780"/>
@@ -591,8 +567,8 @@
     </message>
     <message>
         <location filename="../src/pokemon_mosaic/ui/export_dialog.py" line="263"/>
-        <source>%1 × %2 cartes de %3 × %4 px — %5 × %6 px par panneau, %7 Mpx au total (%8)</source>
-        <translation>%1 × %2 cards of %3 × %4 px — %5 × %6 px per panel, %7 Mpx in total (%8)</translation>
+        <source>%1 × %2 cartes de %3 × %4 px : %5 × %6 px par panneau, %7 Mpx au total (%8)</source>
+        <translation>%1 × %2 cards of %3 × %4 px, %5 × %6 px per panel, %7 Mpx in total (%8)</translation>
     </message>
     <message>
         <location filename="../src/pokemon_mosaic/ui/export_dialog.py" line="289"/>
@@ -712,211 +688,7 @@
     </message>
 </context>
 <context>
-    <name>GridTab</name>
-    <message>
-        <source>Dimensions de la grille</source>
-        <translation type="vanished">Grid dimensions</translation>
-    </message>
-    <message>
-        <source>Dimensions</source>
-        <translation type="vanished">Dimensions</translation>
-    </message>
-    <message>
-        <source>Colonnes</source>
-        <translation type="vanished">Columns</translation>
-    </message>
-    <message>
-        <source>Lignes</source>
-        <translation type="vanished">Rows</translation>
-    </message>
-    <message>
-        <source>Grilles proposées</source>
-        <translation type="vanished">Suggested grids</translation>
-    </message>
-    <message>
-        <source>Double-cliquez pour appliquer. Classées par écart au nombre de cartes retenues.</source>
-        <translation type="vanished">Double-click to apply. Ranked by how close the cell count is to the number of selected cards.</translation>
-    </message>
-    <message>
-        <source>Recommandations de grilles</source>
-        <translation type="vanished">Grid recommendations</translation>
-    </message>
-    <message>
-        <source>Double-cliquez pour appliquer</source>
-        <translation type="vanished">Double-click to apply</translation>
-    </message>
-    <message>
-        <source>Placer les vides automatiquement</source>
-        <translation type="vanished">Place the blanks automatically</translation>
-    </message>
-    <message>
-        <source>Répartit régulièrement les cases vides qui manquent, sans défaire celles que vous avez posées.</source>
-        <translation type="vanished">Spreads the missing blank cells evenly, without undoing the ones you placed.</translation>
-    </message>
-    <message>
-        <source>Tout retirer</source>
-        <translation type="vanished">Remove them all</translation>
-    </message>
-    <message>
-        <source>pile poil</source>
-        <translation type="vanished">exact fit</translation>
-    </message>
-    <message numerus="yes">
-        <source>%n case(s) vide(s)</source>
-        <translation type="vanished">
-            <numerusform>%n blank cell</numerusform>
-            <numerusform>%n blank cells</numerusform>
-        </translation>
-    </message>
-    <message numerus="yes">
-        <source>%n carte(s) en trop</source>
-        <translation type="vanished">
-            <numerusform>%n card too many</numerusform>
-            <numerusform>%n cards too many</numerusform>
-        </translation>
-    </message>
-    <message numerus="yes">
-        <source>&lt;b&gt;%n&lt;/b&gt; carte(s) ne tiennent pas dans la grille : agrandissez-la, ou retirez-les à l&apos;étape précédente.</source>
-        <translation type="vanished">
-            <numerusform>&lt;b&gt;%n&lt;/b&gt; card does not fit in the grid: enlarge it, or drop it at the previous step.</numerusform>
-            <numerusform>&lt;b&gt;%n&lt;/b&gt; cards do not fit in the grid: enlarge it, or drop them at the previous step.</numerusform>
-        </translation>
-    </message>
-    <message numerus="yes">
-        <source>Il reste &lt;b&gt;%n&lt;/b&gt; case(s) vide(s) à placer : cliquez dans la grille pour choisir où.</source>
-        <translation type="vanished">
-            <numerusform>&lt;b&gt;%n&lt;/b&gt; blank cell left to place: click in the grid to choose where.</numerusform>
-            <numerusform>&lt;b&gt;%n&lt;/b&gt; blank cells left to place: click in the grid to choose where.</numerusform>
-        </translation>
-    </message>
-    <message numerus="yes">
-        <source>Les &lt;b&gt;%n&lt;/b&gt; case(s) vide(s) sont placées.</source>
-        <translation type="vanished">
-            <numerusform>The &lt;b&gt;%n&lt;/b&gt; blank cell is placed.</numerusform>
-            <numerusform>The &lt;b&gt;%n&lt;/b&gt; blank cells are placed.</numerusform>
-        </translation>
-    </message>
-    <message numerus="yes">
-        <source>%n carte(s) ne tiennent pas dans la grille : agrandissez-la, ou retirez-les à l&apos;étape précédente.</source>
-        <translation type="vanished">
-            <numerusform>%n card does not fit in the grid: enlarge it, or drop it at the previous step.</numerusform>
-            <numerusform>%n cards do not fit in the grid: enlarge it, or drop them at the previous step.</numerusform>
-        </translation>
-    </message>
-    <message numerus="yes">
-        <source>Il reste %n case(s) vide(s) à placer : cliquez dans la grille pour choisir où.</source>
-        <translation type="vanished">
-            <numerusform>%n blank cell left to place: click in the grid to choose where.</numerusform>
-            <numerusform>%n blank cells left to place: click in the grid to choose where.</numerusform>
-        </translation>
-    </message>
-    <message numerus="yes">
-        <source>Les %n case(s) vide(s) sont placées.</source>
-        <translation type="vanished">
-            <numerusform>The %n blank cell is placed.</numerusform>
-            <numerusform>The %n blank cells are placed.</numerusform>
-        </translation>
-    </message>
-    <message>
-        <source>La grille a exactement autant de cases que de cartes retenues.</source>
-        <translation type="vanished">The grid has exactly as many cells as selected cards.</translation>
-    </message>
-</context>
-<context>
     <name>LayoutStep</name>
-    <message>
-        <source>Format et grille</source>
-        <translation type="vanished">Format and grid</translation>
-    </message>
-    <message>
-        <source>Format d&apos;impression</source>
-        <translation type="vanished">Print format</translation>
-    </message>
-    <message>
-        <source>Paysage</source>
-        <translation type="vanished">Landscape</translation>
-    </message>
-    <message>
-        <source>Résolution (DPI)</source>
-        <translation type="vanished">Resolution (DPI)</translation>
-    </message>
-    <message>
-        <source>Posters côte à côte</source>
-        <translation type="vanished">Posters side by side</translation>
-    </message>
-    <message>
-        <source>Colonnes</source>
-        <translation type="vanished">Columns</translation>
-    </message>
-    <message>
-        <source>Lignes</source>
-        <translation type="vanished">Rows</translation>
-    </message>
-    <message>
-        <source>Grilles adaptées à ce format</source>
-        <translation type="vanished">Grids suited to this format</translation>
-    </message>
-    <message>
-        <source>Double-cliquez pour appliquer. L&apos;écart indique de combien la grille s&apos;éloigne des proportions de la feuille.</source>
-        <translation type="vanished">Double-click to apply. The gap shows how far the grid strays from the sheet&apos;s proportions.</translation>
-    </message>
-    <message>
-        <source>Grilles proposées</source>
-        <translation type="vanished">Suggested grids</translation>
-    </message>
-    <message>
-        <source>Double-cliquez pour appliquer. Classées par écart au nombre de cartes retenues ; le pourcentage dit de combien la grille s&apos;éloigne des proportions de la feuille.</source>
-        <translation type="vanished">Double-click to apply. Ranked by how close the cell count is to the number of selected cards; the percentage says how far the grid strays from the sheet&apos;s proportions.</translation>
-    </message>
-    <message>
-        <source>Replacer les cases vides automatiquement</source>
-        <translation type="vanished">Redistribute empty cells automatically</translation>
-    </message>
-    <message>
-        <source>Aperçu de la mise en page, sans les images. Cliquez une case pour y placer ou retirer un vide.</source>
-        <translation type="vanished">Layout preview, without the images. Click a cell to place or remove a gap.</translation>
-    </message>
-    <message>
-        <source>pile poil</source>
-        <translation type="vanished">exact fit</translation>
-    </message>
-    <message numerus="yes">
-        <source>+%n carte(s) à ajouter</source>
-        <translation type="vanished">
-            <numerusform>+%n card to add</numerusform>
-            <numerusform>+%n cards to add</numerusform>
-        </translation>
-    </message>
-    <message numerus="yes">
-        <source>%n carte(s) en trop</source>
-        <translation type="vanished">
-            <numerusform>%n card too many</numerusform>
-            <numerusform>%n cards too many</numerusform>
-        </translation>
-    </message>
-    <message>
-        <source>%1 colonnes ne se divisent pas en %2 panneaux : la coupe tomberait au milieu d&apos;une carte.</source>
-        <translation type="vanished">%1 columns do not divide into %2 panels: the cut would fall in the middle of a card.</translation>
-    </message>
-    <message>
-        <source>Cartes de %1×%2 px — image totale %3×%4 px sur %5 feuille(s) %6 de %7×%8 mm.</source>
-        <translation type="vanished">Cards of %1×%2 px — total image %3×%4 px on %5 sheet(s) %6 of %7×%8 mm.</translation>
-    </message>
-    <message>
-        <source>%1 DPI dépasse le maximum utile (%2 DPI pour ce format) : les cartes seront agrandies sans gagner en détail.</source>
-        <translation type="vanished">%1 DPI exceeds the useful maximum (%2 DPI for this format): cards will be enlarged without gaining detail.</translation>
-    </message>
-    <message numerus="yes">
-        <source>La mosaïque ne couvre que %1 % de la feuille : le reste sera une marge vide. Une grille plus allongée — plus de colonnes que de lignes — suivrait mieux %n feuille(s) côte à côte.</source>
-        <translation type="vanished">
-            <numerusform>The mosaic covers only %1 % of the sheet: the rest will be blank margin. A longer grid — more columns than rows — would follow %n sheet side by side better.</numerusform>
-            <numerusform>The mosaic covers only %1 % of the sheet: the rest will be blank margin. A longer grid — more columns than rows — would follow %n sheets side by side better.</numerusform>
-        </translation>
-    </message>
-    <message>
-        <source>Image de %1 Mpx : l&apos;export demandera beaucoup de mémoire.</source>
-        <translation type="vanished">Image of %1 Mpx: exporting will require a lot of memory.</translation>
-    </message>
     <message>
         <location filename="../src/pokemon_mosaic/ui/layout_step.py" line="390"/>
         <source>Grille</source>
@@ -994,61 +766,14 @@
         <translation>Rectangle %1 × %2, complete.</translation>
     </message>
     <message>
-        <source>Séquence du lien</source>
-        <translation type="vanished">Link sequence</translation>
-    </message>
-    <message>
-        <source>Cartes du lien, en ordre de lecture</source>
-        <translation type="vanished">Cards in the link, in reading order</translation>
-    </message>
-    <message>
-        <source>Forme</source>
-        <translation type="vanished">Shape</translation>
-    </message>
-    <message>
-        <source>Colonnes × lignes. Les cartes remplissent le rectangle de gauche à droite, puis rangée suivante.</source>
-        <translation type="vanished">Columns × rows. Cards fill the rectangle left to right, then the next row.</translation>
-    </message>
-    <message>
-        <source>Filtrer par nom ou dossier…</source>
-        <translation type="vanished">Filter by name or folder…</translation>
-    </message>
-    <message>
-        <source>Ajouter →</source>
-        <translation type="vanished">Add →</translation>
-    </message>
-    <message>
-        <source>← Retirer</source>
-        <translation type="vanished">← Remove</translation>
-    </message>
-    <message>
-        <source>Monter</source>
-        <translation type="vanished">Move up</translation>
-    </message>
-    <message>
-        <source>Descendre</source>
-        <translation type="vanished">Move down</translation>
-    </message>
-    <message>
         <location filename="../src/pokemon_mosaic/ui/link_dialog.py" line="139"/>
         <source>Nom (facultatif)</source>
         <translation>Name (optional)</translation>
     </message>
     <message>
-        <source>Ordre imposé (sinon l&apos;optimiseur peut retourner le bloc)</source>
-        <translation type="vanished">Fixed order (otherwise the optimiser may flip the block)</translation>
-    </message>
-    <message>
         <location filename="../src/pokemon_mosaic/ui/link_dialog.py" line="164"/>
         <source>(carte exclue)</source>
         <translation>(card excluded)</translation>
-    </message>
-    <message numerus="yes">
-        <source>%n carte(s) ne remplissent aucun rectangle d&apos;au plus 3 cases de côté. Les tailles possibles sont 2, 3, 4, 6 et 9.</source>
-        <translation type="vanished">
-            <numerusform>%n card fills no rectangle of at most 3 cells a side. The possible sizes are 2, 3, 4, 6 and 9.</numerusform>
-            <numerusform>%n cards fill no rectangle of at most 3 cells a side. The possible sizes are 2, 3, 4, 6 and 9.</numerusform>
-        </translation>
     </message>
 </context>
 <context>
@@ -1116,14 +841,6 @@
         <location filename="../src/pokemon_mosaic/ui/main_window.py" line="54"/>
         <source>Cartes</source>
         <translation>Cards</translation>
-    </message>
-    <message>
-        <source>Grille et format</source>
-        <translation type="vanished">Grid and format</translation>
-    </message>
-    <message>
-        <source>Réglages</source>
-        <translation type="vanished">Settings</translation>
     </message>
     <message>
         <location filename="../src/pokemon_mosaic/ui/main_window.py" line="55"/>
@@ -1228,10 +945,10 @@
     </message>
     <message numerus="yes">
         <location filename="../src/pokemon_mosaic/ui/layout_tabs.py" line="558"/>
-        <source>%n feuille(s) de %1 × %2 cm — surface totale de %3 × %4 cm.</source>
+        <source>%n feuille(s) de %1 × %2 cm : surface totale de %3 × %4 cm.</source>
         <translation>
-            <numerusform>%n sheet of %1 × %2 cm — total surface %3 × %4 cm.</numerusform>
-            <numerusform>%n sheets of %1 × %2 cm — total surface %3 × %4 cm.</numerusform>
+            <numerusform>%n sheet of %1 × %2 cm, %3 × %4 cm in total.</numerusform>
+            <numerusform>%n sheets of %1 × %2 cm, %3 × %4 cm in total.</numerusform>
         </translation>
     </message>
     <message>
@@ -1240,73 +957,9 @@
         <translation>Pages</translation>
     </message>
     <message>
-        <source>Format d&apos;impression</source>
-        <translation type="vanished">Print format</translation>
-    </message>
-    <message>
         <location filename="../src/pokemon_mosaic/ui/layout_tabs.py" line="501"/>
         <source>Paysage</source>
         <translation>Landscape</translation>
-    </message>
-    <message>
-        <source>Cartes de %1 × %2 mm — mosaïque de %3 × %4 mm sur %5 feuille(s) %6 de %7×%8 mm.</source>
-        <translation type="vanished">Cards of %1 × %2 mm — mosaic of %3 × %4 mm on %5 sheet(s) of %6, %7×%8 mm.</translation>
-    </message>
-    <message>
-        <source>Finesse (DPI)</source>
-        <translation type="vanished">Resolution (DPI)</translation>
-    </message>
-    <message>
-        <source>Cet onglet choisit le papier : son format, son orientation, et combien de feuilles côte à côte. La carte posée à gauche est à ses dimensions réelles et donne l&apos;échelle ; le « + » à droite ajoute une feuille, donc de la place. La mosaïque dessinée n&apos;est qu&apos;une idée de ce que ça donnerait : les onglets « Grille » la régleront précisément.</source>
-        <translation type="vanished">This tab chooses the paper: its format, its orientation, and how many sheets side by side. The card on the left is at its real size and gives the scale; the “+” on the right adds a sheet, and so more room. The mosaic drawn here is only an idea of how it could look: the “Grid” tabs will set it precisely.</translation>
-    </message>
-    <message>
-        <source>Cartes de %1×%2 px — image totale %3×%4 px sur %5 feuille(s) %6 de %7×%8 mm.</source>
-        <translation type="vanished">Cards of %1×%2 px — total image %3×%4 px on %5 sheet(s) %6 of %7×%8 mm.</translation>
-    </message>
-    <message>
-        <source>%1 DPI dépasse le maximum utile (%2 DPI pour ce format) : les cartes seront agrandies sans gagner en détail.</source>
-        <translation type="vanished">%1 DPI exceeds the useful maximum (%2 DPI for this format): cards will be enlarged without gaining detail.</translation>
-    </message>
-    <message>
-        <source>La mosaïque couvre %1 % du papier : le reste sortira blanc de l&apos;imprimante. C&apos;est normal si vous avez ajouté des feuilles pour avoir de la place ; sinon, une grille plus large ou moins de feuilles la rempliraient mieux.</source>
-        <translation type="vanished">The mosaic covers %1 % of the paper: the rest will come out of the printer blank. That is expected if you added sheets for room; otherwise a wider grid or fewer sheets would fill it better.</translation>
-    </message>
-    <message>
-        <source>Image de %1 Mpx : l&apos;export demandera beaucoup de mémoire.</source>
-        <translation type="vanished">Image of %1 Mpx: exporting will require a lot of memory.</translation>
-    </message>
-    <message>
-        <source>Montrer la mosaïque sur la feuille</source>
-        <translation type="vanished">Show the mosaic on the sheet</translation>
-    </message>
-    <message>
-        <source>La carte posée à gauche est à ses dimensions réelles, à la même échelle que la feuille : c&apos;est elle qui donne la taille. Le « + » à droite ajoute une feuille, donc de la place.</source>
-        <translation type="vanished">The card on the left is at its real size, at the same scale as the sheet: that is what gives you the scale. The “+” on the right adds a sheet, and so more room.</translation>
-    </message>
-    <message>
-        <source>La mosaïque n&apos;est là que pour donner une idée rapide de ce que ça donnerait : elle est posée contre le bord gauche, et le blanc qui reste est la place encore libre. L&apos;onglet suivant permettra de la répartir précisément sur les feuilles.</source>
-        <translation type="vanished">The mosaic is only here to give a quick idea of how it could look: it sits against the left edge, and the white left over is the room still free. The next tab will let you lay it out precisely across the sheets.</translation>
-    </message>
-    <message>
-        <source>La mosaïque est posée contre le bord gauche, et le blanc qui reste est la place encore libre : cet onglet ne décide que de la taille du papier et du nombre de feuilles. La façon dont la grille s&apos;y installe — marges, centrage — viendra à l&apos;onglet suivant.</source>
-        <translation type="vanished">The mosaic sits against the left edge, and the white left over is the room still free: this tab only decides the paper size and the number of sheets. How the grid settles into them — margins, centring — comes on the next tab.</translation>
-    </message>
-    <message>
-        <source>La carte posée à gauche est à ses dimensions réelles, à la même échelle que la feuille : c&apos;est elle qui donne la taille. Le « + » à droite ajoute une feuille côte à côte.</source>
-        <translation type="vanished">The card on the left is at its real size, at the same scale as the sheet: that is what gives you the scale. The “+” on the right adds a sheet side by side.</translation>
-    </message>
-    <message>
-        <source>La carte posée à droite est à ses dimensions réelles, à la même échelle que la feuille : c&apos;est elle qui donne la taille.</source>
-        <translation type="vanished">The card on the right is at its real size, at the same scale as the sheet: that is what gives you the scale.</translation>
-    </message>
-    <message>
-        <source>Cet ajustement n&apos;est pas définitif : l&apos;orientation et le nombre de posters côte à côte se règlent à l&apos;onglet suivant, et les dimensions de la grille restent modifiables au premier — de quoi remplir mieux la feuille.</source>
-        <translation type="vanished">This fit is not final: orientation and the number of posters side by side are set on the next tab, and the grid dimensions stay editable on the first one — enough to fill the sheet better.</translation>
-    </message>
-    <message>
-        <source>%1 colonnes ne se divisent pas en %2 feuilles : la coupe tomberait au milieu d&apos;une carte. La mosaïque n&apos;est pas dessinée tant que ce n&apos;est pas réglé — retirez une feuille, ou changez les colonnes au premier onglet.</source>
-        <translation type="vanished">%1 columns do not divide into %2 sheets: the cut would fall in the middle of a card. The mosaic is not drawn until this is sorted — remove a sheet, or change the columns on the first tab.</translation>
     </message>
 </context>
 <context>
@@ -1354,25 +1007,10 @@
             <numerusform>&lt;b&gt;%n&lt;/b&gt; sheets moved.</numerusform>
         </translation>
     </message>
-    <message numerus="yes">
-        <source>&lt;b&gt;%n&lt;/b&gt; feuille(s) déplacée(s) à la main.</source>
-        <translation type="vanished">
-            <numerusform>&lt;b&gt;%n&lt;/b&gt; sheet moved by hand.</numerusform>
-            <numerusform>&lt;b&gt;%n&lt;/b&gt; sheets moved by hand.</numerusform>
-        </translation>
-    </message>
     <message>
         <location filename="../src/pokemon_mosaic/ui/layout_tabs.py" line="956"/>
         <source>Les morceaux sont à leur emplacement par défaut.</source>
         <translation>Every piece is at its default spot.</translation>
-    </message>
-    <message>
-        <source>La mosaïque est pour l&apos;instant calée contre le bord gauche, et centrée verticalement.</source>
-        <translation type="vanished">For now the mosaic sits against the left edge, centred vertically.</translation>
-    </message>
-    <message>
-        <source>À venir : un bouton pour la centrer au mieux sur les feuilles, et la possibilité de la déplacer en la faisant glisser.</source>
-        <translation type="vanished">Coming: a button to centre it as well as possible on the sheets, and the ability to move it by dragging.</translation>
     </message>
 </context>
 <context>
@@ -1439,10 +1077,10 @@
     </message>
     <message numerus="yes">
         <location filename="../src/pokemon_mosaic/ui/presets_bar.py" line="148"/>
-        <source>Préréglage « %1 » chargé — %n carte(s) introuvable(s).</source>
+        <source>Préréglage « %1 » chargé : %n carte(s) introuvable(s).</source>
         <translation>
-            <numerusform>Preset “%1” loaded — %n card not found.</numerusform>
-            <numerusform>Preset “%1” loaded — %n cards not found.</numerusform>
+            <numerusform>Preset “%1” loaded: %n card not found.</numerusform>
+            <numerusform>Preset “%1” loaded: %n cards not found.</numerusform>
         </translation>
     </message>
     <message>
@@ -1472,68 +1110,6 @@
     </message>
 </context>
 <context>
-    <name>PrintingTab</name>
-    <message>
-        <source>Orientation, finesse et panneaux</source>
-        <translation type="vanished">Orientation, resolution and panels</translation>
-    </message>
-    <message>
-        <source>Orientation et impression</source>
-        <translation type="vanished">Orientation and printing</translation>
-    </message>
-    <message>
-        <source>Impression</source>
-        <translation type="vanished">Printing</translation>
-    </message>
-    <message>
-        <source>Paysage</source>
-        <translation type="vanished">Landscape</translation>
-    </message>
-    <message>
-        <source>Résolution (DPI)</source>
-        <translation type="vanished">Resolution (DPI)</translation>
-    </message>
-    <message>
-        <source>Posters côte à côte</source>
-        <translation type="vanished">Posters side by side</translation>
-    </message>
-    <message>
-        <source>Finesse d&apos;impression</source>
-        <translation type="vanished">Printing resolution</translation>
-    </message>
-    <message>
-        <source>Aperçu de la mise en page sur la feuille, sans les images. Cliquez une case pour y placer ou retirer un vide.</source>
-        <translation type="vanished">Preview of the layout on the sheet, without the images. Click a cell to place or remove a blank there.</translation>
-    </message>
-    <message>
-        <source>La mosaïque couvre %1 % du papier : le reste sortira blanc de l&apos;imprimante. C&apos;est normal si vous avez ajouté des feuilles pour avoir de la place ; sinon, une grille plus large ou moins de feuilles la rempliraient mieux.</source>
-        <translation type="vanished">The mosaic covers %1 % of the paper: the rest will come out of the printer blank. That is expected if you added sheets for room; otherwise a wider grid or fewer sheets would fill it better.</translation>
-    </message>
-    <message>
-        <source>%1 colonnes ne se divisent pas en %2 panneaux : la coupe tomberait au milieu d&apos;une carte.</source>
-        <translation type="vanished">%1 columns do not divide into %2 panels: the cut would fall in the middle of a card.</translation>
-    </message>
-    <message>
-        <source>Cartes de %1×%2 px — image totale %3×%4 px sur %5 feuille(s) %6 de %7×%8 mm.</source>
-        <translation type="vanished">Cards of %1×%2 px — total image %3×%4 px on %5 sheet(s) %6 of %7×%8 mm.</translation>
-    </message>
-    <message>
-        <source>%1 DPI dépasse le maximum utile (%2 DPI pour ce format) : les cartes seront agrandies sans gagner en détail.</source>
-        <translation type="vanished">%1 DPI exceeds the useful maximum (%2 DPI for this format): cards will be enlarged without gaining detail.</translation>
-    </message>
-    <message numerus="yes">
-        <source>La mosaïque ne couvre que %1 % de la feuille : le reste sera une marge vide. Une grille plus allongée — plus de colonnes que de lignes — suivrait mieux %n feuille(s) côte à côte.</source>
-        <translation type="vanished">
-            <numerusform>The mosaic covers only %1 % of the sheet: the rest will be blank margin. A longer grid — more columns than rows — would follow %n sheet side by side better.</numerusform>
-            <numerusform>The mosaic covers only %1 % of the sheet: the rest will be blank margin. A longer grid — more columns than rows — would follow %n sheets side by side better.</numerusform>
-        </translation>
-    </message>
-    <message>
-        <source>Image de %1 Mpx : l&apos;export demandera beaucoup de mémoire.</source>
-        <translation type="vanished">Image of %1 Mpx: exporting will require a lot of memory.</translation>
-    </message>
-</context>
-<context>
     <name>RotationHelp</name>
     <message>
         <location filename="../src/pokemon_mosaic/ui/rotation_help.py" line="85"/>
@@ -1552,13 +1128,13 @@
     </message>
     <message>
         <location filename="../src/pokemon_mosaic/ui/rotation_help.py" line="93"/>
-        <source>Sur un carré, chaque carte va dans le coin opposé — ce n&apos;est pas un effet miroir :</source>
-        <translation>On a square, every card lands in the opposite corner — this is not a mirror:</translation>
+        <source>Sur un carré, chaque carte va dans le coin opposé, ce n&apos;est pas un effet miroir :</source>
+        <translation>On a square, every card lands in the opposite corner, this is not a mirror:</translation>
     </message>
     <message>
         <location filename="../src/pokemon_mosaic/ui/rotation_help.py" line="96"/>
-        <source>La forme ne change jamais : un 3 × 2 pivoté reste un 3 × 2. Gardez l&apos;ordre imposé quand le sens porte quelque chose — une lignée d&apos;évolution, ou une paire qui se lit dans un sens.</source>
-        <translation>The shape never changes: a turned 3 × 2 is still a 3 × 2. Keep the order fixed when the direction means something — an evolution line, or a pair that reads one way.</translation>
+        <source>La forme ne change jamais : un 3 × 2 pivoté reste un 3 × 2. Gardez l&apos;ordre imposé quand le sens porte quelque chose, une lignée d&apos;évolution, ou une paire qui se lit dans un sens.</source>
+        <translation>The shape never changes: a turned 3 × 2 is still a 3 × 2. Keep the order fixed when the direction means something, an evolution line, or a pair that reads one way.</translation>
     </message>
 </context>
 <context>
@@ -1713,8 +1289,8 @@
     </message>
     <message>
         <location filename="../src/pokemon_mosaic/ui/run_step.py" line="532"/>
-        <source>Score %1 → %2 (%3 % de gain) — arrêt : %4</source>
-        <translation>Score %1 → %2 (%3% gain) — stopped: %4</translation>
+        <source>Score %1 → %2 (%3 % de gain), arrêt : %4</source>
+        <translation>Score %1 → %2 (%3% gain), stopped: %4</translation>
     </message>
     <message>
         <location filename="../src/pokemon_mosaic/ui/run_step.py" line="538"/>
@@ -1737,7 +1313,12 @@
         <translation>Pause</translation>
     </message>
     <message>
-        <location filename="../src/pokemon_mosaic/ui/run_step.py" line="792"/>
+        <location filename="../src/pokemon_mosaic/ui/run_step.py" line="791"/>
+        <source>aucun cliché</source>
+        <translation>no snapshot</translation>
+    </message>
+    <message>
+        <location filename="../src/pokemon_mosaic/ui/run_step.py" line="794"/>
         <source>cliché %1 / %2</source>
         <translation>snapshot %1 of %2</translation>
     </message>
@@ -1763,113 +1344,6 @@
         <location filename="../src/pokemon_mosaic/ui/algorithm_tabs.py" line="115"/>
         <source>À gauche, la zone mesurée sur une carte. À droite, une petite grille d&apos;essai réoptimisée à cette épaisseur.</source>
         <translation>On the left, the area measured on a card. On the right, a small test grid re-optimised at that thickness.</translation>
-    </message>
-</context>
-<context>
-    <name>SettingsStep</name>
-    <message>
-        <source>Réglages de base</source>
-        <translation type="vanished">Basic settings</translation>
-    </message>
-    <message>
-        <source>Réglages avancés</source>
-        <translation type="vanished">Advanced settings</translation>
-    </message>
-    <message>
-        <source>Durée du calcul (itérations)</source>
-        <translation type="vanished">Computation length (iterations)</translation>
-    </message>
-    <message>
-        <source>Un cliché tous les N échanges retenus</source>
-        <translation type="vanished">One snapshot every N accepted swaps</translation>
-    </message>
-    <message>
-        <source>itérations sans amélioration</source>
-        <translation type="vanished">iterations without improvement</translation>
-    </message>
-    <message>
-        <source>après</source>
-        <translation type="vanished">after</translation>
-    </message>
-    <message>
-        <source>Couleur des cases vides</source>
-        <translation type="vanished">Empty cell colour</translation>
-    </message>
-    <message>
-        <source>Arrêter sur stagnation</source>
-        <translation type="vanished">Stop on stagnation</translation>
-    </message>
-    <message>
-        <source>Arrêter sur le temps</source>
-        <translation type="vanished">Stop on time</translation>
-    </message>
-    <message>
-        <source>Arrêter sur score atteint</source>
-        <translation type="vanished">Stop on score reached</translation>
-    </message>
-    <message>
-        <source>Algorithme</source>
-        <translation type="vanished">Algorithm</translation>
-    </message>
-    <message>
-        <source>Tolérance d&apos;acceptation</source>
-        <translation type="vanished">Acceptance tolerance</translation>
-    </message>
-    <message>
-        <source>Épaisseur des bandes de bord</source>
-        <translation type="vanished">Edge band thickness</translation>
-    </message>
-    <message>
-        <source>score</source>
-        <translation type="vanished">score</translation>
-    </message>
-    <message>
-        <source>Arrêter sur stagnation après</source>
-        <translation type="vanished">Stop on stagnation after</translation>
-    </message>
-    <message>
-        <source> itérations sans gain</source>
-        <translation type="vanished"> iterations without gain</translation>
-    </message>
-    <message>
-        <source>score </source>
-        <translation type="vanished">score </translation>
-    </message>
-    <message>
-        <source>Recuit simulé</source>
-        <translation type="vanished">Simulated annealing</translation>
-    </message>
-    <message>
-        <source>Descente stricte</source>
-        <translation type="vanished">Strict descent</translation>
-    </message>
-    <message>
-        <source>Effet de l&apos;épaisseur des bandes</source>
-        <translation type="vanished">Effect of the band thickness</translation>
-    </message>
-    <message>
-        <source>À gauche, la zone mesurée sur une carte. À droite, une petite grille d&apos;essai réoptimisée à cette épaisseur.</source>
-        <translation type="vanished">On the left, the area measured on a card. On the right, a small test grid re-optimised at that thickness.</translation>
-    </message>
-    <message>
-        <source>Ce que ces réglages impliquent</source>
-        <translation type="vanished">What these settings imply</translation>
-    </message>
-    <message>
-        <source>Durée estimée : %1</source>
-        <translation type="vanished">Estimated time: %1</translation>
-    </message>
-    <message>
-        <source>Gain attendu sur le score : environ %1 %</source>
-        <translation type="vanished">Expected score gain: about %1%</translation>
-    </message>
-    <message>
-        <source>Timeline : entre %1 et %2 clichés</source>
-        <translation type="vanished">Timeline: between %1 and %2 snapshots</translation>
-    </message>
-    <message>
-        <source>trop peu pour naviguer, resserrez la cadence</source>
-        <translation type="vanished">too few to navigate, tighten the cadence</translation>
     </message>
 </context>
 <context>

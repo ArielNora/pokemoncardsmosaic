@@ -1,7 +1,7 @@
 """Illustrations de cartes : format commun et mise en forme.
 
-Le projet compose ses mosaïques à partir de l'**illustration seule** — sans
-cadre ni texte —, qui est la texture que le jeu compose à l'affichage. Ce module
+Le projet compose ses mosaïques à partir de l'**illustration seule**, sans
+cadre ni texte, qui est la texture que le jeu compose à l'affichage. Ce module
 porte ce que les scripts partagent : le format attendu, l'encodage, et la
 préparation d'une image avant qu'elle n'entre dans le miroir.
 
@@ -19,12 +19,12 @@ RARITIES = ("AR", "SAR", "IM")
 
 # Format commun de toutes les images du miroir. Sert aussi de **filtre** : une
 # image qui n'est pas à ce format est soit une autre illustration, soit un
-# agrandissement — dans les deux cas elle n'a pas sa place telle quelle.
+# agrandissement : dans les deux cas elle n'a pas sa place telle quelle.
 TARGET_SIZE = (734, 1024)
 
 # Qualité d'encodage WebP. Mesuré sur les 441 illustrations : 56,5 Mo au total
 # contre 541 Mo pour les sources sans perte, et un écart médian de 0,45 niveau
-# sur 255 sur la moyenne RGB d'un bord — sous l'erreur des vignettes à 25 %,
+# sur 255 sur la moyenne RGB d'un bord, sous l'erreur des vignettes à 25 %,
 # déjà acceptée. Voir `docs/IMAGES.md`.
 QUALITY = 80
 
@@ -32,7 +32,7 @@ QUALITY = 80
 # constructeur, le publicateur et l'application doivent s'accorder.
 #
 # La version 4 a retiré des entrées tout ce qui décrivait une provenance
-# distante — adresse, empreinte et poids de la source, nom d'asset. Le manifeste
+# distante : adresse, empreinte et poids de la source, nom d'asset. Le manifeste
 # ne dit plus que ce qu'il doit dire : **quelles cartes le miroir contient**.
 MANIFEST_VERSION = 4
 
@@ -65,7 +65,7 @@ def process(raw: bytes, crop: dict | None = None) -> bytes:
     ils ont été mesurés. L'image est donc ramenée à ce format **avant** d'être
     rognée, et non après : sur une source en 717×1000, y retirer 30 px du haut
     tomberait 2,4 % à côté sans que rien ne le signale. Sur une source déjà au
-    format — le cas courant — cette mise à l'échelle ne fait rien.
+    format : le cas courant, cette mise à l'échelle ne fait rien.
     """
     from PIL import Image
 

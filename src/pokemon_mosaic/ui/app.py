@@ -12,7 +12,7 @@ from .session import Session
 
 # Dossier proposé en dernier recours, s'il existe : c'est `data/pokemoncards`
 # quand on tourne depuis le dépôt. Une application installée ne le trouve jamais,
-# et c'est bien ainsi — l'étape 1 propose alors de télécharger les cartes.
+# et c'est bien ainsi : l'étape 1 propose alors de télécharger les cartes.
 FALLBACK_DATA_DIR = user_data_dir() / "pokemoncards"
 
 
@@ -36,8 +36,8 @@ def main(argv=None) -> int:
     app.setApplicationName(APP_NAME)
 
     # ⚠️ **Fusion, et non le style natif.** Mesuré : le style macOS dessine
-    # exactement les mêmes pixels qu'une souris soit dessus ou non — 0 sur 3600
-    # — parce que macOS n'a pas de convention de survol pour les boutons. Fusion
+    # exactement les mêmes pixels qu'une souris soit dessus ou non, 0 sur 3600,
+    # parce que macOS n'a pas de convention de survol pour les boutons. Fusion
     # en change 3307. Sans lui, aucun réglage de notre côté ne produirait de
     # retour au survol.
     #
@@ -51,7 +51,7 @@ def main(argv=None) -> int:
     theme.follow_system(app)
 
     # Le curseur en main sur les boutons : un second signal, que la feuille de
-    # style ne sait pas donner. Gardé en vie par une référence explicite — un
+    # style ne sait pas donner. Gardé en vie par une référence explicite, un
     # filtre collecté cesse de filtrer, en silence.
     curseur = theme.ClickableCursor(app)
     app.installEventFilter(curseur)

@@ -11,11 +11,11 @@ Tous décidés le 2026-08-16. À traiter **une fois toute la v1 terminée**, pas
   ensuite des réglages de marge de page et d'espacement entre cartes (c'est ce qui
   motivait l'idée de rendre la taille des cartes ajustable indépendamment).
   Voir `SPEC.md` §4.
-- ⭐ **Les liens deviennent des rectangles pleins, 3×3 au maximum** — tranché le
+- ⭐ **Les liens deviennent des rectangles pleins, 3×3 au maximum**, tranché le
   2026-08-27, **fait**. Un seul concept **remplace** horizontal, vertical et
   groupe : une ligne de 3 est un 1×3, une colonne un 3×1. Le cas d'usage demandé
-  le 2026-08-22 — Arcko `B3-156` en bas, Massko `B3-157` au milieu,
-  Méga-Jungko-ex `B3-194` en haut — est **fourni d'office**, comme les deux
+  le 2026-08-22 : Arcko `B3-156` en bas, Massko `B3-157` au milieu,
+  Méga-Jungko-ex `B3-194` en haut : est **fourni d'office**, comme les deux
   paires Solgaleo/Lunala et Entei/Raikou.
 
   Formes admises : 1×2, 1×3, 2×1, 3×1, 2×2, 2×3, 3×2, 3×3. Jamais de forme
@@ -37,7 +37,7 @@ Tous décidés le 2026-08-16. À traiter **une fois toute la v1 terminée**, pas
 - **Fixer une carte à des coordonnées précises.** Permettre d'imposer qu'une carte
   donnée occupe une case donnée de la grille. À rapprocher du mécanisme de cases vides
   figées de la v1 : c'est le même verrouillage de position. Le verrouillage se fait
-  **carte par carte**, jamais par groupe — et une carte appartenant à un lien ne
+  **carte par carte**, jamais par groupe, et une carte appartenant à un lien ne
   peut pas être figée.
 - **Traitement de la marge automatique.** La v1 centre l'image et laisse une bordure
   neutre pour absorber l'écart de 2,47 % entre grille et feuille. Laisser ensuite
@@ -51,7 +51,7 @@ Tous décidés le 2026-08-16. À traiter **une fois toute la v1 terminée**, pas
   identiques semblent donc parfaitement compatibles. Piste : découper chaque bord en
   plusieurs sous-bandes avec recouvrement, et sommer les distances.
 
-## Stockage des cartes — tranché le 2026-08-22, provenance refondue le 2026-08-27
+## Stockage des cartes : tranché le 2026-08-22, provenance refondue le 2026-08-27
 
 Les 281 anciens PNG encadrés, gardés le temps de valider le nouveau jeu, ont
 été supprimés le 2026-08-24.
@@ -68,21 +68,21 @@ seule provenance. Voir `docs/IMAGES.md`.
 
 - **Aucun poster n'a encore été fabriqué avec les 441 cartes.** `output/` date
   du 19 août et porte les 281 anciennes cartes encadrées. Ce n'est pas une dette
-  technique mais une vérification manquante — et c'est le but du projet.
+  technique mais une vérification manquante, et c'est le but du projet.
 
 - **Empaqueter pour Linux et Windows.** Tranché le 2026-08-29 : l'application
-  vise les trois systèmes. Le plus gros obstacle est levé — Fusion et nos deux
+  vise les trois systèmes. Le plus gros obstacle est levé : Fusion et nos deux
   palettes lui donnent déjà la même apparence partout, et son mode sombre ne
   dépend plus du thème de la plateforme.
 
   ⚠️ **PyInstaller ne sait pas produire pour un autre système que celui où il
   tourne.** Il faut donc une machine ou un exécuteur d'intégration continue de
-  chaque système — pour construire, et surtout pour **essayer** : aucun rendu
+  chaque système : pour construire, et surtout pour **essayer** : aucun rendu
   hors écran ne remplace l'ouverture réelle d'une fenêtre.
 
   - **Linux**, le plus simple : une recette sans `BUNDLE`, et un AppImage ou une
     archive. Aucune signature, aucun avertissement. ⚠️ Qt a besoin de
-    bibliothèques du système — OpenGL, xkbcommon, xcb — qu'une distribution
+    bibliothèques du système : OpenGL, xkbcommon, xcb, qu'une distribution
     minimale n'a pas ; un AppImage les emporte.
   - **Windows** : la même recette, produisant un `.exe`. Le but est qu'elle
     tourne, pas qu'elle s'installe proprement. Pas de certificat : la marche à
@@ -92,7 +92,7 @@ seule provenance. Voir `docs/IMAGES.md`.
 
   ⚠️ **La détection du mode sombre sur Linux.** Certains bureaux ne répondent
   pas à `colorScheme()`. Le repli lit la clarté du fond posé par le système, ce
-  qui est juste **au démarrage** — mais une bascule en cours d'exécution
+  qui est juste **au démarrage**, mais une bascule en cours d'exécution
   passerait inaperçue, la palette lue étant devenue la nôtre. L'application
   resterait dans le mode où elle a démarré.
 
@@ -115,7 +115,7 @@ seule provenance. Voir `docs/IMAGES.md`.
   facteurs les plus proches, donc 281 cartes (nombre premier) donneraient une bande
   281×1. Ne concerne plus que la **CLI sans `--grid`** : l'interface impose toujours
   une forme et répartit les cases vides excédentaires.
-- ✅ **Noms de fichiers non normalisés** — réglé le 2026-08-24. Les noms sont
+- ✅ **Noms de fichiers non normalisés**, réglé le 2026-08-24. Les noms sont
   désormais produits par `artwork.slug()`, qui retire les accents : plus de
   `mustébouée` ni de `mew 13.27.50.png`, donc plus de sensibilité à la
   normalisation Unicode dans les liens décrits par fragment de chemin.
@@ -129,7 +129,7 @@ seule provenance. Voir `docs/IMAGES.md`.
   au contraire dangereux : les signatures doivent rester cohérentes avec le réglage
   affiché, sous peine de retrouver le défaut des signatures hétérogènes.
 
-## Retiré de cette liste — vérifié le 2026-08-20
+## Retiré de cette liste : vérifié le 2026-08-20
 
 Gardé en trace pour ne pas rouvrir ces sujets sans raison.
 
@@ -144,5 +144,5 @@ Gardé en trace pour ne pas rouvrir ces sujets sans raison.
   RGBA et 91 ont des pixels non opaques, mais il s'agit de l'anticrénelage du
   contour : 0,3 à 1,3 % des pixels. `convert("RGB")` laisse tomber le canal alpha
   sans composer, et l'écart qui en résulte sur une signature de bord vaut **au pire
-  1 niveau de couleur sur 255, 0,1 en médiane** — du même ordre que l'erreur des
+  1 niveau de couleur sur 255, 0,1 en médiane**, du même ordre que l'erreur des
   vignettes, déjà acceptée. `cv2` a par ailleurs quitté l'application.

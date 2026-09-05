@@ -390,7 +390,7 @@ def test_a_preset_saved_under_the_old_name_is_still_readable(tmp_path):
 def test_a_hand_edited_preset_says_what_is_missing():
     """L'en-tête du module présente le JSON comme modifiable à la main. Une
     ligne retirée par mégarde remontait un `KeyError` nu, qui ne nomme ni le
-    champ ni le fichier — alors que l'erreur de version, elle, était claire."""
+    champ ni le fichier, alors que l'erreur de version, elle, était claire."""
     payload = json.loads(Preset(name="x").to_json())
     del payload["name"]
     with pytest.raises(ValueError, match="champ 'name' manquant"):
@@ -410,8 +410,8 @@ def test_a_broken_preset_does_not_break_the_whole_list(tmp_path):
 
 def test_saving_migrates_a_legacy_named_preset_instead_of_duplicating_it(tmp_path):
     """`load_preset` sait lire l'ancien nom ; laisser le fichier en place faisait
-    apparaître le préréglage deux fois dans la liste — celle-ci lisant le nom
-    dans le contenu —, dont une fois avec la configuration d'avant."""
+    apparaître le préréglage deux fois dans la liste, celle-ci lisant le nom
+    dans le contenu, dont une fois avec la configuration d'avant."""
     ancien = tmp_path / "essai_1.json"
     ancien.write_text(Preset(name="essai_1").to_json(), encoding="utf-8")
     save_preset(str(tmp_path), load_preset(str(tmp_path), "essai_1"))
@@ -421,7 +421,7 @@ def test_saving_migrates_a_legacy_named_preset_instead_of_duplicating_it(tmp_pat
 
 
 def test_migrating_never_deletes_a_neighbours_preset(tmp_path):
-    """L'ancien nom de fichier n'est pas injectif — c'est ce qui a motivé le
+    """L'ancien nom de fichier n'est pas injectif, c'est ce qui a motivé le
     changement. Effacer sur sa seule foi détruirait le préréglage du voisin :
     « Essai 1 » et « Essai 1 » s'y ramenaient au même fichier."""
     save_preset(str(tmp_path), Preset(name="Essai 1"))
@@ -431,7 +431,7 @@ def test_migrating_never_deletes_a_neighbours_preset(tmp_path):
 
 def test_a_preset_written_before_rectangles_still_loads(tmp_path):
     """Les préréglages d'avant ne portent pas de forme. `Link` en déduit alors
-    une seule rangée, ce qui reproduit exactement l'ancien comportement — un
+    une seule rangée, ce qui reproduit exactement l'ancien comportement, un
     lien y tenait toujours sur une ligne."""
     from pokemon_mosaic.presets import LinkRef
 
@@ -444,7 +444,7 @@ def test_a_preset_written_before_rectangles_still_loads(tmp_path):
 
 
 def test_a_preset_carries_the_shape_of_a_rectangle(tmp_path):
-    """Sans elle, un 2×2 rechargé redeviendrait une barre de quatre — une autre
+    """Sans elle, un 2×2 rechargé redeviendrait une barre de quatre, une autre
     contrainte, sans que rien ne le signale."""
     from pokemon_mosaic.presets import LinkRef
 

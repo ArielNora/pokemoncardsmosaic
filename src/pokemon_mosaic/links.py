@@ -18,11 +18,11 @@ from dataclasses import dataclass, field
 
 # Côté maximal d'un lien. Au-delà, le bloc devient trop gros devant la grille :
 # mesuré sur 21×21, un 3×3 garde 361 ancrages possibles contre 399 pour une barre
-# de trois — l'optimiseur ne voit pas la différence —, là où un 9×9 tombe à 169
+# de trois : l'optimiseur ne voit pas la différence, là où un 9×9 tombe à 169
 # pour 18 % du poster figé d'un coup.
 MAX_SIDE = 3
 
-# Les huit formes possibles, en **(colonnes, lignes)** — la convention de
+# Les huit formes possibles, en **(colonnes, lignes)**, la convention de
 # `build_initial_grid`, pour qu'il n'y en ait qu'une dans tout le code. Le 1×1 est
 # exclu : un lien qui ne regroupe qu'une carte ne contraint rien.
 SHAPES = tuple(
@@ -57,7 +57,7 @@ class DefaultLink:
 
 # Ces cartes vont ensemble dans un sens qui a un sens. Les fragments sont donnés
 # en **ordre de lecture** du rectangle : de gauche à droite, puis rangée
-# suivante — donc de haut en bas pour une colonne.
+# suivante, donc de haut en bas pour une colonne.
 DEFAULT_LINKS = (
     DefaultLink(("a3-gardiens-celestes/a3-207-solgaleo-ex.webp",
                  "a3-gardiens-celestes/a3-204-lunala-ex.webp"), (2, 1)),
@@ -137,7 +137,7 @@ class Link:
         Inverser la liste **est** la rotation à 180° d'un rectangle lu en ordre
         de lecture : la dernière carte passe en haut à gauche et la première en
         bas à droite. Rien de particulier à écrire pour la 2D, et la forme est
-        préservée — un 3×2 retourné reste un 3×2.
+        préservée : un 3×2 retourné reste un 3×2.
         """
         return tuple(reversed(self.cards))
 

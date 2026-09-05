@@ -75,7 +75,7 @@ def start_loading(parent, data_dir, on_progress, on_folder, on_loaded, on_failed
     """Lance un chargement et renvoie (thread, worker) à garder en vie.
 
     Qt détruit un QThread dont plus personne ne détient de référence, ce qui
-    interromprait le chargement en silence — d'où le renvoi du couple.
+    interromprait le chargement en silence, d'où le renvoi du couple.
     """
     thread = QThread(parent)
     worker = CardLoader(data_dir, scale=scale, strip_size=strip_size)

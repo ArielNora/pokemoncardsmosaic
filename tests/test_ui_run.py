@@ -210,7 +210,7 @@ def test_stop_and_pause_do_nothing_before_a_run(step):
 def test_clicking_start_passes_no_grid(step):
     """`clicked` transmet l'état coché du bouton : branché directement, il
     faisait recevoir False à previous_grid, et `.copy()` sur un booléen faisait
-    échouer la préparation sans qu'aucun signal ne soit émis — interface figée.
+    échouer la préparation sans qu'aucun signal ne soit émis, interface figée.
     """
     widget, _ = step
     received = {}
@@ -672,7 +672,7 @@ def test_changing_the_inputs_disables_resuming(step, change):
     après un changement ferait désigner d'autres cartes par les mêmes indices.
 
     L'épaisseur des bandes compte pour une autre raison : elle recalcule les
-    signatures, donc l'échelle du score. Mesuré — la même grille vaut 621,7
+    signatures, donc l'échelle du score. Mesuré : la même grille vaut 621,7
     avec une bande de 0,10 et 552,0 avec 0,30. Prolonger sans en tenir compte
     mêlait deux métriques et la courbe chutait sans qu'aucune carte ne bouge.
     """
@@ -841,7 +841,7 @@ def prete(step_widget, session):
 
 def test_moving_an_empty_cell_disables_resuming(step):
     """Reprendre saute `build_initial_grid` : les trous resteraient là où ils
-    étaient. Mesuré avant correction — trous demandés en (1,2) et (2,3), grille
+    étaient. Mesuré avant correction : trous demandés en (1,2) et (2,3), grille
     reprise gardant (0,0) et (1,2), sans le moindre signe."""
     widget, session = step
     session.set_layout(cols=4, rows=3)          # 12 cases pour 20 cartes… non
@@ -898,7 +898,7 @@ def test_a_grid_untouched_still_resumes(step):
 def test_thinning_does_not_drag_the_user_back_to_the_live_view(step):
     """L'élagage divise la timeline par deux dès 70 clichés : le maximum baisse,
     Qt écrête la position et émet `valueChanged`. On en déduisait que
-    l'utilisateur était revenu en butée — mesuré, curseur 45 ramené à 44 et
+    l'utilisateur était revenu en butée, mesuré, curseur 45 ramené à 44 et
     l'image se remettant à défiler pendant qu'il examinait un état antérieur."""
     import numpy as np
 
@@ -939,7 +939,7 @@ def test_reaching_the_last_snapshot_by_hand_still_follows(step):
 
 def test_thinning_refreshes_the_image_under_the_cursor(step):
     """L'élagage renumérote : la case du curseur désigne un autre cliché. Sans
-    rendu, l'écran gardait l'image précédente sous une étiquette qui a changé —
+    rendu, l'écran gardait l'image précédente sous une étiquette qui a changé,
     et l'export aurait écrit la grille du nouveau cliché. Mesuré : index 20
     passé de l'itération 20 à l'itération 40, image inchangée."""
     import numpy as np

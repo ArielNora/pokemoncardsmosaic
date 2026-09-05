@@ -231,7 +231,7 @@ class MainWindow(QMainWindow):
         avancable = (current < self._stack.count() - 1
                      and self._session.total_cards > 0)
         # Un écran peut refuser de laisser passer : l'étape 2 exige que la partie
-        # affichée soit complète — toutes ses cases vides placées, par exemple.
+        # affichée soit complète : toutes ses cases vides placées, par exemple.
         peut = getattr(self._stack.currentWidget(), "can_advance", None)
         if avancable and peut is not None:
             avancable = peut()
@@ -251,7 +251,7 @@ class MainWindow(QMainWindow):
 
         Le rouge est **moins fort** que le vert. Il dit « il reste à faire »,
         pas « c'est cassé », et il accompagne le premier passage sur chaque
-        écran — le voir aussi vif que l'invitation à continuer donnerait à tout
+        écran : le voir aussi vif que l'invitation à continuer donnerait à tout
         le parcours l'air d'une suite d'erreurs.
         """
         colours = theme.colours(self.palette())
@@ -270,7 +270,7 @@ class MainWindow(QMainWindow):
 
         ⚠️ **Une couleur figée dans un effet ne suit rien.** Tout ce qui se lit
         au moment du dessin change de mode tout seul ; l'aura, elle, garde la
-        teinte qu'on lui a posée — verte foncée sur une fenêtre devenue claire.
+        teinte qu'on lui a posée : verte foncée sur une fenêtre devenue claire.
         """
         super().changeEvent(event)
         if event.type() == QEvent.PaletteChange:
@@ -296,7 +296,7 @@ class MainWindow(QMainWindow):
         # infermable dès qu'un fil se bloque pour de bon : l'utilisateur clique
         # la croix, rien ne se passe, et il ne lui reste qu'à tuer le processus.
         # C'est pire que le plantage qu'on cherche à éviter. On accorde donc une
-        # seconde tentative — cinq secondes de plus par fil — puis on ferme.
+        # seconde tentative : cinq secondes de plus par fil, puis on ferme.
         self._refus_de_fermeture += 1
         if self._refus_de_fermeture >= self.CLOSE_ATTEMPTS:
             # `_show_status` et non un signal : la fenêtre reçoit les messages

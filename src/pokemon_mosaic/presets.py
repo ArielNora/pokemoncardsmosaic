@@ -6,7 +6,7 @@ travail durable, un préréglage un essai de mise en page. Voir SPEC.md §3.
 
 ⚠️ **Tout est désigné par chemin, jamais par indice.** Les cartes sont numérotées par
 leur position dans le dossier, trié : l'arrivée d'une extension décale tout ce qui la
-suit alphabétiquement. Un préréglage indexé deviendrait alors silencieusement faux —
+suit alphabétiquement. Un préréglage indexé deviendrait alors silencieusement faux,
 il retiendrait d'autres cartes que celles choisies, et les liens colleraient des
 paires que personne n'a formées. Or c'est précisément après une nouvelle extension
 qu'on veut retrouver sa configuration.
@@ -64,7 +64,7 @@ class Preset:
     # de quoi le **recréer à l'identique** s'il a disparu de la bibliothèque : sans
     # `ordered`, un lien à ordre libre reviendrait imposé, ce qui change la
     # contrainte donnée à l'optimiseur sans le dire. Le préréglage ne possède pas
-    # les liens pour autant — il ne fait que décrire ceux qu'il active.
+    # les liens pour autant : il ne fait que décrire ceux qu'il active.
     active_links: tuple["LinkRef", ...] = ()
     layout: dict = field(default_factory=dict)
     algorithm: dict = field(default_factory=dict)
@@ -132,7 +132,7 @@ def safe_filename(name: str) -> str:
       chiffres.
     """
     # Refusé avant tout codage : un nom vide, ou fait des seuls caractères que
-    # le système réserve, reste inutilisable une fois codé — et le coder en
+    # le système réserve, reste inutilisable une fois codé, et le coder en
     # ferait un fichier d'apparence valide portant un nom que personne ne peut
     # relire. Aucune collision n'en découle : ces noms n'ont pas de fichier.
     if not name.strip() or name.strip() in (".", ".."):
@@ -175,14 +175,14 @@ def save_preset(directory: str, preset: Preset) -> str:
 
     Un fichier portant l'ancien nom est retiré au passage : `load_preset` sait
     encore le lire, mais le laisser en place ferait apparaître le préréglage
-    **deux fois** dans la liste — celle-ci lisant le nom dans le contenu — dont
+    **deux fois** dans la liste : celle-ci lisant le nom dans le contenu, dont
     une fois avec la configuration d'avant. La migration se fait donc au premier
     enregistrement.
     """
     os.makedirs(directory, exist_ok=True)
     path = os.path.join(directory, safe_filename(preset.name))
     ancien = os.path.join(directory, _legacy_filename(preset.name))
-    # ⚠️ L'ancien nom n'est **pas injectif** — c'est précisément ce qui a motivé
+    # ⚠️ L'ancien nom n'est **pas injectif**, c'est précisément ce qui a motivé
     # le changement. Effacer sur la seule foi du nom de fichier détruirait le
     # préréglage du voisin : « Essai 1 » et « Essai 1 » se ramenaient au même
     # fichier. On ne retire donc que si le contenu porte bien ce nom-là.

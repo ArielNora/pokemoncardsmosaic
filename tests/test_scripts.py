@@ -1,7 +1,7 @@
 """Tests de la mise en forme des images et du catalogue local.
 
 `build_manifest.py` est un script et non un module du paquet : on le charge par
-son chemin. La récupération, elle, vit dans le paquet — voir `test_mirror.py`.
+son chemin. La récupération, elle, vit dans le paquet, voir `test_mirror.py`.
 """
 
 import io
@@ -107,7 +107,7 @@ def test_an_impossible_crop_names_the_edge_and_the_value(crop):
 def test_a_crop_is_expressed_in_the_common_frame_not_the_source_one():
     """Les rognages sont mesurés au pixel sur du 734×1024. Une source en
     717×1000 à qui l'on retire 30 px du haut tomberait 2,4 % à côté, et la bande
-    resterait — sans que rien ne le signale, puisque l'image sortirait quand même
+    resterait, sans que rien ne le signale, puisque l'image sortirait quand même
     au bon format."""
     import numpy as np
     from PIL import Image

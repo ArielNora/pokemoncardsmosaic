@@ -128,12 +128,12 @@ class PosterPlan:
         ⚠️ **Chaque feuille repart de son propre bord.** Les cartes ne se suivent
         pas d'une feuille à l'autre en ignorant la coupe : elles recommencent au
         coin de la suivante. C'est ce qui garantit qu'une coupe tombe toujours
-        **entre** deux cartes, et jamais sur une. Le reste de feuille — moins
-        d'une carte, quelques dixièmes de millimètre — sort blanc et disparaît
+        **entre** deux cartes, et jamais sur une. Le reste de feuille : moins
+        d'une carte, quelques dixièmes de millimètre, sort blanc et disparaît
         au raboutage, les repères de coupe étant là pour le rogner.
 
-        ⚠️ **Un seul endroit calcule cette position.** Elle en avait deux — une
-        par axe —, et le déplacement à la main dépend des deux à la fois : le
+        ⚠️ **Un seul endroit calcule cette position.** Elle en avait deux : une
+        par axe, et le déplacement à la main dépend des deux à la fois : le
         bout de grille d'une feuille se déplace dans **sa** feuille, donc son
         décalage se lit à l'intersection d'une ligne et d'une colonne.
         """
@@ -175,7 +175,7 @@ def plan_poster(
 ) -> PosterPlan:
     """Calcule la mise en page et rassemble les avertissements à montrer.
 
-    ⚠️ **Plusieurs feuilles, c'est de la place en plus** — et la coupe tombe
+    ⚠️ **Plusieurs feuilles, c'est de la place en plus**, et la coupe tombe
     toujours **entre deux cartes**. On exigeait pour cela que le nombre de
     colonnes se divise par le nombre de feuilles, ce qui interdisait des grilles
     parfaitement bonnes pour une raison qui n'était pas la leur. C'est désormais
@@ -201,7 +201,7 @@ def plan_poster(
     # hauteur, et la marge ne dépend alors d'aucune feuille. Dès qu'il y en a
     # plusieurs, la marge passe à zéro : décalée, elle pousserait la dernière
     # ligne de chaque feuille au-delà de son bord bas, et la coupe tomberait en
-    # pleine carte — la seule chose que l'on ne s'autorise jamais.
+    # pleine carte : la seule chose que l'on ne s'autorise jamais.
     #
     # ⚠️ **Ce que porte la feuille, pas ce que porte la grille.** Les deux se
     # confondent tant que tout tient ; quand la grille déborde, compter toutes
@@ -383,7 +383,7 @@ def panel_paths(path: str, panels: int, panel_rows: int = 1) -> list[str]:
     « poster_2of2.png », qu'aucun sélecteur de fichier ne signale.
 
     Sur plusieurs lignes de feuilles, un numéro seul ne dirait plus où coller
-    quoi : le nom porte alors la ligne et la colonne — « poster_l2c3sur2x3.png ».
+    quoi : le nom porte alors la ligne et la colonne, « poster_l2c3sur2x3.png ».
     """
     base, extension = os.path.splitext(path)
     extension = extension.lower()

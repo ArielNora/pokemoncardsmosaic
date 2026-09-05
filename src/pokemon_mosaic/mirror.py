@@ -31,8 +31,8 @@ USER_AGENT = ("Mozilla/5.0 (compatible; pokemon-mosaic/0.1; "
               "+https://github.com/ArielNora/pokemoncardsmosaic)")
 
 # Un dépôt dédié, public, sans code ni historique. Ces deux constantes sont la
-# seule chose que l'application sait d'avance : tout le reste — les 441 cartes,
-# les empreintes, l'adresse des archives — vient du manifeste qu'elle télécharge.
+# seule chose que l'application sait d'avance : tout le reste, les 441 cartes,
+# les empreintes, l'adresse des archives, vient du manifeste qu'elle télécharge.
 MIRROR_REPO = "ArielNora/pokemoncardsmosaic-images"
 # La balise porte la version du manifeste : un changement de format des entrées
 # produit un miroir distinct, sinon un ancien client téléchargerait des archives
@@ -106,7 +106,7 @@ def validate_manifest(manifest) -> dict:
     if not isinstance(cards, list):
         # `ValueError` et non `TypeError` malgré la règle : c'est un fichier
         # mal formé, pas un mauvais argument, et les appelants n'attrapent que
-        # `(OSError, ValueError)` — un `TypeError` ressortirait en trace nue.
+        # `(OSError, ValueError)` : un `TypeError` ressortirait en trace nue.
         raise ValueError("Manifeste sans liste de cartes.")  # noqa: TRY004
     for position, card in enumerate(cards):
         manquants = [champ for champ in CHAMPS_REQUIS if champ not in card]
@@ -175,7 +175,7 @@ def missing_cards(manifest: dict, directory: str) -> list[dict]:
 
 
 def missing_bytes(manifest: dict, cards: list[dict]) -> int:
-    """Poids à télécharger pour ces cartes — en archives, pas en images.
+    """Poids à télécharger pour ces cartes, en archives, pas en images.
 
     Une archive est indivisible : il manquerait une seule carte de l'extension A1
     que ses 4,8 Mo partiraient quand même. C'est ce chiffre-là qu'il faut
@@ -200,7 +200,7 @@ def _assets_by_name(repo: str, tag: str, token: str) -> dict | None:
     ⚠️ Sur un dépôt **privé**, l'adresse publique de téléchargement répond 404
     même munie du jeton : seul l'endpoint `releases/assets/{id}` sert le
     fichier, et il faut donc résoudre l'identifiant d'abord. Mesuré le
-    2026-08-24 — 404 contre 200 pour 1,2 Mo sur la même archive.
+    2026-08-24 : 404 contre 200 pour 1,2 Mo sur la même archive.
     """
     url = f"https://api.github.com/repos/{repo}/releases/tags/{tag}"
     request = urllib.request.Request(url, headers={
@@ -233,7 +233,7 @@ def fetch_mirror(manifest: dict, directory: str, workers: int = 4,
     le découpage par extension existe pour ça.
 
     `progress(octets_faits, octets_total, extension)` est appelé après chaque
-    archive — depuis un fil de travail, donc l'appelant graphique doit passer par
+    archive : depuis un fil de travail, donc l'appelant graphique doit passer par
     un signal Qt. `cancelled()` est consulté avant chaque archive et rend vrai
     pour arrêter.
     """
@@ -257,7 +257,7 @@ def fetch_mirror(manifest: dict, directory: str, workers: int = 4,
                        for jeu in par_jeu if jeu in mirror["sets"])
     faits = 0
 
-    # Un jeton, s'il y en a un, ouvre les dépôts privés — par un autre chemin.
+    # Un jeton, s'il y en a un, ouvre les dépôts privés, par un autre chemin.
     token = _token()
     assets = None
     if token and mirror.get("repo"):
@@ -293,7 +293,7 @@ def fetch_mirror(manifest: dict, directory: str, workers: int = 4,
             if error.code == 404:
                 return echec(
                     f"{entry['archive']} introuvable (HTTP 404). Si le dépôt "
-                    f"est privé, posez un jeton dans GH_TOKEN — l'adresse "
+                    f"est privé, posez un jeton dans GH_TOKEN, l'adresse "
                     f"publique reste refusée même authentifiée."
                 )
             return echec(f"{entry['archive']} : {error}")

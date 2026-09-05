@@ -271,7 +271,7 @@ def recherche(qt_app, session):
 
 def test_every_advanced_setting_carries_its_explanation(step):
     """⚠️ **Le texte fait partie du réglage.** « Tolérance d'acceptation : 0,30 »
-    ne dit rien à personne — pas même à qui a écrit le programme, six mois
+    ne dit rien à personne : pas même à qui a écrit le programme, six mois
     après."""
     widget, _ = step
     assert set(widget._labels) == set(widget._notes)
@@ -282,7 +282,7 @@ def test_every_advanced_setting_carries_its_explanation(step):
 
 
 def test_the_thickness_is_the_only_one_that_shows_itself(recherche):
-    """Elle se dessine ; les autres n'ont rien à montrer — on ne dessine pas un
+    """Elle se dessine ; les autres n'ont rien à montrer : on ne dessine pas un
     nombre d'itérations."""
     widget, session = recherche
     widget._strip.setValue(0.25)
@@ -406,7 +406,7 @@ def test_screen_paints(step):
 def test_range_holds_across_the_declared_acceptance_band(rate):
     """La fourchette ne tenait compte de l'élagage que lorsqu'il était certain.
     Entre les deux bornes, la timeline jetait un cliché sur deux et tombait sous
-    le plancher annoncé — deux taux sur cinq sortaient de l'intervalle affiché.
+    le plancher annoncé : deux taux sur cinq sortaient de l'intervalle affiché.
     """
     import numpy as np
 

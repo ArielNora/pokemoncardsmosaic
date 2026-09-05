@@ -274,7 +274,7 @@ def test_timeline_always_ends_on_the_returned_grid():
 
     Sans cliché final imposé, le recuit laisse la timeline s'arrêter bien avant la
     fin : il accepte beaucoup à chaud et presque plus à froid, donc les derniers
-    échanges n'atteignent jamais le seuil de cadence — et l'image que l'utilisateur
+    échanges n'atteignent jamais le seuil de cadence, et l'image que l'utilisateur
     voudrait exporter serait absente.
     """
     cards = make_cards(60)
@@ -355,7 +355,7 @@ def test_a_fresh_timeline_starts_at_iteration_zero():
 
 def test_continuing_a_timeline_carries_the_counters_forward():
     """Sans report des compteurs, les itérations reviendraient à zéro au milieu
-    de la timeline, et la cadence — comptée en échanges retenus — n'enregistrerait
+    de la timeline, et la cadence, comptée en échanges retenus, n'enregistrerait
     plus rien avant d'avoir rattrapé le seuil hérité."""
     cards = make_cards(12, seed=3)
     distances = EdgeDistances(cards)
@@ -414,8 +414,8 @@ def test_the_first_pass_stores_its_measurement_on_the_timeline():
 
 
 def test_resuming_reuses_the_measurement_instead_of_taking_a_new_one(monkeypatch):
-    """Mesurer sur une grille déjà optimisée surestime la dégradation — la
-    température en sortait ×3,6 — parce qu'un échange au hasard y dégrade bien
+    """Mesurer sur une grille déjà optimisée surestime la dégradation, la
+    température en sortait ×3,6 : parce qu'un échange au hasard y dégrade bien
     plus le score. Le recuit repartait à chaud, et prolonger coûtait 2,6 %."""
     cartes, distances = _jeu()
     grille = build_initial_grid(cartes, shape=(8, 5), rng=random.Random(0))
@@ -488,7 +488,7 @@ def _grille_creuse(n, rows, cols, graine=0):
 def test_calibration_does_not_collapse_on_a_sparsely_filled_grid():
     """Les couples étaient tirés dans toute la grille puis rejetés s'ils
     touchaient une case vide : à 10 % de remplissage, trois tirages sur cinq
-    tombaient sur le repli à 1,0 — et le recuit, acceptant `exp(-250/1)`,
+    tombaient sur le repli à 1,0, et le recuit, acceptant `exp(-250/1)`,
     dégénérait en descente stricte sans le dire."""
     _, distances, grille = _grille_creuse(40, 20, 20)
     annealing = Annealing(initial_acceptance=0.5)

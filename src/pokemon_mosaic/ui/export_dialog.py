@@ -6,8 +6,8 @@ qu'on exporte sans avoir à revenir en arrière. Ne restent réglables que les
 décisions propres à l'écriture du fichier.
 
 ⚠️ **La finesse en fait partie.** Elle était demandée à l'étape 2, avant que la
-mosaïque n'existe : elle n'y changeait rien de visible — tout s'y mesure en
-millimètres — et il fallait deviner le poids d'un fichier qu'on n'avait pas
+mosaïque n'existe : elle n'y changeait rien de visible, tout s'y mesure en
+millimètres, et il fallait deviner le poids d'un fichier qu'on n'avait pas
 encore décrit. Elle se choisit ici, à côté du nombre de mégapixels qu'elle
 donne. Le choix est écrit dans la session : les aperçus arrondissent leurs
 pixels comme l'export, et un préréglage le retrouve.
@@ -241,7 +241,7 @@ class ExportDialog(QDialog):
         panels = self.tr("%n panneau(x)", "", session.panel_count())
         largeur, hauteur = session.paper_mm()
         feuille = session.paper or f"{largeur / 10:.1f} × {hauteur / 10:.1f} cm"
-        self._layout_recap.setText(f"{feuille} {orientation} — {panels}")
+        self._layout_recap.setText(f"{feuille} {orientation} : {panels}")
         self._overlap.setEnabled(session.panel_count() > 1)
 
         try:
@@ -260,7 +260,7 @@ class ExportDialog(QDialog):
         source = (self.tr("images d'origine") if self.full_resolution()
                   else self.tr("vignettes, rendu rapide et flou à l'impression"))
         self._plan_label.setText(
-            self.tr("%1 × %2 cartes de %3 × %4 px — %5 × %6 px par panneau, "
+            self.tr("%1 × %2 cartes de %3 × %4 px : %5 × %6 px par panneau, "
                     "%7 Mpx au total (%8)")
             .replace("%1", str(plan.cols)).replace("%2", str(plan.rows))
             .replace("%3", str(plan.card_px[0])).replace("%4", str(plan.card_px[1]))
@@ -288,7 +288,7 @@ class ExportDialog(QDialog):
         names = ", ".join(os.path.basename(t) for t in targets)
         text = self.tr("Fichier(s) : %1").replace("%1", names)
         if existing:
-            text += "  —  " + self.tr("%n fichier(s) seront écrasés", "",
+            text += ", " + self.tr("%n fichier(s) seront écrasés", "",
                                       len(existing))
         self._files.setText(text)
 
