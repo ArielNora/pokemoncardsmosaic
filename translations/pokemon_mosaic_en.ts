@@ -4,114 +4,77 @@
 <context>
     <name>AdvancedTab</name>
     <message>
-        <location filename="../src/pokemon_mosaic/ui/algorithm_tabs.py" line="155"/>
+        <location filename="../src/pokemon_mosaic/ui/algorithm_tabs.py" line="161"/>
         <source>Paramètres avancés</source>
         <translation>Advanced settings</translation>
     </message>
     <message>
-        <location filename="../src/pokemon_mosaic/ui/algorithm_tabs.py" line="274"/>
-        <source>Recuit simulé</source>
-        <translation>Simulated annealing</translation>
-    </message>
-    <message>
-        <location filename="../src/pokemon_mosaic/ui/algorithm_tabs.py" line="275"/>
-        <source>Descente stricte</source>
-        <translation>Strict descent</translation>
-    </message>
-    <message>
-        <location filename="../src/pokemon_mosaic/ui/algorithm_tabs.py" line="276"/>
-        <location filename="../src/pokemon_mosaic/ui/algorithm_tabs.py" line="277"/>
-        <location filename="../src/pokemon_mosaic/ui/algorithm_tabs.py" line="278"/>
-        <source>Activer</source>
-        <translation>Enable</translation>
-    </message>
-    <message>
-        <location filename="../src/pokemon_mosaic/ui/algorithm_tabs.py" line="279"/>
-        <source> itérations sans gain</source>
-        <translation> iterations without gain</translation>
-    </message>
-    <message>
-        <location filename="../src/pokemon_mosaic/ui/algorithm_tabs.py" line="280"/>
-        <source>score </source>
-        <translation>score </translation>
-    </message>
-    <message>
-        <location filename="../src/pokemon_mosaic/ui/algorithm_tabs.py" line="282"/>
-        <source>Durée du calcul</source>
-        <translation>Length of the run</translation>
-    </message>
-    <message>
-        <location filename="../src/pokemon_mosaic/ui/algorithm_tabs.py" line="284"/>
-        <source>Le nombre d&apos;échanges de cartes que l&apos;assemblage tentera. Il en essaie environ 127 000 par seconde en descente stricte, 120 000 au recuit. ⚠️ Le gain ne suit pas : les mille premières itérations effacent déjà près d&apos;un tiers de ce qu&apos;on peut gagner, et la courbe s&apos;aplatit ensuite : 56 % du score de départ effacés à 50 000 itérations, 61 % à un million. Multiplier la durée par vingt ne rapporte donc que quelques points.</source>
-        <translation>How many card swaps the assembly will attempt. It tries about 127,000 per second in strict descent, 120,000 with annealing. ⚠️ The gain does not follow: the first thousand iterations already erase nearly a third of what can be gained, and the curve flattens afterwards, 56% of the starting score erased at 50,000 iterations, 61% at a million. Running twenty times longer therefore buys only a few points.</translation>
-    </message>
-    <message>
-        <location filename="../src/pokemon_mosaic/ui/algorithm_tabs.py" line="305"/>
-        <source>Au recuit seulement : la proportion d&apos;échanges dégradants acceptés au démarrage. Elle tombe d&apos;elle-même au fil du calcul, mesuré, 19 % au départ et 0,3 % à la fin. Trop basse, le recuit se comporte comme une descente stricte ; trop haute, il brasse longtemps sans converger. En descente stricte, le champ n&apos;a aucun effet et reste éteint.</source>
-        <translation>Annealing only: the share of worsening swaps accepted at the start. It falls on its own as the run goes, measured, 19% at the start and 0.3% at the end. Too low, annealing behaves like strict descent; too high, it churns for a long time without converging. In strict descent the field has no effect and stays off.</translation>
+        <location filename="../src/pokemon_mosaic/ui/algorithm_tabs.py" line="327"/>
+        <source>le recuit simulé</source>
+        <translation>simulated annealing</translation>
     </message>
     <message>
         <location filename="../src/pokemon_mosaic/ui/algorithm_tabs.py" line="328"/>
-        <source>Arrête dès que le score descend sous cette valeur. ⚠️ Le score n&apos;a pas d&apos;échelle absolue : il dépend du nombre de cartes &lt;b&gt;et&lt;/b&gt; de l&apos;épaisseur des bandes : la même grille vaut 621,7 avec une bande de 0,10 et 552,0 avec 0,30. Une valeur relevée sur un calcul précédent ne vaut donc que pour les mêmes réglages.</source>
-        <translation>Stops as soon as the score falls below this value. ⚠️ The score has no absolute scale: it depends on the number of cards &lt;b&gt;and&lt;/b&gt; on the strip thickness, the same grid scores 621.7 with a 0.10 strip and 552.0 with 0.30. A value noted from an earlier run therefore only holds for the same settings.</translation>
+        <source>la descente stricte</source>
+        <translation>strict descent</translation>
     </message>
     <message>
-        <location filename="../src/pokemon_mosaic/ui/algorithm_tabs.py" line="425"/>
+        <location filename="../src/pokemon_mosaic/ui/algorithm_tabs.py" line="331"/>
+        <source>Les valeurs par défaut donnent presque toujours un bon résultat. Vous pouvez les changer, ou passer directement à la suite.</source>
+        <translation>The default values almost always give a good result. You may change them, or move straight on.</translation>
+    </message>
+    <message>
+        <location filename="../src/pokemon_mosaic/ui/algorithm_tabs.py" line="336"/>
+        <source>À chaque &lt;b&gt;itération&lt;/b&gt;, l&apos;algorithme tente un &lt;b&gt;échange&lt;/b&gt; : il permute deux cartes de la grille et regarde ce que devient la &lt;b&gt;métrique&lt;/b&gt;, l&apos;écart de couleur entre les bords qui se touchent. L&apos;échange est &lt;b&gt;retenu&lt;/b&gt; s&apos;il rapproche l&apos;&lt;b&gt;agencement&lt;/b&gt; du but, une mosaïque dont les bords voisins se ressemblent, et le calcul continue jusqu&apos;à ce qu&apos;un &lt;b&gt;arrêt&lt;/b&gt; tombe.</source>
+        <translation>At every &lt;b&gt;iteration&lt;/b&gt; the algorithm tries a &lt;b&gt;swap&lt;/b&gt;: it exchanges two cards of the grid and looks at what becomes of the &lt;b&gt;metric&lt;/b&gt;, the colour gap between the edges that touch. The swap is &lt;b&gt;kept&lt;/b&gt; if it brings the &lt;b&gt;arrangement&lt;/b&gt; closer to the goal, a mosaic whose neighbouring edges match, and the run carries on until a &lt;b&gt;stop&lt;/b&gt; falls.</translation>
+    </message>
+    <message>
+        <location filename="../src/pokemon_mosaic/ui/algorithm_tabs.py" line="344"/>
+        <source>L&apos;algorithme utilisé est %1</source>
+        <translation>The algorithm used is %1</translation>
+    </message>
+    <message>
+        <location filename="../src/pokemon_mosaic/ui/algorithm_tabs.py" line="346"/>
+        <source>Le recuit accepte au départ %1 d&apos;échanges qui dégradent la métrique, puis devient de plus en plus exigeant.</source>
+        <translation>Annealing accepts %1 of swaps that worsen the metric to begin with, then grows steadily more demanding.</translation>
+    </message>
+    <message>
+        <location filename="../src/pokemon_mosaic/ui/algorithm_tabs.py" line="349"/>
+        <source>&lt;b&gt;L&apos;algorithme s&apos;arrête&lt;/b&gt; lorsque :</source>
+        <translation>&lt;b&gt;The algorithm stops&lt;/b&gt; when:</translation>
+    </message>
+    <message>
+        <location filename="../src/pokemon_mosaic/ui/algorithm_tabs.py" line="350"/>
+        <source>il a fait %1 itérations (toujours actif)</source>
+        <translation>it has run %1 iterations (always on)</translation>
+    </message>
+    <message>
+        <location filename="../src/pokemon_mosaic/ui/algorithm_tabs.py" line="352"/>
+        <source>la métrique ne s&apos;améliore plus depuis %1 itérations</source>
+        <translation>the metric has not improved for %1 iterations</translation>
+    </message>
+    <message>
+        <location filename="../src/pokemon_mosaic/ui/algorithm_tabs.py" line="353"/>
+        <source>il a calculé pendant %1</source>
+        <translation>it has run for %1</translation>
+    </message>
+    <message>
+        <location filename="../src/pokemon_mosaic/ui/algorithm_tabs.py" line="354"/>
+        <source>la métrique descend sous %1</source>
+        <translation>the metric falls below %1</translation>
+    </message>
+    <message>
+        <location filename="../src/pokemon_mosaic/ui/algorithm_tabs.py" line="357"/>
+        <source>Un agencement sera enregistré tous les %1 échanges retenus.</source>
+        <translation>An arrangement is saved every %1 kept swaps.</translation>
+    </message>
+    <message>
+        <location filename="../src/pokemon_mosaic/ui/algorithm_tabs.py" line="444"/>
         <source>Durée estimée : %1, gain attendu : environ %2 %, timeline : entre %3 et %4 clichés</source>
         <translation>Estimated duration: %1, expected gain: about %2%, timeline: between %3 and %4 snapshots</translation>
     </message>
     <message>
-        <location filename="../src/pokemon_mosaic/ui/algorithm_tabs.py" line="292"/>
-        <source>Manière de chercher</source>
-        <translation>How it searches</translation>
-    </message>
-    <message>
-        <location filename="../src/pokemon_mosaic/ui/algorithm_tabs.py" line="294"/>
-        <source>La &lt;b&gt;descente stricte&lt;/b&gt; ne retient un échange que s&apos;il améliore le score. Elle est simple et rapide, mais reste prisonnière du premier arrangement correct qu&apos;elle trouve. Le &lt;b&gt;recuit simulé&lt;/b&gt; accepte au début des échanges qui dégradent le score, pour sortir de ces impasses, puis devient de plus en plus exigeant. Mesuré : 67,5 % du score effacé au recuit contre 61,0 % en descente stricte, à un million d&apos;itérations.</source>
-        <translation>&lt;b&gt;Strict descent&lt;/b&gt; keeps a swap only if it improves the score. It is simple and fast, but stays trapped in the first decent arrangement it finds. &lt;b&gt;Simulated annealing&lt;/b&gt; accepts score-worsening swaps early on, to escape those dead ends, then grows steadily stricter. Measured: 67.5% of the score erased with annealing against 61.0% in strict descent, at a million iterations.</translation>
-    </message>
-    <message>
-        <location filename="../src/pokemon_mosaic/ui/algorithm_tabs.py" line="303"/>
-        <source>Tolérance d&apos;acceptation</source>
-        <translation>Acceptance tolerance</translation>
-    </message>
-    <message>
-        <location filename="../src/pokemon_mosaic/ui/algorithm_tabs.py" line="312"/>
-        <source>Arrêter sur stagnation</source>
-        <translation>Stop on stagnation</translation>
-    </message>
-    <message>
-        <location filename="../src/pokemon_mosaic/ui/algorithm_tabs.py" line="314"/>
-        <source>Arrête le calcul quand aucun échange n&apos;a été retenu depuis ce nombre d&apos;itérations. C&apos;est le seul arrêt qui s&apos;adapte au jeu de cartes : il coupe quand il n&apos;y a plus rien à gagner, au lieu d&apos;attendre une durée décidée d&apos;avance.</source>
-        <translation>Stops the run when no swap has been kept for this many iterations. It is the only stop that adapts to the card set: it cuts when there is nothing left to gain, instead of waiting out a duration decided in advance.</translation>
-    </message>
-    <message>
-        <location filename="../src/pokemon_mosaic/ui/algorithm_tabs.py" line="319"/>
-        <source>Arrêter sur le temps</source>
-        <translation>Stop on time</translation>
-    </message>
-    <message>
-        <location filename="../src/pokemon_mosaic/ui/algorithm_tabs.py" line="321"/>
-        <source>Un budget en secondes, quoi qu&apos;il arrive. Utile pour essayer une mise en page sans y passer l&apos;après-midi ; le résultat est alors celui qu&apos;on a au moment où le chronomètre tombe, pas un résultat abouti.</source>
-        <translation>A budget in seconds, whatever happens. Useful to try out a layout without spending the afternoon on it; the result is then whatever you have when the clock runs out, not a finished one.</translation>
-    </message>
-    <message>
-        <location filename="../src/pokemon_mosaic/ui/algorithm_tabs.py" line="326"/>
-        <source>Arrêter sur score atteint</source>
-        <translation>Stop on score reached</translation>
-    </message>
-    <message>
-        <location filename="../src/pokemon_mosaic/ui/algorithm_tabs.py" line="334"/>
-        <source>Clichés de la timeline</source>
-        <translation>Timeline snapshots</translation>
-    </message>
-    <message>
-        <location filename="../src/pokemon_mosaic/ui/algorithm_tabs.py" line="336"/>
-        <source>Un cliché est gardé tous les N échanges &lt;b&gt;retenus&lt;/b&gt;, pour pouvoir revenir en arrière dans le calcul et choisir un état plutôt qu&apos;un autre. Resserrer la cadence donne une timeline plus fine et occupe plus de mémoire ; l&apos;élargir peut ne laisser que deux ou trois états à comparer.</source>
-        <translation>One snapshot is kept every N &lt;b&gt;kept&lt;/b&gt; swaps, so you can go back through the run and pick one state rather than another. Tightening the pace gives a finer timeline and uses more memory; loosening it may leave only two or three states to compare.</translation>
-    </message>
-    <message>
-        <location filename="../src/pokemon_mosaic/ui/algorithm_tabs.py" line="431"/>
+        <location filename="../src/pokemon_mosaic/ui/algorithm_tabs.py" line="450"/>
         <source>trop peu pour naviguer, resserrez la cadence</source>
         <translation>too few to navigate, tighten the cadence</translation>
     </message>
@@ -1326,22 +1289,22 @@
 <context>
     <name>SearchTab</name>
     <message>
-        <location filename="../src/pokemon_mosaic/ui/algorithm_tabs.py" line="66"/>
+        <location filename="../src/pokemon_mosaic/ui/algorithm_tabs.py" line="69"/>
         <source>Recherche</source>
         <translation>Search</translation>
     </message>
     <message>
-        <location filename="../src/pokemon_mosaic/ui/algorithm_tabs.py" line="105"/>
+        <location filename="../src/pokemon_mosaic/ui/algorithm_tabs.py" line="108"/>
         <source>Épaisseur</source>
         <translation>Thickness</translation>
     </message>
     <message>
-        <location filename="../src/pokemon_mosaic/ui/algorithm_tabs.py" line="107"/>
+        <location filename="../src/pokemon_mosaic/ui/algorithm_tabs.py" line="110"/>
         <source>C&apos;est la part de chaque carte que l&apos;assemblage regarde : une bande le long de ses quatre bords, dont il compare la couleur moyenne à celle de sa voisine. Fine, elle ne voit que l&apos;extrême bord et laisse les motifs se contredire juste derrière ; large, elle mélange le bord au centre de l&apos;illustration et les raccords se relâchent.</source>
         <translation>The share of each card the assembly looks at: a strip along its four edges, whose average colour it compares with its neighbour&apos;s. Thin, it sees only the very edge and lets the patterns contradict each other just behind; wide, it mixes the edge with the middle of the artwork and the joins loosen.</translation>
     </message>
     <message>
-        <location filename="../src/pokemon_mosaic/ui/algorithm_tabs.py" line="115"/>
+        <location filename="../src/pokemon_mosaic/ui/algorithm_tabs.py" line="118"/>
         <source>À gauche, la zone mesurée sur une carte. À droite, une petite grille d&apos;essai réoptimisée à cette épaisseur.</source>
         <translation>On the left, the area measured on a card. On the right, a small test grid re-optimised at that thickness.</translation>
     </message>

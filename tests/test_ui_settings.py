@@ -269,16 +269,88 @@ def recherche(qt_app, session):
     return SearchTab(session), session
 
 
-def test_every_advanced_setting_carries_its_explanation(step):
+def test_every_advanced_setting_sits_inside_a_sentence(step):
     """⚠️ **Le texte fait partie du réglage.** « Tolérance d'acceptation : 0,30 »
-    ne dit rien à personne : pas même à qui a écrit le programme, six mois
-    après."""
+    ne dit rien à personne, pas même à qui a écrit le programme six mois après.
+    Chaque champ est donc précédé des mots qui disent ce qu'il complète."""
     widget, _ = step
-    assert set(widget._labels) == set(widget._notes)
-    assert len(widget._labels) == 7, "sept réglages, sept explications"
-    for cle, note in widget._notes.items():
-        assert widget._labels[cle].text(), cle
-        assert len(note.text()) > 120, f"l'explication de {cle} est trop courte"
+    assert set(widget._sentences) == {
+        "algorithm", "acceptance", "iterations", "stagnation", "time",
+        "score", "snapshot_every"}
+    for cle, (avant, _apres) in widget._sentences.items():
+        assert avant.text(), f"la phrase de {cle} ne dit rien avant son champ"
+
+
+def test_the_advanced_tab_opens_on_a_notice_that_nothing_is_required(step):
+    """Sept réglages en tête d'écran se lisent comme sept décisions à prendre
+    avant de pouvoir lancer quoi que ce soit."""
+    widget, _ = step
+    assert widget._notice.property("role") == "warning"
+    assert widget._notice.font().bold()
+    texte = widget._notice.text()
+    assert "défaut" in texte and "suite" in texte
+    # Il vient bien en premier dans la colonne défilante.
+    colonne = widget._scroll.widget().layout()
+    assert colonne.itemAt(0).widget() is widget._notice
+
+
+def test_the_sentences_reuse_the_words_of_the_opening_paragraph(step):
+    """Le vocabulaire s'apprend une fois : les mots en gras de l'introduction
+    sont ceux que les réglages emploient plus bas."""
+    widget, _ = step
+    intro = widget._intro.text()
+    phrases = " ".join(avant.text() + " " + apres.text()
+                       for avant, apres in widget._sentences.values())
+    for mot in ("itération", "échange", "métrique", "agencement"):
+        assert f"<b>{mot}" in intro, f"« {mot} » n'est pas mis en avant"
+        assert mot in phrases, f"« {mot} » ne resservirait à rien"
+
+
+def test_the_iteration_limit_can_never_be_switched_off(step):
+    """Les autres arrêts ne font que couper plus tôt : un calcul sans borne
+    d'itérations n'existe pas."""
+    widget, _ = step
+    assert widget._always_iterations.isChecked()
+    assert not widget._always_iterations.isEnabled()
+    assert widget._iterations.isEnabled(), "le nombre, lui, reste modifiable"
+
+
+def test_clicking_the_words_of_a_stop_line_ticks_it(step):
+    """⚠️ Une case nue à côté d'un libellé n'offre que douze pixels à viser.
+    Les mots de la ligne appartiennent donc à la case, et la cocher se fait en
+    cliquant la phrase."""
+    from PySide6.QtCore import QPoint, Qt
+    from PySide6.QtTest import QTest
+
+    widget, session = step
+    case = widget._stop_on_time
+    assert case.text(), "la phrase n'est pas portée par la case"
+    assert not session.stop_on_time
+    # Un point franchement dans le texte, bien après l'indicateur.
+    QTest.mouseClick(case, Qt.LeftButton,
+                     pos=QPoint(case.width() - 10, case.height() // 2))
+    assert session.stop_on_time
+
+
+def test_the_iteration_line_keeps_its_words_outside_the_disabled_box(step):
+    """Sa case est grisée pour dire qu'on ne la décoche pas ; la phrase, elle,
+    décrit le réglage actif et doit se lire normalement."""
+    widget, _ = step
+    avant, _apres = widget._sentences["iterations"]
+    assert avant is not widget._always_iterations
+    assert avant.isEnabled()
+
+
+def test_the_acceptance_sentence_greys_out_in_strict_descent(step):
+    """Elle promettrait sinon un comportement que le calcul n'aura pas : la
+    descente stricte n'accepte jamais un échange dégradant."""
+    widget, session = step
+    session.set_algorithm(use_annealing=False)
+    assert not any(morceau.isEnabled()
+                   for morceau in widget._sentences["acceptance"])
+    session.set_algorithm(use_annealing=True)
+    assert all(morceau.isEnabled()
+               for morceau in widget._sentences["acceptance"])
 
 
 def test_the_thickness_is_the_only_one_that_shows_itself(recherche):

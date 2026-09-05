@@ -24,6 +24,7 @@ from PySide6.QtWidgets import (
     QWidget,
 )
 
+from . import theme
 from .big_spin import BigFloatSpin
 from .estimates import (
     estimated_gain,
@@ -37,10 +38,12 @@ from .strip_preview import StripPreview
 
 # En deçà, la timeline offrira trop peu d'états pour être navigable.
 USEFUL_SNAPSHOTS = 10
-# Ce qu'un intitulé de réglage gagne sur la police de l'interface, et le retrait
-# de son explication. Le paragraphe se lit sous son titre, pas à côté.
-ENTRY_BOOST = 1
-ENTRY_INDENT = 14
+# Les champs posés dans une phrase : assez larges pour leur nombre, jamais plus.
+# Un compteur qui s'étire casse la ligne de texte qui le porte.
+FIELD_WIDTH = 150
+SMALL_FIELD_WIDTH = 110
+# Le retrait des lignes qui dépendent de celle du dessus.
+SENTENCE_INDENT = 26
 # Hauteur maximale de l'aperçu des bandes.
 PREVIEW_HEIGHT = 300
 
@@ -133,20 +136,23 @@ class SearchTab(LayoutTab):
 
 
 class AdvancedTab(LayoutTab):
-    """Les réglages qu'on ne peut pas montrer, chacun sous son explication.
+    """Les réglages de l'algorithme, posés **dans** les phrases qui les disent.
 
     ⚠️ **Le texte fait partie du réglage.** « Tolérance d'acceptation : 0,30 »
-    ne dit rien à personne : pas même à qui a écrit le programme, six mois
-    après. Chaque champ est donc précédé de ce qu'il est, de ce à quoi il sert
-    et de ce qu'il change, chiffres mesurés à l'appui.
+    ne dit rien à personne, pas même à qui a écrit le programme six mois après.
+    Chaque champ vit donc au milieu de la phrase qu'il complète, « l'algorithme
+    s'arrête lorsqu'il a fait N itérations », et les mots en gras du paragraphe
+    d'ouverture, itération, échange, métrique, agencement, sont ceux que ces
+    phrases réemploient : le vocabulaire s'apprend une fois.
     """
 
     def __init__(self, session: Session, parent=None):
         super().__init__(parent)
         self._session = session
         self._updating = False
-        self._labels: dict[str, QLabel] = {}
-        self._notes: dict[str, QLabel] = {}
+        # Chaque phrase est coupée en deux autour de son champ : ce qui le
+        # précède, ce qui le suit.
+        self._sentences: dict[str, tuple[QLabel, QLabel]] = {}
         self._build()
         session.algorithm_changed.connect(self.refresh)
         session.cards_loaded.connect(self.refresh)
@@ -169,6 +175,13 @@ class AdvancedTab(LayoutTab):
         self._acceptance = QDoubleSpinBox()
         self._acceptance.setRange(0.01, 0.99)
         self._acceptance.setSingleStep(0.05)
+        # ⚠️ **Toujours cochée, et non débrayable.** Un calcul sans borne
+        # d'itérations n'existe pas : les autres arrêts ne font que le couper
+        # plus tôt. La case le dit au lieu de laisser croire qu'on peut la
+        # retirer, et un champ désactivé se lit mieux qu'un clic sans effet.
+        self._always_iterations = QCheckBox()
+        self._always_iterations.setChecked(True)
+        self._always_iterations.setEnabled(False)
         self._stop_on_stagnation = QCheckBox()
         self._stagnation = QSpinBox()
         self._stagnation.setRange(1000, 10_000_000)
@@ -182,32 +195,62 @@ class AdvancedTab(LayoutTab):
         self._target_score = QDoubleSpinBox()
         self._target_score.setRange(0.0, 10_000_000.0)
         self._target_score.setDecimals(0)
-        for champ in (self._iterations, self._snapshot_every, self._stagnation,
-                      self._time_budget, self._acceptance, self._target_score):
-            champ.setMinimumWidth(210)
+        for champ in (self._iterations, self._stagnation):
+            champ.setFixedWidth(FIELD_WIDTH)
+        for champ in (self._time_budget, self._acceptance, self._target_score,
+                      self._snapshot_every):
+            champ.setFixedWidth(SMALL_FIELD_WIDTH)
+
+        # ⚠️ **L'avertissement vient en premier.** Sans lui, sept réglages en
+        # tête d'écran se lisent comme sept décisions à prendre avant de
+        # pouvoir lancer quoi que ce soit.
+        self._notice = QLabel()
+        self._notice.setWordWrap(True)
+        theme.mark(self._notice, "warning")
+        gras = self._notice.font()
+        gras.setBold(True)
+        self._notice.setFont(gras)
+
+        self._intro = QLabel()
+        self._intro.setWordWrap(True)
+        self._intro.setTextFormat(Qt.RichText)
+
+        self._stop_title = QLabel()
+        self._stop_title.setTextFormat(Qt.RichText)
 
         contenu = QWidget()
         colonne = QVBoxLayout(contenu)
         colonne.setContentsMargins(4, 4, 12, 4)
-        colonne.setSpacing(4)
-        self._add_entry(colonne, "iterations", self._iterations)
-        self._add_entry(colonne, "algorithm", self._algorithm)
-        self._add_entry(colonne, "acceptance", self._acceptance)
-        self._add_entry(colonne, "stagnation", self._stagnation,
-                        self._stop_on_stagnation)
-        self._add_entry(colonne, "time", self._time_budget, self._stop_on_time)
-        self._add_entry(colonne, "score", self._target_score,
-                        self._stop_on_score)
-        self._add_entry(colonne, "snapshot_every", self._snapshot_every)
+        colonne.setSpacing(8)
+        colonne.addWidget(self._notice)
+        colonne.addWidget(self._intro)
+        colonne.addLayout(self._sentence("algorithm", self._algorithm))
+        colonne.addLayout(self._sentence("acceptance", self._acceptance,
+                                         retrait=SENTENCE_INDENT))
+        colonne.addWidget(self._stop_title)
+        colonne.addLayout(self._sentence("iterations", self._iterations,
+                                         self._always_iterations,
+                                         retrait=SENTENCE_INDENT))
+        colonne.addLayout(self._sentence("stagnation", self._stagnation,
+                                         self._stop_on_stagnation,
+                                         retrait=SENTENCE_INDENT))
+        colonne.addLayout(self._sentence("time", self._time_budget,
+                                         self._stop_on_time,
+                                         retrait=SENTENCE_INDENT))
+        colonne.addLayout(self._sentence("score", self._target_score,
+                                         self._stop_on_score,
+                                         retrait=SENTENCE_INDENT))
+        colonne.addLayout(self._sentence("snapshot_every", self._snapshot_every))
         colonne.addStretch(1)
 
-        # ⚠️ **Défilante.** Sept réglages et leurs paragraphes ne tiennent sur
-        # aucun écran : sans cela, les derniers seraient hors du cadre, et rien
-        # ne dirait qu'ils existent.
+        # ⚠️ **Défilante.** Le texte et ses réglages ne tiennent pas sur toutes
+        # les fenêtres : sans cela, les dernières lignes seraient hors du cadre,
+        # et rien ne dirait qu'elles existent.
         self._scroll = QScrollArea()
         self._scroll.setWidget(contenu)
         self._scroll.setWidgetResizable(True)
         self._scroll.setFrameShape(QScrollArea.NoFrame)
+        self._scroll.setHorizontalScrollBarPolicy(Qt.ScrollBarAlwaysOff)
 
         self._projection = QLabel()
         self._projection.setWordWrap(True)
@@ -222,42 +265,52 @@ class AdvancedTab(LayoutTab):
         self._connect_all()
         self.retranslate_ui()
 
-    def _add_entry(self, colonne: QVBoxLayout, key: str, champ: QWidget,
-                   bascule: QCheckBox | None = None) -> None:
-        """Un réglage : son intitulé, son explication, puis le champ.
+    def _sentence(self, key: str, champ: QWidget,
+                  bascule: QCheckBox | None = None,
+                  retrait: int = 0) -> QHBoxLayout:
+        """Une phrase dont le réglage est un mot comme les autres.
 
-        L'explication vient **avant** le champ. Après, elle se lit comme une
-        note de bas de page qu'on saute ; avant, elle est la question à laquelle
-        le champ répond.
+        Le texte se coupe autour de `%1` : ce qui précède le champ, ce qui le
+        suit. Une seule chaîne à traduire, et le champ reste à sa place dans la
+        phrase quelle que soit la langue.
+
+        ⚠️ **Quand la ligne se coche, ses mots appartiennent à la case.** Une
+        case nue à côté d'un libellé n'offre que douze pixels à viser, et
+        cliquer la phrase ne ferait rien. Le texte est donc porté par la
+        `QCheckBox` elle-même. L'exception est la case **désactivée** des
+        itérations : elle griserait la phrase qui décrit le réglage par défaut,
+        celui-là même qui est actif.
         """
-        titre = QLabel()
-        police = titre.font()
-        police.setBold(True)
-        police.setPointSize(police.pointSize() + ENTRY_BOOST)
-        titre.setFont(police)
-        self._labels[key] = titre
+        porte_le_texte = bascule is not None and bascule.isEnabled()
+        avant = bascule if porte_le_texte else QLabel()
+        apres = QLabel()
+        for morceau in (avant, apres):
+            if isinstance(morceau, QLabel):
+                morceau.setTextFormat(Qt.RichText)
+        # ⚠️ **La fin de phrase se replie, le début non.** Sans cela, une
+        # phrase un peu longue élargissait le panneau jusqu'à faire apparaître
+        # une barre de défilement horizontale, et le texte sortait du cadre.
+        # Le début, lui, doit rester collé à son champ.
+        apres.setWordWrap(True)
+        self._sentences[key] = (avant, apres)
 
-        note = QLabel()
-        note.setWordWrap(True)
-        note.setContentsMargins(ENTRY_INDENT, 0, 0, 0)
-        # ⚠️ Le texte enrichi n'est pas une coquetterie : sans lui, les balises
-        # de mise en gras s'afficheraient telles quelles au milieu des phrases.
-        note.setTextFormat(Qt.RichText)
-        self._notes[key] = note
-
-        # ⚠️ **Un champ ne s'étire pas.** Laissé seul dans sa ligne, il prenait
-        # toute la largeur du panneau : un compteur de mille pixels de large ne
-        # se lit pas mieux, et il éloigne ses flèches de son nombre.
         ligne = QHBoxLayout()
-        ligne.setContentsMargins(ENTRY_INDENT, 2, 0, 10)
+        ligne.setContentsMargins(retrait, 0, 0, 0)
+        ligne.setSpacing(6)
         if bascule is not None:
             ligne.addWidget(bascule)
+        if avant is not bascule:
+            ligne.addWidget(avant)
         ligne.addWidget(champ)
-        ligne.addStretch(1)
+        ligne.addWidget(apres, 1)
+        return ligne
 
-        colonne.addWidget(titre)
-        colonne.addWidget(note)
-        colonne.addLayout(ligne)
+    def _say(self, key: str, texte: str) -> None:
+        """Pose une phrase autour de son champ, en coupant sur `%1`."""
+        avant, apres = self._sentences[key]
+        morceaux = texte.split("%1")
+        avant.setText(morceaux[0].strip())
+        apres.setText(morceaux[1].strip() if len(morceaux) > 1 else "")
 
     def _connect_all(self) -> None:
         for widget in (self._iterations, self._snapshot_every, self._stagnation,
@@ -268,77 +321,40 @@ class AdvancedTab(LayoutTab):
             widget.toggled.connect(self._on_form_changed)
         self._algorithm.currentIndexChanged.connect(self._on_form_changed)
 
-    # --- Ce que chaque réglage est, et ce qu'il change --------------------
+    # --- Ce que l'algorithme fait, et ce que chaque réglage y change ------
 
     def retranslate_ui(self) -> None:
-        self._algorithm.setItemText(0, self.tr("Recuit simulé"))
-        self._algorithm.setItemText(1, self.tr("Descente stricte"))
-        self._stop_on_stagnation.setText(self.tr("Activer"))
-        self._stop_on_time.setText(self.tr("Activer"))
-        self._stop_on_score.setText(self.tr("Activer"))
-        self._stagnation.setSuffix(self.tr(" itérations sans gain"))
-        self._target_score.setPrefix(self.tr("score "))
+        self._algorithm.setItemText(0, self.tr("le recuit simulé"))
+        self._algorithm.setItemText(1, self.tr("la descente stricte"))
 
-        self._labels["iterations"].setText(self.tr("Durée du calcul"))
-        self._notes["iterations"].setText(self.tr(
-            "Le nombre d'échanges de cartes que l'assemblage tentera. Il en "
-            "essaie environ 127 000 par seconde en descente stricte, 120 000 au "
-            "recuit. ⚠️ Le gain ne suit pas : les mille premières itérations "
-            "effacent déjà près d'un tiers de ce qu'on peut gagner, et la courbe "
-            "s'aplatit ensuite : 56 % du score de départ effacés à 50 000 "
-            "itérations, 61 % à un million. Multiplier la durée par vingt ne "
-            "rapporte donc que quelques points."))
+        self._notice.setText(self.tr(
+            "Les valeurs par défaut donnent presque toujours un bon résultat. "
+            "Vous pouvez les changer, ou passer directement à la suite."))
 
-        self._labels["algorithm"].setText(self.tr("Manière de chercher"))
-        self._notes["algorithm"].setText(self.tr(
-            "La <b>descente stricte</b> ne retient un échange que s'il améliore "
-            "le score. Elle est simple et rapide, mais reste prisonnière du "
-            "premier arrangement correct qu'elle trouve. Le <b>recuit "
-            "simulé</b> accepte au "
-            "début des échanges qui dégradent le score, pour sortir de ces "
-            "impasses, puis devient de plus en plus exigeant. Mesuré : 67,5 % du "
-            "score effacé au recuit contre 61,0 % en descente stricte, à un "
-            "million d'itérations."))
+        # Les mots en gras sont ceux que les phrases plus bas réemploient.
+        self._intro.setText(self.tr(
+            "À chaque <b>itération</b>, l'algorithme tente un <b>échange</b> : "
+            "il permute deux cartes de la grille et regarde ce que devient la "
+            "<b>métrique</b>, l'écart de couleur entre les bords qui se "
+            "touchent. L'échange est <b>retenu</b> s'il rapproche "
+            "l'<b>agencement</b> du but, une mosaïque dont les bords voisins se "
+            "ressemblent, et le calcul continue jusqu'à ce qu'un <b>arrêt</b> "
+            "tombe."))
 
-        self._labels["acceptance"].setText(self.tr("Tolérance d'acceptation"))
-        self._notes["acceptance"].setText(self.tr(
-            "Au recuit seulement : la proportion d'échanges dégradants acceptés "
-            "au démarrage. Elle tombe d'elle-même au fil du calcul, mesuré, "
-            "19 % au départ et 0,3 % à la fin. Trop basse, le recuit se comporte "
-            "comme une descente stricte ; trop haute, il brasse longtemps sans "
-            "converger. En descente stricte, le champ n'a aucun effet et reste "
-            "éteint."))
+        self._say("algorithm", self.tr("L'algorithme utilisé est %1"))
+        self._say("acceptance", self.tr(
+            "Le recuit accepte au départ %1 d'échanges qui dégradent la "
+            "métrique, puis devient de plus en plus exigeant."))
 
-        self._labels["stagnation"].setText(self.tr("Arrêter sur stagnation"))
-        self._notes["stagnation"].setText(self.tr(
-            "Arrête le calcul quand aucun échange n'a été retenu depuis ce "
-            "nombre d'itérations. C'est le seul arrêt qui s'adapte au jeu de "
-            "cartes : il coupe quand il n'y a plus rien à gagner, au lieu "
-            "d'attendre une durée décidée d'avance."))
+        self._stop_title.setText(self.tr("<b>L'algorithme s'arrête</b> lorsque :"))
+        self._say("iterations", self.tr("il a fait %1 itérations (toujours actif)"))
+        self._say("stagnation", self.tr(
+            "la métrique ne s'améliore plus depuis %1 itérations"))
+        self._say("time", self.tr("il a calculé pendant %1"))
+        self._say("score", self.tr("la métrique descend sous %1"))
 
-        self._labels["time"].setText(self.tr("Arrêter sur le temps"))
-        self._notes["time"].setText(self.tr(
-            "Un budget en secondes, quoi qu'il arrive. Utile pour essayer une "
-            "mise en page sans y passer l'après-midi ; le résultat est alors "
-            "celui qu'on a au moment où le chronomètre tombe, pas un résultat "
-            "abouti."))
-
-        self._labels["score"].setText(self.tr("Arrêter sur score atteint"))
-        self._notes["score"].setText(self.tr(
-            "Arrête dès que le score descend sous cette valeur. ⚠️ Le score n'a "
-            "pas d'échelle absolue : il dépend du nombre de cartes <b>et</b> de "
-            "l'épaisseur des bandes : la même grille vaut 621,7 avec une bande "
-            "de 0,10 et 552,0 avec 0,30. Une valeur relevée sur un calcul "
-            "précédent ne vaut donc que pour les mêmes réglages."))
-
-        self._labels["snapshot_every"].setText(self.tr("Clichés de la timeline"))
-        self._notes["snapshot_every"].setText(self.tr(
-            "Un cliché est gardé tous les N échanges <b>retenus</b>, pour "
-            "pouvoir "
-            "revenir en arrière dans le calcul et choisir un état plutôt qu'un "
-            "autre. Resserrer la cadence donne une timeline plus fine et occupe "
-            "plus de mémoire ; l'élargir peut ne laisser que deux ou trois états "
-            "à comparer."))
+        self._say("snapshot_every", self.tr(
+            "Un agencement sera enregistré tous les %1 échanges retenus."))
         self.refresh()
 
     # --- Réactions --------------------------------------------------------
@@ -411,8 +427,11 @@ class AdvancedTab(LayoutTab):
         self._time_budget.setEnabled(self._session.stop_on_time)
         self._target_score.setEnabled(self._session.stop_on_score)
         # La tolérance ne veut rien dire en descente stricte : elle n'accepte
-        # jamais un coup dégradant.
+        # jamais un coup dégradant. La phrase se grise avec son champ, sinon
+        # elle promettrait un comportement que le calcul n'aura pas.
         self._acceptance.setEnabled(self._session.use_annealing)
+        for morceau in self._sentences["acceptance"]:
+            morceau.setEnabled(self._session.use_annealing)
 
     def _update_projections(self) -> None:
         """Ce que ces réglages impliquent, en une ligne sous les champs."""
