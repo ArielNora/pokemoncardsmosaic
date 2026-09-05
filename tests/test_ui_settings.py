@@ -1,4 +1,9 @@
-"""Tests des réglages d'algorithme et de leurs projections chiffrées."""
+"""Tests des réglages d'algorithme et de leurs projections chiffrées.
+
+Ils ont quitté leur écran pour la famille « Algorithme » de l'étape des
+paramètres : l'épaisseur des bandes à l'onglet « Recherche », qui la montre, et
+tout le reste à « Paramètres avancés », qui l'explique.
+"""
 
 import pytest
 from test_ui_session import card_set_in
@@ -252,16 +257,51 @@ def test_cards_arriving_late_use_the_current_strip_size(qt_app, tmp_path):
 
 @pytest.fixture
 def step(qt_app, session):
-    from pokemon_mosaic.ui.settings_step import SettingsStep
+    from pokemon_mosaic.ui.algorithm_tabs import AdvancedTab
 
-    return SettingsStep(session), session
+    return AdvancedTab(session), session
 
 
-def test_form_starts_from_the_session(step):
+@pytest.fixture
+def recherche(qt_app, session):
+    from pokemon_mosaic.ui.algorithm_tabs import SearchTab
+
+    return SearchTab(session), session
+
+
+def test_every_advanced_setting_carries_its_explanation(step):
+    """⚠️ **Le texte fait partie du réglage.** « Tolérance d'acceptation : 0,30 »
+    ne dit rien à personne — pas même à qui a écrit le programme, six mois
+    après."""
+    widget, _ = step
+    assert set(widget._labels) == set(widget._notes)
+    assert len(widget._labels) == 7, "sept réglages, sept explications"
+    for cle, note in widget._notes.items():
+        assert widget._labels[cle].text(), cle
+        assert len(note.text()) > 120, f"l'explication de {cle} est trop courte"
+
+
+def test_the_thickness_is_the_only_one_that_shows_itself(recherche):
+    """Elle se dessine ; les autres n'ont rien à montrer — on ne dessine pas un
+    nombre d'itérations."""
+    widget, session = recherche
+    widget._strip.setValue(0.25)
+    assert session.strip_size == pytest.approx(0.25)
+    assert widget._preview is not None
+
+
+def test_the_algorithm_tabs_never_block(step, recherche):
+    """Ils ont tous une valeur qui marche : personne n'a à y toucher pour
+    lancer un calcul."""
+    assert step[0].is_valid()
+    assert recherche[0].is_valid()
+
+
+def test_form_starts_from_the_session(step, recherche):
     widget, session = step
     assert widget._iterations.value() == session.iterations
-    assert widget._strip_size.value() == pytest.approx(session.strip_size)
     assert widget._algorithm.currentData() is session.use_annealing
+    assert recherche[0]._strip.value() == pytest.approx(session.strip_size)
 
 
 def test_form_follows_a_change_made_elsewhere(step):
@@ -305,33 +345,33 @@ def test_threshold_fields_follow_their_checkbox(step, flag, field):
 def test_projections_are_displayed(step):
     widget, session = step
     session.set_algorithm(iterations=1_000_000, use_annealing=True, snapshot_every=10)
-    assert "8 s" in widget._duration.text()
-    assert "68" in widget._gain.text()
-    assert "36" in widget._snapshots.text() and "70" in widget._snapshots.text()
+    assert "8 s" in widget._projection.text()
+    assert "68" in widget._projection.text()
+    assert "36" in widget._projection.text() and "70" in widget._projection.text()
 
 
 def test_projections_follow_the_algorithm(step):
     widget, session = step
     session.set_algorithm(iterations=1_000_000, use_annealing=True)
-    annealed = widget._gain.text()
+    annealed = widget._projection.text()
     session.set_algorithm(use_annealing=False)
-    assert widget._gain.text() != annealed
+    assert widget._projection.text() != annealed
 
 
 def test_a_too_loose_cadence_is_flagged(step):
     """Sous une dizaine de clichés la timeline n'est plus navigable."""
     widget, session = step
     session.set_algorithm(iterations=10_000, snapshot_every=1000, use_annealing=False)
-    assert "cadence" in widget._snapshots.text()
+    assert "cadence" in widget._projection.text()
 
 
 def test_a_usable_cadence_is_not_flagged(step):
     widget, session = step
     session.set_algorithm(iterations=1_000_000, snapshot_every=10, use_annealing=True)
-    assert "cadence" not in widget._snapshots.text()
+    assert "cadence" not in widget._projection.text()
 
 
-def test_the_preview_is_debounced(step):
+def test_the_preview_is_debounced(recherche):
     """L'aperçu coûte jusqu'à 294 ms : chaque cran de molette ne doit pas le payer.
 
     L'anti-rebond appartient à l'aperçu lui-même, pas à cet écran : c'est lui qui
@@ -339,7 +379,7 @@ def test_the_preview_is_debounced(step):
     """
     from pokemon_mosaic.ui.strip_preview import REBUILD_DELAY_MS
 
-    widget, session = step
+    widget, session = recherche
     widget._preview.refresh()
     session.set_algorithm(strip_size=0.2)
     assert widget._preview._timer.isActive()
@@ -347,10 +387,10 @@ def test_the_preview_is_debounced(step):
     assert widget._preview._timer.isSingleShot()
 
 
-def test_the_screen_does_not_schedule_the_preview_itself(step):
+def test_the_screen_does_not_schedule_the_preview_itself(recherche):
     """Relancer l'aperçu depuis l'écran le ferait travailler pour des réglages
     qui ne le concernent pas."""
-    widget, session = step
+    widget, session = recherche
     widget._preview.refresh()
     session.set_algorithm(iterations=333_000)
     assert not widget._preview._timer.isActive()
@@ -400,19 +440,19 @@ def test_a_value_outside_the_field_bounds_comes_back_corrected(session):
     """Un préréglage écrit à la main peut porter une valeur hors bornes. Sans
     retour du champ vers la session, le formulaire annoncerait un calcul
     différent de celui qui aurait lieu."""
-    from pokemon_mosaic.ui.settings_step import SettingsStep
+    from pokemon_mosaic.ui.algorithm_tabs import AdvancedTab, SearchTab
 
-    step = SettingsStep(session)
+    avances, cherche = AdvancedTab(session), SearchTab(session)
     session.set_algorithm(iterations=99, strip_size=0.9, acceptance=5.0)
 
-    assert step._iterations.value() == session.iterations == 1000
-    assert step._strip_size.value() == session.strip_size == pytest.approx(0.5)
-    assert step._acceptance.value() == session.acceptance == pytest.approx(0.99)
+    assert avances._iterations.value() == session.iterations == 1000
+    assert cherche._strip.value() == session.strip_size == pytest.approx(0.5)
+    assert avances._acceptance.value() == session.acceptance == pytest.approx(0.99)
 
 
 def test_a_value_within_bounds_is_left_alone(session):
-    from pokemon_mosaic.ui.settings_step import SettingsStep
+    from pokemon_mosaic.ui.algorithm_tabs import AdvancedTab
 
-    step = SettingsStep(session)
+    step = AdvancedTab(session)
     session.set_algorithm(iterations=4242)
     assert step._iterations.value() == session.iterations == 4242

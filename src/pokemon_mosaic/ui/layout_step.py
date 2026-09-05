@@ -1,4 +1,4 @@
-"""Étape 2 — la mise en page, une décision par onglet.
+"""Étape 2 — les paramètres, une décision par onglet.
 
 Un seul formulaire portait tout : dimensions, format, orientation, finesse,
 panneaux, cases vides. Rien ne disait par quoi commencer, ni ce que chaque
@@ -9,6 +9,10 @@ verte quand la partie est réglée.
 Une partie est **prête** quand l'utilisateur l'a validée par « Suivant » **et**
 que son contenu tient toujours debout. Revenir en arrière ne défait donc rien,
 mais changer un réglage jusqu'à le rendre invalide rallume l'avertissement.
+
+L'étape porte aussi les réglages de l'algorithme, qui formaient une étape à
+part : deux décisions du même souffle, séparées par un « Suivant » que rien ne
+justifiait.
 """
 
 from PySide6.QtCore import QEvent, QRectF, QSize, Qt, Signal
@@ -26,7 +30,14 @@ from PySide6.QtWidgets import (
 )
 
 from . import theme
-from .layout_tabs import CardSizeTab, GridSizeTab, PaperTab, PlacementTab
+from .algorithm_tabs import AdvancedTab, SearchTab
+from .layout_tabs import (
+    CardSizeTab,
+    GridSizeTab,
+    LayoutTab,
+    PaperTab,
+    PlacementTab,
+)
 from .session import Session
 
 # Taille de la pastille d'état posée devant chaque onglet.
@@ -157,19 +168,34 @@ class TabList(QListWidget):
 
     def paintEvent(self, event) -> None:
         super().paintEvent(event)
-        rangs = [rang for rang in range(self.count())
-                 if self.item(rang).data(Qt.UserRole + 1)
-                 and not self.isRowHidden(rang)]
-        if not rangs:
-            return                      # famille repliée : rien à rattacher
-        premier = self.visualItemRect(self.item(rangs[0]))
-        dernier = self.visualItemRect(self.item(rangs[-1]))
+        # ⚠️ **Un trait par famille**, et non un seul du premier au dernier
+        # sous-onglet : il y a plusieurs familles, et un trait unique traverserait
+        # l'intitulé de la seconde en prétendant que tout descend de la première.
+        # On les reconnaît à ce qu'elles sont **contiguës**.
         painter = QPainter(self.viewport())
         painter.setPen(QPen(QColor(theme.colours(self.palette())["button_border"]),
                             TRUNK_WIDTH))
-        x = premier.left() + TRUNK_X
-        painter.drawLine(x, premier.top(), x, dernier.bottom() - BOX_BOTTOM_MARGIN)
+        for groupe in self._sub_tab_runs():
+            premier = self.visualItemRect(self.item(groupe[0]))
+            dernier = self.visualItemRect(self.item(groupe[-1]))
+            x = premier.left() + TRUNK_X
+            painter.drawLine(x, premier.top(),
+                             x, dernier.bottom() - BOX_BOTTOM_MARGIN)
         painter.end()
+
+    def _sub_tab_runs(self) -> list[list[int]]:
+        """Les suites de sous-onglets visibles, une par famille dépliée."""
+        groupes: list[list[int]] = []
+        for rang in range(self.count()):
+            visible = (self.item(rang).data(Qt.UserRole + 1)
+                       and not self.isRowHidden(rang))
+            if not visible:
+                groupes.append([])
+            elif groupes and groupes[-1]:
+                groupes[-1].append(rang)
+            else:
+                groupes.append([rang])
+        return [groupe for groupe in groupes if groupe]
 
 
 class LayoutStep(QWidget):
@@ -189,10 +215,9 @@ class LayoutStep(QWidget):
         # cliquer l'intitulé de famille y déplace le rang courant, et il faut
         # savoir où revenir.
         self._position = 0
-        # Vrai quand la famille est repliée. On s'ouvre dépliée : cacher au
-        # premier regard les trois quarts du parcours le raccourcirait pour de
-        # faux.
-        self._collapsed = False
+        # Les familles repliées. On s'ouvre toutes dépliées : cacher au premier
+        # regard les trois quarts du parcours le raccourcirait pour de faux.
+        self._collapsed: set[str] = set()
         # Vrai le temps d'un retour de sélection que nous provoquons.
         self._navigating = False
         self._build()
@@ -201,12 +226,19 @@ class LayoutStep(QWidget):
 
     def _build(self) -> None:
         # ⚠️ **L'ordre est celui des décisions** : d'abord le papier, ensuite ce
-        # qu'on y pose. La grille se règle en trois temps, regroupés sous un même
-        # intitulé : sa taille, la taille de ses cartes, puis son emplacement.
-        self._tabs = [PaperTab(self._session), GridSizeTab(self._session),
-                      CardSizeTab(self._session), PlacementTab(self._session)]
-        # Rang de la liste -> onglet, ou `FAMILY_ROW` pour l'intitulé de famille.
+        # qu'on y pose, enfin comment on l'assemble. Deux familles coiffent
+        # chacune leurs onglets ; « Pages » n'en a pas, elle décide seule.
+        menu = [
+            (None, [PaperTab]),
+            ("grid", [GridSizeTab, CardSizeTab, PlacementTab]),
+            ("algorithm", [SearchTab, AdvancedTab]),
+        ]
+        self._tabs: list[LayoutTab] = []
+        # Rang de la liste -> onglet, ou `FAMILY_ROW` pour un intitulé.
         self._rows: list[int] = []
+        # Clé de famille -> les positions qu'elle chapeaute, et son rang.
+        self._families: dict[str, list[int]] = {}
+        self._family_rows: dict[str, int] = {}
 
         self._list = TabList()
         self._list.setItemDelegate(TabDelegate(self._list))
@@ -221,14 +253,21 @@ class LayoutStep(QWidget):
         self._list.setVerticalScrollMode(QAbstractItemView.ScrollPerPixel)
 
         self._pages = QStackedWidget()
-        for tab in self._tabs:
-            self._pages.addWidget(tab)
-            tab.state_changed.connect(self._refresh_badges)
 
-        self._add_row(0)              # les pages
-        self._add_family_row()        # « Grille », simple intitulé
-        for position in range(1, len(self._tabs)):
-            self._add_row(position)
+        for cle, classes in menu:
+            if cle is not None:
+                self._family_rows[cle] = len(self._rows)
+                self._add_family_row()
+                self._families[cle] = []
+            for fabrique in classes:
+                position = len(self._tabs)
+                onglet = fabrique(self._session)
+                self._tabs.append(onglet)
+                self._pages.addWidget(onglet)
+                onglet.state_changed.connect(self._refresh_badges)
+                self._add_row(position, sous_onglet=cle is not None)
+                if cle is not None:
+                    self._families[cle].append(position)
 
         self._list.currentRowChanged.connect(self._on_tab_picked)
         self._list.itemClicked.connect(self._on_item_clicked)
@@ -239,9 +278,8 @@ class LayoutStep(QWidget):
         layout.addWidget(self._pages, 1)
         self.retranslate_ui()
 
-    def _add_row(self, position: int) -> None:
+    def _add_row(self, position: int, sous_onglet: bool) -> None:
         """Une ligne cliquable pour un onglet. Les seconds rangs sont décalés."""
-        sous_onglet = position > 0
         item = QListWidgetItem("")
         hauteur = SUB_TAB_HEIGHT if sous_onglet else TAB_HEIGHT
         item.setSizeHint(QSize(TAB_WIDTH - 8, hauteur))
@@ -312,13 +350,13 @@ class LayoutStep(QWidget):
             return BLOCKED
         return READY if position in self._validated else PENDING
 
-    def _family_state(self) -> str:
-        """Ce que la famille repliée dit de ses trois onglets.
+    def _family_state(self, cle: str) -> str:
+        """Ce qu'une famille repliée dit de ses onglets.
 
         Le pire l'emporte : une croix rouge cachée sous un groupe replié serait
         exactement ce qu'on ne veut pas rater.
         """
-        etats = [self._state(position) for position in self._family_positions()]
+        etats = [self._state(position) for position in self._families[cle]]
         for etat in (BLOCKED, PENDING):
             if etat in etats:
                 return etat
@@ -340,24 +378,39 @@ class LayoutStep(QWidget):
         """
         return all(rang in self._validated for rang in range(position))
 
-    def _family_positions(self) -> range:
-        """Les onglets que l'intitulé « Grille » chapeaute."""
-        return range(1, len(self._tabs))
+    def _family_of(self, position: int) -> str | None:
+        """La famille qui chapeaute cet onglet, s'il en a une."""
+        for cle, positions in self._families.items():
+            if position in positions:
+                return cle
+        return None
+
+    def _family_title(self, cle: str) -> str:
+        """L'intitulé d'une famille. Littéral : `lupdate` n'extrait que ceux-là."""
+        return {"grid": self.tr("Grille"),
+                "algorithm": self.tr("Algorithme")}[cle]
+
+    def _family_at_row(self, rang: int) -> str | None:
+        for cle, ligne in self._family_rows.items():
+            if ligne == rang:
+                return cle
+        return None
 
     def _refresh_badges(self) -> None:
         palette = self.palette()
         for rang, position in enumerate(self._rows):
             item = self._list.item(rang)
             if position == FAMILY_ROW:
-                chevron = "▸" if self._collapsed else "▾"
-                item.setText(f"{chevron} " + self.tr("Grille"))
+                cle = self._family_at_row(rang)
+                chevron = "▸" if cle in self._collapsed else "▾"
+                item.setText(f"{chevron} " + self._family_title(cle))
                 # Repliée, la famille répond pour ses trois onglets : sans cela,
                 # ce qui reste à faire disparaîtrait avec eux.
                 # ⚠️ L'intitulé de famille ne prend **pas** de cadre coloré :
                 # il n'est pas une destination, et un cadre en ferait un
                 # quatrième onglet. Sa pastille, repliée, dit l'état des siens.
-                item.setIcon(state_icon(self._family_state(), palette)
-                             if self._collapsed else QIcon())
+                item.setIcon(state_icon(self._family_state(cle), palette)
+                             if cle in self._collapsed else QIcon())
                 continue
             # Le retrait est **géométrique** — voir `TabDelegate` — et non
             # quatre espaces dans le libellé, qui décalaient le texte sans
@@ -383,23 +436,42 @@ class LayoutStep(QWidget):
     # --- Navigation -------------------------------------------------------
 
     def _on_item_clicked(self, item: QListWidgetItem) -> None:
-        if self._rows[self._list.row(item)] == FAMILY_ROW:
-            self._toggle_family()
+        cle = self._family_at_row(self._list.row(item))
+        if cle is not None:
+            self._toggle_family(cle)
 
-    def _toggle_family(self) -> None:
-        """Plie ou déplie les trois onglets de la grille.
+    def _toggle_family(self, cle: str) -> None:
+        """Plie ou déplie les onglets d'une famille.
 
-        ⚠️ **Replier depuis l'un d'eux ramène aux pages.** Garder affiché un
-        onglet dont la ligne vient d'être cachée laisserait un écran que plus
-        aucune sélection ne désigne, et un « Suivant » qui avance depuis un
-        endroit invisible.
+        ⚠️ **Replier depuis l'un d'eux ramène à un onglet sans famille.**
+        Garder affiché un onglet dont la ligne vient d'être cachée laisserait un
+        écran que plus aucune sélection ne désigne, et un « Suivant » qui avance
+        depuis un endroit invisible. Le refuge se cherche : le premier onglet
+        hors de toute famille reste visible quoi qu'on plie, alors que la
+        position 0 pourrait un jour entrer dans un groupe.
         """
-        self._collapsed = not self._collapsed
-        for position in self._family_positions():
-            self._list.setRowHidden(self._row_of(position), self._collapsed)
-        if self._collapsed and self._position in self._family_positions():
-            self._show(0)
+        plie = cle not in self._collapsed
+        if plie:
+            self._collapsed.add(cle)
+        else:
+            self._collapsed.discard(cle)
+        for position in self._families[cle]:
+            self._list.setRowHidden(self._row_of(position), plie)
+        if plie and self._position in self._families[cle]:
+            self._show(self._refuge())
         self._refresh_badges()
+
+    def _refuge(self) -> int:
+        """Premier onglet qui n'appartient à aucune famille, donc toujours
+        atteignable. Aucun n'en sortirait : à défaut, le premier onglet tout
+        court, quitte à déplier sa famille."""
+        groupes = {
+            position for onglets in self._families.values() for position in onglets
+        }
+        for position in range(len(self._tabs)):
+            if position not in groupes:
+                return position
+        return 0
 
     def _show(self, position: int) -> None:
         """Affiche un onglet, en dépliant la famille s'il s'y trouve.
@@ -410,8 +482,9 @@ class LayoutStep(QWidget):
         suivante — avant d'appeler ceci. Un futur « aller à l'onglet X » devra
         faire de même, sous peine de ne rien faire, sans erreur.
         """
-        if position in self._family_positions() and self._collapsed:
-            self._toggle_family()
+        cle = self._family_of(position)
+        if cle is not None and cle in self._collapsed:
+            self._toggle_family(cle)
         self._list.setCurrentRow(self._row_of(position))
 
     def _on_tab_picked(self, row: int) -> None:

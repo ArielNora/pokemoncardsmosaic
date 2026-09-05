@@ -61,7 +61,7 @@ def test_step_titles_are_extractable_not_dynamic():
     from pokemon_mosaic.ui.main_window import MainWindow
 
     source = inspect.getsource(MainWindow.step_title)
-    for literal in ('self.tr("Cartes")', 'self.tr("Réglages")'):
+    for literal in ('self.tr("Cartes")', 'self.tr("Paramètres")'):
         assert literal in source
 
 

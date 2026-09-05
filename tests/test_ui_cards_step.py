@@ -311,6 +311,16 @@ def test_the_aura_follows_a_change_of_mode(fenetre, qt_app):
     assert clair == theme.LIGHT["error"]
 
 
+def test_the_window_walks_three_steps(fenetre):
+    """L'algorithme a rejoint les paramètres : il n'y a plus d'écran entre la
+    mise en page et l'exécution."""
+    w, _ = fenetre
+    assert w.STEP_COUNT == 3
+    assert w._stack.count() == 3
+    assert [w.step_title(i) for i in range(3)] == [
+        "Cartes", "Paramètres", "Exécution"]
+
+
 def test_the_last_step_has_no_aura_at_all(fenetre, tmp_path):
     """⚠️ Le bouton y est éteint parce qu'il n'y a plus d'écran après, et non
     parce qu'il manque quelque chose : une aura rouge y accuserait un travail

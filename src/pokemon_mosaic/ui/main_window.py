@@ -26,7 +26,6 @@ from .layout_step import LayoutStep
 from .presets_bar import PresetsBar
 from .run_step import RunStep
 from .session import Session
-from .settings_step import SettingsStep
 
 # L'aura du bouton « Suivant » : son rayon, son opacité, et la place à lui
 # laisser autour. ⚠️ **Le rouge est plus discret que le vert** : il accompagne le
@@ -37,38 +36,23 @@ GLOW_RADIUS_WAITING, GLOW_ALPHA_WAITING = 16, 130
 GLOW_ROOM = 10
 
 
-class PlaceholderStep(QWidget):
-    """Étape pas encore construite, pour que la navigation soit déjà testable."""
-
-    def __init__(self, title_provider, parent=None):
-        super().__init__(parent)
-        # On reçoit une fonction plutôt qu'un texte : le titre doit être relu à
-        # chaque changement de langue.
-        self._title_provider = title_provider
-        self._label = QLabel()
-        self._label.setAlignment(Qt.AlignCenter)
-        layout = QVBoxLayout(self)
-        layout.addWidget(self._label)
-        self.retranslate_ui()
-
-    def retranslate_ui(self) -> None:
-        self._label.setText(
-            self.tr("« %1 » : à construire.").replace("%1", self._title_provider())
-        )
-
-
 class MainWindow(QMainWindow):
     """Coquille de l'application : navigation, langue, barre d'état."""
 
-    STEP_COUNT = 4
+    STEP_COUNT = 3
 
     def step_title(self, index: int) -> str:
         """Titres écrits en toutes lettres : `tr()` sur une variable n'est pas
-        extractible par lupdate, et la chaîne resterait non traduite."""
+        extractible par lupdate, et la chaîne resterait non traduite.
+
+        ⚠️ **Les réglages de l'algorithme ont rejoint les paramètres.** Ils
+        avaient leur écran entre la mise en page et l'exécution : ce sont des
+        paramètres comme les autres, et les séparer obligeait à traverser une
+        étape entière pour revenir changer une durée.
+        """
         return (
             self.tr("Cartes"),
-            self.tr("Grille et format"),
-            self.tr("Réglages"),
+            self.tr("Paramètres"),
             self.tr("Exécution"),
         )[index]
 
@@ -151,8 +135,6 @@ class MainWindow(QMainWindow):
         self._layout_step.advance_state_changed.connect(self._update_navigation)
         self._cards_step.advance_state_changed.connect(self._update_navigation)
         self._stack.addWidget(self._layout_step)
-        self._settings_step = SettingsStep(self._session)
-        self._stack.addWidget(self._settings_step)
         self._run_step = RunStep(self._session)
         self._run_step.status_message.connect(self._show_status)
         self._stack.addWidget(self._run_step)

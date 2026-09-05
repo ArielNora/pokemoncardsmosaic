@@ -183,13 +183,31 @@ def ecran(session):
     return LayoutStep(session)
 
 
-def test_the_menu_has_two_levels(ecran):
-    """Les pages d'abord, puis la famille « Grille » et ses trois temps."""
+def test_the_menu_has_two_levels_and_two_families(ecran):
+    """Les pages d'abord, puis « Grille » et ses trois temps, puis
+    « Algorithme » et ses deux."""
     titres = [ecran._list.item(i).text() for i in range(ecran._list.count())]
-    assert len(titres) == 5
+    assert len(titres) == 8
     assert all(titres), "une ligne sans intitulé"
     assert titres[1].strip().endswith("Grille"), "l'intitulé de famille manque"
+    assert titres[5].strip().endswith("Algorithme"), "la seconde famille manque"
     assert not any(t.startswith(" ") for t in titres), "le retrait n'est pas du texte"
+    assert list(ecran._families) == ["grid", "algorithm"]
+    assert ecran._families["grid"] == [1, 2, 3]
+    assert ecran._families["algorithm"] == [4, 5]
+
+
+def test_the_algorithm_joined_the_parameters(session, ecran):
+    """⚠️ Il avait son écran à lui, entre la mise en page et l'exécution. Il n'a
+    pourtant rien de plus à décider : ce sont des paramètres comme les autres,
+    et les séparer obligeait à traverser une étape entière pour revenir changer
+    une durée."""
+    titres = [ecran._tabs[position].title()
+              for position in ecran._families["algorithm"]]
+    assert titres == ["Recherche", "Paramètres avancés"]
+    # Aucun ne bloque : le parcours ne s'arrête pas sur eux.
+    assert all(ecran._tabs[position].is_valid()
+               for position in ecran._families["algorithm"])
 
 
 def test_the_family_row_is_not_a_tab(ecran):
@@ -201,13 +219,13 @@ def test_the_family_row_is_not_a_tab(ecran):
     assert ecran._rows[1] == -1
 
 
-def click_family(ecran):
-    """Un vrai clic sur l'intitulé, pour éprouver aussi le rang qui rebondit."""
+def click_family(ecran, rang: int = 1):
+    """Un vrai clic sur un intitulé, pour éprouver aussi le rang qui rebondit."""
     from PySide6.QtCore import Qt
     from PySide6.QtTest import QTest
 
     ecran.show()
-    rect = ecran._list.visualItemRect(ecran._list.item(1))
+    rect = ecran._list.visualItemRect(ecran._list.item(rang))
     QTest.mouseClick(ecran._list.viewport(), Qt.LeftButton, Qt.NoModifier,
                      rect.center())
 
@@ -248,6 +266,15 @@ def test_clicking_the_family_never_makes_it_the_current_tab(session, ecran):
     assert not ecran._collapsed
     assert ecran._current_tab() == 0, "le rang est resté sur l'intitulé"
     assert ecran._list.currentRow() == ecran._row_of(0)
+
+
+def test_the_refuge_is_looked_for_not_assumed(session, ecran):
+    """⚠️ Replier ramenait à l'onglet 0, juste parce qu'il est hors famille
+    aujourd'hui. Le jour où un groupe s'ouvrira en tête, ce refuge serait plié
+    lui aussi : il se cherche."""
+    ecran._families = {"grid": [0, 1, 2]}
+
+    assert ecran._refuge() == 3
 
 
 def test_advancing_into_the_family_unfolds_it(session, ecran):
@@ -343,20 +370,51 @@ def test_a_single_line_joins_the_small_tabs_to_their_family(ecran):
         assert dot(image, ratio, x, y) != fond, y
 
 
-def test_the_line_goes_away_with_the_folded_family(ecran):
-    """Repliée, la famille n'a plus rien à rattacher."""
+def colonne_du_tronc(ecran):
     from pokemon_mosaic.ui.layout_step import TRUNK_X
 
-    bande = ecran._list.visualItemRect(ecran._list.item(2))
-    click_family(ecran)
+    return ecran._list.visualItemRect(ecran._list.item(0)).left() + TRUNK_X
+
+
+def segments_du_tronc(ecran):
+    """Les portions de colonne que les traits occupent, en pixels."""
+    from pokemon_mosaic.ui.layout_step import BOX_BOTTOM_MARGIN
+
+    rect = ecran._list.visualItemRect
+    return [(rect(ecran._list.item(groupe[0])).top(),
+             rect(ecran._list.item(groupe[-1])).bottom() - BOX_BOTTOM_MARGIN)
+            for groupe in ecran._list._sub_tab_runs()]
+
+
+def test_each_family_has_its_own_line(ecran):
+    """⚠️ **Un trait par famille**, et non un seul du premier au dernier
+    sous-onglet : il y en a plusieurs, et un trait unique traverserait
+    l'intitulé de la seconde en prétendant que tout descend de la première."""
     image, ratio = painted(ecran)
-    x = bande.left() + TRUNK_X
-    fond = dot(image, ratio, 100, bande.center().y())
-    assert all(dot(image, ratio, x, y) == fond
-               for y in range(bande.top() + 2, bande.bottom()))
+    assert len(ecran._list._sub_tab_runs()) == 2
+
+    # Le trait longe bien les sous-onglets…
+    x = colonne_du_tronc(ecran)
+    sous_onglet = ecran._list.visualItemRect(ecran._list.item(2))
+    fond = dot(image, ratio, x, sous_onglet.top() - 20)   # dans l'intitulé
+    assert dot(image, ratio, x, sous_onglet.center().y()) != fond
+
+    # …et aucun ne traverse l'intitulé de la seconde famille.
+    intitule = ecran._list.visualItemRect(ecran._list.item(5))
+    assert all(bas <= intitule.top() or haut >= intitule.bottom()
+               for haut, bas in segments_du_tronc(ecran))
 
 
-# --- Le parcours se fait dans l'ordre ---------------------------------------
+def test_the_lines_go_away_with_the_folded_families(ecran):
+    """Repliée, une famille n'a plus rien à rattacher."""
+    click_family(ecran)                       # « Grille »
+    # ⚠️ Le rang d'une ligne cachée ne bouge pas : « Algorithme » reste au 5.
+    click_family(ecran, rang=5)
+
+    assert ecran._list._sub_tab_runs() == []
+    assert segments_du_tronc(ecran) == []
+    ecran._list.grab()                        # le tracé ne doit pas lever
+
 
 def test_the_tabs_ahead_are_locked_until_suivant_opens_them(session, ecran):
     """⚠️ Sauter d'un clic à l'onglet des écarts sans avoir vu les pages ni la
@@ -1337,10 +1395,11 @@ def test_the_mosaic_is_shown_by_the_grid_family_only(session, ecran):
     la montre partout. L'onglet des pages, lui, ne décide que du papier, et une
     grille posée dessus se lisait comme un aperçu du résultat alors qu'elle
     n'était réglée nulle part encore."""
-    for position in range(len(ecran._tabs)):
+    for position in ecran._families["grid"]:
         onglet = ecran._tabs[position]
         assert not hasattr(onglet, "_show_grid"), position
-        assert onglet._preview._show_grid is (position > 0), position
+        assert onglet._preview._show_grid, position
+    assert not ecran._tabs[0]._preview._show_grid, "les pages n'en montrent pas"
 
 
 def test_only_the_size_tab_lets_you_paint(session, ecran):
