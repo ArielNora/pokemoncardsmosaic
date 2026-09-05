@@ -357,3 +357,46 @@ def test_the_remembered_palette_is_the_first_one_seen(qt_app):
     finally:
         theme.forget_system()
         qt_app.setPalette(original)
+
+
+def test_marking_a_widget_also_asks_for_a_repaint(qt_app):
+    """⚠️ **Repolir ne repeint pas.** Qt recalcule le style et laisse à l'écran
+    les pixels d'avant : le cadre vert d'une case choisie restait sur la
+    précédente, et seul un événement étranger, un survol, un redimensionnement,
+    finissait par le déplacer.
+
+    ⚠️ Rien ne le montrait dans les tests : `grab()` redessine tout, toujours.
+    Il faut donc compter les tours de dessin d'un widget **posé à l'écran**.
+    """
+    from PySide6.QtWidgets import QFrame
+
+    class Compteur(QFrame):
+        def __init__(self):
+            super().__init__()
+            self.peints = 0
+
+        def paintEvent(self, event):
+            super().paintEvent(event)
+            self.peints += 1
+
+    widget = Compteur()
+    widget.resize(80, 40)
+    widget.show()
+    qt_app.processEvents()
+    avant = widget.peints
+
+    theme.mark(widget, "slot-current")
+    qt_app.processEvents()
+
+    assert widget.peints > avant, "le changement de rôle n'a rien repeint"
+
+
+def test_marking_a_list_view_does_not_trip_on_its_own_update(qt_app):
+    """⚠️ Une vue de liste a son propre `update(index)`, qui masque celui du
+    widget et réclame un argument : marquer la colonne d'onglets levait un
+    `TypeError` en pleine construction de l'étape."""
+    from PySide6.QtWidgets import QListWidget
+
+    liste = QListWidget()
+    theme.mark(liste, "tabs")      # ne doit pas lever
+    assert liste.property("role") == "tabs"

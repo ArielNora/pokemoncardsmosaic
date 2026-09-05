@@ -433,6 +433,12 @@ def mark(widget, role: str) -> None:
     n'affiche aucun texte, donc sa couleur ne se voit pas. C'est un accident de
     la mise en forme actuelle, pas une garantie, afficher un jour le nom sous
     la vignette suffirait à faire ressortir le style de l'état précédent.
+
+    ⚠️ **Repolir ne repeint pas.** Qt recalcule le style, mais laisse à l'écran
+    les pixels d'avant tant que rien ne demande un tour de dessin : le cadre
+    vert d'une case choisie restait sur la précédente, et seul un événement
+    étranger, un survol, un redimensionnement, finissait par le déplacer. Rien
+    ne le montrait dans les tests : `grab()` redessine tout, toujours.
     """
     from PySide6.QtWidgets import QWidget
 
@@ -441,6 +447,10 @@ def mark(widget, role: str) -> None:
     for cible in (widget, *widget.findChildren(QWidget)):
         style.unpolish(cible)
         style.polish(cible)
+        # ⚠️ `QWidget.update` **et non** `cible.update()` : une vue de liste a
+        # son propre `update(index)`, qui masque celui du widget et réclame un
+        # argument. Passer par la classe demande bien un tour de dessin entier.
+        QWidget.update(cible)
 
 
 class ClickableCursor(QObject):
