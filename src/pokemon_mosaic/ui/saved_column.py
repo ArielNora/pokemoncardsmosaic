@@ -14,9 +14,9 @@ from PySide6.QtCore import QSize, Qt, Signal
 from PySide6.QtGui import QImage, QPixmap
 from PySide6.QtWidgets import (
     QFrame,
-    QHBoxLayout,
     QLabel,
     QPushButton,
+    QScrollArea,
     QVBoxLayout,
     QWidget,
 )
@@ -27,8 +27,14 @@ from .session import MAX_SAVED
 
 # La vignette d'une case. Assez grande pour reconnaître un agencement d'un coup
 # d'œil, assez petite pour que cinq tiennent en colonne sans faire défiler.
-SLOT_IMAGE = QSize(120, 84)
+SLOT_IMAGE = QSize(120, 120)
 CLOSE_SIZE = 18
+# Ce qui sépare la croix du bord de sa case.
+CLOSE_MARGIN = 4
+# La colonne : ce qu'elle réclame de haut, et la place qu'il faut à sa barre de
+# défilement en plus de la case.
+COLUMN_MIN_HEIGHT = 200
+COLUMN_ROOM = 34
 
 
 def mosaic_image(grid: np.ndarray, cards, empty_colour) -> QImage | None:
@@ -68,28 +74,26 @@ class SavedSlot(QFrame):
         self._slot = slot
         self.setFixedWidth(SLOT_IMAGE.width() + 16)
 
-        self._close = QPushButton("✕")
+        # ⚠️ **La croix se pose par-dessus, elle ne prend pas de rang.** Dans
+        # une ligne au-dessus de l'image, elle lui mangeait sa hauteur : la
+        # mosaïque se retrouvait deux fois plus petite que sa case.
+        self._close = QPushButton("✕", self)
         theme.mark(self._close, "mini")
         self._close.setFixedSize(CLOSE_SIZE, CLOSE_SIZE)
         self._close.clicked.connect(lambda: self.removed.emit(self._slot))
         self._close.setVisible(False)
+        self._close.raise_()
         self._removable = removable
         # L'habillage de repos, celui que la case retrouve en perdant la main.
         self._base_role = "slot-empty"
 
-        entete = QHBoxLayout()
-        entete.setContentsMargins(0, 0, 0, 0)
-        entete.addStretch(1)
-        entete.addWidget(self._close)
-
         self._image = QLabel()
         self._image.setAlignment(Qt.AlignCenter)
-        self._image.setFixedSize(SLOT_IMAGE)
+        self._image.setFixedHeight(SLOT_IMAGE.height())
 
         pile = QVBoxLayout(self)
-        pile.setContentsMargins(6, 4, 6, 6)
-        pile.setSpacing(2)
-        pile.addLayout(entete)
+        pile.setContentsMargins(6, 6, 6, 6)
+        pile.setSpacing(0)
         pile.addWidget(self._image)
 
     def show_saved(self, saved, empty_colour) -> None:
@@ -108,6 +112,14 @@ class SavedSlot(QFrame):
                 SLOT_IMAGE, Qt.KeepAspectRatio, Qt.SmoothTransformation)))
         self._base_role = "slot"
         theme.mark(self, self._base_role)
+
+    def resizeEvent(self, event) -> None:
+        """La croix se cale dans le coin haut-droit, sur l'image."""
+        super().resizeEvent(event)
+        self._close.move(self.width() - CLOSE_SIZE - CLOSE_MARGIN, CLOSE_MARGIN)
+        # Posée avant l'image, elle passerait dessous : les frères ajoutés
+        # ensuite s'empilent au-dessus.
+        self._close.raise_()
 
     def set_current(self, current: bool) -> None:
         theme.mark(self, "slot-current" if current else self._base_role)
@@ -139,18 +151,36 @@ class SavedColumn(QWidget):
         police.setBold(True)
         self._title.setFont(police)
 
+        # ⚠️ **Les cases défilent.** Cinq d'affilée réclament sept cents
+        # pixels de haut : posées dans l'écran, elles lui imposaient cette
+        # hauteur minimale, et une fenêtre plus courte étirait tout le reste
+        # jusqu'à ce que l'image ne tienne plus.
         self._slots: list[SavedSlot] = []
-        pile = QVBoxLayout(self)
-        pile.setContentsMargins(0, 0, 0, 0)
-        pile.setSpacing(6)
-        pile.addWidget(self._title)
+        contenu = QWidget()
+        cases = QVBoxLayout(contenu)
+        cases.setContentsMargins(0, 0, 0, 0)
+        cases.setSpacing(6)
         for rang in range(MAX_SAVED):
             case = SavedSlot(rang, removable)
             case.picked.connect(self._on_picked)
             case.removed.connect(self._session.remove_saved)
             self._slots.append(case)
-            pile.addWidget(case)
-        pile.addStretch(1)
+            cases.addWidget(case)
+        cases.addStretch(1)
+
+        self._scroll = QScrollArea()
+        self._scroll.setWidget(contenu)
+        self._scroll.setWidgetResizable(True)
+        self._scroll.setFrameShape(QScrollArea.NoFrame)
+        self._scroll.setHorizontalScrollBarPolicy(Qt.ScrollBarAlwaysOff)
+        self._scroll.setMinimumHeight(COLUMN_MIN_HEIGHT)
+        self._scroll.setFixedWidth(SLOT_IMAGE.width() + COLUMN_ROOM)
+
+        pile = QVBoxLayout(self)
+        pile.setContentsMargins(0, 0, 0, 0)
+        pile.setSpacing(6)
+        pile.addWidget(self._title)
+        pile.addWidget(self._scroll, 1)
 
         session.saved_changed.connect(self.refresh)
         self.retranslate_ui()

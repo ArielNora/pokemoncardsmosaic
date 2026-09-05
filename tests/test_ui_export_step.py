@@ -219,3 +219,66 @@ def test_without_any_arrangement_the_export_button_is_dead(qt_app):
 
     assert widget.current_saved() is None
     assert not widget._export.isEnabled()
+
+
+# --- Arrêt du fil d'export --------------------------------------------------
+
+class _FilFactice:
+    """Un QThread simulé, qui s'arrête ou s'obstine selon `tenace`."""
+
+    def __init__(self, tenace=False):
+        self.tenace = tenace
+        self.journal = []
+        self._actif = True
+
+    def isRunning(self):
+        return self._actif
+
+    def quit(self):
+        self.journal.append("quit")
+
+    def wait(self, ms):
+        self.journal.append("wait")
+        if self.tenace:
+            return False
+        self._actif = False
+        return True
+
+
+class _ExportFactice:
+    def __init__(self):
+        self.annule = False
+
+    def cancel(self):
+        self.annule = True
+
+
+def test_shutdown_cancels_then_waits_for_the_export(ecran):
+    widget, _, _ = ecran
+    fil, ouvrier = _FilFactice(), _ExportFactice()
+    widget._export_thread, widget._export_worker = fil, ouvrier
+
+    assert widget.shutdown() is True
+    assert ouvrier.annule, "l'export doit d'abord être prié de s'arrêter"
+    assert fil.journal == ["quit", "wait"], fil.journal
+    assert widget._export_thread is None and widget._export_worker is None
+
+
+def test_a_stubborn_export_keeps_its_reference(ecran):
+    """⚠️ Une référence n'est lâchée que si son fil est réellement terminé :
+    la lâcher sur un fil actif laisse la fenêtre se fermer dessus, et Qt
+    abandonne le processus."""
+    widget, _, _ = ecran
+    messages = []
+    widget.status_message.connect(messages.append)
+    fil = _FilFactice(tenace=True)
+    widget._export_thread, widget._export_worker = fil, _ExportFactice()
+
+    assert widget.shutdown() is False
+    assert widget._export_thread is fil
+    assert messages and "export" in messages[0]
+
+
+def test_shutdown_is_content_when_nothing_is_running(ecran):
+    widget, _, _ = ecran
+    assert widget.shutdown() is True

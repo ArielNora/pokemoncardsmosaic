@@ -12,6 +12,8 @@ l'agencement que l'algorithme vient de trouver : les cartes ne seraient plus à
 leur place, et le score n'aurait plus de sens.
 """
 
+import os
+
 from PySide6.QtCore import QSize, Qt, Signal
 from PySide6.QtGui import QColor
 from PySide6.QtWidgets import (
@@ -20,6 +22,7 @@ from PySide6.QtWidgets import (
     QHBoxLayout,
     QLabel,
     QListWidgetItem,
+    QProgressBar,
     QPushButton,
     QScrollArea,
     QSpinBox,
@@ -51,6 +54,8 @@ NEUTRAL = "neutral"
 ZOOM_MIN, ZOOM_MAX, ZOOM_STEP = 1.0, 6.0, 0.5
 # Taille de la pastille de couleur d'un bouton.
 SWATCH = QSize(28, 18)
+# Ce qu'on accorde à un fil d'export pour s'arrêter, avant de le dire bloqué.
+SHUTDOWN_TIMEOUT_MS = 5000
 
 
 def swatch(colour) -> str:
@@ -385,9 +390,19 @@ class ExportStep(QWidget):
 
         self._export = QPushButton()
         self._export.clicked.connect(self._open_export)
+        # Un export de poster prend des minutes : sans annulation ni barre, il
+        # n'y a que la croix de la fenêtre pour en sortir, et rien ne dit où il
+        # en est.
+        self._cancel_export = QPushButton()
+        self._cancel_export.clicked.connect(self._request_export_stop)
+        self._cancel_export.hide()
+        self._export_progress = QProgressBar()
+        self._export_progress.hide()
         self._summary = QLabel()
         barre = QHBoxLayout()
         barre.addWidget(self._export)
+        barre.addWidget(self._cancel_export)
+        barre.addWidget(self._export_progress)
         barre.addStretch(1)
         barre.addWidget(self._summary)
 
@@ -407,6 +422,7 @@ class ExportStep(QWidget):
             onglet.retranslate_ui()
             self._list.item(rang).setText(onglet.title())
         self._export.setText(self.tr("Exporter cet agencement…"))
+        self._cancel_export.setText(self.tr("Annuler l'export"))
         self._saved.retranslate_ui()
         self._refresh_preview()
 
@@ -495,36 +511,82 @@ class ExportStep(QWidget):
 
     def _start_export(self, saved, settings, path, full_resolution) -> None:
         self._export.setEnabled(False)
+        self._cancel_export.show()
+        self._cancel_export.setEnabled(True)
+        # Un seul panneau n'a aucune étape intermédiaire à annoncer : une barre
+        # figée à 0 % pendant plusieurs secondes se lit comme un export bloqué.
+        # Indéterminée, elle dit la seule chose vraie, que ça travaille.
+        feuilles = settings.panel_count
+        self._export_progress.setRange(0, feuilles if feuilles > 1 else 0)
+        self._export_progress.setValue(0)
+        self._export_progress.show()
+        self.status_message.emit(self.tr("Export en cours…"))
         self._export_thread, self._export_worker = start_export(
             self, saved.grid, saved.cards, settings, path, full_resolution,
             progress=self._on_export_progress,
-            exported=self._on_export_finished,
+            exported=self._on_exported,
             cancelled=self._on_export_cancelled,
             failed=self._on_export_failed,
         )
 
-    def _on_export_progress(self, fait: int, total: int, fichier: str) -> None:
+    def _request_export_stop(self) -> None:
+        if self._export_worker is not None:
+            self._export_worker.cancel()
+            self._cancel_export.setEnabled(False)
+
+    def _on_export_progress(self, panel: int, total: int, fichier: str) -> None:
+        self._export_progress.setValue(panel)
+        if fichier:
+            self.status_message.emit(
+                self.tr("Panneau %1 / %2 : %3")
+                .replace("%1", str(panel + 1)).replace("%2", str(total))
+                .replace("%3", os.path.basename(fichier))
+            )
+
+    def _end_export(self) -> None:
+        self._export_thread = self._export_worker = None
+        self._cancel_export.hide()
+        self._cancel_export.setEnabled(True)
+        self._export_progress.hide()
+        self._update_summary()
+
+    def _on_exported(self, written: list) -> None:
+        self._end_export()
         self.status_message.emit(
-            self.tr("Écriture %1 / %2").replace("%1", str(fait))
-            .replace("%2", str(total)))
+            self.tr("%n fichier(s) écrit(s) : %1", "", len(written))
+            .replace("%1", ", ".join(os.path.basename(p) for p in written))
+        )
 
     def _on_export_cancelled(self) -> None:
-        self._export_thread = self._export_worker = None
-        self._update_summary()
-        self.status_message.emit(self.tr("Export interrompu."))
-
-    def _on_export_finished(self, paths) -> None:
-        self._export_thread = self._export_worker = None
-        self._update_summary()
+        self._end_export()
         self.status_message.emit(
-            self.tr("%n fichier(s) écrit(s).", "", len(paths)))
+            self.tr("Export annulé ; les fichiers partiels ont été effacés.")
+        )
 
     def _on_export_failed(self, message: str) -> None:
-        self._export_thread = self._export_worker = None
-        self._update_summary()
-        self.status_message.emit(message)
+        self._end_export()
+        self.status_message.emit(
+            self.tr("Échec de l'export : %1").replace("%1", message)
+        )
 
     def shutdown(self) -> bool:
-        """Rend faux si un export tourne encore : la fenêtre ne doit pas partir
-        avec un fil qui écrit."""
-        return self._export_thread is None
+        """Arrête l'export en cours. Rend faux s'il résiste.
+
+        ⚠️ **Le résultat compte.** Le `QThread` a pour parent ce widget : la
+        fenêtre détruite l'emporte avec elle, référence Python ou non, et Qt
+        abandonne alors le processus. Une référence n'est donc lâchée que si son
+        fil est réellement terminé.
+        """
+        if self._export_worker is not None:
+            self._export_worker.cancel()
+        if self._export_thread is not None and self._export_thread.isRunning():
+            self._export_thread.quit()
+            if not self._export_thread.wait(SHUTDOWN_TIMEOUT_MS):
+                # `status_message` et non `print` : depuis un paquet `.app`, la
+                # sortie standard ne va nulle part que l'utilisateur puisse lire.
+                self.status_message.emit(
+                    self.tr("Arrêt en cours : l'export ne répond pas encore.")
+                )
+                return False
+        self._export_thread = self._export_worker = None
+        return True

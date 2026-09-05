@@ -1,4 +1,8 @@
-"""Tests de l'export depuis la vue d'exécution : dialogue, travailleur, écran."""
+"""Tests de l'export : dialogue, travailleur, et l'écran de l'étape 4.
+
+L'export a quitté la vue d'exécution : c'est l'étape « Export » qui l'ouvre, sur
+un agencement gardé et non sur le cliché affiché.
+"""
 
 import os
 
@@ -27,29 +31,44 @@ def step(session):
     return widget, session
 
 
+@pytest.fixture
+def ecran(session):
+    """L'étape 4, sur un agencement gardé."""
+    from pokemon_mosaic.ui.export_step import ExportStep
+    from pokemon_mosaic.ui.run_step import RunStep
+
+    calcul = RunStep(session)
+    feed(calcul, session)
+    calcul._keep_current()
+    widget = ExportStep(session)
+    widget.enter()
+    return widget, session
+
+
 def grid_of(step_widget):
     return step_widget.current_grid()
 
 
 # --- L'écran --------------------------------------------------------------
 
-def test_export_is_refused_before_a_run(session):
-    """Il n'y a rien à exporter tant qu'aucun cliché n'existe."""
-    from pokemon_mosaic.ui.run_step import RunStep
+def test_export_is_refused_without_a_kept_arrangement(session):
+    """L'export part des agencements gardés : sans case, il n'a rien à écrire."""
+    from pokemon_mosaic.ui.export_step import ExportStep
 
-    widget = RunStep(session)
+    widget = ExportStep(session)
+    widget.enter()
     assert not widget._export.isEnabled()
-    assert widget.current_grid() is None
+    assert widget.current_saved() is None
     widget._open_export()       # ne doit pas lever
 
 
-def test_export_becomes_available_once_the_run_has_started(step):
-    widget, _ = step
+def test_export_becomes_available_with_a_kept_arrangement(ecran):
+    widget, _ = ecran
     assert widget._export.isEnabled()
 
 
-def test_the_exported_grid_is_the_one_displayed(step):
-    """« Exporter ce cliché » : celui qu'on regarde, pas le dernier calculé."""
+def test_the_kept_grid_is_the_one_displayed(step):
+    """« Enregistrer » garde le cliché qu'on regarde, pas le dernier calculé."""
     widget, _ = step
     latest = widget.current_grid().copy()
     widget._slider.setValue(0)
@@ -235,18 +254,18 @@ def run_worker(step_widget, path, **kwargs):
     return worker, seen
 
 
-def test_a_single_panel_shows_an_indeterminate_progress(step, tmp_path):
+def test_a_single_panel_shows_an_indeterminate_progress(ecran, tmp_path):
     """Une barre figée à 0 % pendant sept secondes se lit comme un export bloqué."""
     from pokemon_mosaic.export import PosterSettings
 
-    widget, _ = step
-    widget._start_export(grid_of(widget), PosterSettings(paper="A5", dpi=72),
+    widget, _ = ecran
+    garde = widget.current_saved()
+    widget._start_export(garde, PosterSettings(paper="A5", dpi=72),
                          str(tmp_path / "poster.png"), False)
     assert widget._export_progress.maximum() == 0
     widget.shutdown()
 
-    widget._start_export(grid_of(widget)[:, :4],
-                         PosterSettings(paper="A5", dpi=72, panels=2),
+    widget._start_export(garde, PosterSettings(paper="A5", dpi=72, panels=2),
                          str(tmp_path / "deux.png"), False)
     assert widget._export_progress.maximum() == 2
     widget.shutdown()
@@ -254,8 +273,7 @@ def test_a_single_panel_shows_an_indeterminate_progress(step, tmp_path):
     # ⚠️ Les lignes de feuilles comptent aussi : la barre restait indéterminée
     # pour deux feuilles superposées, et se bornait à trois quand il y en
     # avait six.
-    widget._start_export(grid_of(widget)[:, :4],
-                         PosterSettings(paper="A5", dpi=72, panel_rows=2),
+    widget._start_export(garde, PosterSettings(paper="A5", dpi=72, panel_rows=2),
                          str(tmp_path / "empilees.png"), False)
     assert widget._export_progress.maximum() == 2
     widget.shutdown()
@@ -290,8 +308,8 @@ def test_a_bad_format_is_reported_not_raised(step, tmp_path):
     assert "Format non géré" in seen["failed"][0]
 
 
-def test_the_screen_returns_to_its_resting_state_after_an_export(step, tmp_path):
-    widget, _ = step
+def test_the_screen_returns_to_its_resting_state_after_an_export(ecran, tmp_path):
+    widget, _ = ecran
     widget._on_exported([str(tmp_path / "poster.png")])
     assert widget._export.isEnabled()
     assert widget._cancel_export.isHidden()
@@ -299,28 +317,23 @@ def test_the_screen_returns_to_its_resting_state_after_an_export(step, tmp_path)
     assert widget._export_thread is None
 
 
-def test_resuming_comes_back_after_the_export(step, tmp_path, monkeypatch):
-    """Griser les boutons à part de `can_resume` les laissait éteints après un
-    export : plus moyen de prolonger sans toucher au curseur."""
+def test_an_export_in_flight_locks_the_button(ecran, tmp_path, monkeypatch):
+    """Deux exports à la fois écriraient dans le même fichier."""
     from pokemon_mosaic.export import PosterSettings
-    from pokemon_mosaic.ui import run_step as module
+    from pokemon_mosaic.ui import export_step as module
 
-    widget, _ = step
-    widget._run_signature = widget._signature()
-    widget._update_buttons(running=False)
-    widget._slider.setValue(0)
-    assert widget._extend.isEnabled() and widget._resume.isEnabled()
-
+    widget, _ = ecran
     monkeypatch.setattr(module, "start_export",
                         lambda *args, **kwargs: (object(), object()))
-    widget._start_export(grid_of(widget), PosterSettings(paper="A5", dpi=72),
+    widget._start_export(widget.current_saved(),
+                         PosterSettings(paper="A5", dpi=72),
                          str(tmp_path / "poster.png"), False)
-    assert not widget._extend.isEnabled(), "un export en cours occupe l'écran"
-    assert not widget.can_resume()
+
+    assert not widget._export.isEnabled()
+    assert widget._cancel_export.isVisibleTo(widget)
 
     widget._on_exported([str(tmp_path / "poster.png")])
-    assert widget._extend.isEnabled() and widget._resume.isEnabled()
-    assert widget.can_resume()
+    assert widget._export.isEnabled()
 
 
 def test_the_card_size_and_gap_reach_the_export(dialog, session):

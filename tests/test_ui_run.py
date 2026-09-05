@@ -183,6 +183,46 @@ def test_the_keep_button_dies_once_the_five_slots_are_taken(step):
     assert widget._keep.isEnabled()
 
 
+def test_keeping_wakes_up_on_the_first_snapshot(step):
+    """⚠️ Le bouton se réveillait au démarrage du calcul, où la timeline est
+    encore **vide** : il restait éteint tout le calcul, et seul un « Prolonger »
+    le rallumait."""
+    widget, session = step
+    seen = run_synchronously(session)
+    cards, timeline = seen["started"][0]
+    vide = type(timeline)(every=timeline.every)
+
+    widget._on_started(cards, vide)
+    assert not widget._keep.isEnabled(), "rien à garder tant qu'il n'y a rien"
+
+    widget._on_started(cards, timeline)
+    widget._on_snapshot(timeline[0])
+    assert widget._keep.isEnabled()
+
+
+def test_a_new_run_keeps_the_arrangements_already_set_aside(step):
+    """⚠️ Relancer, prolonger ou repartir d'un cliché ne vide pas la colonne :
+    ce qu'on a mis de côté est ce qu'on a décidé de garder, et le recalculer
+    n'est pas possible."""
+    widget, session = step
+    timeline = feed(widget, session)
+    widget._slider.setValue(0)
+    widget._keep_current()
+    garde = session.saved[0]
+
+    # Un second calcul repart de zéro : nouveau jeu de cartes, nouvelle timeline.
+    seen = run_synchronously(session)
+    cards, neuve = seen["started"][0]
+    widget._on_started(cards, neuve)
+    for cliche in neuve:
+        widget._on_snapshot(cliche)
+
+    assert session.saved[0] is garde, "la colonne n'a pas à être vidée"
+    # Elle porte toujours la grille d'alors, et non celle du calcul neuf.
+    assert (session.saved[0].grid == timeline[0].grid).all()
+    assert widget.can_advance()
+
+
 def test_clicking_a_slot_goes_back_to_its_snapshot(step):
     widget, session = step
     timeline = feed(widget, session)
@@ -857,29 +897,25 @@ class _ExportFactice:
         self.annule = True
 
 
-def test_a_stubborn_run_does_not_leave_the_export_thread_behind(step):
-    """`shutdown()` sortait dès le premier échec : le fil d'export n'était ni
-    arrêté ni attendu, et la fenêtre se fermait dessus. Qt abandonne alors le
-    processus, précisément le crash que cette méthode existe pour éviter."""
+def test_a_stubborn_run_is_reported_and_its_reference_kept(step):
+    """⚠️ Une référence n'est lâchée que si son fil est réellement terminé :
+    la lâcher sur un fil actif rouvre le crash que `shutdown` évite. L'export a
+    quitté cet écran, il n'y a plus qu'un fil ici."""
     widget, _ = step
-    export = _FilFactice()
-    widget._thread = _FilFactice(tenace=True)
-    widget._export_thread = export
-    widget._export_worker = _ExportFactice()
+    tenace = _FilFactice(tenace=True)
+    widget._thread = tenace
 
     assert widget.shutdown() is False, "un fil tenace doit être signalé"
-    assert export.journal == ["quit", "wait"], export.journal
-    assert widget._export_worker is None, "l'export terminé, la référence se lâche"
+    assert tenace.journal == ["quit", "wait"], tenace.journal
+    assert widget._thread is tenace, "un fil encore actif garde sa référence"
 
 
-def test_shutdown_reports_success_when_every_thread_stops(step):
+def test_shutdown_reports_success_when_the_run_stops(step):
     widget, _ = step
     widget._thread = _FilFactice()
-    widget._export_thread = _FilFactice()
-    widget._export_worker = _ExportFactice()
 
     assert widget.shutdown() is True
-    assert widget._thread is None and widget._export_thread is None
+    assert widget._thread is None and widget._worker is None
 
 
 def test_a_stubborn_thread_keeps_the_window_open(qt_app, session):
