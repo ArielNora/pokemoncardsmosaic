@@ -104,12 +104,21 @@ class MainWindow(QMainWindow):
         base = QStandardPaths.writableLocation(QStandardPaths.AppConfigLocation)
         return str(Path(base or ".") / "presets")
 
+    @staticmethod
+    def arrangements_directory() -> str:
+        """Où vit la bibliothèque des agencements, à côté des préréglages."""
+        base = QStandardPaths.writableLocation(QStandardPaths.AppConfigLocation)
+        return str(Path(base or ".") / "arrangements")
+
     def __init__(self, language: LanguageManager, session: Session,
-                 presets_directory: str | None = None):
+                 presets_directory: str | None = None,
+                 arrangements_directory: str | None = None):
         super().__init__()
         self._language = language
         self._session = session
         self._presets_directory = presets_directory or self.presets_directory()
+        self._arrangements_directory = (arrangements_directory
+                                        or self.arrangements_directory())
         # Tentatives de fermeture déjà refusées, bornées par `CLOSE_ATTEMPTS`.
         self._refus_de_fermeture = 0
         self._build()
@@ -139,11 +148,12 @@ class MainWindow(QMainWindow):
         self._layout_step.advance_state_changed.connect(self._update_navigation)
         self._cards_step.advance_state_changed.connect(self._update_navigation)
         self._stack.addWidget(self._layout_step)
-        self._run_step = RunStep(self._session)
+        self._run_step = RunStep(self._session, self._arrangements_directory)
         self._run_step.advance_state_changed.connect(self._update_navigation)
         self._run_step.status_message.connect(self._show_status)
         self._stack.addWidget(self._run_step)
-        self._export_step = ExportStep(self._session)
+        self._export_step = ExportStep(self._session,
+                                       self._arrangements_directory)
         self._export_step.status_message.connect(self._show_status)
         self._stack.addWidget(self._export_step)
         self._stack.currentChanged.connect(self._update_navigation)

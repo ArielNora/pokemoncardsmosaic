@@ -138,6 +138,75 @@ def feed(step_widget, session):
     return timeline
 
 
+# --- La bibliothèque -------------------------------------------------------
+
+def test_keeping_also_writes_the_arrangement_in_the_library(qt_app, session,
+                                                            tmp_path):
+    """⚠️ **Gardé veut dire écrit.** Les cases ne survivaient pas à la
+    fermeture : un calcul d'un quart d'heure se perdait en fermant une
+    fenêtre."""
+    from pokemon_mosaic.arrangements import list_arrangements
+    from pokemon_mosaic.ui.run_step import RunStep
+
+    bibliotheque = str(tmp_path / "agencements")
+    widget = RunStep(session, bibliotheque)
+    feed(widget, session)
+
+    widget._keep_current()
+
+    gardes = list_arrangements(bibliotheque)
+    assert len(gardes) == 1
+    assert gardes[0].shape == (session.cols, session.rows)
+    assert len(gardes[0].cards) == session.selected_count
+    assert gardes[0].presentation["paper"] == session.paper
+
+
+def test_two_arrangements_kept_in_the_same_minute_do_not_overwrite(
+        qt_app, session, tmp_path):
+    from pokemon_mosaic.arrangements import list_arrangements
+    from pokemon_mosaic.ui.run_step import RunStep
+
+    bibliotheque = str(tmp_path / "agencements")
+    widget = RunStep(session, bibliotheque)
+    feed(widget, session)
+
+    widget._keep_current()
+    widget._slider.setValue(0)
+    widget._keep_current()
+
+    assert len(list_arrangements(bibliotheque)) == 2
+
+
+def test_a_library_that_cannot_be_written_keeps_the_slot_and_says_so(
+        qt_app, session, tmp_path, monkeypatch):
+    """Disque plein ou dossier devenu non inscriptible : la case reste."""
+    from pokemon_mosaic.ui import run_step as module
+    from pokemon_mosaic.ui.run_step import RunStep
+
+    widget = RunStep(session, str(tmp_path / "agencements"))
+    feed(widget, session)
+    messages = []
+    widget.status_message.connect(messages.append)
+    monkeypatch.setattr(module, "save_arrangement",
+                        lambda *a: (_ for _ in ()).throw(OSError("disque plein")))
+
+    widget._keep_current()
+
+    assert session.saved_count() == 1, "la case reste"
+    assert any("disque plein" in message for message in messages)
+
+
+def test_without_a_library_nothing_is_written(step):
+    """Les tests, et toute construction sans dossier, ne touchent pas au
+    disque."""
+    widget, session = step
+    feed(widget, session)
+
+    widget._keep_current()          # ne doit pas lever
+
+    assert session.saved_count() == 1
+
+
 # --- Agencements mis de côté ------------------------------------------------
 
 def test_keeping_is_impossible_before_the_first_snapshot(step):

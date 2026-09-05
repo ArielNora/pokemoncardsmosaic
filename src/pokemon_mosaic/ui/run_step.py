@@ -16,8 +16,10 @@ from PySide6.QtWidgets import (
     QWidget,
 )
 
+from ..arrangements import default_name, save_arrangement, unique_name
 from ..control import RunControl
 from ..optimize import StopReason
+from .arrangements_dialog import ArrangementsDialog
 from .runner import start_run
 from .saved_column import SavedColumn, SavedDialog, mosaic_image
 from .session import MAX_SAVED, Session
@@ -70,9 +72,13 @@ class RunStep(QWidget):
     # fois un agencement gardé.
     advance_state_changed = Signal()
 
-    def __init__(self, session: Session, parent=None):
+    def __init__(self, session: Session, arrangements_directory: str = "",
+                 parent=None):
         super().__init__(parent)
         self._session = session
+        # Où la bibliothèque range les agencements. Vide : rien n'est écrit,
+        # ce qui laisse les tests travailler sans toucher au disque.
+        self._arrangements_directory = arrangements_directory
         self._control: RunControl | None = None
         self._thread = None
         self._worker = None
@@ -223,6 +229,7 @@ class RunStep(QWidget):
 
         self._saved = SavedColumn(self._session)
         self._saved.slot_picked.connect(self._show_saved)
+        self._saved.library_requested.connect(self._open_library)
         self._session.saved_changed.connect(self._update_keep)
 
         controls = QHBoxLayout()
@@ -412,10 +419,49 @@ class RunStep(QWidget):
             self.status_message.emit(
                 self.tr("Les quatre cases sont prises : retirez-en une."))
             return
+        # ⚠️ **Gardé veut dire écrit.** Les cases ne survivaient pas à la
+        # fermeture de l'application : un calcul d'un quart d'heure se perdait
+        # en fermant une fenêtre. L'agencement part donc dans la bibliothèque
+        # du même geste, sous un nom posé sans rien demander.
+        nom = self._store(self._session.saved[rang])
         # ⚠️ Garder n'allume pas la case : le cadre vert dit celle qu'on a
         # choisie, et mettre de côté ce qu'on regarde déjà n'est pas un choix
         # de case.
-        self.status_message.emit(self.tr("Agencement gardé."))
+        self.status_message.emit(
+            self.tr("Agencement gardé : %1").replace("%1", nom)
+            if nom else self.tr("Agencement gardé."))
+
+    def _store(self, saved) -> str:
+        """Écrit l'agencement dans la bibliothèque, et rend le nom retenu."""
+        if not self._arrangements_directory or saved is None:
+            return ""
+        colonnes, lignes = saved.grid.shape[1], saved.grid.shape[0]
+        nom = unique_name(self._arrangements_directory,
+                          default_name((colonnes, lignes), saved.score))
+        try:
+            save_arrangement(self._arrangements_directory,
+                             self._session.arrangement_of(saved, nom))
+        except OSError as erreur:
+            # Écrire peut échouer, disque plein ou dossier devenu non
+            # inscriptible : la case reste, et le message le dit.
+            self.status_message.emit(
+                self.tr("Agencement gardé, mais non enregistré : %1")
+                .replace("%1", str(erreur)))
+            return ""
+        return nom
+
+    def _open_library(self) -> None:
+        """Ouvre le menu de la bibliothèque, à part pour que les tests le
+        remplacent : un `exec()` modal n'a pas de fin dans une suite qui ne
+        clique sur rien."""
+        if not self._arrangements_directory:
+            return
+        dialogue = ArrangementsDialog(self._session,
+                                      self._arrangements_directory, parent=self)
+        try:
+            dialogue.exec()
+        finally:
+            dialogue.deleteLater()
 
     def _show_saved(self, slot: int) -> None:
         """Retourne au cliché d'une case gardée, ou l'ouvre à part.

@@ -145,6 +145,9 @@ class SavedColumn(QWidget):
     """
 
     slot_picked = Signal(int)
+    # Le menu de la bibliothèque, ouvert par l'écran qui porte la colonne :
+    # c'est lui qui sait où elle est rangée.
+    library_requested = Signal()
 
     def __init__(self, session, removable: bool = True, parent=None):
         super().__init__(parent)
@@ -181,17 +184,22 @@ class SavedColumn(QWidget):
         self._scroll.setMinimumHeight(COLUMN_MIN_HEIGHT)
         self._scroll.setFixedWidth(SLOT_IMAGE.width() + COLUMN_ROOM)
 
+        self._library = QPushButton()
+        self._library.clicked.connect(self.library_requested.emit)
+
         pile = QVBoxLayout(self)
         pile.setContentsMargins(0, 0, 0, 0)
         pile.setSpacing(6)
         pile.addWidget(self._title)
         pile.addWidget(self._scroll, 1)
+        pile.addWidget(self._library)
 
         session.saved_changed.connect(self.refresh)
         self.retranslate_ui()
 
     def retranslate_ui(self) -> None:
         self._title.setText(self.tr("Agencements gardés"))
+        self._library.setText(self.tr("Tous les agencements…"))
         self.refresh()
 
     def refresh(self) -> None:

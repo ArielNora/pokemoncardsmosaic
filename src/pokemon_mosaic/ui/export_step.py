@@ -33,6 +33,7 @@ from PySide6.QtWidgets import (
 
 from ..layout import MM_PER_INCH, max_useful_dpi
 from . import theme
+from .arrangements_dialog import ArrangementsDialog
 from .big_spin import BigFloatSpin
 from .export_dialog import ExportDialog
 from .exporter import start_export
@@ -322,9 +323,11 @@ class ExportStep(QWidget):
 
     status_message = Signal(str)
 
-    def __init__(self, session: Session, parent=None):
+    def __init__(self, session: Session, arrangements_directory: str = "",
+                 parent=None):
         super().__init__(parent)
         self._session = session
+        self._arrangements_directory = arrangements_directory
         self._export_thread = None
         self._export_worker = None
         self._slot: int | None = None
@@ -387,6 +390,7 @@ class ExportStep(QWidget):
 
         self._saved = SavedColumn(self._session, removable=False)
         self._saved.slot_picked.connect(self.show_slot)
+        self._saved.library_requested.connect(self._open_library)
 
         self._export = QPushButton()
         self._export.clicked.connect(self._open_export)
@@ -492,6 +496,17 @@ class ExportStep(QWidget):
              .replace("%2", str(self._session.saved_count()))
              .replace("%3", f"{saved.score:.1f}")
         )
+
+    def _open_library(self) -> None:
+        """Le même menu qu'à l'exécution : on y prend l'agencement à habiller."""
+        if not self._arrangements_directory:
+            return
+        dialogue = ArrangementsDialog(self._session,
+                                      self._arrangements_directory, parent=self)
+        try:
+            dialogue.exec()
+        finally:
+            dialogue.deleteLater()
 
     # --- Écriture ---------------------------------------------------------
 

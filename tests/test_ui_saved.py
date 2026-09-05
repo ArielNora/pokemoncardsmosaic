@@ -141,3 +141,16 @@ def test_the_mosaic_needs_cards():
     from pokemon_mosaic.ui.saved_column import mosaic_image
 
     assert mosaic_image(np.array([[0]]), None, (0, 0, 0)) is None
+
+
+def test_the_column_opens_the_library(colonne):
+    """Le menu appartient à l'écran qui porte la colonne : c'est lui qui sait
+    où la bibliothèque est rangée."""
+    widget, _, _ = colonne
+    demandes = []
+    widget.library_requested.connect(lambda: demandes.append(True))
+
+    widget._library.click()
+
+    assert demandes == [True]
+    assert widget._library.text()
