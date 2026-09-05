@@ -1374,72 +1374,72 @@
         <translation>Arrangement kept.</translation>
     </message>
     <message>
-        <location filename="../src/pokemon_mosaic/ui/run_step.py" line="471"/>
+        <location filename="../src/pokemon_mosaic/ui/run_step.py" line="510"/>
         <source>le calcul</source>
         <translation>the run</translation>
     </message>
     <message>
-        <location filename="../src/pokemon_mosaic/ui/run_step.py" line="470"/>
+        <location filename="../src/pokemon_mosaic/ui/run_step.py" line="509"/>
         <source>Arrêt en cours : %1 ne répond pas encore.</source>
         <translation>Stopping: %1 is not responding yet.</translation>
     </message>
     <message>
-        <location filename="../src/pokemon_mosaic/ui/run_step.py" line="533"/>
+        <location filename="../src/pokemon_mosaic/ui/run_step.py" line="572"/>
         <source>itérations épuisées</source>
         <translation>iterations exhausted</translation>
     </message>
     <message>
-        <location filename="../src/pokemon_mosaic/ui/run_step.py" line="534"/>
+        <location filename="../src/pokemon_mosaic/ui/run_step.py" line="573"/>
         <source>score atteint</source>
         <translation>target score reached</translation>
     </message>
     <message>
-        <location filename="../src/pokemon_mosaic/ui/run_step.py" line="535"/>
+        <location filename="../src/pokemon_mosaic/ui/run_step.py" line="574"/>
         <source>stagnation</source>
         <translation>stagnation</translation>
     </message>
     <message>
-        <location filename="../src/pokemon_mosaic/ui/run_step.py" line="536"/>
+        <location filename="../src/pokemon_mosaic/ui/run_step.py" line="575"/>
         <source>budget de temps</source>
         <translation>time budget</translation>
     </message>
     <message>
-        <location filename="../src/pokemon_mosaic/ui/run_step.py" line="537"/>
+        <location filename="../src/pokemon_mosaic/ui/run_step.py" line="576"/>
         <source>arrêt demandé</source>
         <translation>stopped by user</translation>
     </message>
     <message>
-        <location filename="../src/pokemon_mosaic/ui/run_step.py" line="544"/>
+        <location filename="../src/pokemon_mosaic/ui/run_step.py" line="583"/>
         <source>Score %1 → %2 (%3 % de gain), arrêt : %4</source>
         <translation>Score %1 → %2 (%3% gain), stopped: %4</translation>
     </message>
     <message>
-        <location filename="../src/pokemon_mosaic/ui/run_step.py" line="550"/>
+        <location filename="../src/pokemon_mosaic/ui/run_step.py" line="589"/>
         <source>Calcul terminé.</source>
         <translation>Run finished.</translation>
     </message>
     <message>
-        <location filename="../src/pokemon_mosaic/ui/run_step.py" line="556"/>
+        <location filename="../src/pokemon_mosaic/ui/run_step.py" line="595"/>
         <source>Échec du calcul : %1</source>
         <translation>Run failed: %1</translation>
     </message>
     <message>
-        <location filename="../src/pokemon_mosaic/ui/run_step.py" line="788"/>
+        <location filename="../src/pokemon_mosaic/ui/run_step.py" line="828"/>
         <source>Reprendre</source>
         <translation>Resume</translation>
     </message>
     <message>
-        <location filename="../src/pokemon_mosaic/ui/run_step.py" line="788"/>
+        <location filename="../src/pokemon_mosaic/ui/run_step.py" line="828"/>
         <source>Pause</source>
         <translation>Pause</translation>
     </message>
     <message>
-        <location filename="../src/pokemon_mosaic/ui/run_step.py" line="794"/>
+        <location filename="../src/pokemon_mosaic/ui/run_step.py" line="834"/>
         <source>aucun cliché</source>
         <translation>no snapshot</translation>
     </message>
     <message>
-        <location filename="../src/pokemon_mosaic/ui/run_step.py" line="797"/>
+        <location filename="../src/pokemon_mosaic/ui/run_step.py" line="837"/>
         <source>cliché %1 / %2</source>
         <translation>snapshot %1 of %2</translation>
     </message>
@@ -1447,15 +1447,48 @@
 <context>
     <name>SavedColumn</name>
     <message>
-        <location filename="../src/pokemon_mosaic/ui/saved_column.py" line="189"/>
+        <location filename="../src/pokemon_mosaic/ui/saved_column.py" line="194"/>
         <source>Agencements gardés</source>
         <translation>Kept arrangements</translation>
+    </message>
+    <message>
+        <location filename="../src/pokemon_mosaic/ui/saved_column.py" line="223"/>
+        <source>Retirer cet agencement ?</source>
+        <translation>Remove this arrangement?</translation>
+    </message>
+    <message>
+        <location filename="../src/pokemon_mosaic/ui/saved_column.py" line="224"/>
+        <source>La case %1 sera vidée. L&apos;agencement ne se retrouve pas : le calcul ne redonne pas deux fois le même.</source>
+        <translation>Slot %1 will be emptied. The arrangement cannot be found again: no run gives the same one twice.</translation>
+    </message>
+</context>
+<context>
+    <name>SavedDialog</name>
+    <message>
+        <location filename="../src/pokemon_mosaic/ui/saved_column.py" line="295"/>
+        <source>Agencement gardé</source>
+        <translation>Kept arrangement</translation>
+    </message>
+    <message>
+        <location filename="../src/pokemon_mosaic/ui/saved_column.py" line="296"/>
+        <source>L&apos;agencement n&apos;est plus dans la timeline.</source>
+        <translation>This arrangement is no longer in the timeline.</translation>
+    </message>
+    <message>
+        <location filename="../src/pokemon_mosaic/ui/saved_column.py" line="297"/>
+        <source>Fermer</source>
+        <translation>Close</translation>
+    </message>
+    <message>
+        <location filename="../src/pokemon_mosaic/ui/saved_column.py" line="313"/>
+        <source>Aucune image à montrer.</source>
+        <translation>No image to show.</translation>
     </message>
 </context>
 <context>
     <name>SavedSlot</name>
     <message>
-        <location filename="../src/pokemon_mosaic/ui/saved_column.py" line="104"/>
+        <location filename="../src/pokemon_mosaic/ui/saved_column.py" line="109"/>
         <source>vide</source>
         <translation>empty</translation>
     </message>

@@ -19,7 +19,7 @@ from PySide6.QtWidgets import (
 from ..control import RunControl
 from ..optimize import StopReason
 from .runner import start_run
-from .saved_column import SavedColumn, mosaic_image
+from .saved_column import SavedColumn, SavedDialog, mosaic_image
 from .session import MAX_SAVED, Session
 
 # Un cran de zoom. 1,25 laisse une progression douce sans multiplier les clics.
@@ -412,36 +412,75 @@ class RunStep(QWidget):
             self.status_message.emit(
                 self.tr("Les cinq cases sont prises : retirez-en une."))
             return
-        self._saved.set_current(rang)
+        self._update_current_slot()
         self.status_message.emit(self.tr("Agencement gardé."))
 
     def _show_saved(self, slot: int) -> None:
-        """Retourne au cliché d'une case gardée.
+        """Retourne au cliché d'une case gardée, ou l'ouvre à part.
 
-        ⚠️ **La timeline s'élague en cours de calcul.** Le rang du cliché ne
-        veut donc rien dire une heure plus tard ; son numéro d'itération, si.
-        À défaut de le retrouver, on montre l'agencement gardé tel quel, sans
-        bouger le curseur : il existe toujours, lui.
+        ⚠️ **La timeline s'élague, et un nouveau calcul la remplace.** Le rang
+        d'un cliché ne veut donc rien dire une heure plus tard. On le retrouve
+        par son numéro d'itération **et** sa grille, deux calculs pouvant passer
+        par la même itération sans y ranger les mêmes cartes.
+
+        Faute de le retrouver, le curseur ne bouge pas : le montrer au plus
+        proche donnerait à voir autre chose que ce que la case promet. Une
+        fenêtre à part le montre pour lui-même, et le dit.
         """
         saved = self._session.saved[slot]
         if saved is None:
             return
-        self._saved.set_current(slot)
+        rang = self._snapshot_of(saved)
+        if rang is not None:
+            self._following = False
+            self._slider.setValue(rang)
+            self._update_current_slot()
+            return
+        self._open_saved_dialog(saved)
+
+    def _open_saved_dialog(self, saved) -> None:
+        """Ouvre la fenêtre d'un agencement que la timeline n'a plus.
+
+        À part pour que les tests puissent l'intercepter : un `exec()` modal
+        n'a pas de fin dans une suite qui ne clique sur rien.
+        """
+        dialogue = SavedDialog(saved, self._session.empty_colour, parent=self)
+        try:
+            dialogue.exec()
+        finally:
+            # Parenté à l'écran, la fenêtre lui survivrait.
+            dialogue.deleteLater()
+
+    def _snapshot_of(self, saved) -> int | None:
+        """Le rang du cliché qui porte cet agencement, s'il est encore là."""
         for rang, cliche in enumerate(self._timeline or []):
-            if cliche.iteration == saved.iteration:
-                self._following = False
-                self._slider.setValue(rang)
-                return
-        image = self._render(saved.grid)
-        if image is not None:
-            self._image.setPixmap(QPixmap.fromImage(image))
-            self._image.resize(image.size())
-            self._view.setCurrentWidget(self._scroll)
+            if (cliche.iteration == saved.iteration
+                    and np.array_equal(cliche.grid, saved.grid)):
+                return rang
+        return None
+
+    def _update_current_slot(self) -> None:
+        """⚠️ **La case verte est celle qu'on regarde**, et rien de plus.
+
+        Marquée à la sauvegarde et laissée telle quelle, elle prétendait montrer
+        l'agencement affiché alors que le curseur était parti ailleurs.
+        """
+        courant = None
+        if self._timeline:
+            index = max(0, min(len(self._timeline) - 1, self._slider.value()))
+            cliche = self._timeline[index]
+            for numero, place in enumerate(self._session.saved):
+                if (place is not None and place.iteration == cliche.iteration
+                        and np.array_equal(place.grid, cliche.grid)):
+                    courant = numero
+                    break
+        self._saved.set_current(courant)
 
     def _update_keep(self) -> None:
         """Garder n'a de sens que sur un cliché, et tant qu'il reste une case."""
         libre = self._session.saved_count() < MAX_SAVED
         self._keep.setEnabled(bool(self._timeline) and libre)
+        self._update_current_slot()
         self.advance_state_changed.emit()
 
     def can_advance(self) -> bool:
@@ -568,6 +607,7 @@ class RunStep(QWidget):
         self._show(value)
         self._update_position()
         self._update_resume_buttons()
+        self._update_current_slot()
 
     def _go_to_latest(self) -> None:
         if self._timeline:

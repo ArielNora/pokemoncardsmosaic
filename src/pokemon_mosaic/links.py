@@ -66,6 +66,10 @@ DEFAULT_LINKS = (
     # La lignée d'Arcko, dressée : la plus évoluée en haut, comme sur un arbre
     # généalogique. C'est le premier cas d'usage vertical demandé, et ce qui a
     # motivé le passage des liens en rectangles.
+    # Gromago-ex au-dessus de Mordudor : la forme évoluée domine, comme la
+    # lignée d'Arcko plus bas.
+    DefaultLink(("b2a-merveilles-de-paldea/b2a-114-gromago-ex.webp",
+                 "b2a-merveilles-de-paldea/b2a-096-mordudor.webp"), (1, 2)),
     DefaultLink(("b3-aura-palpitante/b3-194-mega-jungko-ex.webp",
                  "b3-aura-palpitante/b3-157-massko.webp",
                  "b3-aura-palpitante/b3-156-arcko.webp"), (1, 3)),

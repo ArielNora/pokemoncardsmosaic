@@ -74,17 +74,27 @@ def test_the_cross_only_shows_on_a_filled_slot(colonne):
     assert widget._slots[0]._close.isVisibleTo(widget._slots[0])
 
 
-def test_the_cross_empties_its_own_slot(colonne):
-    """Elle vide la case visée, et seulement elle : les autres gardent leur
-    rang."""
+def test_the_cross_asks_before_emptying_its_slot(colonne, monkeypatch):
+    """⚠️ **Toujours une confirmation.** La croix est à quelques pixels de la
+    vignette, et ce qu'elle efface ne se retrouve pas : le calcul ne redonne
+    pas deux fois le même agencement."""
+    from PySide6.QtWidgets import QMessageBox
+
     widget, session, jeu = colonne
     garde(session, jeu, iteration=1)
     garde(session, jeu, iteration=2)
 
+    monkeypatch.setattr(QMessageBox, "question",
+                        lambda *a, **k: QMessageBox.No)
+    widget._slots[0]._close.click()
+    assert session.saved[0] is not None, "un refus ne doit rien effacer"
+
+    monkeypatch.setattr(QMessageBox, "question",
+                        lambda *a, **k: QMessageBox.Yes)
     widget._slots[0]._close.click()
 
     assert session.saved[0] is None
-    assert session.saved[1].iteration == 2
+    assert session.saved[1].iteration == 2, "les autres gardent leur rang"
     assert widget._slots[0]._base_role == "slot-empty"
 
 

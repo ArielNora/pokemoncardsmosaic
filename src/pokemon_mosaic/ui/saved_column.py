@@ -13,8 +13,11 @@ import numpy as np
 from PySide6.QtCore import QSize, Qt, Signal
 from PySide6.QtGui import QImage, QPixmap
 from PySide6.QtWidgets import (
+    QDialog,
     QFrame,
+    QHBoxLayout,
     QLabel,
+    QMessageBox,
     QPushButton,
     QScrollArea,
     QVBoxLayout,
@@ -35,6 +38,8 @@ CLOSE_MARGIN = 4
 # défilement en plus de la case.
 COLUMN_MIN_HEIGHT = 200
 COLUMN_ROOM = 34
+# La fenêtre d'un agencement hors timeline, assez grande pour le voir en entier.
+DIALOG_SIZE = QSize(720, 640)
 
 
 def mosaic_image(grid: np.ndarray, cards, empty_colour) -> QImage | None:
@@ -163,7 +168,7 @@ class SavedColumn(QWidget):
         for rang in range(MAX_SAVED):
             case = SavedSlot(rang, removable)
             case.picked.connect(self._on_picked)
-            case.removed.connect(self._session.remove_saved)
+            case.removed.connect(self._confirm_remove)
             self._slots.append(case)
             cases.addWidget(case)
         cases.addStretch(1)
@@ -206,8 +211,117 @@ class SavedColumn(QWidget):
         for rang, case in enumerate(self._slots):
             case.set_current(rang == self._current)
 
+    def _confirm_remove(self, slot: int) -> None:
+        """⚠️ **Toujours une confirmation.** La croix est à quelques pixels de
+        la vignette, et ce qu'elle efface ne se retrouve pas : le cliché d'où
+        vient l'agencement a pu disparaître de la timeline, et le calcul ne le
+        redonnera pas à l'identique.
+        """
+        if self._session.saved[slot] is None:
+            return
+        reponse = QMessageBox.question(
+            self, self.tr("Retirer cet agencement ?"),
+            self.tr("La case %1 sera vidée. L'agencement ne se retrouve pas : "
+                    "le calcul ne redonne pas deux fois le même.")
+            .replace("%1", str(slot + 1)),
+            QMessageBox.Yes | QMessageBox.No, QMessageBox.No)
+        if reponse == QMessageBox.Yes:
+            self._session.remove_saved(slot)
+
     def _on_picked(self, slot: int) -> None:
         # Une case vide n'est pas une destination : rien à montrer, et le clic
         # laisserait croire à une panne.
         if self._session.saved[slot] is not None:
             self.slot_picked.emit(slot)
+
+
+# Le zoom de la fenêtre d'un agencement hors timeline, et ses bornes.
+DIALOG_ZOOM_MIN, DIALOG_ZOOM_MAX, DIALOG_ZOOM_STEP = 1.0, 6.0, 1.25
+
+
+class SavedDialog(QDialog):
+    """Un agencement gardé que la timeline n'a plus, montré pour lui-même.
+
+    ⚠️ **Le curseur ne saute pas.** Rejoindre un cliché disparu est impossible,
+    et déplacer la timeline au plus proche montrerait autre chose que ce que la
+    case promet. La fenêtre montre donc l'agencement tel qu'il a été gardé, et
+    le dit en toutes lettres.
+    """
+
+    def __init__(self, saved, empty_colour, parent=None):
+        super().__init__(parent)
+        self._image = mosaic_image(saved.grid, saved.cards, empty_colour)
+        self._zoom = DIALOG_ZOOM_MIN
+
+        self._notice = QLabel()
+        self._notice.setWordWrap(True)
+        theme.mark(self._notice, "warning")
+        gras = self._notice.font()
+        gras.setBold(True)
+        self._notice.setFont(gras)
+
+        self._view = QLabel()
+        self._view.setAlignment(Qt.AlignCenter)
+        self._scroll = QScrollArea()
+        self._scroll.setWidget(self._view)
+        self._scroll.setWidgetResizable(False)
+        self._scroll.setAlignment(Qt.AlignCenter)
+
+        self._zoom_out = QPushButton("−")
+        self._zoom_in = QPushButton("+")
+        self._zoom_label = QLabel()
+        for bouton in (self._zoom_out, self._zoom_in):
+            bouton.setFixedWidth(32)
+        self._zoom_out.clicked.connect(lambda: self._zoom_by(1 / DIALOG_ZOOM_STEP))
+        self._zoom_in.clicked.connect(lambda: self._zoom_by(DIALOG_ZOOM_STEP))
+        self._close = QPushButton()
+        self._close.clicked.connect(self.accept)
+
+        barre = QHBoxLayout()
+        barre.addWidget(self._zoom_out)
+        barre.addWidget(self._zoom_label)
+        barre.addWidget(self._zoom_in)
+        barre.addStretch(1)
+        barre.addWidget(self._close)
+
+        pile = QVBoxLayout(self)
+        pile.addWidget(self._notice)
+        pile.addWidget(self._scroll, 1)
+        pile.addLayout(barre)
+        self.resize(DIALOG_SIZE)
+        self.retranslate_ui()
+
+    def retranslate_ui(self) -> None:
+        self.setWindowTitle(self.tr("Agencement gardé"))
+        self._notice.setText(self.tr("L'agencement n'est plus dans la timeline."))
+        self._close.setText(self.tr("Fermer"))
+        self._redraw()
+
+    def zoom(self) -> float:
+        return self._zoom
+
+    def _zoom_by(self, facteur: float) -> None:
+        voulu = max(DIALOG_ZOOM_MIN, min(DIALOG_ZOOM_MAX, self._zoom * facteur))
+        if voulu == self._zoom:
+            return
+        self._zoom = voulu
+        self._redraw()
+
+    def _redraw(self) -> None:
+        self._zoom_label.setText(f"{self._zoom * 100:.0f} %")
+        if self._image is None:
+            self._view.setText(self.tr("Aucune image à montrer."))
+            return
+        cadre = self._scroll.viewport().size()
+        ajuste = self._image.scaled(cadre, Qt.KeepAspectRatio,
+                                    Qt.SmoothTransformation)
+        cible = ajuste.size() * self._zoom
+        pixmap = QPixmap.fromImage(
+            self._image.scaled(cible, Qt.KeepAspectRatio,
+                               Qt.SmoothTransformation))
+        self._view.setPixmap(pixmap)
+        self._view.resize(pixmap.size())
+
+    def resizeEvent(self, event) -> None:
+        super().resizeEvent(event)
+        self._redraw()

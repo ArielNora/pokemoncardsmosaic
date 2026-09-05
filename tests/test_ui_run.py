@@ -236,9 +236,11 @@ def test_clicking_a_slot_goes_back_to_its_snapshot(step):
     assert widget._saved.current() == 0
 
 
-def test_a_kept_arrangement_survives_the_loss_of_its_snapshot(step):
-    """⚠️ **La timeline s'élague en cours de calcul.** Le rang du cliché ne veut
-    plus rien dire ensuite ; l'agencement gardé, lui, existe toujours."""
+def test_an_arrangement_lost_from_the_timeline_opens_in_its_own_window(step):
+    """⚠️ **La timeline s'élague, et un nouveau calcul la remplace.** Rejoindre
+    un cliché disparu est impossible, et montrer le plus proche donnerait à voir
+    autre chose que ce que la case promet : une fenêtre à part le montre pour
+    lui-même, et le dit."""
     widget, session = step
     timeline = feed(widget, session)
     widget._slider.setValue(1)
@@ -247,12 +249,48 @@ def test_a_kept_arrangement_survives_the_loss_of_its_snapshot(step):
     widget._slider.setValue(dernier)
     # La timeline oublie le cliché gardé.
     session.saved[0].iteration = -12345
+    ouvertes = []
+    widget._open_saved_dialog = ouvertes.append
 
     widget._show_saved(0)
 
+    assert ouvertes == [session.saved[0]]
     assert widget._slider.value() == dernier, "le curseur n'a pas à sauter"
-    widget._flush_render()
-    assert widget._image.pixmap() is not None
+
+
+def test_the_dialog_of_a_lost_arrangement_says_so_and_zooms(qt_app, session):
+    from pokemon_mosaic.ui.saved_column import SavedDialog
+    from pokemon_mosaic.ui.session import SavedGrid
+
+    jeu = card_set(20)
+    garde = SavedGrid(np.arange(20).reshape(4, 5), jeu, 42, 1.0)
+    dialogue = SavedDialog(garde, (255, 255, 255))
+    dialogue.show()
+
+    assert dialogue._notice.property("role") == "warning"
+    assert "timeline" in dialogue._notice.text()
+    avant = dialogue._view.pixmap().size()
+
+    dialogue._zoom_in.click()
+
+    assert dialogue.zoom() > 1.0
+    assert dialogue._view.pixmap().width() > avant.width()
+
+
+def test_the_green_outline_follows_what_is_displayed(step):
+    """⚠️ Marquée à la sauvegarde et laissée telle quelle, la case prétendait
+    montrer l'agencement affiché alors que le curseur était parti ailleurs."""
+    widget, session = step
+    timeline = feed(widget, session)
+    widget._slider.setValue(1)
+    widget._keep_current()
+    assert widget._saved.current() == 0
+
+    widget._slider.setValue(len(timeline) - 1)
+    assert widget._saved.current() is None, "on ne regarde plus la case gardée"
+
+    widget._show_saved(0)
+    assert widget._saved.current() == 0
 
 
 def test_the_screen_offers_the_button_before_anything_has_run(step):
