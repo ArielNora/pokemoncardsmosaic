@@ -183,31 +183,29 @@ def ecran(session):
     return LayoutStep(session)
 
 
-def test_the_menu_has_two_levels_and_two_families(ecran):
-    """Les pages d'abord, puis « Grille » et ses trois temps, puis
-    « Algorithme » et ses deux."""
+def test_the_menu_has_two_levels(ecran):
+    """Les pages d'abord, puis « Grille » et ses trois temps, puis les
+    paramètres de l'algorithme, seuls et sans famille."""
     titres = [ecran._list.item(i).text() for i in range(ecran._list.count())]
-    assert len(titres) == 8
+    assert len(titres) == 6
     assert all(titres), "une ligne sans intitulé"
     assert titres[1].strip().endswith("Grille"), "l'intitulé de famille manque"
-    assert titres[5].strip().endswith("Algorithme"), "la seconde famille manque"
     assert not any(t.startswith(" ") for t in titres), "le retrait n'est pas du texte"
-    assert list(ecran._families) == ["grid", "algorithm"]
+    assert list(ecran._families) == ["grid"]
     assert ecran._families["grid"] == [1, 2, 3]
-    assert ecran._families["algorithm"] == [4, 5]
 
 
 def test_the_algorithm_joined_the_parameters(session, ecran):
     """⚠️ Il avait son écran à lui, entre la mise en page et l'exécution. Il n'a
     pourtant rien de plus à décider : ce sont des paramètres comme les autres,
     et les séparer obligeait à traverser une étape entière pour revenir changer
-    une durée."""
-    titres = [ecran._tabs[position].title()
-              for position in ecran._families["algorithm"]]
-    assert titres == ["Recherche", "Paramètres avancés"]
-    # Aucun ne bloque : le parcours ne s'arrête pas sur eux.
-    assert all(ecran._tabs[position].is_valid()
-               for position in ecran._families["algorithm"])
+    une durée. ⚠️ **Et pas de famille pour lui** : un seul onglet en dépend
+    depuis que la métrique l'a rejoint, un intitulé pliant qui promet une liste
+    n'aurait rien à plier."""
+    dernier = ecran._tabs[-1]
+    assert dernier.title() == "Paramètres avancés"
+    assert ecran._family_of(len(ecran._tabs) - 1) is None
+    assert dernier.is_valid(), "il ne bloque pas le parcours"
 
 
 def test_the_family_row_is_not_a_tab(ecran):
@@ -386,12 +384,12 @@ def segments_du_tronc(ecran):
             for groupe in ecran._list._sub_tab_runs()]
 
 
-def test_each_family_has_its_own_line(ecran):
-    """⚠️ **Un trait par famille**, et non un seul du premier au dernier
-    sous-onglet : il y en a plusieurs, et un trait unique traverserait
-    l'intitulé de la seconde en prétendant que tout descend de la première."""
+def test_the_line_belongs_to_its_family_alone(ecran):
+    """⚠️ **Un trait par famille**, tracé sur ses seuls sous-onglets : tiré du
+    premier au dernier de la liste, il traverserait ce qui vient après en
+    prétendant que tout en descend."""
     image, ratio = painted(ecran)
-    assert len(ecran._list._sub_tab_runs()) == 2
+    assert ecran._list._sub_tab_runs() == [[2, 3, 4]]
 
     # Le trait longe bien les sous-onglets…
     x = colonne_du_tronc(ecran)
@@ -399,17 +397,15 @@ def test_each_family_has_its_own_line(ecran):
     fond = dot(image, ratio, x, sous_onglet.top() - 20)   # dans l'intitulé
     assert dot(image, ratio, x, sous_onglet.center().y()) != fond
 
-    # …et aucun ne traverse l'intitulé de la seconde famille.
-    intitule = ecran._list.visualItemRect(ecran._list.item(5))
-    assert all(bas <= intitule.top() or haut >= intitule.bottom()
+    # …et ne descend pas jusqu'à l'onglet qui suit la famille.
+    suivant = ecran._list.visualItemRect(ecran._list.item(5))
+    assert all(bas <= suivant.top() or haut >= suivant.bottom()
                for haut, bas in segments_du_tronc(ecran))
 
 
 def test_the_lines_go_away_with_the_folded_families(ecran):
     """Repliée, une famille n'a plus rien à rattacher."""
     click_family(ecran)                       # « Grille »
-    # ⚠️ Le rang d'une ligne cachée ne bouge pas : « Algorithme » reste au 5.
-    click_family(ecran, rang=5)
 
     assert ecran._list._sub_tab_runs() == []
     assert segments_du_tronc(ecran) == []

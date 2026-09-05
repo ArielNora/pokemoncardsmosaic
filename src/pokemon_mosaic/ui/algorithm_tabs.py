@@ -1,12 +1,16 @@
-"""Les onglets de l'algorithme, dans l'étape des paramètres.
+"""L'onglet de l'algorithme, dans l'étape des paramètres.
 
 L'algorithme avait son écran à lui, entre la mise en page et l'exécution. Il
 n'avait pourtant rien de plus à décider : ce sont des **paramètres**, comme le
 papier et la grille, et les séparer obligeait à traverser une étape entière pour
 revenir changer une durée.
 
-Deux onglets, et une division claire : ce qu'on **voit** d'un côté, l'épaisseur
-des bandes de bord se montre, ce qu'on ne peut qu'**expliquer** de l'autre.
+Un seul onglet, lu de haut en bas : ce que l'assemblage **mesure**, l'épaisseur
+des bandes de bord et son aperçu, puis ce qu'il **fait** de cette mesure, une
+phrase par réglage. L'épaisseur avait un onglet à elle ; elle y était seule, et
+séparer la métrique des réglages qui s'en servent obligeait à faire l'aller-retour
+pour comprendre l'un par l'autre.
+
 Aucun de ces réglages ne bloque quoi que ce soit : ils ont tous une valeur qui
 marche, et l'utilisateur n'a pas à y toucher pour lancer un calcul.
 """
@@ -16,6 +20,8 @@ from PySide6.QtWidgets import (
     QCheckBox,
     QComboBox,
     QDoubleSpinBox,
+    QFrame,
+    QGraphicsDropShadowEffect,
     QHBoxLayout,
     QLabel,
     QScrollArea,
@@ -46,93 +52,8 @@ SMALL_FIELD_WIDTH = 110
 SENTENCE_INDENT = 26
 # Hauteur maximale de l'aperçu des bandes.
 PREVIEW_HEIGHT = 300
-
-
-class SearchTab(LayoutTab):
-    """L'épaisseur des bandes de bord, et ce qu'elle change.
-
-    Seule de tous les réglages de l'algorithme à se **voir** : la bande mesurée
-    se dessine sur une carte, et une petite grille d'essai montre ce que
-    l'appariement donne à cette épaisseur. Les autres n'ont rien à montrer,
-    on ne dessine pas un nombre d'itérations.
-    """
-
-    def __init__(self, session: Session, parent=None):
-        super().__init__(parent)
-        self._session = session
-        self._updating = False
-        self._build()
-        session.algorithm_changed.connect(self.refresh)
-        session.cards_loaded.connect(self.refresh)
-
-    def title(self) -> str:
-        return self.tr("Recherche")
-
-    def _build(self) -> None:
-        self._strip = BigFloatSpin(0.01, 0.50, step=0.05, decimals=2)
-        self._strip.setFixedWidth(150)
-        self._strip.value_changed.connect(self._on_form_changed)
-
-        self._hint = QLabel()
-        self._hint.setWordWrap(True)
-        self._hint.setAlignment(Qt.AlignTop)
-
-        haut = QHBoxLayout()
-        haut.setSpacing(24)
-        haut.addWidget(self._strip)
-        haut.addWidget(self._hint, 1)
-        bandeau = QWidget()
-        bandeau.setLayout(haut)
-
-        self._preview = StripPreview(self._session)
-        # ⚠️ **Bornée en hauteur.** Laissée libre, une carte d'essai occupait
-        # tout le panneau : on ne juge pas une bande de bord à sa taille, et la
-        # phrase qui l'explique se retrouvait rejetée en bas de l'écran.
-        self._preview.setMaximumHeight(PREVIEW_HEIGHT)
-
-        self._status = QLabel()
-        self._status.setWordWrap(True)
-        etat = self._status.font()
-        etat.setPointSize(etat.pointSize() + STATUS_BOOST)
-        self._status.setFont(etat)
-
-        layout = QVBoxLayout(self)
-        layout.setContentsMargins(8, 6, 8, 6)
-        layout.addWidget(bandeau)
-        layout.addWidget(self._preview)
-        layout.addWidget(self._status)
-        layout.addStretch(1)
-        self.retranslate_ui()
-
-    def retranslate_ui(self) -> None:
-        self._strip.setTitle(self.tr("Épaisseur"))
-        self._hint.setText(
-            self.tr("C'est la part de chaque carte que l'assemblage regarde : "
-                    "une bande le long de ses quatre bords, dont il compare la "
-                    "couleur moyenne à celle de sa voisine. Fine, elle ne voit "
-                    "que l'extrême bord et laisse les motifs se contredire juste "
-                    "derrière ; large, elle mélange le bord au centre de "
-                    "l'illustration et les raccords se relâchent.")
-        )
-        self._status.setText(
-            self.tr("À gauche, la zone mesurée sur une carte. À droite, une "
-                    "petite grille d'essai réoptimisée à cette épaisseur.")
-        )
-        self.refresh()
-
-    def _on_form_changed(self, *_) -> None:
-        if not self._updating:
-            self._session.set_algorithm(strip_size=self._strip.value())
-
-    def refresh(self) -> None:
-        self._updating = True
-        self._strip.setValue(self._session.strip_size)
-        self._updating = False
-        # ⚠️ Le champ a pu écrêter une valeur venue d'un préréglage écrit à la
-        # main : on renvoie à la session ce qu'il a réellement accepté.
-        if self._strip.value() != self._session.strip_size:
-            self._session.set_algorithm(strip_size=self._strip.value())
-        self.state_changed.emit()
+# La place laissée autour d'une ligne pour que son aura ne soit pas rognée.
+GLOW_ROOM = theme.GLOW_ROOM
 
 
 class AdvancedTab(LayoutTab):
@@ -153,6 +74,9 @@ class AdvancedTab(LayoutTab):
         # Chaque phrase est coupée en deux autour de son champ : ce qui le
         # précède, ce qui le suit.
         self._sentences: dict[str, tuple[QLabel, QLabel]] = {}
+        # L'aura de chaque ligne à cocher, reposée à chaque changement d'état
+        # ou de mode.
+        self._glows: dict[str, QGraphicsDropShadowEffect] = {}
         self._build()
         session.algorithm_changed.connect(self.refresh)
         session.cards_loaded.connect(self.refresh)
@@ -215,6 +139,38 @@ class AdvancedTab(LayoutTab):
         self._intro.setWordWrap(True)
         self._intro.setTextFormat(Qt.RichText)
 
+        # --- La métrique : l'épaisseur mesurée, et ce qu'elle donne --------
+        self._metric_title = QLabel()
+        self._metric_title.setTextFormat(Qt.RichText)
+        self._settings_title = QLabel()
+        self._settings_title.setTextFormat(Qt.RichText)
+
+        self._metric_note = QLabel()
+        self._metric_note.setWordWrap(True)
+
+        self._strip = BigFloatSpin(0.01, 0.50, step=0.05, decimals=2)
+        self._strip.setFixedWidth(150)
+        self._strip.value_changed.connect(self._on_form_changed)
+        self._preview = StripPreview(self._session)
+        self._preview.setMaximumHeight(PREVIEW_HEIGHT)
+
+        # Le réglage à gauche, ce qu'il donne à droite : on lit la cause puis
+        # l'effet, sur la même ligne.
+        mesure = QHBoxLayout()
+        mesure.setSpacing(24)
+        mesure.addWidget(self._strip, 0, Qt.AlignTop)
+        mesure.addWidget(self._preview, 1)
+        self._metric_box = QWidget()
+        self._metric_box.setLayout(mesure)
+
+        self._metric_status = QLabel()
+        self._metric_status.setWordWrap(True)
+        # Même corps que la projection du bas : ce sont deux commentaires de
+        # l'écran sur ce qu'il montre, pas des réglages.
+        legende = self._metric_status.font()
+        legende.setPointSize(legende.pointSize() + STATUS_BOOST)
+        self._metric_status.setFont(legende)
+
         self._stop_title = QLabel()
         self._stop_title.setTextFormat(Qt.RichText)
 
@@ -223,24 +179,29 @@ class AdvancedTab(LayoutTab):
         colonne.setContentsMargins(4, 4, 12, 4)
         colonne.setSpacing(8)
         colonne.addWidget(self._notice)
+        colonne.addWidget(self._metric_title)
+        colonne.addWidget(self._metric_note)
+        colonne.addWidget(self._metric_box)
+        colonne.addWidget(self._metric_status)
+        colonne.addWidget(self._settings_title)
         colonne.addWidget(self._intro)
-        colonne.addLayout(self._sentence("algorithm", self._algorithm))
-        colonne.addLayout(self._sentence("acceptance", self._acceptance,
+        colonne.addWidget(self._sentence("algorithm", self._algorithm))
+        colonne.addWidget(self._sentence("acceptance", self._acceptance,
                                          retrait=SENTENCE_INDENT))
         colonne.addWidget(self._stop_title)
-        colonne.addLayout(self._sentence("iterations", self._iterations,
+        colonne.addWidget(self._sentence("iterations", self._iterations,
                                          self._always_iterations,
                                          retrait=SENTENCE_INDENT))
-        colonne.addLayout(self._sentence("stagnation", self._stagnation,
+        colonne.addWidget(self._sentence("stagnation", self._stagnation,
                                          self._stop_on_stagnation,
                                          retrait=SENTENCE_INDENT))
-        colonne.addLayout(self._sentence("time", self._time_budget,
+        colonne.addWidget(self._sentence("time", self._time_budget,
                                          self._stop_on_time,
                                          retrait=SENTENCE_INDENT))
-        colonne.addLayout(self._sentence("score", self._target_score,
+        colonne.addWidget(self._sentence("score", self._target_score,
                                          self._stop_on_score,
                                          retrait=SENTENCE_INDENT))
-        colonne.addLayout(self._sentence("snapshot_every", self._snapshot_every))
+        colonne.addWidget(self._sentence("snapshot_every", self._snapshot_every))
         colonne.addStretch(1)
 
         # ⚠️ **Défilante.** Le texte et ses réglages ne tiennent pas sur toutes
@@ -267,7 +228,7 @@ class AdvancedTab(LayoutTab):
 
     def _sentence(self, key: str, champ: QWidget,
                   bascule: QCheckBox | None = None,
-                  retrait: int = 0) -> QHBoxLayout:
+                  retrait: int = 0) -> QWidget:
         """Une phrase dont le réglage est un mot comme les autres.
 
         Le texte se coupe autour de `%1` : ce qui précède le champ, ce qui le
@@ -295,7 +256,6 @@ class AdvancedTab(LayoutTab):
         self._sentences[key] = (avant, apres)
 
         ligne = QHBoxLayout()
-        ligne.setContentsMargins(retrait, 0, 0, 0)
         ligne.setSpacing(6)
         if bascule is not None:
             ligne.addWidget(bascule)
@@ -303,7 +263,30 @@ class AdvancedTab(LayoutTab):
             ligne.addWidget(avant)
         ligne.addWidget(champ)
         ligne.addWidget(apres, 1)
-        return ligne
+
+        cadre = QFrame()
+        cadre.setLayout(ligne)
+        if bascule is None:
+            ligne.setContentsMargins(retrait, 0, 0, 0)
+            return cadre
+        # ⚠️ **Une ligne à cocher porte l'aura de son état**, comme « Suivant » :
+        # verte quand elle compte, rouge, plus discrète, quand elle est éteinte.
+        # Il lui faut donc un cadre opaque à border, et de la place autour pour
+        # que le halo ne soit pas rogné par ses voisines.
+        theme.mark(cadre, "stop-line")
+        ligne.setContentsMargins(GLOW_ROOM, 4, GLOW_ROOM, 4)
+        halo = QGraphicsDropShadowEffect(cadre)
+        halo.setOffset(0, 0)
+        cadre.setGraphicsEffect(halo)
+        self._glows[key] = halo
+
+        entoure = QHBoxLayout()
+        entoure.setContentsMargins(retrait, GLOW_ROOM // 2, GLOW_ROOM,
+                                   GLOW_ROOM // 2)
+        entoure.addWidget(cadre)
+        porteur = QWidget()
+        porteur.setLayout(entoure)
+        return porteur
 
     def _say(self, key: str, texte: str) -> None:
         """Pose une phrase autour de son champ, en coupant sur `%1`."""
@@ -326,6 +309,20 @@ class AdvancedTab(LayoutTab):
     def retranslate_ui(self) -> None:
         self._algorithm.setItemText(0, self.tr("le recuit simulé"))
         self._algorithm.setItemText(1, self.tr("la descente stricte"))
+
+        self._strip.setTitle(self.tr("Épaisseur"))
+        self._metric_title.setText(self.tr("<b>La métrique :</b>"))
+        self._metric_note.setText(self.tr(
+            "C'est la part de chaque carte que l'assemblage regarde : une bande "
+            "le long de ses quatre bords, dont il compare la couleur moyenne à "
+            "celle de sa voisine. Fine, elle ne voit que l'extrême bord et "
+            "laisse les motifs se contredire juste derrière ; large, elle "
+            "mélange le bord au centre de l'illustration et les raccords se "
+            "relâchent."))
+        self._metric_status.setText(self.tr(
+            "À gauche, la zone mesurée sur une carte. À droite, une petite "
+            "grille d'essai réoptimisée à cette épaisseur."))
+        self._settings_title.setText(self.tr("<b>Paramètres de l'algorithme :</b>"))
 
         self._notice.setText(self.tr(
             "Les valeurs par défaut donnent presque toujours un bon résultat. "
@@ -363,6 +360,7 @@ class AdvancedTab(LayoutTab):
         if self._updating:
             return
         self._session.set_algorithm(
+            strip_size=self._strip.value(),
             iterations=self._iterations.value(),
             snapshot_every=self._snapshot_every.value(),
             stop_on_stagnation=self._stop_on_stagnation.isChecked(),
@@ -385,6 +383,7 @@ class AdvancedTab(LayoutTab):
         """Recopie la session dans les champs, sans réémettre."""
         self._updating = True
         session = self._session
+        self._strip.setValue(session.strip_size)
         self._iterations.setValue(session.iterations)
         self._snapshot_every.setValue(session.snapshot_every)
         self._stop_on_stagnation.setChecked(session.stop_on_stagnation)
@@ -409,6 +408,7 @@ class AdvancedTab(LayoutTab):
         """
         session = self._session
         accepted = {
+            "strip_size": self._strip.value(),
             "iterations": self._iterations.value(),
             "snapshot_every": self._snapshot_every.value(),
             "stagnation_iterations": self._stagnation.value(),
@@ -432,6 +432,18 @@ class AdvancedTab(LayoutTab):
         self._acceptance.setEnabled(self._session.use_annealing)
         for morceau in self._sentences["acceptance"]:
             morceau.setEnabled(self._session.use_annealing)
+        self._update_glows()
+
+    def _update_glows(self) -> None:
+        """Verte sur une ligne d'arrêt qui compte, rouge sur une ligne éteinte."""
+        actifs = {
+            "iterations": True,      # jamais débrayable
+            "stagnation": self._session.stop_on_stagnation,
+            "time": self._session.stop_on_time,
+            "score": self._session.stop_on_score,
+        }
+        for cle, halo in self._glows.items():
+            theme.set_glow(halo, self.palette(), actifs[cle])
 
     def _update_projections(self) -> None:
         """Ce que ces réglages impliquent, en une ligne sous les champs."""

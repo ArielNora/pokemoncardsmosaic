@@ -4,7 +4,6 @@ import os
 from pathlib import Path
 
 from PySide6.QtCore import QEvent, QSettings, QStandardPaths, Qt
-from PySide6.QtGui import QColor
 from PySide6.QtWidgets import (
     QComboBox,
     QGraphicsDropShadowEffect,
@@ -31,9 +30,9 @@ from .session import Session
 # laisser autour. ⚠️ **Le rouge est plus discret que le vert** : il accompagne le
 # premier passage sur chaque écran, et le voir aussi vif que l'invitation à
 # continuer donnerait au parcours l'air d'une suite d'erreurs.
-GLOW_RADIUS, GLOW_ALPHA = 26, 220
-GLOW_RADIUS_WAITING, GLOW_ALPHA_WAITING = 16, 130
-GLOW_ROOM = 10
+# L'aura et sa place viennent du thème : les lignes d'arrêt des paramètres en
+# posent une aussi, et deux réglages du même signal finiraient par diverger.
+GLOW_ROOM = theme.GLOW_ROOM
 
 
 class MainWindow(QMainWindow):
@@ -254,16 +253,11 @@ class MainWindow(QMainWindow):
         écran : le voir aussi vif que l'invitation à continuer donnerait à tout
         le parcours l'air d'une suite d'erreurs.
         """
-        colours = theme.colours(self.palette())
         if not has_next:
             self._next_glow.setEnabled(False)
             return
         self._next_glow.setEnabled(True)
-        couleur = QColor(colours["ok"] if ready else colours["error"])
-        couleur.setAlpha(GLOW_ALPHA if ready else GLOW_ALPHA_WAITING)
-        self._next_glow.setColor(couleur)
-        self._next_glow.setBlurRadius(GLOW_RADIUS if ready
-                                      else GLOW_RADIUS_WAITING)
+        theme.set_glow(self._next_glow, self.palette(), ready)
 
     def changeEvent(self, event) -> None:
         """Suit la bascule clair/sombre du système.

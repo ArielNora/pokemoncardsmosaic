@@ -239,6 +239,31 @@ def system_is_dark(app) -> bool:
     return is_dark(reference)
 
 
+# L'aura d'un élément prêt, et celle d'un élément qui attend encore quelque
+# chose. ⚠️ **Le rouge est moins fort que le vert** : il dit « il reste à
+# faire », pas « c'est cassé ». Vu aussi vif que l'invitation à continuer, il
+# donnerait à tout le parcours l'air d'une suite d'erreurs.
+GLOW_RADIUS, GLOW_ALPHA = 26, 220
+GLOW_RADIUS_WAITING, GLOW_ALPHA_WAITING = 16, 130
+# La place à laisser autour d'un élément pour que son aura ne soit pas rognée.
+GLOW_ROOM = 10
+
+
+def set_glow(effect, palette: QPalette, ready: bool) -> None:
+    """Pose sur `effect` l'aura de l'état demandé.
+
+    ⚠️ **Une couleur figée dans un effet ne suit pas le mode.** Tout ce qui se
+    lit au moment du dessin change de mode tout seul ; l'aura, elle, garde la
+    teinte qu'on lui a posée. Les appelants la reposent donc sur
+    `PaletteChange`.
+    """
+    c = colours(palette)
+    couleur = QColor(c["ok"] if ready else c["error"])
+    couleur.setAlpha(GLOW_ALPHA if ready else GLOW_ALPHA_WAITING)
+    effect.setColor(couleur)
+    effect.setBlurRadius(GLOW_RADIUS if ready else GLOW_RADIUS_WAITING)
+
+
 def stylesheet(palette: QPalette) -> str:
     """La feuille globale, écrite pour les propriétés `role` des widgets."""
     c = colours(palette)
@@ -252,6 +277,14 @@ QLabel[role="banner"] {{
     border: 1px solid {c["banner_border"]};
     border-radius: 4px;
     padding: 6px;
+}}
+/* Une ligne d'arrêt porte l'aura de son état : verte cochée, rouge sinon.
+   ⚠️ **Il lui faut un fond opaque.** Une aura posée sur un cadre transparent
+   ne halo que les lettres, une par une, au lieu d'entourer la ligne. */
+QFrame[role="stop-line"] {{
+    background: palette(window);
+    border: 1px solid {c["cell_border"]};
+    border-radius: 6px;
 }}
 QFrame[role="cell"] {{ border: 1px solid {c["cell_border"]}; }}
 QFrame[role="cell-empty"] {{

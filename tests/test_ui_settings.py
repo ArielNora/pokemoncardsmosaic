@@ -1,8 +1,8 @@
 """Tests des réglages d'algorithme et de leurs projections chiffrées.
 
-Ils ont quitté leur écran pour la famille « Algorithme » de l'étape des
-paramètres : l'épaisseur des bandes à l'onglet « Recherche », qui la montre, et
-tout le reste à « Paramètres avancés », qui l'explique.
+Ils ont quitté leur écran pour l'étape des paramètres, dans un onglet unique,
+« Paramètres avancés » : la métrique et son aperçu d'abord, puis une phrase par
+réglage.
 """
 
 import pytest
@@ -262,13 +262,6 @@ def step(qt_app, session):
     return AdvancedTab(session), session
 
 
-@pytest.fixture
-def recherche(qt_app, session):
-    from pokemon_mosaic.ui.algorithm_tabs import SearchTab
-
-    return SearchTab(session), session
-
-
 def test_every_advanced_setting_sits_inside_a_sentence(step):
     """⚠️ **Le texte fait partie du réglage.** « Tolérance d'acceptation : 0,30 »
     ne dit rien à personne, pas même à qui a écrit le programme six mois après.
@@ -323,6 +316,10 @@ def test_clicking_the_words_of_a_stop_line_ticks_it(step):
     from PySide6.QtTest import QTest
 
     widget, session = step
+    # ⚠️ Posé, l'écran donne à la case sa vraie taille : sans cela le clic
+    # tombe dans les 640 pixels par défaut d'un widget jamais disposé, et rate.
+    widget.resize(900, 600)
+    widget.show()
     case = widget._stop_on_time
     assert case.text(), "la phrase n'est pas portée par la case"
     assert not session.stop_on_time
@@ -330,6 +327,27 @@ def test_clicking_the_words_of_a_stop_line_ticks_it(step):
     QTest.mouseClick(case, Qt.LeftButton,
                      pos=QPoint(case.width() - 10, case.height() // 2))
     assert session.stop_on_time
+
+
+def test_a_stop_line_wears_the_aura_of_its_state(step):
+    """Comme « Suivant » : verte quand la ligne compte, rouge, plus discrète,
+    quand elle est éteinte. Le rouge dit « pas actif », pas « cassé »."""
+    from pokemon_mosaic.ui import theme
+
+    widget, session = step
+    couleurs = theme.colours(widget.palette())
+    assert set(widget._glows) == {"iterations", "stagnation", "time", "score"}
+
+    # Les itérations comptent toujours, la stagnation est décochée au départ.
+    assert widget._glows["iterations"].color().name() == couleurs["ok"]
+    eteinte = widget._glows["stagnation"]
+    assert eteinte.color().name() == couleurs["error"]
+    attente = (eteinte.color().alpha(), eteinte.blurRadius())
+
+    session.set_algorithm(stop_on_stagnation=True)
+    assert eteinte.color().name() == couleurs["ok"]
+    prete = (eteinte.color().alpha(), eteinte.blurRadius())
+    assert prete > attente, "le rouge doit rester le plus discret des deux"
 
 
 def test_the_iteration_line_keeps_its_words_outside_the_disabled_box(step):
@@ -353,27 +371,32 @@ def test_the_acceptance_sentence_greys_out_in_strict_descent(step):
                for morceau in widget._sentences["acceptance"])
 
 
-def test_the_thickness_is_the_only_one_that_shows_itself(recherche):
+def test_the_thickness_is_the_only_one_that_shows_itself(step):
     """Elle se dessine ; les autres n'ont rien à montrer : on ne dessine pas un
-    nombre d'itérations."""
-    widget, session = recherche
+    nombre d'itérations. ⚠️ Elle ouvre donc l'onglet, au-dessus des réglages
+    qui s'en servent : séparée d'eux, elle obligeait à l'aller-retour pour
+    comprendre l'un par l'autre."""
+    widget, session = step
     widget._strip.setValue(0.25)
     assert session.strip_size == pytest.approx(0.25)
     assert widget._preview is not None
+    colonne = widget._scroll.widget().layout()
+    rangs = [colonne.indexOf(w) for w in (widget._metric_box,
+                                          widget._settings_title)]
+    assert rangs[0] < rangs[1], "la métrique passe après les réglages"
 
 
-def test_the_algorithm_tabs_never_block(step, recherche):
-    """Ils ont tous une valeur qui marche : personne n'a à y toucher pour
+def test_the_algorithm_tab_never_blocks(step):
+    """Il a une valeur qui marche partout : personne n'a à y toucher pour
     lancer un calcul."""
     assert step[0].is_valid()
-    assert recherche[0].is_valid()
 
 
-def test_form_starts_from_the_session(step, recherche):
+def test_form_starts_from_the_session(step):
     widget, session = step
     assert widget._iterations.value() == session.iterations
     assert widget._algorithm.currentData() is session.use_annealing
-    assert recherche[0]._strip.value() == pytest.approx(session.strip_size)
+    assert widget._strip.value() == pytest.approx(session.strip_size)
 
 
 def test_form_follows_a_change_made_elsewhere(step):
@@ -443,7 +466,7 @@ def test_a_usable_cadence_is_not_flagged(step):
     assert "cadence" not in widget._projection.text()
 
 
-def test_the_preview_is_debounced(recherche):
+def test_the_preview_is_debounced(step):
     """L'aperçu coûte jusqu'à 294 ms : chaque cran de molette ne doit pas le payer.
 
     L'anti-rebond appartient à l'aperçu lui-même, pas à cet écran : c'est lui qui
@@ -451,7 +474,7 @@ def test_the_preview_is_debounced(recherche):
     """
     from pokemon_mosaic.ui.strip_preview import REBUILD_DELAY_MS
 
-    widget, session = recherche
+    widget, session = step
     widget._preview.refresh()
     session.set_algorithm(strip_size=0.2)
     assert widget._preview._timer.isActive()
@@ -459,10 +482,10 @@ def test_the_preview_is_debounced(recherche):
     assert widget._preview._timer.isSingleShot()
 
 
-def test_the_screen_does_not_schedule_the_preview_itself(recherche):
+def test_the_screen_does_not_schedule_the_preview_itself(step):
     """Relancer l'aperçu depuis l'écran le ferait travailler pour des réglages
     qui ne le concernent pas."""
-    widget, session = recherche
+    widget, session = step
     widget._preview.refresh()
     session.set_algorithm(iterations=333_000)
     assert not widget._preview._timer.isActive()
@@ -512,13 +535,13 @@ def test_a_value_outside_the_field_bounds_comes_back_corrected(session):
     """Un préréglage écrit à la main peut porter une valeur hors bornes. Sans
     retour du champ vers la session, le formulaire annoncerait un calcul
     différent de celui qui aurait lieu."""
-    from pokemon_mosaic.ui.algorithm_tabs import AdvancedTab, SearchTab
+    from pokemon_mosaic.ui.algorithm_tabs import AdvancedTab
 
-    avances, cherche = AdvancedTab(session), SearchTab(session)
+    avances = AdvancedTab(session)
     session.set_algorithm(iterations=99, strip_size=0.9, acceptance=5.0)
 
     assert avances._iterations.value() == session.iterations == 1000
-    assert cherche._strip.value() == session.strip_size == pytest.approx(0.5)
+    assert avances._strip.value() == session.strip_size == pytest.approx(0.5)
     assert avances._acceptance.value() == session.acceptance == pytest.approx(0.99)
 
 

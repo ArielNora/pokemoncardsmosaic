@@ -30,7 +30,7 @@ from PySide6.QtWidgets import (
 )
 
 from . import theme
-from .algorithm_tabs import AdvancedTab, SearchTab
+from .algorithm_tabs import AdvancedTab
 from .layout_tabs import (
     CardSizeTab,
     GridSizeTab,
@@ -231,7 +231,11 @@ class LayoutStep(QWidget):
         menu = [
             (None, [PaperTab]),
             ("grid", [GridSizeTab, CardSizeTab, PlacementTab]),
-            ("algorithm", [SearchTab, AdvancedTab]),
+            # ⚠️ **Pas de famille pour l'algorithme.** Il n'a plus qu'un
+            # onglet depuis que la métrique l'a rejoint, et un intitulé qui
+            # plie un seul enfant, avec son trait, promet une liste qui
+            # n'existe pas.
+            (None, [AdvancedTab]),
         ]
         self._tabs: list[LayoutTab] = []
         # Rang de la liste -> onglet, ou `FAMILY_ROW` pour un intitulé.
@@ -387,8 +391,7 @@ class LayoutStep(QWidget):
 
     def _family_title(self, cle: str) -> str:
         """L'intitulé d'une famille. Littéral : `lupdate` n'extrait que ceux-là."""
-        return {"grid": self.tr("Grille"),
-                "algorithm": self.tr("Algorithme")}[cle]
+        return {"grid": self.tr("Grille")}[cle]
 
     def _family_at_row(self, rang: int) -> str | None:
         for cle, ligne in self._family_rows.items():
