@@ -4,7 +4,8 @@ C'est le réglage qui change le plus le rendu final, et le seul des réglages
 « avancés » dont l'effet soit montrable. L'aperçu est double, parce qu'aucune des
 deux moitiés ne suffit :
 
-- les bandes surlignées sur une carte disent **quelle zone** est mesurée ;
+- deux cartes posées côte à côte, bandes surlignées et flèche entre celles qui
+  se touchent, disent **quelle zone** est mesurée et **entre qui** ;
 - une petite grille d'essai réoptimisée en direct dit **ce que ça change** au
   résultat, ce qu'un surlignage ne peut pas montrer.
 
@@ -16,7 +17,7 @@ Voir SPEC.md §5.
 import random
 
 import numpy as np
-from PySide6.QtCore import QRectF, Qt, QTimer
+from PySide6.QtCore import QPointF, QRectF, Qt, QTimer
 from PySide6.QtGui import QColor, QImage, QPainter, QPen
 from PySide6.QtWidgets import QWidget
 
@@ -25,6 +26,9 @@ from ..scoring import EdgeDistances
 
 BAND = QColor(255, 190, 60, 110)
 BAND_EDGE = QColor(210, 130, 0)
+# La flèche qui relie les deux bandes mises face à face.
+ARROW_WIDTH = 2
+ARROW_HEAD = 6
 
 # Taille de la grille d'essai. Assez grande pour montrer un raccord, assez petite
 # pour se réoptimiser sans latence perceptible.
@@ -44,7 +48,7 @@ def _to_qimage(array: np.ndarray) -> QImage:
 
 
 class StripPreview(QWidget):
-    """Une carte avec ses bandes surlignées, et une grille d'essai réoptimisée."""
+    """Deux cartes voisines, bandes surlignées, et une grille d'essai."""
 
     def __init__(self, session, parent=None):
         super().__init__(parent)
@@ -170,9 +174,40 @@ class StripPreview(QWidget):
 
         margin = 6
         height = self.height() - 2 * margin
-        card_width = self._draw_card(painter, cards[selected[0]], margin, margin, height)
-        self._draw_sandbox(painter, margin * 2 + card_width, margin, height)
+        paire = self._draw_pair(painter, cards, selected, margin, margin, height)
+        self._draw_sandbox(painter, margin * 2 + paire, margin, height)
         painter.end()
+
+    def _draw_pair(self, painter, cards, selected, x, y, height) -> float:
+        """Deux cartes voisines, et la flèche entre les bandes qui se touchent.
+
+        ⚠️ **Une carte seule ne disait pas ce qui est comparé.** Elle montrait
+        quatre bandes surlignées sans dire à quoi elles servaient : le score
+        n'existe qu'entre **deux** cartes, et c'est ce raccord que la flèche
+        pointe.
+        """
+        gauche = cards[selected[0]]
+        # Une seconde carte, différente si le jeu en offre une.
+        droite = cards[selected[1 if len(selected) > 1 else 0]]
+        largeur = self._draw_card(painter, gauche, x, y, height)
+        self._draw_card(painter, droite, x + largeur, y, height)
+
+        bande = largeur * self._session.strip_size
+        self._draw_arrow(painter, x + largeur - bande, x + largeur + bande,
+                         y + height / 2)
+        return 2 * largeur
+
+    def _draw_arrow(self, painter, x1: float, x2: float, y: float) -> None:
+        """Une flèche à deux pointes, d'une bande à l'autre."""
+        painter.save()
+        painter.setPen(QPen(BAND_EDGE, ARROW_WIDTH))
+        painter.drawLine(QPointF(x1, y), QPointF(x2, y))
+        for x, sens in ((x1, 1), (x2, -1)):
+            painter.drawLine(QPointF(x, y),
+                             QPointF(x + sens * ARROW_HEAD, y - ARROW_HEAD))
+            painter.drawLine(QPointF(x, y),
+                             QPointF(x + sens * ARROW_HEAD, y + ARROW_HEAD))
+        painter.restore()
 
     def _draw_card(self, painter, card, x, y, height) -> float:
         """Dessine une carte et surligne les quatre bandes mesurées."""

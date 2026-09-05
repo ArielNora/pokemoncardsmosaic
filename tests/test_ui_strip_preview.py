@@ -200,6 +200,41 @@ def test_widget_paints_with_cards(preview):
     assert not pixmap.isNull()
 
 
+def test_two_cards_face_each_other_with_an_arrow_between_them(preview):
+    """⚠️ **Une carte seule ne disait pas ce qui est comparé.** Elle montrait
+    quatre bandes surlignées sans dire à quoi elles servaient : le score n'existe
+    qu'entre **deux** cartes, et la flèche pointe le raccord."""
+    from pokemon_mosaic.ui.strip_preview import BAND_EDGE
+
+    widget, session = preview
+    widget.refresh()
+    image = widget.grab().toImage()
+    ratio = image.devicePixelRatio() or 1
+
+    # ⚠️ La couleur seule ne suffit pas : les contours des bandes la portent
+    # aussi. La flèche est la seule **suite horizontale** de cette couleur.
+    milieu = int(widget.height() / 2 * ratio)
+    ligne = [image.pixelColor(x, milieu).name() == BAND_EDGE.name()
+             for x in range(int(widget.width() * ratio))]
+    suites, debut = [], None
+    for x, porte in enumerate(ligne + [False]):
+        if porte and debut is None:
+            debut = x
+        elif not porte and debut is not None:
+            suites.append((x - debut, debut, x))
+            debut = None
+    longueur, gauche, droite = max(suites)
+    assert longueur / ratio >= 10, "aucune flèche à hauteur du raccord"
+
+    # Elle est centrée sur la jointure des deux cartes.
+    hauteur = widget.height() - 12
+    vignette = session.card_set[0].thumbnail
+    une_carte = hauteur * vignette.shape[1] / vignette.shape[0]
+    centre = (gauche + droite) / 2 / ratio
+    assert une_carte * 0.85 < centre < une_carte * 1.15, (
+        "la flèche ne tombe pas sur la jointure des deux cartes")
+
+
 def test_the_shortage_message_goes_through_the_catalogue(qt_app):
     """Écrite en dur, elle s'affichait en français dans une interface anglaise :
     `lupdate` n'extrait que les `tr()` portant une chaîne littérale."""

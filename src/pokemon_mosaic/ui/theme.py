@@ -278,6 +278,13 @@ QLabel[role="banner"] {{
     border-radius: 4px;
     padding: 6px;
 }}
+/* Chaque partie des réglages tient dans son cadre : trois blocs de texte à la
+   suite se lisaient comme un seul, et rien ne disait où l'un finissait. */
+QFrame[role="section"] {{
+    border: 1px solid {c["cell_border"]};
+    border-radius: 8px;
+}}
+
 /* Une ligne d'arrêt porte l'aura de son état : verte cochée, rouge sinon.
    ⚠️ **Il lui faut un fond opaque.** Une aura posée sur un cadre transparent
    ne halo que les lettres, une par une, au lieu d'entourer la ligne. */

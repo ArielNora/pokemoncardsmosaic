@@ -54,6 +54,8 @@ SENTENCE_INDENT = 26
 PREVIEW_HEIGHT = 300
 # La place laissée autour d'une ligne pour que son aura ne soit pas rognée.
 GLOW_ROOM = theme.GLOW_ROOM
+# L'air entre le cadre d'une partie et ce qu'elle contient.
+SECTION_PADDING = 10
 
 
 class AdvancedTab(LayoutTab):
@@ -144,6 +146,8 @@ class AdvancedTab(LayoutTab):
         self._metric_title.setTextFormat(Qt.RichText)
         self._settings_title = QLabel()
         self._settings_title.setTextFormat(Qt.RichText)
+        self._saving_title = QLabel()
+        self._saving_title.setTextFormat(Qt.RichText)
 
         self._metric_note = QLabel()
         self._metric_note.setWordWrap(True)
@@ -179,29 +183,26 @@ class AdvancedTab(LayoutTab):
         colonne.setContentsMargins(4, 4, 12, 4)
         colonne.setSpacing(8)
         colonne.addWidget(self._notice)
-        colonne.addWidget(self._metric_title)
-        colonne.addWidget(self._metric_note)
-        colonne.addWidget(self._metric_box)
-        colonne.addWidget(self._metric_status)
-        colonne.addWidget(self._settings_title)
-        colonne.addWidget(self._intro)
-        colonne.addWidget(self._sentence("algorithm", self._algorithm))
-        colonne.addWidget(self._sentence("acceptance", self._acceptance,
-                                         retrait=SENTENCE_INDENT))
-        colonne.addWidget(self._stop_title)
-        colonne.addWidget(self._sentence("iterations", self._iterations,
-                                         self._always_iterations,
-                                         retrait=SENTENCE_INDENT))
-        colonne.addWidget(self._sentence("stagnation", self._stagnation,
-                                         self._stop_on_stagnation,
-                                         retrait=SENTENCE_INDENT))
-        colonne.addWidget(self._sentence("time", self._time_budget,
-                                         self._stop_on_time,
-                                         retrait=SENTENCE_INDENT))
-        colonne.addWidget(self._sentence("score", self._target_score,
-                                         self._stop_on_score,
-                                         retrait=SENTENCE_INDENT))
-        colonne.addWidget(self._sentence("snapshot_every", self._snapshot_every))
+        colonne.addWidget(self._section(
+            self._metric_title, self._metric_note, self._metric_box,
+            self._metric_status))
+        colonne.addWidget(self._section(
+            self._saving_title,
+            self._sentence("snapshot_every", self._snapshot_every)))
+        colonne.addWidget(self._section(
+            self._settings_title, self._intro,
+            self._sentence("algorithm", self._algorithm),
+            self._sentence("acceptance", self._acceptance,
+                           retrait=SENTENCE_INDENT),
+            self._stop_title,
+            self._sentence("iterations", self._iterations,
+                           self._always_iterations, retrait=SENTENCE_INDENT),
+            self._sentence("stagnation", self._stagnation,
+                           self._stop_on_stagnation, retrait=SENTENCE_INDENT),
+            self._sentence("time", self._time_budget,
+                           self._stop_on_time, retrait=SENTENCE_INDENT),
+            self._sentence("score", self._target_score,
+                           self._stop_on_score, retrait=SENTENCE_INDENT)))
         colonne.addStretch(1)
 
         # ⚠️ **Défilante.** Le texte et ses réglages ne tiennent pas sur toutes
@@ -225,6 +226,22 @@ class AdvancedTab(LayoutTab):
         layout.addWidget(self._projection)
         self._connect_all()
         self.retranslate_ui()
+
+    def _section(self, *contenus: QWidget) -> QFrame:
+        """Une partie des réglages, dans son cadre.
+
+        Trois blocs de texte à la suite se lisaient comme un seul : rien ne
+        disait où la métrique s'arrêtait et où l'algorithme commençait.
+        """
+        cadre = QFrame()
+        theme.mark(cadre, "section")
+        pile = QVBoxLayout(cadre)
+        pile.setContentsMargins(SECTION_PADDING, SECTION_PADDING,
+                                SECTION_PADDING, SECTION_PADDING)
+        pile.setSpacing(6)
+        for contenu in contenus:
+            pile.addWidget(contenu)
+        return cadre
 
     def _sentence(self, key: str, champ: QWidget,
                   bascule: QCheckBox | None = None,
@@ -310,18 +327,19 @@ class AdvancedTab(LayoutTab):
         self._algorithm.setItemText(0, self.tr("le recuit simulé"))
         self._algorithm.setItemText(1, self.tr("la descente stricte"))
 
-        self._strip.setTitle(self.tr("Épaisseur"))
+        self._strip.setTitle(self.tr("Épaisseur des bandes"))
         self._metric_title.setText(self.tr("<b>La métrique :</b>"))
         self._metric_note.setText(self.tr(
-            "C'est la part de chaque carte que l'assemblage regarde : une bande "
-            "le long de ses quatre bords, dont il compare la couleur moyenne à "
-            "celle de sa voisine. Fine, elle ne voit que l'extrême bord et "
-            "laisse les motifs se contredire juste derrière ; large, elle "
-            "mélange le bord au centre de l'illustration et les raccords se "
-            "relâchent."))
+            "La partie la plus importante de l'algorithme. Elle prend les "
+            "bandes voisines de deux cartes et en tire un score, qui dit à quel "
+            "point ces bandes se ressemblent. Tout le travail de l'algorithme "
+            "est ensuite de déplacer les cartes pour obtenir le meilleur score "
+            "d'ensemble."))
         self._metric_status.setText(self.tr(
-            "À gauche, la zone mesurée sur une carte. À droite, une petite "
-            "grille d'essai réoptimisée à cette épaisseur."))
+            "À gauche, deux cartes voisines : la flèche relie les deux bandes "
+            "que le score compare. À droite, une petite grille d'essai "
+            "réoptimisée à cette épaisseur."))
+        self._saving_title.setText(self.tr("<b>Fréquence de sauvegarde :</b>"))
         self._settings_title.setText(self.tr("<b>Paramètres de l'algorithme :</b>"))
 
         self._notice.setText(self.tr(

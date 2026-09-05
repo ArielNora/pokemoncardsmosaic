@@ -381,8 +381,10 @@ def test_the_thickness_is_the_only_one_that_shows_itself(step):
     assert session.strip_size == pytest.approx(0.25)
     assert widget._preview is not None
     colonne = widget._scroll.widget().layout()
-    rangs = [colonne.indexOf(w) for w in (widget._metric_box,
-                                          widget._settings_title)]
+    # Chaque partie vit dans son cadre : on compare la place des cadres.
+    rangs = [colonne.indexOf(w.parentWidget())
+             for w in (widget._metric_box, widget._settings_title)]
+    assert -1 not in rangs, "une partie n'est pas dans son cadre"
     assert rangs[0] < rangs[1], "la métrique passe après les réglages"
 
 
