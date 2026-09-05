@@ -256,6 +256,10 @@ class PagePreview(QWidget):
             self._start_drag(point)
             return
         if not self._paintable:
+            # ⚠️ **Rendu à qui de droit.** Sans rien à poser ni à déplacer, ce
+            # widget n'a que faire du clic : accepté quand même, il privait son
+            # cadre du glissement qui fait défiler l'aperçu à l'export.
+            event.ignore()
             return
         cell = self.cell_at(point.x(), point.y())
         if cell is None:

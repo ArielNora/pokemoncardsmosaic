@@ -3,9 +3,11 @@
 Le calcul est fini, la grille est arrêtée : **sa forme ne se discute plus**.
 Ce qui reste ouvert est tout ce qui n'y touche pas, l'écart entre les cartes,
 le nombre de feuilles, les couleurs de ce qui n'est pas une carte, la finesse
-d'impression. Trois onglets, un par famille de décisions, et la colonne des
-quatre agencements gardés à droite : on habille celui qu'on regarde, et on
-l'exporte quand il va.
+d'impression. À gauche, trois sections qui se déplient une à la fois ; à droite,
+les quatre agencements gardés, le résumé et le bouton d'export ; au milieu,
+**l'image**, qui prend tout ce qui reste, se zoome à la molette et se promène au
+glissement. C'est elle qu'on est venu regarder : les réglages se replient pour la
+laisser respirer.
 
 ⚠️ **Ni les colonnes ni les lignes ne s'y règlent.** Les changer défferait
 l'agencement que l'algorithme vient de trouver : les cartes ne seraient plus à
@@ -14,19 +16,17 @@ leur place, et le score n'aurait plus de sens.
 
 import os
 
-from PySide6.QtCore import QSize, Qt, Signal
+from PySide6.QtCore import QEvent, QPointF, QSize, Qt, Signal
 from PySide6.QtGui import QColor
 from PySide6.QtWidgets import (
-    QAbstractItemView,
     QColorDialog,
+    QFrame,
     QHBoxLayout,
     QLabel,
-    QListWidgetItem,
     QProgressBar,
     QPushButton,
     QScrollArea,
     QSpinBox,
-    QStackedWidget,
     QVBoxLayout,
     QWidget,
 )
@@ -37,22 +37,20 @@ from .arrangements_dialog import ArrangementsDialog
 from .big_spin import BigFloatSpin
 from .export_dialog import ExportDialog
 from .exporter import start_export
-from .layout_step import (
-    SUB_TAB_HEIGHT,
-    TAB_BOOST,
-    TAB_WIDTH,
-    TabDelegate,
-    TabList,
-)
+from .layout_step import TAB_WIDTH
 from .page_preview import PagePreview
 from .saved_column import SavedColumn
 from .session import Session
 
-# L'état neutre des onglets d'ici : ils ne se valident pas, on y passe et on y
-# revient. Le cadre reste, la couleur ne dit rien de plus qu'« onglet ».
-NEUTRAL = "neutral"
-# Le zoom de l'aperçu, en pas et en bornes. À 1, la feuille tient dans le cadre.
-ZOOM_MIN, ZOOM_MAX, ZOOM_STEP = 1.0, 6.0, 0.5
+# Le zoom de l'aperçu, ses bornes et son pas multiplicatif. À 1, la feuille
+# entière tient dans le cadre.
+ZOOM_MIN, ZOOM_MAX, ZOOM_STEP = 1.0, 8.0, 1.25
+# Les signes du dépliant, devant l'intitulé d'une section.
+OPEN_SIGN, CLOSED_SIGN = "▾", "▸"
+# Ce que la phrase d'en-tête gagne sur la police de l'interface.
+HEADING_BOOST = 2
+# L'écart entre la loupe et le bord de l'aperçu qu'elle surplombe.
+ZOOM_BAR_MARGIN = 12
 # Taille de la pastille de couleur d'un bouton.
 SWATCH = QSize(28, 18)
 # Ce qu'on accorde à un fil d'export pour s'arrêter, avant de le dire bloqué.
@@ -94,25 +92,17 @@ class PresentationTab(ExportTab):
         self._centre = QPushButton()
         self._centre.clicked.connect(self._session.center_panels)
 
-        self._note = QLabel()
-        self._note.setWordWrap(True)
-
-        champs = QHBoxLayout()
-        champs.setSpacing(24)
-        champs.addWidget(self._width, 0, Qt.AlignTop)
-        champs.addWidget(self._gap, 0, Qt.AlignTop)
-        boutons = QVBoxLayout()
-        boutons.addWidget(self._auto_width)
-        boutons.addWidget(self._centre)
-        boutons.addStretch(1)
-        champs.addLayout(boutons)
-        champs.addStretch(1)
-
+        # ⚠️ **En colonne, et sans paragraphe.** Le panneau ne s'élargit pas :
+        # deux champs côte à côte et une explication de quatre lignes le
+        # faisaient déborder, au détriment de l'image, qui est ce qu'on est venu
+        # regarder.
         pile = QVBoxLayout(self)
-        pile.setContentsMargins(8, 6, 8, 6)
-        pile.addWidget(self._note)
-        pile.addLayout(champs)
-        pile.addStretch(1)
+        pile.setContentsMargins(6, 4, 6, 6)
+        pile.setSpacing(6)
+        pile.addWidget(self._width)
+        pile.addWidget(self._auto_width)
+        pile.addWidget(self._gap)
+        pile.addWidget(self._centre)
         self.retranslate_ui()
 
     def title(self) -> str:
@@ -123,11 +113,6 @@ class PresentationTab(ExportTab):
         self._gap.setTitle(self.tr("Écart entre les cartes (mm)"))
         self._auto_width.setText(self.tr("Au plus grand"))
         self._centre.setText(self.tr("Centrer sur les feuilles"))
-        self._note.setText(self.tr(
-            "La forme de la grille est arrêtée : la changer déferait "
-            "l'agencement trouvé. Tout ce qui n'y touche pas reste ouvert, "
-            "l'écart entre les cartes, leur taille, et le nombre de feuilles, "
-            "que l'aperçu ajoute par ses « + »."))
         self.refresh()
 
     def refresh(self) -> None:
@@ -166,12 +151,10 @@ class ColoursTab(ExportTab):
         super().__init__(session, parent)
         self._labels: dict[str, QLabel] = {}
         self._buttons: dict[str, QPushButton] = {}
-        self._note = QLabel()
-        self._note.setWordWrap(True)
 
         pile = QVBoxLayout(self)
-        pile.setContentsMargins(8, 6, 8, 6)
-        pile.addWidget(self._note)
+        pile.setContentsMargins(6, 4, 6, 6)
+        pile.setSpacing(6)
         for role in self.ROLES:
             intitule = QLabel()
             bouton = QPushButton()
@@ -182,20 +165,14 @@ class ColoursTab(ExportTab):
             ligne = QHBoxLayout()
             ligne.setSpacing(10)
             ligne.addWidget(bouton)
-            ligne.addWidget(intitule)
-            ligne.addStretch(1)
+            ligne.addWidget(intitule, 1)
             pile.addLayout(ligne)
-        pile.addStretch(1)
         self.retranslate_ui()
 
     def title(self) -> str:
         return self.tr("Couleurs des vides")
 
     def retranslate_ui(self) -> None:
-        self._note.setText(self.tr(
-            "Ces couleurs ne changent rien au calcul : une case vide est un "
-            "bord pour l'algorithme, qui ne compare jamais ses voisines à "
-            "travers elle. Elles ne se voient qu'à l'impression."))
         self._labels["background_colour"].setText(self.tr("Autour de la grille"))
         self._labels["gap_colour"].setText(self.tr("Entre les cartes"))
         self._labels["empty_colour"].setText(self.tr("Cases vides"))
@@ -216,54 +193,33 @@ class ColoursTab(ExportTab):
 
 
 class ResolutionTab(ExportTab):
-    """La finesse d'impression, et de quoi regarder le détail de près."""
+    """La finesse d'impression, et ce qu'elle donne en pixels.
 
-    zoom_changed = Signal(float)
+    ⚠️ **Le zoom n'est plus ici.** Il porte sur l'image, pas sur le fichier à
+    écrire : le ranger dans une section qu'il faut déplier pour s'en servir le
+    mettait à trois clics de ce qu'il agrandit.
+    """
 
     def __init__(self, session: Session, parent=None):
         super().__init__(session, parent)
-        self._zoom = ZOOM_MIN
         self._dpi = QSpinBox()
         self._dpi.setRange(50, 1200)
         self._dpi.setSingleStep(50)
         self._dpi.valueChanged.connect(self._on_dpi)
         self._dpi_label = QLabel()
-        self._note = QLabel()
-        self._note.setWordWrap(True)
         self._pixels = QLabel()
         self._pixels.setWordWrap(True)
 
-        self._zoom_out = QPushButton("−")
-        self._zoom_in = QPushButton("+")
-        self._zoom_label = QLabel()
-        for bouton in (self._zoom_out, self._zoom_in):
-            bouton.setFixedWidth(32)
-        self._zoom_out.clicked.connect(lambda: self._zoom_by(-ZOOM_STEP))
-        self._zoom_in.clicked.connect(lambda: self._zoom_by(ZOOM_STEP))
-        self._zoom_fit = QPushButton()
-        self._zoom_fit.clicked.connect(lambda: self._set_zoom(ZOOM_MIN))
-
         finesse = QHBoxLayout()
-        finesse.setSpacing(10)
+        finesse.setSpacing(8)
         finesse.addWidget(self._dpi_label)
-        finesse.addWidget(self._dpi)
-        finesse.addStretch(1)
-
-        loupe = QHBoxLayout()
-        loupe.setSpacing(6)
-        loupe.addWidget(self._zoom_out)
-        loupe.addWidget(self._zoom_label)
-        loupe.addWidget(self._zoom_in)
-        loupe.addWidget(self._zoom_fit)
-        loupe.addStretch(1)
+        finesse.addWidget(self._dpi, 1)
 
         pile = QVBoxLayout(self)
-        pile.setContentsMargins(8, 6, 8, 6)
-        pile.addWidget(self._note)
+        pile.setContentsMargins(6, 4, 6, 6)
+        pile.setSpacing(6)
         pile.addLayout(finesse)
         pile.addWidget(self._pixels)
-        pile.addLayout(loupe)
-        pile.addStretch(1)
         self.retranslate_ui()
 
     def title(self) -> str:
@@ -271,11 +227,6 @@ class ResolutionTab(ExportTab):
 
     def retranslate_ui(self) -> None:
         self._dpi_label.setText(self.tr("Finesse (DPI)"))
-        self._zoom_fit.setText(self.tr("Ajuster"))
-        self._note.setText(self.tr(
-            "La finesse commande le poids du fichier et le détail visible sur "
-            "le papier. Au-delà du maximum utile, les cartes sont agrandies "
-            "sans gagner un pixel de détail."))
         self.refresh()
 
     def refresh(self) -> None:
@@ -283,7 +234,6 @@ class ResolutionTab(ExportTab):
         session = self._session
         self._dpi.setValue(session.dpi)
         self._updating = False
-        self._zoom_label.setText(f"{self._zoom * 100:.0f} %")
         largeur, hauteur = session.paper_mm()
         pixels_l = round(largeur / 25.4 * session.dpi)
         pixels_h = round(hauteur / 25.4 * session.dpi)
@@ -299,23 +249,114 @@ class ResolutionTab(ExportTab):
                                 .replace("%1", f"{utile:.0f}"))
         self._pixels.setText(texte)
 
-    def zoom(self) -> float:
-        return self._zoom
-
     def _on_dpi(self, valeur: int) -> None:
         if not self._updating:
             self._session.set_layout(dpi=valeur)
 
-    def _zoom_by(self, pas: float) -> None:
-        self._set_zoom(self._zoom + pas)
 
-    def _set_zoom(self, valeur: float) -> None:
-        valeur = max(ZOOM_MIN, min(ZOOM_MAX, valeur))
-        if valeur == self._zoom:
+class Section(QWidget):
+    """Un intitulé qu'on déplie, et ses réglages en dessous.
+
+    ⚠️ **Un seul ouvert à la fois**, décidé par le panneau : deux sections
+    dépliées font défiler la colonne, et l'œil ne sait plus où regarder.
+    """
+
+    toggled = Signal(str)
+
+    def __init__(self, key: str, content: QWidget, parent=None):
+        super().__init__(parent)
+        self._key = key
+        self._content = content
+        self._header = QPushButton()
+        self._header.setCheckable(True)
+        self._header.clicked.connect(lambda: self.toggled.emit(self._key))
+        police = self._header.font()
+        police.setBold(True)
+        self._header.setFont(police)
+
+        cadre = QFrame()
+        theme.mark(cadre, "section")
+        dedans = QVBoxLayout(cadre)
+        dedans.setContentsMargins(0, 0, 0, 0)
+        dedans.addWidget(content)
+        self._frame = cadre
+
+        pile = QVBoxLayout(self)
+        pile.setContentsMargins(0, 0, 0, 0)
+        pile.setSpacing(4)
+        pile.addWidget(self._header)
+        pile.addWidget(cadre)
+        self.set_open(False)
+
+    def key(self) -> str:
+        return self._key
+
+    def content(self) -> QWidget:
+        return self._content
+
+    def set_open(self, ouverte: bool) -> None:
+        self._open = ouverte
+        self._header.setChecked(ouverte)
+        self._frame.setVisible(ouverte)
+        self.retranslate_ui()
+
+    def is_open(self) -> bool:
+        return self._open
+
+    def retranslate_ui(self) -> None:
+        signe = OPEN_SIGN if self._open else CLOSED_SIGN
+        self._header.setText(f"{signe}  {self._content.title()}")
+
+
+class PreviewView(QScrollArea):
+    """Le cadre de l'aperçu : molette pour zoomer, glissement pour se déplacer.
+
+    ⚠️ **Le zoom garde le point sous le curseur.** Sans cela, agrandir renvoyait
+    à chaque cran vers le coin haut-gauche, et il fallait retrouver à la main
+    l'endroit qu'on regardait.
+    """
+
+    zoom_requested = Signal(float, object)   # facteur, point visé dans la vue
+
+    def __init__(self, parent=None):
+        super().__init__(parent)
+        self._pan_from = None
+        self._bars_at_press = (0, 0)
+        self.setCursor(Qt.OpenHandCursor)
+
+    def wheelEvent(self, event) -> None:
+        crans = event.angleDelta().y()
+        if not crans:
+            super().wheelEvent(event)
             return
-        self._zoom = valeur
-        self._zoom_label.setText(f"{self._zoom * 100:.0f} %")
-        self.zoom_changed.emit(self._zoom)
+        facteur = ZOOM_STEP if crans > 0 else 1 / ZOOM_STEP
+        self.zoom_requested.emit(facteur, event.position())
+        event.accept()
+
+    def mousePressEvent(self, event) -> None:
+        if event.button() != Qt.LeftButton:
+            super().mousePressEvent(event)
+            return
+        self._pan_from = event.position()
+        self._bars_at_press = (self.horizontalScrollBar().value(),
+                               self.verticalScrollBar().value())
+        self.setCursor(Qt.ClosedHandCursor)
+        event.accept()
+
+    def mouseMoveEvent(self, event) -> None:
+        if self._pan_from is None:
+            super().mouseMoveEvent(event)
+            return
+        ecart = event.position() - self._pan_from
+        x, y = self._bars_at_press
+        self.horizontalScrollBar().setValue(int(x - ecart.x()))
+        self.verticalScrollBar().setValue(int(y - ecart.y()))
+        event.accept()
+
+    def mouseReleaseEvent(self, event) -> None:
+        self._pan_from = None
+        self.setCursor(Qt.OpenHandCursor)
+        super().mouseReleaseEvent(event)
 
 
 class ExportStep(QWidget):
@@ -345,31 +386,30 @@ class ExportStep(QWidget):
         self._tabs = [PresentationTab(self._session),
                       ColoursTab(self._session),
                       ResolutionTab(self._session)]
-        self._list = TabList()
-        self._list.setItemDelegate(TabDelegate(self._list))
-        self._list.setFixedWidth(TAB_WIDTH)
-        self._list.setWordWrap(True)
-        theme.mark(self._list, "tabs")
-        self._list.setSpacing(0)
-        self._list.setSelectionMode(QAbstractItemView.SingleSelection)
 
-        self._pages = QStackedWidget()
-        for onglet in self._tabs:
-            item = QListWidgetItem("")
-            item.setSizeHint(QSize(TAB_WIDTH - 8, SUB_TAB_HEIGHT))
-            police = self.font()
-            police.setPointSize(police.pointSize() + TAB_BOOST)
-            police.setBold(True)
-            item.setFont(police)
-            # ⚠️ **Un état neutre, et non « prêt ».** Ces onglets ne se valident
-            # pas : une coche verte promettrait une étape franchie là où l'on
-            # ne fait qu'ajuster.
-            item.setData(Qt.UserRole + 2, NEUTRAL)
-            self._list.addItem(item)
-            self._pages.addWidget(onglet)
-        self._list.currentRowChanged.connect(self._pages.setCurrentIndex)
-        self._list.setCurrentRow(0)
-        self._tabs[2].zoom_changed.connect(self._apply_zoom)
+        # ⚠️ **Les réglages se replient.** Trois panneaux ouverts d'un coup
+        # prenaient la moitié de l'écran pour des champs qu'on touche une fois :
+        # ici on vient regarder le poster, pas les formulaires.
+        self._sections = [Section(onglet.title(), onglet) for onglet in self._tabs]
+        colonne = QVBoxLayout()
+        colonne.setContentsMargins(0, 0, 0, 0)
+        colonne.setSpacing(8)
+        for section in self._sections:
+            section.toggled.connect(self._toggle_section)
+            colonne.addWidget(section)
+        colonne.addStretch(1)
+        gauche = QWidget()
+        gauche.setLayout(colonne)
+        # ⚠️ **Largeur fixe.** Un champ un peu large repoussait sinon l'image,
+        # qui est la seule chose de cet écran qu'on regarde longtemps.
+        gauche.setFixedWidth(TAB_WIDTH)
+        self._sections[0].set_open(True)
+
+        self._heading = QLabel()
+        entete = self._heading.font()
+        entete.setBold(True)
+        entete.setPointSize(entete.pointSize() + HEADING_BOOST)
+        self._heading.setFont(entete)
 
         # L'aperçu montre le poster tel qu'il s'imprimera, agencement compris.
         self._preview = PagePreview(self._session)
@@ -378,15 +418,39 @@ class ExportStep(QWidget):
             lambda combien: self._session.set_layout(panels=combien))
         self._preview.panel_rows_requested.connect(
             lambda combien: self._session.set_layout(panel_rows=combien))
-        self._preview.set_draggable(True)
-        self._preview.panel_moved.connect(self._session.move_panel)
-        # ⚠️ **Une zone défilante pour le zoom.** L'aperçu se dessine à la
-        # taille qu'on lui donne : l'agrandir dans un cadre fixe le rognerait,
-        # et il n'y aurait aucun moyen d'atteindre le bas de la feuille.
-        self._scroll = QScrollArea()
+        # ⚠️ **On ne déplace plus un bout de grille à la souris ici.** Le
+        # glissement sert à se promener dans l'image ; « Centrer sur les
+        # feuilles » reste, et l'étape 2 garde le placement à la main.
+        self._preview.set_draggable(False)
+        self._zoom = ZOOM_MIN
+        self._scroll = PreviewView()
         self._scroll.setWidget(self._preview)
         self._scroll.setWidgetResizable(True)
         self._scroll.setFrameShape(QScrollArea.NoFrame)
+        self._scroll.zoom_requested.connect(self._zoom_at)
+        self._scroll.viewport().installEventFilter(self)
+
+        # La loupe se pose **sur** l'image : une barre en dessous lui aurait
+        # repris la hauteur qu'on vient de lui donner.
+        self._zoom_out = QPushButton("−")
+        self._zoom_in = QPushButton("+")
+        self._zoom_fit = QPushButton()
+        self._zoom_label = QLabel()
+        self._zoom_label.setMinimumWidth(48)
+        self._zoom_label.setAlignment(Qt.AlignCenter)
+        for bouton in (self._zoom_out, self._zoom_in):
+            bouton.setFixedWidth(32)
+        self._zoom_out.clicked.connect(lambda: self._zoom_at(1 / ZOOM_STEP, None))
+        self._zoom_in.clicked.connect(lambda: self._zoom_at(ZOOM_STEP, None))
+        self._zoom_fit.clicked.connect(self._fit)
+        self._loupe = QWidget(self._scroll)
+        theme.mark(self._loupe, "floating-bar")
+        loupe = QHBoxLayout(self._loupe)
+        loupe.setContentsMargins(6, 4, 6, 4)
+        loupe.setSpacing(4)
+        for widget in (self._zoom_out, self._zoom_label, self._zoom_in,
+                       self._zoom_fit):
+            loupe.addWidget(widget)
 
         self._saved = SavedColumn(self._session, removable=False)
         self._saved.slot_picked.connect(self.show_slot)
@@ -403,28 +467,101 @@ class ExportStep(QWidget):
         self._export_progress = QProgressBar()
         self._export_progress.hide()
         self._summary = QLabel()
-        barre = QHBoxLayout()
-        barre.addWidget(self._export)
-        barre.addWidget(self._cancel_export)
-        barre.addWidget(self._export_progress)
-        barre.addStretch(1)
-        barre.addWidget(self._summary)
+        self._summary.setWordWrap(True)
 
-        centre = QVBoxLayout()
-        centre.addWidget(self._pages)
-        centre.addWidget(self._scroll, 1)
-        centre.addLayout(barre)
+        droite = QVBoxLayout()
+        droite.setContentsMargins(0, 0, 0, 0)
+        droite.addWidget(self._saved, 1)
+        droite.addWidget(self._summary)
+        droite.addWidget(self._export)
+        droite.addWidget(self._cancel_export)
+        droite.addWidget(self._export_progress)
+        panneau_droit = QWidget()
+        panneau_droit.setLayout(droite)
 
-        layout = QHBoxLayout(self)
-        layout.addWidget(self._list)
-        layout.addLayout(centre, 1)
-        layout.addWidget(self._saved)
+        milieu = QHBoxLayout()
+        milieu.addWidget(gauche)
+        milieu.addWidget(self._scroll, 1)
+        milieu.addWidget(panneau_droit)
+
+        layout = QVBoxLayout(self)
+        layout.addWidget(self._heading)
+        layout.addLayout(milieu, 1)
         self.retranslate_ui()
 
+    def _toggle_section(self, key: str) -> None:
+        """Ouvre la section demandée et referme les autres."""
+        for section in self._sections:
+            section.set_open(section.key() == key and not section.is_open())
+
+    # --- Le zoom et le déplacement ----------------------------------------
+
+    def _fit(self) -> None:
+        self._zoom_at(ZOOM_MIN / self._zoom, None)
+
+    def _zoom_at(self, facteur: float, point) -> None:
+        """Zoome autour d'un point de la vue, ou de son centre.
+
+        ⚠️ Sans viser un point, chaque cran renvoyait au coin haut-gauche, et il
+        fallait retrouver à la main l'endroit qu'on regardait.
+        """
+        voulu = max(ZOOM_MIN, min(ZOOM_MAX, self._zoom * facteur))
+        if voulu == self._zoom:
+            return
+        cadre = self._scroll.viewport().size()
+        vise = point if point is not None else QPointF(cadre.width() / 2,
+                                                       cadre.height() / 2)
+        barres = (self._scroll.horizontalScrollBar(),
+                  self._scroll.verticalScrollBar())
+        avant = (barres[0].value() + vise.x(), barres[1].value() + vise.y())
+        rapport = voulu / self._zoom
+        self._zoom = voulu
+        self._apply_zoom()
+        barres[0].setValue(int(avant[0] * rapport - vise.x()))
+        barres[1].setValue(int(avant[1] * rapport - vise.y()))
+
+    def _apply_zoom(self) -> None:
+        """Le zoom agrandit le dessin ; la zone défilante fait le reste."""
+        cadre = self._scroll.viewport().size()
+        if self._zoom <= ZOOM_MIN:
+            # Ajusté, l'aperçu suit le cadre : une taille minimale figée
+            # laisserait des barres de défilement sur une image qui tient.
+            self._preview.setMinimumSize(0, 0)
+        else:
+            self._preview.setMinimumSize(int(cadre.width() * self._zoom),
+                                         int(cadre.height() * self._zoom))
+        self._zoom_label.setText(f"{self._zoom * 100:.0f} %")
+        self._preview.refresh()
+
+    def resizeEvent(self, event) -> None:
+        super().resizeEvent(event)
+        self._place_zoom_bar()
+
+    def eventFilter(self, objet, event) -> bool:
+        """⚠️ **La loupe suit le cadre, pas l'écran.** Placée sur le seul
+        `resizeEvent` de l'étape, elle se posait d'après une géométrie que la
+        disposition n'avait pas encore arrêtée, et restait en plein milieu de
+        l'image."""
+        if objet is self._scroll.viewport() and event.type() == QEvent.Resize:
+            self._place_zoom_bar()
+        return super().eventFilter(objet, event)
+
+    def _place_zoom_bar(self) -> None:
+        """La loupe se pose en bas à droite de l'aperçu, par-dessus lui."""
+        taille = self._loupe.sizeHint()
+        cadre = self._scroll.viewport().geometry()
+        self._loupe.resize(taille)
+        self._loupe.move(cadre.right() - taille.width() - ZOOM_BAR_MARGIN,
+                         cadre.bottom() - taille.height() - ZOOM_BAR_MARGIN)
+        self._loupe.raise_()
+
     def retranslate_ui(self) -> None:
-        for rang, onglet in enumerate(self._tabs):
+        self._heading.setText(self.tr("Derniers ajustements avant l'export"))
+        for onglet, section in zip(self._tabs, self._sections, strict=True):
             onglet.retranslate_ui()
-            self._list.item(rang).setText(onglet.title())
+            section.retranslate_ui()
+        self._zoom_fit.setText(self.tr("Ajuster"))
+        self._zoom_label.setText(f"{self._zoom * 100:.0f} %")
         self._export.setText(self.tr("Exporter cet agencement…"))
         self._cancel_export.setText(self.tr("Annuler l'export"))
         self._saved.retranslate_ui()
@@ -475,13 +612,6 @@ class ExportStep(QWidget):
     def _refresh_preview(self) -> None:
         self._preview.refresh()
         self._update_summary()
-
-    def _apply_zoom(self, zoom: float) -> None:
-        """Le zoom agrandit le dessin ; la zone défilante fait le reste."""
-        base = self._scroll.viewport().size()
-        self._preview.setMinimumSize(int(base.width() * zoom),
-                                     int(base.height() * zoom))
-        self._preview.refresh()
 
     def _update_summary(self) -> None:
         saved = self.current_saved()

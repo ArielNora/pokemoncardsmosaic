@@ -62,15 +62,48 @@ def test_only_the_selected_slot_is_outlined(ecran):
     assert widget.current_saved() is session.saved[1]
 
 
-def test_the_three_tabs_are_there_and_never_lock(ecran):
+def test_the_three_sections_are_there_and_only_one_unfolds(ecran):
+    """⚠️ Deux sections dépliées font défiler la colonne, et l'œil ne sait plus
+    où regarder."""
     widget, _, _ = ecran
-    titres = [widget._list.item(i).text() for i in range(widget._list.count())]
-    assert titres == ["Présentation", "Couleurs des vides", "Résolution"]
-    from PySide6.QtCore import Qt
+    assert [section.key() for section in widget._sections] == [
+        "Présentation", "Couleurs des vides", "Résolution"]
+    assert [section.is_open() for section in widget._sections] == [True, False, False]
 
-    for rang in range(widget._list.count()):
-        drapeaux = widget._list.item(rang).flags()
-        assert drapeaux & Qt.ItemIsEnabled, f"onglet {rang} inaccessible"
+    widget._toggle_section("Résolution")
+    assert [section.is_open() for section in widget._sections] == [False, False, True]
+
+    # Recliquer la même la referme : rien ne reste ouvert par force.
+    widget._toggle_section("Résolution")
+    assert not any(section.is_open() for section in widget._sections)
+
+
+def test_a_folded_section_hides_its_settings(ecran):
+    widget, _, _ = ecran
+    widget.show()
+    presentation = widget._sections[0]
+
+    assert presentation.content().isVisibleTo(widget)
+    widget._toggle_section("Présentation")
+    assert not presentation.content().isVisibleTo(widget)
+
+
+def test_the_settings_panel_never_widens(ecran):
+    """L'image est la seule chose de cet écran qu'on regarde longtemps : un
+    champ un peu large la repoussait."""
+    from pokemon_mosaic.ui.layout_step import TAB_WIDTH
+
+    widget, _, _ = ecran
+    widget.show()
+    for section in widget._sections:
+        widget._toggle_section(section.key())
+        assert section.parentWidget().width() == TAB_WIDTH
+
+
+def test_the_step_opens_on_its_heading(ecran):
+    widget, _, _ = ecran
+    assert widget._heading.text() == "Derniers ajustements avant l'export"
+    assert widget._heading.font().bold()
 
 
 def test_the_grid_shape_is_not_offered_anywhere(ecran):
@@ -144,14 +177,60 @@ def test_the_zoom_enlarges_the_preview_inside_its_scroll_area(ecran):
     l'agrandir le rognerait et le bas de la feuille deviendrait inatteignable."""
     widget, _, _ = ecran
     widget.show()
-    resolution = widget._tabs[2]
     avant = widget._preview.minimumHeight()
 
-    resolution._zoom_in.click()
+    widget._zoom_in.click()
 
-    assert resolution.zoom() > 1.0
+    assert widget._zoom > 1.0
     assert widget._preview.minimumHeight() > avant
     assert widget._scroll.widget() is widget._preview
+
+    widget._zoom_fit.click()
+    assert widget._zoom == 1.0
+    assert widget._preview.minimumHeight() == 0, "ajusté, l'aperçu suit le cadre"
+
+
+def test_the_wheel_zooms_around_the_cursor(ecran):
+    """⚠️ Sans viser un point, chaque cran renvoyait au coin haut-gauche, et il
+    fallait retrouver à la main l'endroit qu'on regardait."""
+    from PySide6.QtCore import QPointF
+
+    widget, _, _ = ecran
+    widget.resize(1100, 700)
+    widget.show()
+    cadre = widget._scroll.viewport().size()
+    coin = QPointF(cadre.width() - 10, cadre.height() - 10)
+
+    widget._zoom_at(2.0, coin)
+
+    assert widget._zoom == 2.0
+    barres = (widget._scroll.horizontalScrollBar(),
+              widget._scroll.verticalScrollBar())
+    assert barres[0].value() > 0 and barres[1].value() > 0, (
+        "le coin visé doit rester sous le curseur, pas revenir en haut à gauche")
+
+
+def test_dragging_scrolls_instead_of_moving_a_sheet(ecran):
+    """Le glissement sert à se promener dans l'image ; déplacer un bout de
+    grille reste à l'étape 2."""
+    from PySide6.QtCore import QPoint, Qt
+    from PySide6.QtTest import QTest
+
+    widget, _, _ = ecran
+    widget.resize(900, 600)
+    widget.show()
+    widget._zoom_at(3.0, None)
+    barre = widget._scroll.horizontalScrollBar()
+    barre.setValue(barre.maximum() // 2)
+    depart = barre.value()
+
+    vue = widget._scroll.viewport()
+    QTest.mousePress(vue, Qt.LeftButton, pos=QPoint(200, 150))
+    QTest.mouseMove(vue, QPoint(120, 150))
+    QTest.mouseRelease(vue, Qt.LeftButton, pos=QPoint(120, 150))
+
+    assert barre.value() > depart, "le glissement n'a pas fait défiler"
+    assert not widget._preview._draggable
 
 
 def test_the_preview_paints_the_real_arrangement(ecran):
