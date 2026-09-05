@@ -1,6 +1,6 @@
 """La colonne des agencements mis de côté, à droite de l'écran.
 
-Cinq cases numérotées, les mêmes à l'exécution et à l'export : c'est le passage
+Quatre cases numérotées, les mêmes à l'exécution et à l'export : c'est le passage
 d'une étape à l'autre. On met de côté ce qu'on aime pendant que le calcul
 tourne, et on retrouve exactement ces cases pour habiller puis écrire le poster.
 
@@ -29,7 +29,7 @@ from . import theme
 from .session import MAX_SAVED
 
 # La vignette d'une case. Assez grande pour reconnaître un agencement d'un coup
-# d'œil, assez petite pour que cinq tiennent en colonne sans faire défiler.
+# d'œil, assez petite pour que quatre tiennent en colonne sans faire défiler.
 SLOT_IMAGE = QSize(120, 120)
 CLOSE_SIZE = 18
 # Ce qui sépare la croix du bord de sa case.
@@ -138,7 +138,7 @@ class SavedSlot(QFrame):
 
 
 class SavedColumn(QWidget):
-    """Les cinq cases, plus leur intitulé.
+    """Les quatre cases, plus leur intitulé.
 
     `removable` : la croix n'a de sens que là où l'on met de côté. À l'export,
     retirer sous ses propres pieds l'agencement affiché n'apporte rien.
@@ -156,8 +156,8 @@ class SavedColumn(QWidget):
         police.setBold(True)
         self._title.setFont(police)
 
-        # ⚠️ **Les cases défilent.** Cinq d'affilée réclament sept cents
-        # pixels de haut : posées dans l'écran, elles lui imposaient cette
+        # ⚠️ **Les cases défilent.** Quatre d'affilée réclament plus de cinq
+        # cents pixels de haut : posées dans l'écran, elles lui imposaient cette
         # hauteur minimale, et une fenêtre plus courte étirait tout le reste
         # jusqu'à ce que l'image ne tienne plus.
         self._slots: list[SavedSlot] = []
@@ -195,6 +195,10 @@ class SavedColumn(QWidget):
         self.refresh()
 
     def refresh(self) -> None:
+        # Une case vidée ne peut plus être la case choisie : son cadre montrerait
+        # une sélection qui ne désigne rien.
+        if self._current is not None and self._session.saved[self._current] is None:
+            self._current = None
         for rang, case in enumerate(self._slots):
             case.show_saved(self._session.saved[rang], self._session.empty_colour)
         self._mark_current()

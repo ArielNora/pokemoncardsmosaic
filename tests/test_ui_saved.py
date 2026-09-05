@@ -32,7 +32,7 @@ def garde(session, jeu, iteration=1):
     return session.save_grid(np.array([[0, 1], [2, 3]]), jeu, iteration, 1.0)
 
 
-def test_the_column_shows_five_slots(colonne):
+def test_the_column_shows_one_box_per_slot(colonne):
     from pokemon_mosaic.ui.session import MAX_SAVED
 
     widget, _, _ = colonne

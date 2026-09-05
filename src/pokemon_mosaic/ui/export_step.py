@@ -4,7 +4,7 @@ Le calcul est fini, la grille est arrêtée : **sa forme ne se discute plus**.
 Ce qui reste ouvert est tout ce qui n'y touche pas, l'écart entre les cartes,
 le nombre de feuilles, les couleurs de ce qui n'est pas une carte, la finesse
 d'impression. Trois onglets, un par famille de décisions, et la colonne des
-cinq agencements gardés à droite : on habille celui qu'on regarde, et on
+quatre agencements gardés à droite : on habille celui qu'on regarde, et on
 l'exporte quand il va.
 
 ⚠️ **Ni les colonnes ni les lignes ne s'y règlent.** Les changer défferait

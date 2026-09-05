@@ -360,7 +360,7 @@ def test_a_slot_keeps_its_rank_when_a_neighbour_is_emptied(session, tmp_path):
     assert session.first_saved() == 0
 
 
-def test_the_sixth_arrangement_is_refused(session, tmp_path):
+def test_the_arrangement_beyond_the_last_slot_is_refused(session, tmp_path):
     """Rien n'est écrasé sans qu'on l'ait demandé : l'utilisateur retire
     lui-même la case dont il ne veut plus."""
     from pokemon_mosaic.ui.session import MAX_SAVED

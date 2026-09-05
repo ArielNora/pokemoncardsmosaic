@@ -168,7 +168,7 @@ def test_keeping_stores_the_grid_its_cards_and_its_iteration(step):
     assert widget.can_advance()
 
 
-def test_the_keep_button_dies_once_the_five_slots_are_taken(step):
+def test_the_keep_button_dies_once_every_slot_is_taken(step):
     from pokemon_mosaic.ui.session import MAX_SAVED
 
     widget, session = step
@@ -277,28 +277,38 @@ def test_the_dialog_of_a_lost_arrangement_says_so_and_zooms(qt_app, session):
     assert dialogue._view.pixmap().width() > avant.width()
 
 
-def test_the_green_outline_says_an_open_slot_not_a_kept_one(step):
-    """⚠️ **Le cadre vert dit où l'on est**, et l'on n'y « va » pas en mettant
-    de côté ce qu'on regarde déjà : allumé par la sauvegarde, il restait allumé
-    pour de bon, le cliché gardé étant celui qu'on venait de regarder."""
+def test_the_green_outline_marks_the_chosen_slot_and_nothing_else(step):
+    """⚠️ **Le cadre vert dit la case choisie, rien d'autre.** Il a d'abord
+    suivi la sauvegarde, puis le cliché affiché : dans les deux cas il
+    s'allumait tout seul, et personne ne savait plus ce qu'il désignait."""
     widget, session = step
-    timeline = feed(widget, session)
+    feed(widget, session)
     widget._slider.setValue(1)
     widget._keep_current()
 
-    assert widget._saved.current() is None, "garder n'ouvre pas la case"
+    assert widget._saved.current() is None, "garder ne choisit pas la case"
 
     widget._show_saved(0)
-    assert widget._saved.current() == 0, "y aller l'ouvre"
+    assert widget._saved.current() == 0, "la choisir l'allume"
     assert widget._slider.value() == 1
 
-    widget._slider.setValue(len(timeline) - 1)
-    assert widget._saved.current() is None, "on ne la regarde plus"
+
+def test_an_emptied_slot_loses_the_outline(step, monkeypatch):
+    """Son cadre montrerait une sélection qui ne désigne plus rien."""
+    widget, session = step
+    feed(widget, session)
+    widget._keep_current()
+    widget._show_saved(0)
+    assert widget._saved.current() == 0
+
+    session.remove_saved(0)
+
+    assert widget._saved.current() is None
 
 
-def test_the_outline_lights_up_while_the_window_of_a_lost_one_is_open(step):
-    """Elle n'est plus dans la timeline : c'est la fenêtre qui la montre, et la
-    case reste ouverte le temps qu'elle est à l'écran."""
+def test_a_lost_arrangement_is_chosen_and_shown_in_its_window(step):
+    """Elle n'est plus dans la timeline : la case se choisit quand même, et
+    c'est la fenêtre qui la montre."""
     widget, session = step
     feed(widget, session)
     widget._keep_current()
@@ -311,8 +321,8 @@ def test_the_outline_lights_up_while_the_window_of_a_lost_one_is_open(step):
     widget._open_saved_dialog = ouvre
     widget._show_saved(0)
 
-    assert vues == [0], "la case s'allume avec la fenêtre"
-    assert widget._saved.current() is None, "et s'éteint avec elle"
+    assert vues == [0], "la case est choisie avant que la fenêtre s'ouvre"
+    assert widget._saved.current() == 0
 
 
 def test_the_screen_offers_the_button_before_anything_has_run(step):

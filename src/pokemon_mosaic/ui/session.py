@@ -35,10 +35,10 @@ from ..presets import LinkRef, Preset
 _SERIE = re.compile(r"^(?:promo-)?([a-z])(?=\d|-|$)", re.IGNORECASE)
 
 
-# Le nombre d'agencements que l'utilisateur peut mettre de côté. Cinq : de quoi
-# comparer des essais sans transformer l'export en bibliothèque, et cinq cases
-# se lisent d'un coup d'œil en colonne.
-MAX_SAVED = 5
+# Le nombre d'agencements que l'utilisateur peut mettre de côté. Quatre : de quoi
+# comparer des essais sans transformer l'export en bibliothèque, et quatre cases
+# se lisent d'un coup d'œil en colonne sans la faire défiler.
+MAX_SAVED = 4
 
 
 @dataclass
@@ -162,7 +162,7 @@ class Session(QObject):
         self.stop_on_score = False
         self.target_score = 0.0
 
-        # Les agencements mis de côté à l'exécution, cinq cases numérotées. Une
+        # Les agencements mis de côté à l'exécution, quatre cases numérotées. Une
         # liste à trous plutôt qu'une liste courte : la case 3 reste la case 3
         # quand on vide la 2, et la colonne ne se réordonne pas sous la souris.
         self.saved: list[SavedGrid | None] = [None] * MAX_SAVED
@@ -173,7 +173,7 @@ class Session(QObject):
                   score: float) -> int | None:
         """Range un agencement dans la première case libre, et rend son rang.
 
-        Rend `None` quand les cinq cases sont prises : rien n'est écrasé sans
+        Rend `None` quand les quatre cases sont prises : rien n'est écrasé sans
         que l'utilisateur l'ait demandé, il retire lui-même celle dont il ne
         veut plus.
         """

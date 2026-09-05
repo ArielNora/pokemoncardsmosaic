@@ -82,9 +82,6 @@ class RunStep(QWidget):
         self._cards = None
         self._timeline = None
         self._following = True      # suit le dernier cliché tant qu'on ne touche pas
-        # La case ouverte, celle dont l'agencement est à l'écran. Aucune tant
-        # que l'utilisateur n'en a pas choisi une.
-        self._picked: int | None = None
         # Vrai le temps d'un réglage de curseur que nous provoquons : ce n'est
         # pas un geste de l'utilisateur et il ne doit rien conclure de la
         # position qui en résulte.
@@ -413,10 +410,11 @@ class RunStep(QWidget):
                                        cliche.iteration, cliche.score)
         if rang is None:
             self.status_message.emit(
-                self.tr("Les cinq cases sont prises : retirez-en une."))
+                self.tr("Les quatre cases sont prises : retirez-en une."))
             return
-        # ⚠️ Garder n'allume pas la case : le cadre vert dit où l'on est, et
-        # l'on n'y « va » pas en mettant de côté ce qu'on regarde déjà.
+        # ⚠️ Garder n'allume pas la case : le cadre vert dit celle qu'on a
+        # choisie, et mettre de côté ce qu'on regarde déjà n'est pas un choix
+        # de case.
         self.status_message.emit(self.tr("Agencement gardé."))
 
     def _show_saved(self, slot: int) -> None:
@@ -434,22 +432,17 @@ class RunStep(QWidget):
         saved = self._session.saved[slot]
         if saved is None:
             return
+        # ⚠️ **Le cadre vert dit la case choisie, rien d'autre.** Il a d'abord
+        # suivi la sauvegarde, puis le cliché affiché : dans les deux cas il
+        # s'allumait tout seul, et personne ne savait plus ce qu'il désignait.
+        self._saved.set_current(slot)
         rang = self._snapshot_of(saved)
         if rang is not None:
             self._following = False
-            self._picked = slot
             self._slider.setValue(rang)
-            self._update_current_slot()
             return
-        # La fenêtre montre l'agencement : sa case est ouverte le temps qu'elle
-        # reste à l'écran, et se referme avec elle.
-        self._picked = slot
-        self._saved.set_current(slot)
-        try:
-            self._open_saved_dialog(saved)
-        finally:
-            self._picked = None
-            self._saved.set_current(None)
+        # La timeline ne l'a plus : une fenêtre le montre pour lui-même.
+        self._open_saved_dialog(saved)
 
     def _open_saved_dialog(self, saved) -> None:
         """Ouvre la fenêtre d'un agencement que la timeline n'a plus.
@@ -472,34 +465,10 @@ class RunStep(QWidget):
                 return rang
         return None
 
-    def _update_current_slot(self) -> None:
-        """⚠️ **Le cadre vert dit une case ouverte, pas une case gardée.**
-
-        Il s'allume quand l'utilisateur va **sur** un agencement, en cliquant sa
-        case ou en ouvrant sa fenêtre, et s'éteint dès que l'écran montre autre
-        chose. Allumé par la sauvegarde, il restait allumé pour de bon : le
-        cliché gardé étant celui qu'on venait de regarder, plus rien ne
-        l'éteignait.
-        """
-        if self._picked is None:
-            self._saved.set_current(None)
-            return
-        place = self._session.saved[self._picked]
-        if place is None or self._snapshot_of(place) != self._displayed_index():
-            self._picked = None
-        self._saved.set_current(self._picked)
-
-    def _displayed_index(self) -> int | None:
-        """Le rang du cliché affiché, s'il y en a un."""
-        if not self._timeline:
-            return None
-        return max(0, min(len(self._timeline) - 1, self._slider.value()))
-
     def _update_keep(self) -> None:
         """Garder n'a de sens que sur un cliché, et tant qu'il reste une case."""
         libre = self._session.saved_count() < MAX_SAVED
         self._keep.setEnabled(bool(self._timeline) and libre)
-        self._update_current_slot()
         self.advance_state_changed.emit()
 
     def can_advance(self) -> bool:
@@ -626,7 +595,6 @@ class RunStep(QWidget):
         self._show(value)
         self._update_position()
         self._update_resume_buttons()
-        self._update_current_slot()
 
     def _go_to_latest(self) -> None:
         if self._timeline:
