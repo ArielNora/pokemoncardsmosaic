@@ -13,6 +13,7 @@ from PySide6.QtWidgets import (
     QPushButton,
     QScrollArea,
     QSlider,
+    QStackedWidget,
     QVBoxLayout,
     QWidget,
 )
@@ -57,6 +58,12 @@ class ImageView(QScrollArea):
             event.accept()
             return
         super().wheelEvent(event)
+
+
+# Le bouton d'accueil : plus gros que ceux de la barre du bas, c'est le seul
+# geste de l'écran tant que rien n'a tourné.
+WELCOME_BOOST = 3
+WELCOME_BUTTON = QSize(220, 52)
 
 
 class RunStep(QWidget):
@@ -130,6 +137,35 @@ class RunStep(QWidget):
         self._scroll.setFocusPolicy(Qt.NoFocus)
         self._scroll.zoom_requested.connect(self._zoom_by)
         self.setFocusPolicy(Qt.StrongFocus)
+
+        # ⚠️ **Un écran qui n'a rien encore à montrer offre le geste à faire.**
+        # Une phrase seule laissait chercher où l'on lance : le bouton du bas se
+        # perdait dans une rangée de six, tous éteints sauf lui.
+        self._welcome_text = QLabel()
+        self._welcome_text.setAlignment(Qt.AlignCenter)
+        self._welcome_text.setWordWrap(True)
+        self._welcome_start = QPushButton()
+        gros = self._welcome_start.font()
+        gros.setPointSize(gros.pointSize() + WELCOME_BOOST)
+        self._welcome_start.setFont(gros)
+        self._welcome_start.setMinimumSize(WELCOME_BUTTON)
+        self._welcome_start.clicked.connect(lambda: self.start_run())
+
+        accueil = QVBoxLayout()
+        accueil.addStretch(1)
+        accueil.addWidget(self._welcome_text)
+        accueil.addSpacing(16)
+        accueil.addWidget(self._welcome_start, 0, Qt.AlignCenter)
+        accueil.addStretch(1)
+        self._welcome = QWidget()
+        self._welcome.setLayout(accueil)
+
+        # Une pile plutôt qu'un texte posé dans le label de l'image : un bouton
+        # ne se met pas dans un `QLabel`, et l'écran d'accueil n'a rien à faire
+        # d'une zone défilante ni d'un cadre.
+        self._view = QStackedWidget()
+        self._view.addWidget(self._welcome)
+        self._view.addWidget(self._scroll)
 
         self._zoom_out = QPushButton("−")
         self._zoom_in = QPushButton("+")
@@ -207,9 +243,13 @@ class RunStep(QWidget):
         controls.addWidget(self._summary)
 
         layout = QVBoxLayout(self)
-        layout.addWidget(self._scroll, 1)
+        layout.addWidget(self._view, 1)
         layout.addLayout(timeline_row)
         layout.addLayout(controls)
+        # « Pause » et « Arrêter » naissaient actifs : cliquables sans effet tant
+        # qu'aucun calcul ne tourne, et deux boutons de plus à ignorer sur un
+        # écran qui n'en propose qu'un.
+        self._update_buttons(running=False)
         self.retranslate_ui()
 
     def retranslate_ui(self) -> None:
@@ -235,12 +275,15 @@ class RunStep(QWidget):
         self._slider.setToolTip(
             self.tr("Flèches gauche et droite pour parcourir les clichés.")
         )
+        self._welcome_start.setText(self.tr("Lancer le calcul"))
+        self._welcome_text.setText(
+            self.tr("Tout est réglé. Lancez le calcul pour voir la mosaïque se "
+                    "construire, cliché après cliché.")
+        )
         self._update_pause_label()
         self._update_position()
         self._update_zoom_label()
-        if not self._timeline:
-            self._show_placeholder(self.tr("Lancez le calcul pour voir la mosaïque "
-                                           "se construire."))
+        self._update_view()
 
     # --- Commandes --------------------------------------------------------
 
@@ -256,6 +299,10 @@ class RunStep(QWidget):
             finished_run=self._on_finished, failed=self._on_failed,
         )
         self._update_buttons(running=True)
+        # Le premier cliché n'arrive pas instantanément : sans ce mot, l'écran
+        # resterait sur son invitation alors que le calcul a démarré.
+        self._show_placeholder(self.tr("Calcul en cours…"))
+        self._update_view()
         self.status_message.emit(self.tr("Calcul en cours…"))
 
     # --- Prolongation et reprise ------------------------------------------
@@ -475,6 +522,8 @@ class RunStep(QWidget):
     def _on_started(self, cards, timeline) -> None:
         self._cards = cards
         self._timeline = timeline
+        # L'accueil a fait son office : il y a désormais quelque chose à voir.
+        self._update_view()
         self._slider.setEnabled(True)
         self._export.setEnabled(True)
         # Le plafond se déduit de la grille : une grille plus petite que la
@@ -758,6 +807,11 @@ class RunStep(QWidget):
         self._update_zoom_label()
 
     # --- Affichage --------------------------------------------------------
+
+    def _update_view(self) -> None:
+        """L'accueil tant que rien n'a tourné, l'image dès qu'il y a un cliché."""
+        rien_encore = not self._timeline and self._thread is None
+        self._view.setCurrentWidget(self._welcome if rien_encore else self._scroll)
 
     def _show_placeholder(self, text: str) -> None:
         """Texte d'attente, occupant tout le cadre faute d'image à montrer."""

@@ -138,6 +138,44 @@ def feed(step_widget, session):
     return timeline
 
 
+def test_the_screen_offers_the_button_before_anything_has_run(step):
+    """⚠️ **Un écran qui n'a rien à montrer offre le geste à faire.** Une phrase
+    seule laissait chercher où l'on lance : le bouton du bas se perdait dans une
+    rangée de six, tous éteints sauf lui."""
+    widget, _ = step
+    assert widget._view.currentWidget() is widget._welcome
+    assert widget._welcome_start.text()
+    # Plus gros que ceux de la barre du bas : c'est le seul geste de l'écran.
+    assert (widget._welcome_start.font().pointSize()
+            > widget._start.font().pointSize())
+
+
+def test_pause_and_stop_start_out_dead(step):
+    """Ils naissaient actifs : cliquables sans effet tant qu'aucun calcul ne
+    tourne, et deux boutons de plus à ignorer sur un écran qui n'en offre qu'un."""
+    widget, _ = step
+    assert not widget._pause.isEnabled()
+    assert not widget._stop.isEnabled()
+    assert widget._start.isEnabled()
+
+
+def test_the_welcome_gives_way_to_the_image(step):
+    """Elle n'a plus lieu d'être dès qu'il y a un cliché à regarder."""
+    widget, session = step
+    feed(widget, session)
+    assert widget._view.currentWidget() is widget._scroll
+
+
+def test_the_central_button_launches_the_run(step):
+    """Il fait exactement ce que fait « Lancer » : c'est le même geste, offert
+    là où l'œil se pose."""
+    widget, _ = step
+    lance = []
+    widget.start_run = lambda *a, **k: lance.append(True)
+    widget._welcome_start.click()
+    assert lance
+
+
 def test_the_slider_follows_the_latest_snapshot(step):
     widget, session = step
     timeline = feed(widget, session)
