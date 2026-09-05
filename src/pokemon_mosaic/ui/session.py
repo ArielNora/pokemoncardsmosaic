@@ -6,6 +6,7 @@ préviennent par signaux. Rien n'est recalculé en double d'un écran à l'autre
 
 import os
 import re
+from dataclasses import dataclass
 from dataclasses import replace as dataclass_replace
 
 from PySide6.QtCore import QObject, Signal
@@ -32,6 +33,29 @@ from ..presets import LinkRef, Preset
 # la lettre de tête est la série, et les promos d'une série portent la même. Rien
 # d'autre ne la donne : le catalogue ne connaît que des extensions.
 _SERIE = re.compile(r"^(?:promo-)?([a-z])(?=\d|-|$)", re.IGNORECASE)
+
+
+# Le nombre d'agencements que l'utilisateur peut mettre de côté. Cinq : de quoi
+# comparer des essais sans transformer l'export en bibliothèque, et cinq cases
+# se lisent d'un coup d'œil en colonne.
+MAX_SAVED = 5
+
+
+@dataclass
+class SavedGrid:
+    """Un agencement mis de côté, avec de quoi le montrer et l'exporter.
+
+    ⚠️ **Le jeu de cartes fait partie de l'agencement.** La grille indexe le
+    **sous-ensemble retenu** au moment du calcul, pas le catalogue : sans lui,
+    les mêmes nombres désigneraient d'autres cartes dès que l'utilisateur change
+    sa sélection. C'est une simple référence, l'objet est partagé avec la
+    timeline et ne coûte rien de plus.
+    """
+
+    grid: object                    # np.ndarray, non importé ici
+    cards: CardSet
+    iteration: int
+    score: float
 
 
 def series_of(folder: str) -> str:
@@ -66,6 +90,7 @@ class Session(QObject):
     selection_changed = Signal()
     links_changed = Signal()
     algorithm_changed = Signal()
+    saved_changed = Signal()        # un agencement mis de côté, ou retiré
 
     def __init__(self):
         super().__init__()
@@ -125,6 +150,45 @@ class Session(QObject):
         self.strip_size = DEFAULT_STRIP_SIZE
         self.stop_on_score = False
         self.target_score = 0.0
+
+        # Les agencements mis de côté à l'exécution, cinq cases numérotées. Une
+        # liste à trous plutôt qu'une liste courte : la case 3 reste la case 3
+        # quand on vide la 2, et la colonne ne se réordonne pas sous la souris.
+        self.saved: list[SavedGrid | None] = [None] * MAX_SAVED
+
+    # --- Agencements mis de côté ------------------------------------------
+
+    def save_grid(self, grid, cards: CardSet, iteration: int,
+                  score: float) -> int | None:
+        """Range un agencement dans la première case libre, et rend son rang.
+
+        Rend `None` quand les cinq cases sont prises : rien n'est écrasé sans
+        que l'utilisateur l'ait demandé, il retire lui-même celle dont il ne
+        veut plus.
+        """
+        for rang, place in enumerate(self.saved):
+            if place is None:
+                # La grille est copiée : celle de la timeline continue de vivre,
+                # et une reprise de calcul la réécrirait sous nos yeux.
+                self.saved[rang] = SavedGrid(grid.copy(), cards, iteration, score)
+                self.saved_changed.emit()
+                return rang
+        return None
+
+    def remove_saved(self, slot: int) -> None:
+        if 0 <= slot < MAX_SAVED and self.saved[slot] is not None:
+            self.saved[slot] = None
+            self.saved_changed.emit()
+
+    def saved_count(self) -> int:
+        return sum(1 for place in self.saved if place is not None)
+
+    def first_saved(self) -> int | None:
+        """Le rang de la première case occupée, celle que l'export ouvre."""
+        for rang, place in enumerate(self.saved):
+            if place is not None:
+                return rang
+        return None
 
     # --- Cartes -----------------------------------------------------------
 

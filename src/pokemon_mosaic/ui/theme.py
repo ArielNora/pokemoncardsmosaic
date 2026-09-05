@@ -278,6 +278,25 @@ QLabel[role="banner"] {{
     border-radius: 4px;
     padding: 6px;
 }}
+/* Les cases des agencements gardés. Vide, la case est en creux et sans
+   promesse ; occupée, elle se clique ; affichée, elle porte un trait franc. */
+QFrame[role="slot-empty"] {{
+    border: 1px dashed {c["empty_border"]};
+    border-radius: 6px;
+    color: {c["empty_text"]};
+    background: {c["empty_bg"]};
+}}
+QFrame[role="slot"] {{
+    border: 1px solid {c["cell_border"]};
+    border-radius: 6px;
+}}
+QFrame[role="slot-current"] {{
+    border: 2px solid {c["ok"]};
+    border-radius: 6px;
+}}
+QFrame[role="slot"] QLabel, QFrame[role="slot-current"] QLabel {{ border: none; }}
+QFrame[role="slot-empty"] QLabel {{ border: none; color: {c["empty_text"]}; }}
+
 /* Chaque partie des réglages tient dans son cadre : trois blocs de texte à la
    suite se lisaient comme un seul, et rien ne disait où l'un finissait. */
 QFrame[role="section"] {{

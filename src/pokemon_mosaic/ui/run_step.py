@@ -20,11 +20,11 @@ from PySide6.QtWidgets import (
 
 from ..control import RunControl
 from ..optimize import StopReason
-from ..scoring import EMPTY
 from .export_dialog import ExportDialog
 from .exporter import start_export
 from .runner import start_run
-from .session import Session
+from .saved_column import SavedColumn, mosaic_image
+from .session import MAX_SAVED, Session
 
 # Un cran de zoom. 1,25 laisse une progression douce sans multiplier les clics.
 ZOOM_STEP = 1.25
@@ -70,6 +70,9 @@ class RunStep(QWidget):
     """Pilote une exécution et laisse naviguer dans ses états successifs."""
 
     status_message = Signal(str)
+    # La fenêtre en dépend pour le bouton « Suivant » : il ne s'allume qu'une
+    # fois un agencement gardé.
+    advance_state_changed = Signal()
 
     def __init__(self, session: Session, parent=None):
         super().__init__(parent)
@@ -223,6 +226,17 @@ class RunStep(QWidget):
         self._export.setEnabled(False)
         self._extend.setEnabled(False)
         self._resume.setEnabled(False)
+        # ⚠️ **Mettre de côté n'est pas exporter.** L'export écrit un fichier
+        # tout de suite ; garder un agencement ne fait que le réserver pour
+        # l'étape suivante, où on l'habillera.
+        self._keep = QPushButton()
+        self._keep.clicked.connect(self._keep_current)
+        self._keep.setEnabled(False)
+
+        self._saved = SavedColumn(self._session)
+        self._saved.slot_picked.connect(self._show_saved)
+        self._session.saved_changed.connect(self._update_keep)
+
         self._cancel_export = QPushButton()
         self._cancel_export.clicked.connect(self._request_export_stop)
         self._cancel_export.hide()
@@ -235,6 +249,7 @@ class RunStep(QWidget):
         controls.addWidget(self._stop)
         controls.addWidget(self._extend)
         controls.addWidget(self._resume)
+        controls.addWidget(self._keep)
         controls.addWidget(self._export)
         controls.addWidget(self._cancel_export)
         controls.addWidget(self._export_progress)
@@ -242,8 +257,14 @@ class RunStep(QWidget):
         self._summary = QLabel()
         controls.addWidget(self._summary)
 
+        # La colonne longe l'image et la timeline : elle appartient à ce qu'on
+        # regarde, pas à la barre de commandes.
+        milieu = QHBoxLayout()
+        milieu.addWidget(self._view, 1)
+        milieu.addWidget(self._saved)
+
         layout = QVBoxLayout(self)
-        layout.addWidget(self._view, 1)
+        layout.addLayout(milieu, 1)
         layout.addLayout(timeline_row)
         layout.addLayout(controls)
         # « Pause » et « Arrêter » naissaient actifs : cliquables sans effet tant
@@ -276,6 +297,8 @@ class RunStep(QWidget):
             self.tr("Flèches gauche et droite pour parcourir les clichés.")
         )
         self._welcome_start.setText(self.tr("Lancer le calcul"))
+        self._keep.setText(self.tr("Enregistrer"))
+        self._saved.retranslate_ui()
         self._welcome_text.setText(
             self.tr("Tout est réglé. Lancez le calcul pour voir la mosaïque se "
                     "construire, cliché après cliché.")
@@ -396,6 +419,58 @@ class RunStep(QWidget):
             return None
         index = max(0, min(len(self._timeline) - 1, self._slider.value()))
         return self._timeline[index].grid
+
+    # --- Agencements mis de côté ------------------------------------------
+
+    def _keep_current(self) -> None:
+        """Range le cliché affiché dans la première case libre."""
+        grid = self.current_grid()
+        if grid is None or self._cards is None:
+            return
+        index = max(0, min(len(self._timeline) - 1, self._slider.value()))
+        cliche = self._timeline[index]
+        rang = self._session.save_grid(grid, self._cards,
+                                       cliche.iteration, cliche.score)
+        if rang is None:
+            self.status_message.emit(
+                self.tr("Les cinq cases sont prises : retirez-en une."))
+            return
+        self._saved.set_current(rang)
+        self.status_message.emit(self.tr("Agencement gardé."))
+
+    def _show_saved(self, slot: int) -> None:
+        """Retourne au cliché d'une case gardée.
+
+        ⚠️ **La timeline s'élague en cours de calcul.** Le rang du cliché ne
+        veut donc rien dire une heure plus tard ; son numéro d'itération, si.
+        À défaut de le retrouver, on montre l'agencement gardé tel quel, sans
+        bouger le curseur : il existe toujours, lui.
+        """
+        saved = self._session.saved[slot]
+        if saved is None:
+            return
+        self._saved.set_current(slot)
+        for rang, cliche in enumerate(self._timeline or []):
+            if cliche.iteration == saved.iteration:
+                self._following = False
+                self._slider.setValue(rang)
+                return
+        image = self._render(saved.grid)
+        if image is not None:
+            self._image.setPixmap(QPixmap.fromImage(image))
+            self._image.resize(image.size())
+            self._view.setCurrentWidget(self._scroll)
+
+    def _update_keep(self) -> None:
+        """Garder n'a de sens que sur un cliché, et tant qu'il reste une case."""
+        libre = self._session.saved_count() < MAX_SAVED
+        self._keep.setEnabled(bool(self._timeline) and libre)
+        self.advance_state_changed.emit()
+
+    def can_advance(self) -> bool:
+        """⚠️ **L'export part des agencements gardés**, pas du cliché affiché :
+        sans une case au moins, l'étape suivante n'aurait rien à habiller."""
+        return self._session.saved_count() > 0
 
     def _open_export(self) -> None:
         grid = self.current_grid()
@@ -524,6 +599,7 @@ class RunStep(QWidget):
         self._timeline = timeline
         # L'accueil a fait son office : il y a désormais quelque chose à voir.
         self._update_view()
+        self._update_keep()
         self._slider.setEnabled(True)
         self._export.setEnabled(True)
         # Le plafond se déduit de la grille : une grille plus petite que la
@@ -641,24 +717,10 @@ class RunStep(QWidget):
 
     def _render(self, grid: np.ndarray) -> QImage | None:
         """Assemble un cliché à partir des vignettes déjà en mémoire."""
-        if self._cards is None or not len(self._cards):
+        image = mosaic_image(grid, self._cards, self._session.empty_colour)
+        if image is None:
             return None
-        tile_h, tile_w = self._cards[0].thumbnail.shape[:2]
-        rows, cols = grid.shape
-        canvas = np.full((rows * tile_h, cols * tile_w, 3),
-                         self._session.empty_colour, dtype=np.uint8)
-        for row in range(rows):
-            for col in range(cols):
-                index = int(grid[row, col])
-                if index == EMPTY:
-                    continue
-                canvas[row * tile_h:(row + 1) * tile_h,
-                       col * tile_w:(col + 1) * tile_w] = self._cards[index].thumbnail
-
-        canvas = np.ascontiguousarray(canvas)
-        height, width, _ = canvas.shape
-        image = QImage(canvas.data, width, height, 3 * width,
-                       QImage.Format_RGB888).copy()
+        width, height = image.width(), image.height()
         scale = self._fit_scale(image.size()) * self._zoom
         target = QSize(max(1, round(width * scale)), max(1, round(height * scale)))
         return image.scaled(target, Qt.KeepAspectRatio, Qt.SmoothTransformation)

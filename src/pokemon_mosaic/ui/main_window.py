@@ -135,6 +135,7 @@ class MainWindow(QMainWindow):
         self._cards_step.advance_state_changed.connect(self._update_navigation)
         self._stack.addWidget(self._layout_step)
         self._run_step = RunStep(self._session)
+        self._run_step.advance_state_changed.connect(self._update_navigation)
         self._run_step.status_message.connect(self._show_status)
         self._stack.addWidget(self._run_step)
         self._stack.currentChanged.connect(self._update_navigation)

@@ -327,3 +327,73 @@ def test_the_warnings_reach_the_session_card_set(qt_app, tmp_path):
     assert session.card_set.has_warnings
     assert session.card_set.odd_sizes[0].size == (717, 1000)
     assert session.card_set.unreadable == ["casse.webp : illisible"]
+
+
+# --- Agencements mis de côté ------------------------------------------------
+
+def test_saving_fills_the_first_free_slot(session, tmp_path):
+    jeu = card_set_in(tmp_path, {"s": ["a", "b"]})
+    grille = np.array([[0, 1]])
+
+    assert session.save_grid(grille, jeu, iteration=10, score=1.5) == 0
+    assert session.save_grid(grille, jeu, iteration=20, score=1.2) == 1
+    session.remove_saved(0)
+    assert session.save_grid(grille, jeu, iteration=30, score=1.0) == 0, (
+        "la case libérée doit resservir"
+    )
+    assert session.saved_count() == 2
+    assert session.first_saved() == 0
+
+
+def test_a_slot_keeps_its_rank_when_a_neighbour_is_emptied(session, tmp_path):
+    """La case 3 reste la case 3 : une colonne qui se réordonne sous la souris
+    ferait cliquer sur autre chose que ce qu'on visait."""
+    jeu = card_set_in(tmp_path, {"s": ["a", "b"]})
+    grille = np.array([[0, 1]])
+    for numero in range(3):
+        session.save_grid(grille, jeu, iteration=numero, score=0.0)
+
+    session.remove_saved(1)
+
+    assert session.saved[1] is None
+    assert session.saved[2].iteration == 2
+    assert session.first_saved() == 0
+
+
+def test_the_sixth_arrangement_is_refused(session, tmp_path):
+    """Rien n'est écrasé sans qu'on l'ait demandé : l'utilisateur retire
+    lui-même la case dont il ne veut plus."""
+    from pokemon_mosaic.ui.session import MAX_SAVED
+
+    jeu = card_set_in(tmp_path, {"s": ["a", "b"]})
+    grille = np.array([[0, 1]])
+    for numero in range(MAX_SAVED):
+        assert session.save_grid(grille, jeu, iteration=numero, score=0.0) is not None
+
+    assert session.save_grid(grille, jeu, iteration=99, score=0.0) is None
+    assert session.saved_count() == MAX_SAVED
+    assert [place.iteration for place in session.saved] == list(range(MAX_SAVED))
+
+
+def test_the_saved_grid_is_a_copy(session, tmp_path):
+    """Celle de la timeline continue de vivre : une reprise de calcul la
+    réécrirait sous nos yeux."""
+    jeu = card_set_in(tmp_path, {"s": ["a", "b"]})
+    grille = np.array([[0, 1]])
+    session.save_grid(grille, jeu, iteration=1, score=0.0)
+
+    grille[0, 0] = 42
+
+    assert session.saved[0].grid[0, 0] == 0
+
+
+def test_saving_and_removing_announce_themselves(session, tmp_path):
+    jeu = card_set_in(tmp_path, {"s": ["a", "b"]})
+    vus = []
+    session.saved_changed.connect(lambda: vus.append(True))
+
+    session.save_grid(np.array([[0, 1]]), jeu, iteration=1, score=0.0)
+    session.remove_saved(0)
+    session.remove_saved(0)          # déjà vide : rien à annoncer
+
+    assert len(vus) == 2

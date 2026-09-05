@@ -138,6 +138,83 @@ def feed(step_widget, session):
     return timeline
 
 
+# --- Agencements mis de côté ------------------------------------------------
+
+def test_keeping_is_impossible_before_the_first_snapshot(step):
+    widget, session = step
+    assert not widget._keep.isEnabled()
+    assert not widget.can_advance(), "l'export n'aurait rien à habiller"
+
+    feed(widget, session)
+
+    assert widget._keep.isEnabled()
+
+
+def test_keeping_stores_the_grid_its_cards_and_its_iteration(step):
+    """⚠️ **Le jeu de cartes fait partie de l'agencement.** La grille indexe le
+    sous-ensemble retenu au calcul : sans lui, les mêmes nombres désigneraient
+    d'autres cartes dès que la sélection change."""
+    widget, session = step
+    timeline = feed(widget, session)
+    widget._slider.setValue(1)
+
+    widget._keep_current()
+
+    garde = session.saved[0]
+    assert garde is not None
+    assert garde.cards is widget._cards
+    assert garde.iteration == timeline[1].iteration
+    assert (garde.grid == timeline[1].grid).all()
+    assert widget.can_advance()
+
+
+def test_the_keep_button_dies_once_the_five_slots_are_taken(step):
+    from pokemon_mosaic.ui.session import MAX_SAVED
+
+    widget, session = step
+    feed(widget, session)
+    for _ in range(MAX_SAVED):
+        widget._keep_current()
+
+    assert session.saved_count() == MAX_SAVED
+    assert not widget._keep.isEnabled()
+    # Retirer une case le rallume.
+    session.remove_saved(2)
+    assert widget._keep.isEnabled()
+
+
+def test_clicking_a_slot_goes_back_to_its_snapshot(step):
+    widget, session = step
+    timeline = feed(widget, session)
+    widget._slider.setValue(1)
+    widget._keep_current()
+    widget._slider.setValue(len(timeline) - 1)
+
+    widget._show_saved(0)
+
+    assert widget._slider.value() == 1
+    assert widget._saved.current() == 0
+
+
+def test_a_kept_arrangement_survives_the_loss_of_its_snapshot(step):
+    """⚠️ **La timeline s'élague en cours de calcul.** Le rang du cliché ne veut
+    plus rien dire ensuite ; l'agencement gardé, lui, existe toujours."""
+    widget, session = step
+    timeline = feed(widget, session)
+    widget._slider.setValue(1)
+    widget._keep_current()
+    dernier = len(timeline) - 1
+    widget._slider.setValue(dernier)
+    # La timeline oublie le cliché gardé.
+    session.saved[0].iteration = -12345
+
+    widget._show_saved(0)
+
+    assert widget._slider.value() == dernier, "le curseur n'a pas à sauter"
+    widget._flush_render()
+    assert widget._image.pixmap() is not None
+
+
 def test_the_screen_offers_the_button_before_anything_has_run(step):
     """⚠️ **Un écran qui n'a rien à montrer offre le geste à faire.** Une phrase
     seule laissait chercher où l'on lance : le bouton du bas se perdait dans une
