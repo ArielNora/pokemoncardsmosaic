@@ -138,6 +138,62 @@ def feed(step_widget, session):
     return timeline
 
 
+# --- La graine -------------------------------------------------------------
+
+def test_a_run_records_its_seed_and_shows_it(step):
+    """⚠️ Sans graine, le calcul retombait sur le hasard global : deux calculs
+    identiques donnaient deux posters, et aucun ne se rejouait."""
+    widget, session = step
+    assert widget._seed_label.text() == "", "aucun calcul, aucune graine"
+    assert not widget._copy_seed.isEnabled()
+
+    feed(widget, session)
+
+    assert session.last_seed is not None
+    assert str(session.last_seed) in widget._seed_label.text().replace(" ", "")
+    assert widget._copy_seed.isEnabled()
+
+
+def test_a_pinned_seed_is_the_one_used(qt_app, session):
+    from pokemon_mosaic.ui.run_step import RunStep
+
+    session.set_algorithm(seed=4242)
+    widget = RunStep(session)
+    feed(widget, session)
+
+    assert session.last_seed == 4242
+
+
+def test_the_same_seed_replays_the_same_timeline(qt_app, session):
+    """Le tout de la question : mêmes cartes, mêmes réglages, même graine,
+    même suite de clichés."""
+    from pokemon_mosaic.ui.run_step import RunStep
+
+    session.set_algorithm(seed=7)
+    premier = RunStep(session)
+    une = feed(premier, session)
+    empreinte = [(cliche.iteration, cliche.grid.tolist()) for cliche in une]
+
+    second = RunStep(session)
+    deux = feed(second, session)
+
+    assert [(c.iteration, c.grid.tolist()) for c in deux] == empreinte
+
+
+def test_two_runs_without_a_seed_differ(qt_app, session):
+    """Sans graine fixée, chaque calcul tire la sienne : deux essais ne se
+    ressemblent pas, et c'est ce qu'on veut d'un tirage au hasard."""
+    from pokemon_mosaic.ui.run_step import RunStep
+
+    session.set_algorithm(seed=None)
+    une = feed(RunStep(session), session)
+    premiere = session.last_seed
+    deux = feed(RunStep(session), session)
+
+    assert premiere != session.last_seed
+    assert (une[-1].grid != deux[-1].grid).any()
+
+
 # --- Agencements mis de côté ------------------------------------------------
 
 def test_keeping_is_impossible_before_the_first_snapshot(step):

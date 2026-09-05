@@ -269,7 +269,7 @@ def test_every_advanced_setting_sits_inside_a_sentence(step):
     widget, _ = step
     assert set(widget._sentences) == {
         "algorithm", "acceptance", "iterations", "stagnation", "time",
-        "score", "snapshot_every"}
+        "score", "snapshot_every", "seed"}
     for cle, (avant, _apres) in widget._sentences.items():
         assert avant.text(), f"la phrase de {cle} ne dit rien avant son champ"
 

@@ -6,6 +6,8 @@ un QThread, et communique par signaux. La grille est modifiée sur place par
 seulement eux que l'interface lit, jamais la grille en cours de modification.
 """
 
+import random
+
 import numpy as np
 from PySide6.QtCore import QObject, QThread, Signal
 
@@ -18,6 +20,10 @@ from ..optimize import (
 )
 from ..scoring import EMPTY, EdgeDistances
 from ..timeline import Timeline
+
+# La borne des graines tirées au hasard. Assez large pour ne jamais se répéter
+# en pratique, assez courte pour se recopier à la main et se dire au téléphone.
+MAX_SEED = 1_000_000_000
 
 
 class RunWorker(QObject):
@@ -39,6 +45,7 @@ class RunWorker(QObject):
         # Timeline à poursuivre. Fournie, ses clichés sont conservés et les
         # nouveaux s'y ajoutent à la suite ; absente, on en ouvre une neuve.
         self._timeline = timeline
+        self._rng: random.Random | None = None
 
     def run(self) -> None:
         try:
@@ -56,6 +63,7 @@ class RunWorker(QObject):
         try:
             result: OptimizationResult = optimize_grid(
                 grid, distances, links.group_map(),
+                rng=self._rng,
                 annealing=self._session.annealing(),
                 stop=self._session.stop_conditions(),
                 timeline=timeline,
@@ -70,6 +78,16 @@ class RunWorker(QObject):
         session = self._session
         if session.card_set is None or session.selected_count == 0:
             raise ValueError("Aucune carte retenue.")
+
+        # ⚠️ **Une graine, et un seul générateur pour tout le calcul.** Sans
+        # elle, `optimize_grid` retombait sur le hasard global : deux calculs
+        # identiques donnaient deux posters, et aucun ne se rejouait. Fixée par
+        # l'utilisateur, elle rejoue exactement le même ; laissée libre, elle
+        # est tirée ici et retenue, pour qu'on puisse la relire après coup.
+        graine = (session.seed if session.seed is not None
+                  else random.randrange(MAX_SEED))
+        session.last_seed = graine
+        self._rng = random.Random(graine)
 
         # `select_cards` et non `subset` : les liens doivent être traduits en même
         # temps que les cartes sont renumérotées.
@@ -96,7 +114,7 @@ class RunWorker(QObject):
         else:
             grid = build_initial_grid(
                 cards, shape=(session.cols, session.rows), links=links,
-                empty_cells=session.empty_cells(),
+                empty_cells=session.empty_cells(), rng=self._rng,
             )
         return cards, links, timeline, grid, distances
 

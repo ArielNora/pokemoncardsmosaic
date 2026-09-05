@@ -5,6 +5,7 @@ import numpy as np
 from PySide6.QtCore import QSize, Qt, QTimer, Signal
 from PySide6.QtGui import QImage, QPixmap
 from PySide6.QtWidgets import (
+    QApplication,
     QFrame,
     QHBoxLayout,
     QLabel,
@@ -232,7 +233,15 @@ class RunStep(QWidget):
         controls.addWidget(self._extend)
         controls.addWidget(self._resume)
         controls.addWidget(self._keep)
+        # La graine du calcul en cours, à recopier pour le rejouer ou le
+        # partager. À côté du résumé : ce sont deux choses qu'on lit **après**.
+        self._seed_label = QLabel()
+        self._copy_seed = QPushButton()
+        self._copy_seed.clicked.connect(self._copy_seed_to_clipboard)
+        self._copy_seed.setEnabled(False)
         controls.addStretch(1)
+        controls.addWidget(self._seed_label)
+        controls.addWidget(self._copy_seed)
         self._summary = QLabel()
         controls.addWidget(self._summary)
 
@@ -275,6 +284,8 @@ class RunStep(QWidget):
         )
         self._welcome_start.setText(self.tr("Lancer le calcul"))
         self._keep.setText(self.tr("Enregistrer"))
+        self._copy_seed.setText(self.tr("Copier la graine"))
+        self._update_seed_label()
         self._saved.retranslate_ui()
         self._welcome_text.setText(
             self.tr("Tout est réglé. Lancez le calcul pour voir la mosaïque se "
@@ -457,6 +468,23 @@ class RunStep(QWidget):
             # Parenté à l'écran, la fenêtre lui survivrait.
             dialogue.deleteLater()
 
+    def _update_seed_label(self) -> None:
+        """Dit la graine du calcul en cours, s'il y en a eu un."""
+        graine = self._session.last_seed
+        self._copy_seed.setEnabled(graine is not None)
+        self._seed_label.setText(
+            "" if graine is None
+            else self.tr("Graine %1").replace("%1", f"{graine:,}".replace(",", " "))
+        )
+
+    def _copy_seed_to_clipboard(self) -> None:
+        graine = self._session.last_seed
+        if graine is None:
+            return
+        QApplication.clipboard().setText(str(graine))
+        self.status_message.emit(
+            self.tr("Graine %1 copiée.").replace("%1", str(graine)))
+
     def _snapshot_of(self, saved) -> int | None:
         """Le rang du cliché qui porte cet agencement, s'il est encore là."""
         for rang, cliche in enumerate(self._timeline or []):
@@ -511,6 +539,7 @@ class RunStep(QWidget):
         # L'accueil a fait son office : il y a désormais quelque chose à voir.
         self._update_view()
         self._update_keep()
+        self._update_seed_label()
         self._slider.setEnabled(True)
         # Le plafond se déduit de la grille : une grille plus petite que la
         # précédente l'abaisse, et le zoom hérité doit redescendre avec lui.

@@ -4,107 +4,112 @@
 <context>
     <name>AdvancedTab</name>
     <message>
-        <location filename="../src/pokemon_mosaic/ui/algorithm_tabs.py" line="87"/>
+        <location filename="../src/pokemon_mosaic/ui/algorithm_tabs.py" line="88"/>
         <source>Paramètres avancés</source>
         <translation>Advanced settings</translation>
     </message>
     <message>
-        <location filename="../src/pokemon_mosaic/ui/algorithm_tabs.py" line="327"/>
+        <location filename="../src/pokemon_mosaic/ui/algorithm_tabs.py" line="338"/>
         <source>le recuit simulé</source>
         <translation>simulated annealing</translation>
     </message>
     <message>
-        <location filename="../src/pokemon_mosaic/ui/algorithm_tabs.py" line="328"/>
+        <location filename="../src/pokemon_mosaic/ui/algorithm_tabs.py" line="339"/>
         <source>la descente stricte</source>
         <translation>strict descent</translation>
     </message>
     <message>
-        <location filename="../src/pokemon_mosaic/ui/algorithm_tabs.py" line="331"/>
+        <location filename="../src/pokemon_mosaic/ui/algorithm_tabs.py" line="342"/>
         <source>&lt;b&gt;La métrique :&lt;/b&gt;</source>
         <translation>&lt;b&gt;The metric:&lt;/b&gt;</translation>
     </message>
     <message>
-        <location filename="../src/pokemon_mosaic/ui/algorithm_tabs.py" line="330"/>
+        <location filename="../src/pokemon_mosaic/ui/algorithm_tabs.py" line="341"/>
         <source>Épaisseur des bandes</source>
         <translation>Strip thickness</translation>
     </message>
     <message>
-        <location filename="../src/pokemon_mosaic/ui/algorithm_tabs.py" line="333"/>
+        <location filename="../src/pokemon_mosaic/ui/algorithm_tabs.py" line="344"/>
         <source>La partie la plus importante de l&apos;algorithme. Elle prend les bandes voisines de deux cartes et en tire un score, qui dit à quel point ces bandes se ressemblent. Tout le travail de l&apos;algorithme est ensuite de déplacer les cartes pour obtenir le meilleur score d&apos;ensemble.</source>
         <translation>The most important part of the algorithm. It takes the neighbouring strips of two cards and draws a score from them, saying how alike those strips are. All the algorithm then does is move the cards around to reach the best overall score.</translation>
     </message>
     <message>
-        <location filename="../src/pokemon_mosaic/ui/algorithm_tabs.py" line="339"/>
+        <location filename="../src/pokemon_mosaic/ui/algorithm_tabs.py" line="350"/>
         <source>À gauche, deux cartes voisines : la flèche relie les deux bandes que le score compare. À droite, une petite grille d&apos;essai réoptimisée à cette épaisseur.</source>
         <translation>On the left, two neighbouring cards: the arrow joins the two strips the score compares. On the right, a small test grid re-optimised at that thickness.</translation>
     </message>
     <message>
-        <location filename="../src/pokemon_mosaic/ui/algorithm_tabs.py" line="342"/>
+        <location filename="../src/pokemon_mosaic/ui/algorithm_tabs.py" line="353"/>
         <source>&lt;b&gt;Fréquence de sauvegarde :&lt;/b&gt;</source>
         <translation>&lt;b&gt;Saving frequency:&lt;/b&gt;</translation>
     </message>
     <message>
-        <location filename="../src/pokemon_mosaic/ui/algorithm_tabs.py" line="343"/>
+        <location filename="../src/pokemon_mosaic/ui/algorithm_tabs.py" line="354"/>
         <source>&lt;b&gt;Paramètres de l&apos;algorithme :&lt;/b&gt;</source>
         <translation>&lt;b&gt;Algorithm settings:&lt;/b&gt;</translation>
     </message>
     <message>
-        <location filename="../src/pokemon_mosaic/ui/algorithm_tabs.py" line="346"/>
+        <location filename="../src/pokemon_mosaic/ui/algorithm_tabs.py" line="357"/>
         <source>Les valeurs par défaut donnent presque toujours un bon résultat. Vous pouvez les changer, ou passer directement à la suite.</source>
         <translation>The default values almost always give a good result. You may change them, or move straight on.</translation>
     </message>
     <message>
-        <location filename="../src/pokemon_mosaic/ui/algorithm_tabs.py" line="351"/>
+        <location filename="../src/pokemon_mosaic/ui/algorithm_tabs.py" line="362"/>
         <source>À chaque &lt;b&gt;itération&lt;/b&gt;, l&apos;algorithme tente un &lt;b&gt;échange&lt;/b&gt; : il permute deux cartes de la grille et regarde ce que devient la &lt;b&gt;métrique&lt;/b&gt;, l&apos;écart de couleur entre les bords qui se touchent. L&apos;échange est &lt;b&gt;retenu&lt;/b&gt; s&apos;il rapproche l&apos;&lt;b&gt;agencement&lt;/b&gt; du but, une mosaïque dont les bords voisins se ressemblent, et le calcul continue jusqu&apos;à ce qu&apos;un &lt;b&gt;arrêt&lt;/b&gt; tombe.</source>
         <translation>At every &lt;b&gt;iteration&lt;/b&gt; the algorithm tries a &lt;b&gt;swap&lt;/b&gt;: it exchanges two cards of the grid and looks at what becomes of the &lt;b&gt;metric&lt;/b&gt;, the colour gap between the edges that touch. The swap is &lt;b&gt;kept&lt;/b&gt; if it brings the &lt;b&gt;arrangement&lt;/b&gt; closer to the goal, a mosaic whose neighbouring edges match, and the run carries on until a &lt;b&gt;stop&lt;/b&gt; falls.</translation>
     </message>
     <message>
-        <location filename="../src/pokemon_mosaic/ui/algorithm_tabs.py" line="359"/>
+        <location filename="../src/pokemon_mosaic/ui/algorithm_tabs.py" line="370"/>
         <source>L&apos;algorithme utilisé est %1</source>
         <translation>The algorithm used is %1</translation>
     </message>
     <message>
-        <location filename="../src/pokemon_mosaic/ui/algorithm_tabs.py" line="361"/>
+        <location filename="../src/pokemon_mosaic/ui/algorithm_tabs.py" line="372"/>
+        <source>Le hasard part de la graine %1 (vide : une neuve à chaque calcul). La même graine rejoue exactement le même calcul, clichés compris, sur les mêmes cartes et les mêmes réglages.</source>
+        <translation>Randomness starts from seed %1 (empty: a fresh one for every run). The same seed replays exactly the same run, snapshots included, on the same cards and the same settings.</translation>
+    </message>
+    <message>
+        <location filename="../src/pokemon_mosaic/ui/algorithm_tabs.py" line="376"/>
         <source>Le recuit accepte au départ %1 d&apos;échanges qui dégradent la métrique, puis devient de plus en plus exigeant.</source>
         <translation>Annealing accepts %1 of swaps that worsen the metric to begin with, then grows steadily more demanding.</translation>
     </message>
     <message>
-        <location filename="../src/pokemon_mosaic/ui/algorithm_tabs.py" line="364"/>
+        <location filename="../src/pokemon_mosaic/ui/algorithm_tabs.py" line="379"/>
         <source>&lt;b&gt;L&apos;algorithme s&apos;arrête&lt;/b&gt; lorsque :</source>
         <translation>&lt;b&gt;The algorithm stops&lt;/b&gt; when:</translation>
     </message>
     <message>
-        <location filename="../src/pokemon_mosaic/ui/algorithm_tabs.py" line="365"/>
+        <location filename="../src/pokemon_mosaic/ui/algorithm_tabs.py" line="380"/>
         <source>il a fait %1 itérations (toujours actif)</source>
         <translation>it has run %1 iterations (always on)</translation>
     </message>
     <message>
-        <location filename="../src/pokemon_mosaic/ui/algorithm_tabs.py" line="367"/>
+        <location filename="../src/pokemon_mosaic/ui/algorithm_tabs.py" line="382"/>
         <source>la métrique ne s&apos;améliore plus depuis %1 itérations</source>
         <translation>the metric has not improved for %1 iterations</translation>
     </message>
     <message>
-        <location filename="../src/pokemon_mosaic/ui/algorithm_tabs.py" line="368"/>
+        <location filename="../src/pokemon_mosaic/ui/algorithm_tabs.py" line="383"/>
         <source>il a calculé pendant %1</source>
         <translation>it has run for %1</translation>
     </message>
     <message>
-        <location filename="../src/pokemon_mosaic/ui/algorithm_tabs.py" line="369"/>
+        <location filename="../src/pokemon_mosaic/ui/algorithm_tabs.py" line="384"/>
         <source>la métrique descend sous %1</source>
         <translation>the metric falls below %1</translation>
     </message>
     <message>
-        <location filename="../src/pokemon_mosaic/ui/algorithm_tabs.py" line="372"/>
+        <location filename="../src/pokemon_mosaic/ui/algorithm_tabs.py" line="387"/>
         <source>Un agencement sera enregistré tous les %1 échanges retenus.</source>
         <translation>An arrangement is saved every %1 kept swaps.</translation>
     </message>
     <message>
-        <location filename="../src/pokemon_mosaic/ui/algorithm_tabs.py" line="474"/>
+        <location filename="../src/pokemon_mosaic/ui/algorithm_tabs.py" line="493"/>
         <source>Durée estimée : %1, gain attendu : environ %2 %, timeline : entre %3 et %4 clichés</source>
         <translation>Estimated duration: %1, expected gain: about %2%, timeline: between %3 and %4 snapshots</translation>
     </message>
     <message>
-        <location filename="../src/pokemon_mosaic/ui/algorithm_tabs.py" line="480"/>
+        <location filename="../src/pokemon_mosaic/ui/algorithm_tabs.py" line="499"/>
         <source>trop peu pour naviguer, resserrez la cadence</source>
         <translation>too few to navigate, tighten the cadence</translation>
     </message>
@@ -1283,163 +1288,178 @@
 <context>
     <name>RunStep</name>
     <message>
-        <location filename="../src/pokemon_mosaic/ui/run_step.py" line="256"/>
+        <location filename="../src/pokemon_mosaic/ui/run_step.py" line="265"/>
         <source>Lancer</source>
         <translation>Start</translation>
     </message>
     <message>
-        <location filename="../src/pokemon_mosaic/ui/run_step.py" line="257"/>
+        <location filename="../src/pokemon_mosaic/ui/run_step.py" line="266"/>
         <source>Arrêter</source>
         <translation>Stop</translation>
     </message>
     <message>
-        <location filename="../src/pokemon_mosaic/ui/run_step.py" line="258"/>
+        <location filename="../src/pokemon_mosaic/ui/run_step.py" line="267"/>
         <source>Dernier</source>
         <translation>Latest</translation>
     </message>
     <message>
-        <location filename="../src/pokemon_mosaic/ui/run_step.py" line="259"/>
+        <location filename="../src/pokemon_mosaic/ui/run_step.py" line="268"/>
         <source>Prolonger</source>
         <translation>Extend</translation>
     </message>
     <message>
-        <location filename="../src/pokemon_mosaic/ui/run_step.py" line="260"/>
+        <location filename="../src/pokemon_mosaic/ui/run_step.py" line="269"/>
         <source>Repartir de ce cliché</source>
         <translation>Restart from this snapshot</translation>
     </message>
     <message>
-        <location filename="../src/pokemon_mosaic/ui/run_step.py" line="262"/>
+        <location filename="../src/pokemon_mosaic/ui/run_step.py" line="271"/>
         <source>Poursuit le calcul depuis le dernier cliché, en conservant toute la timeline.</source>
         <translation>Continues from the latest snapshot, keeping the whole timeline.</translation>
     </message>
     <message>
-        <location filename="../src/pokemon_mosaic/ui/run_step.py" line="266"/>
+        <location filename="../src/pokemon_mosaic/ui/run_step.py" line="275"/>
         <source>Relance le calcul depuis le cliché affiché. Les clichés suivants sont abandonnés.</source>
         <translation>Restarts from the displayed snapshot. Later snapshots are discarded.</translation>
     </message>
     <message>
-        <location filename="../src/pokemon_mosaic/ui/run_step.py" line="269"/>
+        <location filename="../src/pokemon_mosaic/ui/run_step.py" line="278"/>
         <source>Ajuster</source>
         <translation>Fit</translation>
     </message>
     <message>
-        <location filename="../src/pokemon_mosaic/ui/run_step.py" line="270"/>
+        <location filename="../src/pokemon_mosaic/ui/run_step.py" line="279"/>
         <source>Dézoomer (touche −)</source>
         <translation>Zoom out (− key)</translation>
     </message>
     <message>
-        <location filename="../src/pokemon_mosaic/ui/run_step.py" line="271"/>
+        <location filename="../src/pokemon_mosaic/ui/run_step.py" line="280"/>
         <source>Zoomer (touche +)</source>
         <translation>Zoom in (+ key)</translation>
     </message>
     <message>
-        <location filename="../src/pokemon_mosaic/ui/run_step.py" line="272"/>
+        <location filename="../src/pokemon_mosaic/ui/run_step.py" line="281"/>
         <source>Revenir à l&apos;image entière</source>
         <translation>Back to the whole image</translation>
     </message>
     <message>
-        <location filename="../src/pokemon_mosaic/ui/run_step.py" line="274"/>
+        <location filename="../src/pokemon_mosaic/ui/run_step.py" line="283"/>
         <source>Flèches gauche et droite pour parcourir les clichés.</source>
         <translation>Left and right arrows step through the snapshots.</translation>
     </message>
     <message>
-        <location filename="../src/pokemon_mosaic/ui/run_step.py" line="276"/>
+        <location filename="../src/pokemon_mosaic/ui/run_step.py" line="285"/>
         <source>Lancer le calcul</source>
         <translation>Start the run</translation>
     </message>
     <message>
-        <location filename="../src/pokemon_mosaic/ui/run_step.py" line="277"/>
+        <location filename="../src/pokemon_mosaic/ui/run_step.py" line="286"/>
         <source>Enregistrer</source>
         <translation>Keep</translation>
     </message>
     <message>
-        <location filename="../src/pokemon_mosaic/ui/run_step.py" line="280"/>
+        <location filename="../src/pokemon_mosaic/ui/run_step.py" line="287"/>
+        <source>Copier la graine</source>
+        <translation>Copy the seed</translation>
+    </message>
+    <message>
+        <location filename="../src/pokemon_mosaic/ui/run_step.py" line="291"/>
         <source>Tout est réglé. Lancez le calcul pour voir la mosaïque se construire, cliché après cliché.</source>
         <translation>Everything is set. Start the run to watch the mosaic take shape, snapshot after snapshot.</translation>
     </message>
     <message>
-        <location filename="../src/pokemon_mosaic/ui/run_step.py" line="304"/>
-        <location filename="../src/pokemon_mosaic/ui/run_step.py" line="306"/>
+        <location filename="../src/pokemon_mosaic/ui/run_step.py" line="315"/>
+        <location filename="../src/pokemon_mosaic/ui/run_step.py" line="317"/>
         <source>Calcul en cours…</source>
         <translation>Running…</translation>
     </message>
     <message>
-        <location filename="../src/pokemon_mosaic/ui/run_step.py" line="418"/>
+        <location filename="../src/pokemon_mosaic/ui/run_step.py" line="429"/>
         <source>Agencement gardé.</source>
         <translation>Arrangement kept.</translation>
     </message>
     <message>
-        <location filename="../src/pokemon_mosaic/ui/run_step.py" line="498"/>
+        <location filename="../src/pokemon_mosaic/ui/run_step.py" line="477"/>
+        <source>Graine %1</source>
+        <translation>Seed %1</translation>
+    </message>
+    <message>
+        <location filename="../src/pokemon_mosaic/ui/run_step.py" line="486"/>
+        <source>Graine %1 copiée.</source>
+        <translation>Seed %1 copied.</translation>
+    </message>
+    <message>
+        <location filename="../src/pokemon_mosaic/ui/run_step.py" line="526"/>
         <source>le calcul</source>
         <translation>the run</translation>
     </message>
     <message>
-        <location filename="../src/pokemon_mosaic/ui/run_step.py" line="497"/>
+        <location filename="../src/pokemon_mosaic/ui/run_step.py" line="525"/>
         <source>Arrêt en cours : %1 ne répond pas encore.</source>
         <translation>Stopping: %1 is not responding yet.</translation>
     </message>
     <message>
-        <location filename="../src/pokemon_mosaic/ui/run_step.py" line="413"/>
+        <location filename="../src/pokemon_mosaic/ui/run_step.py" line="424"/>
         <source>Les quatre cases sont prises : retirez-en une.</source>
         <translation>All four slots are taken: remove one.</translation>
     </message>
     <message>
-        <location filename="../src/pokemon_mosaic/ui/run_step.py" line="560"/>
+        <location filename="../src/pokemon_mosaic/ui/run_step.py" line="589"/>
         <source>itérations épuisées</source>
         <translation>iterations exhausted</translation>
     </message>
     <message>
-        <location filename="../src/pokemon_mosaic/ui/run_step.py" line="561"/>
+        <location filename="../src/pokemon_mosaic/ui/run_step.py" line="590"/>
         <source>score atteint</source>
         <translation>target score reached</translation>
     </message>
     <message>
-        <location filename="../src/pokemon_mosaic/ui/run_step.py" line="562"/>
+        <location filename="../src/pokemon_mosaic/ui/run_step.py" line="591"/>
         <source>stagnation</source>
         <translation>stagnation</translation>
     </message>
     <message>
-        <location filename="../src/pokemon_mosaic/ui/run_step.py" line="563"/>
+        <location filename="../src/pokemon_mosaic/ui/run_step.py" line="592"/>
         <source>budget de temps</source>
         <translation>time budget</translation>
     </message>
     <message>
-        <location filename="../src/pokemon_mosaic/ui/run_step.py" line="564"/>
+        <location filename="../src/pokemon_mosaic/ui/run_step.py" line="593"/>
         <source>arrêt demandé</source>
         <translation>stopped by user</translation>
     </message>
     <message>
-        <location filename="../src/pokemon_mosaic/ui/run_step.py" line="571"/>
+        <location filename="../src/pokemon_mosaic/ui/run_step.py" line="600"/>
         <source>Score %1 → %2 (%3 % de gain), arrêt : %4</source>
         <translation>Score %1 → %2 (%3% gain), stopped: %4</translation>
     </message>
     <message>
-        <location filename="../src/pokemon_mosaic/ui/run_step.py" line="577"/>
+        <location filename="../src/pokemon_mosaic/ui/run_step.py" line="606"/>
         <source>Calcul terminé.</source>
         <translation>Run finished.</translation>
     </message>
     <message>
-        <location filename="../src/pokemon_mosaic/ui/run_step.py" line="583"/>
+        <location filename="../src/pokemon_mosaic/ui/run_step.py" line="612"/>
         <source>Échec du calcul : %1</source>
         <translation>Run failed: %1</translation>
     </message>
     <message>
-        <location filename="../src/pokemon_mosaic/ui/run_step.py" line="815"/>
+        <location filename="../src/pokemon_mosaic/ui/run_step.py" line="844"/>
         <source>Reprendre</source>
         <translation>Resume</translation>
     </message>
     <message>
-        <location filename="../src/pokemon_mosaic/ui/run_step.py" line="815"/>
+        <location filename="../src/pokemon_mosaic/ui/run_step.py" line="844"/>
         <source>Pause</source>
         <translation>Pause</translation>
     </message>
     <message>
-        <location filename="../src/pokemon_mosaic/ui/run_step.py" line="821"/>
+        <location filename="../src/pokemon_mosaic/ui/run_step.py" line="850"/>
         <source>aucun cliché</source>
         <translation>no snapshot</translation>
     </message>
     <message>
-        <location filename="../src/pokemon_mosaic/ui/run_step.py" line="824"/>
+        <location filename="../src/pokemon_mosaic/ui/run_step.py" line="853"/>
         <source>cliché %1 / %2</source>
         <translation>snapshot %1 of %2</translation>
     </message>

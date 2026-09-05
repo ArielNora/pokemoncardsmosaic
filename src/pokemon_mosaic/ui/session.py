@@ -80,7 +80,7 @@ class Session(QObject):
     # se relisent ainsi dans les préréglages écrits avant elles, et un second
     # groupe pour trois valeurs ferait deux signaux à écouter au lieu d'un.
     ALGORITHM_SETTINGS = frozenset({
-        "iterations", "snapshot_every",
+        "iterations", "snapshot_every", "seed",
         "empty_colour", "gap_colour", "background_colour",
         "stop_on_stagnation", "stagnation_iterations",
         "stop_on_time", "time_budget",
@@ -161,6 +161,14 @@ class Session(QObject):
         self.strip_size = DEFAULT_STRIP_SIZE
         self.stop_on_score = False
         self.target_score = 0.0
+        # La graine du hasard. `None` : une neuve à chaque calcul, tirée par
+        # l'exécution et retenue dans `last_seed` pour être relue ou partagée.
+        # Fixée, elle rejoue **exactement** le même calcul, clichés compris,
+        # tant que les cartes et les réglages sont les mêmes.
+        self.seed: int | None = None
+        # Celle du dernier calcul lancé. Ce n'est pas un réglage : elle décrit
+        # ce qui a eu lieu, et ne part donc pas dans les préréglages.
+        self.last_seed: int | None = None
 
         # Les agencements mis de côté à l'exécution, quatre cases numérotées. Une
         # liste à trous plutôt qu'une liste courte : la case 3 reste la case 3
