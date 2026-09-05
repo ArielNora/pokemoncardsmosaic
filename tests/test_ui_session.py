@@ -397,3 +397,70 @@ def test_saving_and_removing_announce_themselves(session, tmp_path):
     session.remove_saved(0)          # déjà vide : rien à annoncer
 
     assert len(vus) == 2
+
+
+# --- Agencements enregistrés ------------------------------------------------
+
+def test_an_arrangement_names_its_cards_by_path(session, tmp_path):
+    """⚠️ La grille d'un calcul indexe le sous-ensemble retenu, renuméroté de 0
+    à n-1 : ces nombres ne veulent rien dire ailleurs."""
+    from pokemon_mosaic.optimize import select_cards
+    from pokemon_mosaic.ui.session import SavedGrid
+
+    session.set_cards(card_set_in(tmp_path, {"a": ["un", "deux", "trois", "quatre"]}),
+                      str(tmp_path))
+    sous_ensemble, _ = select_cards(session.card_set, [1, 3])
+    garde = SavedGrid(np.array([[0, 1]]), sous_ensemble, iteration=5, score=2.5)
+
+    agencement = session.arrangement_of(garde, "essai")
+
+    assert agencement.cards == ("a/deux.png", "a/quatre.png")
+    assert agencement.grid == ((0, 1),)
+    assert agencement.score == 2.5
+    assert agencement.presentation["paper"] == session.paper
+
+
+def test_an_arrangement_comes_back_on_the_right_cards(session, tmp_path):
+    """⚠️ **`subset` trie les indices**, il ne garde pas l'ordre qu'on lui
+    donne : sans retraduction, la mosaïque montrerait les bonnes cartes aux
+    mauvaises places."""
+    from pokemon_mosaic.arrangements import Arrangement
+
+    session.set_cards(card_set_in(tmp_path, {"a": ["un", "deux", "trois", "quatre"]}),
+                      str(tmp_path))
+    # L'ordre du fichier est **l'inverse** de l'ordre du catalogue.
+    agencement = Arrangement(name="x", cards=("a/quatre.png", "a/deux.png"),
+                             grid=((0, 1), (-1, 0)))
+
+    garde = session.saved_from_arrangement(agencement)
+
+    noms = [[None if case < 0 else garde.cards[case].name
+             for case in ligne] for ligne in garde.grid]
+    assert noms == [["quatre", "deux"], [None, "quatre"]]
+
+
+def test_a_missing_card_is_named_and_blocks_the_translation(session, tmp_path):
+    from pokemon_mosaic.arrangements import Arrangement
+
+    session.set_cards(card_set_in(tmp_path, {"a": ["un"]}), str(tmp_path))
+    agencement = Arrangement(name="x", cards=("a/un.png", "a/absente.png"),
+                             grid=((0, 1),))
+
+    assert session.missing_cards(agencement) == ["a/absente.png"]
+    with pytest.raises(ValueError, match="absente"):
+        session.saved_from_arrangement(agencement)
+
+
+def test_the_presentation_travels_with_the_arrangement(session, tmp_path):
+    session.set_cards(card_set_in(tmp_path, {"a": ["un"]}), str(tmp_path))
+    session.set_layout(paper="A3", landscape=True, dpi=150, panels=2,
+                       card_gap_mm=3.0)
+    session.set_algorithm(gap_colour=(1, 2, 3))
+    habillage = session.presentation()
+
+    autre = type(session)()
+    autre.apply_presentation(habillage)
+
+    assert (autre.paper, autre.landscape, autre.dpi) == ("A3", True, 150)
+    assert autre.panels == 2 and autre.card_gap_mm == 3.0
+    assert autre.gap_colour == (1, 2, 3)

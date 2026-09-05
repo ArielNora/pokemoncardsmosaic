@@ -8,10 +8,13 @@ import os
 import re
 from dataclasses import dataclass
 from dataclasses import replace as dataclass_replace
+from datetime import datetime
 
+import numpy as np
 from PySide6.QtCore import QObject, Signal
 
 from ..annealing import Annealing
+from ..arrangements import Arrangement
 from ..cards import DEFAULT_STRIP_SIZE, CardSet
 from ..layout import (
     DEFAULT_DPI,
@@ -25,8 +28,9 @@ from ..layout import (
     grid_geometry,
 )
 from ..links import DEFAULT_LINKS, Link, LinkLibrary, resolve_links
-from ..optimize import StopConditions
+from ..optimize import StopConditions, select_cards
 from ..presets import LinkRef, Preset
+from ..scoring import EMPTY
 
 # ⚠️ **La série se lit dans le nom du dossier.** Le miroir les nomme
 # « a1-puissance-genetique », « a3b-la-clairiere-d-evoli », « promo-a-promo-a » :
@@ -200,6 +204,101 @@ class Session(QObject):
             if place is not None:
                 return rang
         return None
+
+    # --- Agencements enregistrés ------------------------------------------
+
+    def arrangement_of(self, saved: SavedGrid, name: str) -> Arrangement:
+        """Décrit un agencement gardé par les **chemins** de ses cartes.
+
+        ⚠️ La grille d'un calcul indexe le sous-ensemble retenu, renuméroté de 0
+        à n-1 : ces nombres ne veulent rien dire ailleurs. Le fichier liste donc
+        les cartes une fois, par chemin, et la grille désigne des rangs de cette
+        liste.
+        """
+        chemins = [os.path.relpath(card.path, self.data_dir)
+                   for card in saved.cards.cards]
+        grille = tuple(tuple(int(case) for case in ligne)
+                       for ligne in saved.grid)
+        return Arrangement(
+            name=name, cards=tuple(chemins), grid=grille,
+            presentation=self.presentation(), score=saved.score,
+            saved_at=datetime.now().astimezone().isoformat(timespec="seconds"),
+        )
+
+    def missing_cards(self, arrangement: Arrangement) -> list[str]:
+        """Les cartes de l'agencement que le catalogue chargé n'a pas."""
+        if self.card_set is None:
+            return list(arrangement.cards)
+        return [chemin for chemin in arrangement.cards
+                if self.index_of_path(chemin) is None]
+
+    def saved_from_arrangement(self, arrangement: Arrangement) -> SavedGrid:
+        """Retraduit un agencement en grille sur les cartes chargées.
+
+        ⚠️ **`subset` trie les indices**, il ne garde pas l'ordre qu'on lui
+        donne : la case qui disait « la troisième carte du fichier » doit donc
+        être retraduite, sans quoi la mosaïque montrerait les bonnes cartes aux
+        mauvaises places.
+
+        Lève `ValueError` si une carte manque : `missing_cards` le dit avant, et
+        un agencement amputé n'est plus celui qu'on a partagé.
+        """
+        manquantes = self.missing_cards(arrangement)
+        if manquantes:
+            raise ValueError(f"{len(manquantes)} carte(s) absente(s) du "
+                             f"catalogue.")
+        indices = [self.index_of_path(chemin) for chemin in arrangement.cards]
+        subset, _ = select_cards(self.card_set, indices)
+        rang = subset.index_mapping()
+        grille = np.array(
+            [[EMPTY if case == EMPTY else rang[indices[case]] for case in ligne]
+             for ligne in arrangement.grid], dtype=int)
+        return SavedGrid(grille, subset, iteration=0, score=arrangement.score)
+
+    def presentation(self) -> dict:
+        """L'habillage du poster : tout ce que l'étape d'export laisse régler.
+
+        Ni la forme de la grille ni les cases vides : elles sont dans
+        l'agencement lui-même, qui les porte case par case.
+        """
+        return {
+            "paper": self.paper,
+            "paper_size_mm": list(self.paper_size_mm),
+            "landscape": self.landscape,
+            "dpi": self.dpi,
+            "panels": self.panels,
+            "panel_rows": self.panel_rows,
+            "panel_offsets": [[index, *offset] for index, offset
+                              in sorted(self.panel_offsets.items())] or None,
+            "card_width_mm": self.card_width_mm,
+            "card_gap_mm": self.card_gap_mm,
+            "empty_colour": list(self.empty_colour),
+            "gap_colour": list(self.gap_colour),
+            "background_colour": list(self.background_colour),
+        }
+
+    def apply_presentation(self, presentation: dict) -> None:
+        """Repose l'habillage venu d'un agencement.
+
+        Les couleurs passent par `set_algorithm`, qui est le groupe où elles
+        voyagent ; le reste par `set_layout`. ⚠️ Les déplacements de feuilles
+        **après** : tout autre réglage de mise en page les défait.
+        """
+        couleurs = {nom: tuple(presentation[nom]) for nom in
+                    ("empty_colour", "gap_colour", "background_colour")
+                    if presentation.get(nom) is not None}
+        mise_en_page = {nom: presentation[nom] for nom in
+                        ("paper", "landscape", "dpi", "panels", "panel_rows",
+                         "card_width_mm", "card_gap_mm")
+                        if nom in presentation}
+        if presentation.get("paper_size_mm"):
+            mise_en_page["paper_size_mm"] = tuple(presentation["paper_size_mm"])
+        if mise_en_page:
+            self.set_layout(**mise_en_page)
+        if couleurs:
+            self.set_algorithm(**couleurs)
+        for index, x, y in (presentation.get("panel_offsets") or ()):
+            self.move_panel(int(index), float(x), float(y))
 
     # --- Cartes -----------------------------------------------------------
 
