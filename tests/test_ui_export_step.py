@@ -44,6 +44,24 @@ def test_the_step_opens_on_the_first_kept_arrangement(ecran):
     assert widget._saved.current() == 0
 
 
+def test_only_the_selected_slot_is_outlined(ecran):
+    """Le cadre vert dit l'agencement affiché, et lui seul."""
+    widget, session, jeu = ecran
+    session.save_grid(np.arange(20).reshape(4, 5)[:, ::-1].copy(), jeu,
+                      iteration=200, score=9.0)
+    widget.enter()
+
+    assert widget._saved.current() == 0
+    assert widget._saved._slots[0].property("role") == "slot-current"
+    assert widget._saved._slots[1].property("role") == "slot"
+
+    widget.show_slot(1)
+
+    assert widget._saved._slots[0].property("role") == "slot"
+    assert widget._saved._slots[1].property("role") == "slot-current"
+    assert widget.current_saved() is session.saved[1]
+
+
 def test_the_three_tabs_are_there_and_never_lock(ecran):
     widget, _, _ = ecran
     titres = [widget._list.item(i).text() for i in range(widget._list.count())]

@@ -277,20 +277,42 @@ def test_the_dialog_of_a_lost_arrangement_says_so_and_zooms(qt_app, session):
     assert dialogue._view.pixmap().width() > avant.width()
 
 
-def test_the_green_outline_follows_what_is_displayed(step):
-    """⚠️ Marquée à la sauvegarde et laissée telle quelle, la case prétendait
-    montrer l'agencement affiché alors que le curseur était parti ailleurs."""
+def test_the_green_outline_says_an_open_slot_not_a_kept_one(step):
+    """⚠️ **Le cadre vert dit où l'on est**, et l'on n'y « va » pas en mettant
+    de côté ce qu'on regarde déjà : allumé par la sauvegarde, il restait allumé
+    pour de bon, le cliché gardé étant celui qu'on venait de regarder."""
     widget, session = step
     timeline = feed(widget, session)
     widget._slider.setValue(1)
     widget._keep_current()
-    assert widget._saved.current() == 0
 
-    widget._slider.setValue(len(timeline) - 1)
-    assert widget._saved.current() is None, "on ne regarde plus la case gardée"
+    assert widget._saved.current() is None, "garder n'ouvre pas la case"
 
     widget._show_saved(0)
-    assert widget._saved.current() == 0
+    assert widget._saved.current() == 0, "y aller l'ouvre"
+    assert widget._slider.value() == 1
+
+    widget._slider.setValue(len(timeline) - 1)
+    assert widget._saved.current() is None, "on ne la regarde plus"
+
+
+def test_the_outline_lights_up_while_the_window_of_a_lost_one_is_open(step):
+    """Elle n'est plus dans la timeline : c'est la fenêtre qui la montre, et la
+    case reste ouverte le temps qu'elle est à l'écran."""
+    widget, session = step
+    feed(widget, session)
+    widget._keep_current()
+    session.saved[0].iteration = -12345
+    vues = []
+
+    def ouvre(saved):
+        vues.append(widget._saved.current())
+
+    widget._open_saved_dialog = ouvre
+    widget._show_saved(0)
+
+    assert vues == [0], "la case s'allume avec la fenêtre"
+    assert widget._saved.current() is None, "et s'éteint avec elle"
 
 
 def test_the_screen_offers_the_button_before_anything_has_run(step):

@@ -82,6 +82,9 @@ class RunStep(QWidget):
         self._cards = None
         self._timeline = None
         self._following = True      # suit le dernier cliché tant qu'on ne touche pas
+        # La case ouverte, celle dont l'agencement est à l'écran. Aucune tant
+        # que l'utilisateur n'en a pas choisi une.
+        self._picked: int | None = None
         # Vrai le temps d'un réglage de curseur que nous provoquons : ce n'est
         # pas un geste de l'utilisateur et il ne doit rien conclure de la
         # position qui en résulte.
@@ -412,7 +415,8 @@ class RunStep(QWidget):
             self.status_message.emit(
                 self.tr("Les cinq cases sont prises : retirez-en une."))
             return
-        self._update_current_slot()
+        # ⚠️ Garder n'allume pas la case : le cadre vert dit où l'on est, et
+        # l'on n'y « va » pas en mettant de côté ce qu'on regarde déjà.
         self.status_message.emit(self.tr("Agencement gardé."))
 
     def _show_saved(self, slot: int) -> None:
@@ -433,10 +437,19 @@ class RunStep(QWidget):
         rang = self._snapshot_of(saved)
         if rang is not None:
             self._following = False
+            self._picked = slot
             self._slider.setValue(rang)
             self._update_current_slot()
             return
-        self._open_saved_dialog(saved)
+        # La fenêtre montre l'agencement : sa case est ouverte le temps qu'elle
+        # reste à l'écran, et se referme avec elle.
+        self._picked = slot
+        self._saved.set_current(slot)
+        try:
+            self._open_saved_dialog(saved)
+        finally:
+            self._picked = None
+            self._saved.set_current(None)
 
     def _open_saved_dialog(self, saved) -> None:
         """Ouvre la fenêtre d'un agencement que la timeline n'a plus.
@@ -460,21 +473,27 @@ class RunStep(QWidget):
         return None
 
     def _update_current_slot(self) -> None:
-        """⚠️ **La case verte est celle qu'on regarde**, et rien de plus.
+        """⚠️ **Le cadre vert dit une case ouverte, pas une case gardée.**
 
-        Marquée à la sauvegarde et laissée telle quelle, elle prétendait montrer
-        l'agencement affiché alors que le curseur était parti ailleurs.
+        Il s'allume quand l'utilisateur va **sur** un agencement, en cliquant sa
+        case ou en ouvrant sa fenêtre, et s'éteint dès que l'écran montre autre
+        chose. Allumé par la sauvegarde, il restait allumé pour de bon : le
+        cliché gardé étant celui qu'on venait de regarder, plus rien ne
+        l'éteignait.
         """
-        courant = None
-        if self._timeline:
-            index = max(0, min(len(self._timeline) - 1, self._slider.value()))
-            cliche = self._timeline[index]
-            for numero, place in enumerate(self._session.saved):
-                if (place is not None and place.iteration == cliche.iteration
-                        and np.array_equal(place.grid, cliche.grid)):
-                    courant = numero
-                    break
-        self._saved.set_current(courant)
+        if self._picked is None:
+            self._saved.set_current(None)
+            return
+        place = self._session.saved[self._picked]
+        if place is None or self._snapshot_of(place) != self._displayed_index():
+            self._picked = None
+        self._saved.set_current(self._picked)
+
+    def _displayed_index(self) -> int | None:
+        """Le rang du cliché affiché, s'il y en a un."""
+        if not self._timeline:
+            return None
+        return max(0, min(len(self._timeline) - 1, self._slider.value()))
 
     def _update_keep(self) -> None:
         """Garder n'a de sens que sur un cliché, et tant qu'il reste une case."""
