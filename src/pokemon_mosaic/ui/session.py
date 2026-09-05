@@ -75,8 +75,13 @@ class Session(QObject):
     # tout attribut de QObject ou de mise en page : `set_algorithm(dpi=600)`
     # passerait et émettrait `algorithm_changed`, alors que l'aperçu fil de fer
     # n'écoute que `layout_changed` : il n'aurait jamais connaissance du changement.
+    # ⚠️ **Les trois couleurs voyagent avec ce groupe**, alors qu'elles ne
+    # changent rien au calcul : elles y étaient déjà pour `empty_colour`, elles
+    # se relisent ainsi dans les préréglages écrits avant elles, et un second
+    # groupe pour trois valeurs ferait deux signaux à écouter au lieu d'un.
     ALGORITHM_SETTINGS = frozenset({
-        "iterations", "snapshot_every", "empty_colour",
+        "iterations", "snapshot_every",
+        "empty_colour", "gap_colour", "background_colour",
         "stop_on_stagnation", "stagnation_iterations",
         "stop_on_time", "time_budget",
         "use_annealing", "acceptance", "strip_size",
@@ -139,7 +144,13 @@ class Session(QObject):
         # De base, ce qui se décide par intention.
         self.iterations = 1_000_000
         self.snapshot_every = 10
+        # Les couleurs de ce qui n'est pas une carte. Neutres au départ : le
+        # blanc du papier ne prétend rien, et c'est à l'export qu'on essaie
+        # autre chose. La couleur d'une case vide n'entre pas dans le score,
+        # `grid_score` écarte toute paire qui en contient une.
         self.empty_colour = (255, 255, 255)
+        self.gap_colour = (255, 255, 255)
+        self.background_colour = (255, 255, 255)
         self.stop_on_stagnation = False
         self.stagnation_iterations = 50_000
         self.stop_on_time = False
@@ -816,8 +827,9 @@ class Session(QObject):
         # JSON ne connaît pas les tuples : sans cette conversion, la couleur
         # relue serait une liste, éternellement différente de la valeur courante,
         # et chaque rechargement rejouerait un changement pour rien.
-        if "empty_colour" in known:
-            known["empty_colour"] = tuple(known["empty_colour"])
+        for couleur in ("empty_colour", "gap_colour", "background_colour"):
+            if couleur in known:
+                known[couleur] = tuple(known[couleur])
         if known:
             self.set_algorithm(**known)
 

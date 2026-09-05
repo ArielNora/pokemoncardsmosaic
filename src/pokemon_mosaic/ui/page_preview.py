@@ -9,8 +9,9 @@ parce que c'est le seul objet des deux que l'on ait déjà tenu en main.
 La mosaïque peut se poser dessus, pour voir ce qu'elle laisse de marge.
 """
 
+import numpy as np
 from PySide6.QtCore import QPointF, QRect, QRectF, Qt, Signal
-from PySide6.QtGui import QBrush, QColor, QPainter, QPen
+from PySide6.QtGui import QBrush, QColor, QImage, QPainter, QPen, QPixmap
 from PySide6.QtWidgets import QPushButton, QWidget
 
 from ..layout import MM_PER_INCH, REAL_CARD_MM, cards_on_panel
@@ -91,6 +92,10 @@ class PagePreview(QWidget):
         # qu'on l'ait demandé serait une surprise désagréable.
         self._paintable = False
         self._painted: list[tuple[int, int]] = []
+        # L'agencement à dessiner pour de vrai, s'il y en a un.
+        self._grid = None
+        self._grid_cards = None
+        self._tiles: dict[int, QPixmap] = {}
         self._paint_mode: bool | None = None
         # Le bout de grille en cours de déplacement, et d'où il est parti.
         self._draggable = False
@@ -129,6 +134,21 @@ class PagePreview(QWidget):
 
     def set_show_grid(self, montrer: bool) -> None:
         self._show_grid = bool(montrer)
+        self.update()
+
+    def set_arrangement(self, grid, cards) -> None:
+        """Pose un agencement réel à dessiner, images comprises.
+
+        Sans lui, le dessin reste le **fil de fer** : des rectangles gris qui
+        disent la place occupée. Avec, la feuille montre le poster tel qu'il
+        s'imprimera, ce qui est la seule façon de juger d'une couleur de fond ou
+        d'un écart entre les cartes.
+        """
+        self._grid = grid
+        self._grid_cards = cards
+        # Les vignettes converties une fois pour toutes : une conversion par
+        # case et par repeint coûterait 441 fois le prix d'un tour de dessin.
+        self._tiles = {}
         self.update()
 
     def set_paintable(self, actif: bool) -> None:
@@ -411,7 +431,11 @@ class PagePreview(QWidget):
 
         colours = theme.colours(self.palette())
         encre = self.palette().windowText().color()
-        painter.setBrush(self.palette().base())
+        # Avec un agencement réel, la feuille prend la couleur qui s'imprimera
+        # autour de la grille : juger d'un fond sur le blanc de l'écran ne dit
+        # rien de ce que donnera le papier.
+        painter.setBrush(QColor(*self._session.background_colour)
+                         if self._grid is not None else self.palette().base())
         painter.setPen(QPen(encre, 1.4))
         painter.drawRect(feuille)
 
@@ -566,6 +590,9 @@ class PagePreview(QWidget):
         cases = self.grid_cells(feuille)
         if cases is None:
             return
+        if self._grid is not None:
+            self._draw_arrangement(painter, feuille, cases)
+            return
         vides = set(session.empty_cells())
         trait = 0 if session.cols * session.rows > FINE_PEN_ABOVE else 0.8
         # ⚠️ **Bornée à la feuille.** Une grille trop grande pour le papier
@@ -581,6 +608,50 @@ class PagePreview(QWidget):
                                 1.2 if creux else trait))
             painter.drawRect(rect)
         painter.restore()
+
+    def _draw_arrangement(self, painter, feuille: QRectF, cases) -> None:
+        """La mosaïque avec ses images, ses trous et la couleur de ses écarts.
+
+        ⚠️ **Les écarts se peignent sous les cartes, pas entre elles.** Un
+        rectangle par intervalle multiplierait les cas de bord ; l'étendue de la
+        grille peinte d'un bloc ne se voit que là où aucune carte ne la
+        recouvre, c'est-à-dire exactement dans les écarts.
+        """
+        session = self._session
+        vides = set(session.empty_cells())
+        painter.save()
+        painter.setClipRect(feuille)
+        painter.setPen(Qt.NoPen)
+        etendue = cases[0][2]
+        for _row, _col, rect in cases:
+            etendue = etendue.united(rect)
+        painter.fillRect(etendue, QColor(*session.gap_colour))
+        rows, cols = self._grid.shape
+        for row, col, rect in cases:
+            if row >= rows or col >= cols:
+                continue
+            if (row, col) in vides:
+                painter.fillRect(rect, QColor(*session.empty_colour))
+                continue
+            tuile = self._tile(int(self._grid[row, col]))
+            if tuile is None:
+                painter.fillRect(rect, QColor(*session.empty_colour))
+            else:
+                painter.drawPixmap(rect.toRect(), tuile)
+        painter.restore()
+
+    def _tile(self, index: int) -> QPixmap | None:
+        """La vignette d'une carte, convertie une seule fois."""
+        if index < 0 or self._grid_cards is None:
+            return None
+        if index not in self._tiles:
+            vignette = self._grid_cards[index].thumbnail
+            data = np.ascontiguousarray(vignette)
+            hauteur, largeur, _ = data.shape
+            image = QImage(data.data, largeur, hauteur, 3 * largeur,
+                           QImage.Format_RGB888).copy()
+            self._tiles[index] = QPixmap.fromImage(image)
+        return self._tiles[index]
 
     def _label_text(self) -> str:
         return (self.tr("carte réelle\n%1 × %2 cm")

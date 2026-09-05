@@ -222,6 +222,12 @@ class ExportDialog(QDialog):
             card_gap_mm=session.card_gap_mm,
             overlap_mm=self._overlap.value(),
             crop_marks=self._crop_marks.isChecked(),
+            # ⚠️ **Les trois couleurs, et pas la seule des cases vides.** Le
+            # fond et l'écart entre les cartes se règlent à l'étape d'export :
+            # oubliés ici, le fichier serait blanc là où l'écran montrait une
+            # couleur.
+            background=session.background_colour,
+            gap_colour=session.gap_colour,
             empty_colour=session.empty_colour,
             jpeg_quality=self._quality.value(),
         )

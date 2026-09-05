@@ -68,7 +68,13 @@ class PosterSettings:
     card_gap_mm: float = 0.0
     overlap_mm: float = 0.0
     crop_marks: bool = False
+    # Ce qui entoure la grille sur la feuille.
     background: tuple[int, int, int] = WHITE
+    # Ce qui sépare deux cartes. Distinct du fond : l'écart se voit **dans** la
+    # mosaïque, et le teinter ne dit pas la même chose que teinter la marge
+    # autour d'elle. `None` s'en remet au fond, ce que fait la ligne de
+    # commande, qui ne connaît qu'une couleur.
+    gap_colour: tuple[int, int, int] | None = None
     empty_colour: tuple[int, int, int] = WHITE
     jpeg_quality: int = 95
 
@@ -279,6 +285,7 @@ def _render_window(
     card_w, card_h = plan.card_px
     canvas = Image.new("RGB", (x1 - x0, y1 - y0), plan.settings.background)
     draw = ImageDraw.Draw(canvas)
+    _fill_gaps(draw, plan, window)
 
     # ⚠️ **Aucune case ne se déduit d'une division.** Chaque feuille repart de
     # son coin, et son bout de grille a pu être déplacé à la main : la position
@@ -315,6 +322,37 @@ def _render_window(
             canvas.paste(tile, (left, top))
 
     return canvas
+
+
+def _fill_gaps(draw, plan: PosterPlan, window) -> None:
+    """Teinte l'espace entre les cartes, sous les cartes elles-mêmes.
+
+    ⚠️ **La couleur des écarts n'est pas celle du fond.** Peindre l'étendue de
+    la mosaïque avant d'y coller les cartes ne laisse voir cette couleur que
+    dans les écarts, exactement là où elle doit se voir ; le reste de la
+    feuille garde le fond. Sans cela, il n'y avait qu'une couleur pour les deux
+    et l'écart ne se réglait pas séparément.
+    """
+    couleur = plan.settings.gap_colour
+    if couleur is None or couleur == plan.settings.background:
+        return
+    x0, y0, x1, y1 = window
+    card_w, card_h = plan.card_px
+    gauche = haut = None
+    droite = bas = None
+    for r in range(plan.rows):
+        for c in range(plan.cols):
+            ox, oy = plan.card_origin(r, c)
+            if not (ox < x1 and ox + card_w > x0 and oy < y1 and oy + card_h > y0):
+                continue
+            gauche = ox if gauche is None else min(gauche, ox)
+            haut = oy if haut is None else min(haut, oy)
+            droite = ox + card_w if droite is None else max(droite, ox + card_w)
+            bas = oy + card_h if bas is None else max(bas, oy + card_h)
+    if gauche is None:
+        return
+    draw.rectangle([gauche - x0, haut - y0, droite - x0 - 1, bas - y0 - 1],
+                   fill=couleur)
 
 
 def _draw_crop_marks(image: Image.Image, plan: PosterPlan, panel: int) -> None:

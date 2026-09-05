@@ -20,6 +20,7 @@ from PySide6.QtWidgets import (
 from ..paths import APP_NAME
 from . import theme
 from .cards_step import CardsStep
+from .export_step import ExportStep
 from .i18n import LANGUAGES, LanguageManager
 from .layout_step import LayoutStep
 from .presets_bar import PresetsBar
@@ -38,7 +39,7 @@ GLOW_ROOM = theme.GLOW_ROOM
 class MainWindow(QMainWindow):
     """Coquille de l'application : navigation, langue, barre d'état."""
 
-    STEP_COUNT = 3
+    STEP_COUNT = 4
 
     def step_title(self, index: int) -> str:
         """Titres écrits en toutes lettres : `tr()` sur une variable n'est pas
@@ -48,11 +49,15 @@ class MainWindow(QMainWindow):
         avaient leur écran entre la mise en page et l'exécution : ce sont des
         paramètres comme les autres, et les séparer obligeait à traverser une
         étape entière pour revenir changer une durée.
+
+        L'export, lui, est bien une étape : la grille y est arrêtée, et tout ce
+        qui s'y règle ne touche qu'à l'habillage du poster.
         """
         return (
             self.tr("Cartes"),
             self.tr("Paramètres"),
             self.tr("Exécution"),
+            self.tr("Export"),
         )[index]
 
     # Clé du dossier de cartes retenu d'un lancement à l'autre. Sans elle,
@@ -138,6 +143,9 @@ class MainWindow(QMainWindow):
         self._run_step.advance_state_changed.connect(self._update_navigation)
         self._run_step.status_message.connect(self._show_status)
         self._stack.addWidget(self._run_step)
+        self._export_step = ExportStep(self._session)
+        self._export_step.status_message.connect(self._show_status)
+        self._stack.addWidget(self._export_step)
         self._stack.currentChanged.connect(self._update_navigation)
         # Sans cela, « Suivant » resterait grisé après l'arrivée des cartes :
         # il ne se réévaluait qu'au changement d'écran, qu'on ne peut plus faire.
@@ -200,6 +208,10 @@ class MainWindow(QMainWindow):
 
     def _go(self, index: int) -> None:
         if 0 <= index < self._stack.count():
+            # L'export ouvre une case gardée en arrivant : un écran d'habillage
+            # sans agencement n'aurait rien à montrer.
+            if self._stack.widget(index) is self._export_step:
+                self._export_step.enter()
             self._stack.setCurrentIndex(index)
 
     def _on_next(self) -> None:
@@ -282,7 +294,8 @@ class MainWindow(QMainWindow):
         appelées avant tout test, pour qu'un refus de la première n'empêche pas
         d'arrêter la seconde.
         """
-        arrets = [self._cards_step.shutdown(), self._run_step.shutdown()]
+        arrets = [self._cards_step.shutdown(), self._run_step.shutdown(),
+                  self._export_step.shutdown()]
         if all(arrets):
             super().closeEvent(event)
             return

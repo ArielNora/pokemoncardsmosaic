@@ -311,14 +311,14 @@ def test_the_aura_follows_a_change_of_mode(fenetre, qt_app):
     assert clair == theme.LIGHT["error"]
 
 
-def test_the_window_walks_three_steps(fenetre):
-    """L'algorithme a rejoint les paramètres : il n'y a plus d'écran entre la
-    mise en page et l'exécution."""
+def test_the_window_walks_four_steps(fenetre):
+    """L'algorithme a rejoint les paramètres, et l'export est devenu une étape :
+    la grille y est arrêtée, et tout ce qui s'y règle n'habille que le poster."""
     w, _ = fenetre
-    assert w.STEP_COUNT == 3
-    assert w._stack.count() == 3
-    assert [w.step_title(i) for i in range(3)] == [
-        "Cartes", "Paramètres", "Exécution"]
+    assert w.STEP_COUNT == 4
+    assert w._stack.count() == 4
+    assert [w.step_title(i) for i in range(4)] == [
+        "Cartes", "Paramètres", "Exécution", "Export"]
 
 
 def test_the_last_step_has_no_aura_at_all(fenetre, tmp_path):

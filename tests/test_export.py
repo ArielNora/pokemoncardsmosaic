@@ -430,3 +430,42 @@ def test_an_export_that_is_never_cancelled_writes_everything(tmp_path):
     )
     assert len(written) == 2
     assert all(os.path.exists(path) for path in written)
+
+
+# --- Couleurs de ce qui n'est pas une carte ---------------------------------
+
+def test_the_gap_colour_only_shows_between_the_cards():
+    """⚠️ **La couleur des écarts n'est pas celle du fond.** Une seule couleur
+    servait aux deux, et teinter l'écart teintait toute la marge avec lui."""
+    from pokemon_mosaic.export import render_panel
+
+    jeu = card_set(4)
+    grille = small_grid(2, 2)
+    settings = PosterSettings(paper="A6", dpi=72, card_gap_mm=6.0,
+                              background=(0, 0, 255), gap_colour=(0, 255, 0))
+    plan = plan_poster(grille, jeu, settings)
+    image = render_panel(grille, jeu, plan, 0, full_resolution=False)
+
+    card_w, card_h = plan.card_px
+    x, y = plan.card_origin(0, 0)
+    # Entre la première et la deuxième carte de la première ligne.
+    assert image.getpixel((x + card_w + plan.gap_px // 2, y + card_h // 2)) == (0, 255, 0)
+    # Le coin de la feuille, lui, garde le fond.
+    assert image.getpixel((1, 1)) == (0, 0, 255)
+
+
+def test_without_a_gap_colour_nothing_is_painted_over_the_background():
+    """Par défaut les deux se valent : le rectangle de la mosaïque n'a alors
+    aucune raison d'être peint."""
+    from pokemon_mosaic.export import render_panel
+
+    jeu = card_set(4)
+    grille = small_grid(2, 2)
+    settings = PosterSettings(paper="A6", dpi=72, card_gap_mm=6.0,
+                              background=(0, 0, 255))
+    plan = plan_poster(grille, jeu, settings)
+    image = render_panel(grille, jeu, plan, 0, full_resolution=False)
+
+    card_w, card_h = plan.card_px
+    x, y = plan.card_origin(0, 0)
+    assert image.getpixel((x + card_w + plan.gap_px // 2, y + card_h // 2)) == (0, 0, 255)
