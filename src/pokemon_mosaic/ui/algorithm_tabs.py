@@ -39,7 +39,6 @@ from .estimates import (
     format_duration,
 )
 from .layout_tabs import STATUS_BOOST, LayoutTab
-from .runner import MAX_SEED
 from .session import Session
 from .strip_preview import StripPreview
 
@@ -96,14 +95,6 @@ class AdvancedTab(LayoutTab):
         self._iterations.setGroupSeparatorShown(True)
         self._snapshot_every = QSpinBox()
         self._snapshot_every.setRange(1, 1000)
-        # ⚠️ **Zéro veut dire « au hasard ».** Une graine se recopie et se
-        # partage : fixée, elle rejoue exactement le même calcul, clichés
-        # compris. Un champ vide aurait demandé un second réglage pour dire
-        # « pas de graine » ; le zéro le dit, et aucune graine tirée ne le vaut.
-        self._seed = QSpinBox()
-        self._seed.setRange(0, MAX_SEED - 1)
-        self._seed.setSpecialValueText(" ")
-        self._seed.setGroupSeparatorShown(True)
         self._algorithm = QComboBox()
         self._algorithm.addItem("", True)      # recuit
         self._algorithm.addItem("", False)     # descente stricte
@@ -130,7 +121,7 @@ class AdvancedTab(LayoutTab):
         self._target_score = QDoubleSpinBox()
         self._target_score.setRange(0.0, 10_000_000.0)
         self._target_score.setDecimals(0)
-        for champ in (self._iterations, self._stagnation, self._seed):
+        for champ in (self._iterations, self._stagnation):
             champ.setFixedWidth(FIELD_WIDTH)
         for champ in (self._time_budget, self._acceptance, self._target_score,
                       self._snapshot_every):
@@ -203,7 +194,6 @@ class AdvancedTab(LayoutTab):
             self._sentence("algorithm", self._algorithm),
             self._sentence("acceptance", self._acceptance,
                            retrait=SENTENCE_INDENT),
-            self._sentence("seed", self._seed),
             self._stop_title,
             self._sentence("iterations", self._iterations,
                            self._always_iterations, retrait=SENTENCE_INDENT),
@@ -324,8 +314,7 @@ class AdvancedTab(LayoutTab):
 
     def _connect_all(self) -> None:
         for widget in (self._iterations, self._snapshot_every, self._stagnation,
-                       self._time_budget, self._acceptance, self._target_score,
-                       self._seed):
+                       self._time_budget, self._acceptance, self._target_score):
             widget.valueChanged.connect(self._on_form_changed)
         for widget in (self._stop_on_stagnation, self._stop_on_time,
                        self._stop_on_score):
@@ -368,10 +357,6 @@ class AdvancedTab(LayoutTab):
             "tombe."))
 
         self._say("algorithm", self.tr("L'algorithme utilisé est %1"))
-        self._say("seed", self.tr(
-            "Le hasard part de la graine %1 (vide : une neuve à chaque calcul). "
-            "La même graine rejoue exactement le même calcul, clichés compris, "
-            "sur les mêmes cartes et les mêmes réglages."))
         self._say("acceptance", self.tr(
             "Le recuit accepte au départ %1 d'échanges qui dégradent la "
             "métrique, puis devient de plus en plus exigeant."))
@@ -385,7 +370,6 @@ class AdvancedTab(LayoutTab):
 
         self._say("snapshot_every", self.tr(
             "Un agencement sera enregistré tous les %1 échanges retenus."))
-
         self.refresh()
 
     # --- Réactions --------------------------------------------------------
@@ -394,8 +378,6 @@ class AdvancedTab(LayoutTab):
         if self._updating:
             return
         self._session.set_algorithm(
-            # Zéro n'est pas une graine : c'est l'absence de graine.
-            seed=self._seed.value() or None,
             strip_size=self._strip.value(),
             iterations=self._iterations.value(),
             snapshot_every=self._snapshot_every.value(),
@@ -419,7 +401,6 @@ class AdvancedTab(LayoutTab):
         """Recopie la session dans les champs, sans réémettre."""
         self._updating = True
         session = self._session
-        self._seed.setValue(session.seed or 0)
         self._strip.setValue(session.strip_size)
         self._iterations.setValue(session.iterations)
         self._snapshot_every.setValue(session.snapshot_every)

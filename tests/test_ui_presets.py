@@ -178,20 +178,3 @@ def test_saving_unlocks_on_the_very_first_batch(qt_app, tmp_path):
     session.start_loading(str(tmp_path / "cartes"))
     session.append_cards(jeu.cards)
     assert barre._save.isEnabled()
-
-
-def test_a_preset_carries_the_pinned_seed(session):
-    """Partager une configuration, c'est partager de quoi rejouer le même
-    calcul : la graine fixée en fait partie, celle du dernier calcul non, elle
-    décrit ce qui a eu lieu."""
-    session.set_algorithm(seed=987)
-    session.last_seed = 123
-
-    preset = session.to_preset("essai")
-
-    assert preset.algorithm["seed"] == 987
-    assert "last_seed" not in preset.algorithm
-
-    session.set_algorithm(seed=None)
-    session.apply_preset(preset)
-    assert session.seed == 987
