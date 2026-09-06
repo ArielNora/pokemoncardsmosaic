@@ -469,3 +469,167 @@ def test_without_a_gap_colour_nothing_is_painted_over_the_background():
     card_w, card_h = plan.card_px
     x, y = plan.card_origin(0, 0)
     assert image.getpixel((x + card_w + plan.gap_px // 2, y + card_h // 2)) == (0, 0, 255)
+
+
+# --- Mode caméléon ----------------------------------------------------------
+
+def coloured_cards(colours, size=(713, 984)):
+    """Un jeu de cartes d'aplats distincts : le dégradé se lit alors au pixel."""
+    cards = make_cards(len(colours))
+    thumb = (size[0] // 4, size[1] // 4)
+    for card, couleur in zip(cards, colours, strict=True):
+        card.thumbnail = np.full((thumb[1], thumb[0], 3), couleur, np.uint8)
+    return CardSet(cards=cards, full_size=size, thumb_size=thumb)
+
+
+def rendu(grille, jeu, **reglages):
+    from pokemon_mosaic.export import render_panel
+
+    settings = PosterSettings(paper="A6", dpi=72, card_gap_mm=6.0, **reglages)
+    plan = plan_poster(grille, jeu, settings)
+    return render_panel(grille, jeu, plan, 0, full_resolution=False), plan
+
+
+def test_a_chameleon_gap_walks_from_one_card_to_the_other():
+    """⚠️ **Pixel par pixel** : le raccord suit les motifs, et un aplat rouge
+    face à un aplat bleu donne bien du rouge qui devient bleu."""
+    jeu = coloured_cards([(255, 0, 0), (0, 0, 255)])
+    grille = np.array([[0, 1]])
+    image, plan = rendu(grille, jeu, chameleon_gaps=True)
+
+    card_w, card_h = plan.card_px
+    x, y = plan.card_origin(0, 0)
+    milieu = y + card_h // 2
+    premier = image.getpixel((x + card_w, milieu))
+    dernier = image.getpixel((x + card_w + plan.gap_px - 1, milieu))
+
+    assert premier[0] > premier[2], "l'écart commence du côté rouge"
+    assert dernier[2] > dernier[0], "et finit du côté bleu"
+    assert premier[0] < 255, "sans recopier la carte elle-même"
+
+
+def test_the_chameleon_follows_the_rows_not_an_average():
+    """Deux cartes moitié rouge moitié verte : l'écart doit être rouge en haut
+    et vert en bas, là où une moyenne l'aurait fait uniformément jaune."""
+    jeu = coloured_cards([(0, 0, 0), (0, 0, 0)])
+    for card in jeu.cards:
+        haut = card.thumbnail.shape[0] // 2
+        card.thumbnail[:haut] = (255, 0, 0)
+        card.thumbnail[haut:] = (0, 255, 0)
+    grille = np.array([[0, 1]])
+    image, plan = rendu(grille, jeu, chameleon_gaps=True)
+
+    card_w, card_h = plan.card_px
+    x, y = plan.card_origin(0, 0)
+    dans_ecart = x + card_w + plan.gap_px // 2
+    en_haut = image.getpixel((dans_ecart, y + card_h // 4))
+    en_bas = image.getpixel((dans_ecart, y + 3 * card_h // 4))
+
+    assert en_haut[0] > 200 and en_haut[1] < 60
+    assert en_bas[1] > 200 and en_bas[0] < 60
+
+
+def test_an_empty_cell_colours_the_gap_beside_it():
+    """Sa couleur entre dans le dégradé comme celle d'une carte."""
+    jeu = coloured_cards([(255, 0, 0), (0, 0, 255)])
+    grille = np.array([[0, EMPTY]])
+    image, plan = rendu(grille, jeu, chameleon_gaps=True,
+                        empty_colour=(0, 255, 0))
+
+    card_w, card_h = plan.card_px
+    x, y = plan.card_origin(0, 0)
+    dernier = image.getpixel((x + card_w + plan.gap_px - 1, y + card_h // 2))
+
+    assert dernier[1] > dernier[0], "l'écart vire au vert de la case vide"
+
+
+def test_a_crossing_mixes_the_four_cards_around_it():
+    """⚠️ Quatre cartes s'y touchent : le carré ne peut pas être un simple
+    dégradé à une dimension."""
+    jeu = coloured_cards([(255, 0, 0), (0, 255, 0), (0, 0, 255), (255, 255, 0)])
+    grille = np.array([[0, 1], [2, 3]])
+    image, plan = rendu(grille, jeu, chameleon_gaps=True)
+
+    card_w, card_h = plan.card_px
+    x, y = plan.card_origin(0, 0)
+    croisee = (x + card_w + plan.gap_px // 2, y + card_h + plan.gap_px // 2)
+    couleur = image.getpixel(croisee)
+
+    # Chaque composante tient de plusieurs voisins : aucune n'est nulle ni pleine.
+    assert all(0 < composante < 255 for composante in couleur), couleur
+
+
+def test_the_chameleon_border_fades_towards_the_background():
+    """⚠️ La mosaïque est calée contre le bord gauche : c'est sous elle et à sa
+    droite qu'il reste de la marge, et donc de la place pour une bande."""
+    jeu = coloured_cards([(255, 0, 0)])
+    grille = np.array([[0]])
+    image, plan = rendu(grille, jeu, chameleon_border=True,
+                        background=(0, 0, 0), card_width_mm=30.0)
+
+    x, y = plan.card_origin(0, 0)
+    card_w, card_h = plan.card_px
+    colonne = x + card_w // 2
+    pres = image.getpixel((colonne, y + card_h))
+    loin = image.getpixel((colonne, y + card_h + plan.gap_px - 1))
+
+    assert pres[0] > loin[0] > 0, "la bande s'éteint en s'éloignant"
+    assert image.getpixel((colonne, y + card_h + plan.gap_px + 1)) == (0, 0, 0), (
+        "au-delà de la bande, le fond reste le fond"
+    )
+
+
+def test_the_border_of_a_single_column_gets_both_sides():
+    """⚠️ Traiter « la première et la dernière colonne » d'un seul tenant
+    laissait une grille d'une colonne sans bande d'un côté : elle est à la fois
+    la première et la dernière."""
+    jeu = coloured_cards([(255, 0, 0)])
+    grille = np.array([[0]])
+    image, plan = rendu(grille, jeu, chameleon_border=True,
+                        background=(0, 0, 0), card_width_mm=30.0)
+
+    x, y = plan.card_origin(0, 0)
+    card_w, card_h = plan.card_px
+    ligne = y + card_h // 2
+    assert image.getpixel((x + card_w, ligne))[0] > 0, "rien à droite"
+    assert image.getpixel((x + card_w // 2, y + card_h))[0] > 0, "rien en bas"
+
+
+def test_without_the_mode_nothing_changes():
+    """Le caméléon est un mode : éteint, l'écart garde son aplat."""
+    jeu = coloured_cards([(255, 0, 0), (0, 0, 255)])
+    grille = np.array([[0, 1]])
+    image, plan = rendu(grille, jeu, gap_colour=(0, 255, 0))
+
+    card_w, card_h = plan.card_px
+    x, y = plan.card_origin(0, 0)
+    assert image.getpixel((x + card_w + 1, y + card_h // 2)) == (0, 255, 0)
+
+
+def test_the_border_has_no_notch_above_a_gap():
+    """⚠️ Une bande par carte laissait un trou au-dessus de chaque écart : la
+    mosaïque était cernée d'un liseré à créneaux."""
+    jeu = coloured_cards([(255, 0, 0), (0, 0, 255)])
+    grille = np.array([[0, 1]])
+    image, plan = rendu(grille, jeu, chameleon_gaps=True, chameleon_border=True,
+                        background=(0, 0, 0), card_width_mm=20.0)
+
+    x, y = plan.card_origin(0, 0)
+    card_w, card_h = plan.card_px
+    au_dessus_de_l_ecart = (x + card_w + plan.gap_px // 2, y + card_h + 1)
+
+    assert image.getpixel(au_dessus_de_l_ecart) != (0, 0, 0)
+
+
+def test_the_corners_of_the_border_are_not_left_black():
+    """Laissés au fond, ils faisaient quatre encoches sombres."""
+    jeu = coloured_cards([(255, 0, 0)])
+    grille = np.array([[0]])
+    image, plan = rendu(grille, jeu, chameleon_border=True,
+                        background=(0, 0, 0), card_width_mm=20.0)
+
+    x, y = plan.card_origin(0, 0)
+    card_w, card_h = plan.card_px
+    coin = (x + card_w + 1, y + card_h + 1)
+
+    assert image.getpixel(coin) != (0, 0, 0)

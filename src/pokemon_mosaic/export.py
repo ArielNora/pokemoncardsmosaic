@@ -18,6 +18,7 @@ from dataclasses import dataclass, field
 import numpy as np
 from PIL import Image, ImageDraw
 
+from . import chameleon
 from .cards import CardSet, load_full_image
 from .layout import (
     DEFAULT_DPI,
@@ -76,6 +77,10 @@ class PosterSettings:
     # commande, qui ne connaît qu'une couleur.
     gap_colour: tuple[int, int, int] | None = None
     empty_colour: tuple[int, int, int] = WHITE
+    # Le mode caméléon : les écarts, et la bordure, prennent la couleur de ce
+    # qui les borde plutôt qu'un aplat. Voir `chameleon.py`.
+    chameleon_gaps: bool = False
+    chameleon_border: bool = False
     jpeg_quality: int = 95
 
     def __post_init__(self):
@@ -321,6 +326,9 @@ def _render_window(
                 )
             canvas.paste(tile, (left, top))
 
+    # ⚠️ **Après les cartes, et non avant.** Le caméléon lit les pixels de bord
+    # que les cartes viennent de poser : peint avant, il n'aurait rien à lire.
+    _paint_chameleon(canvas, grid, plan, window)
     return canvas
 
 
@@ -336,10 +344,168 @@ def _fill_gaps(draw, plan: PosterPlan, window) -> None:
     couleur = plan.settings.gap_colour
     if couleur is None or couleur == plan.settings.background:
         return
+    boite = _mosaic_box(plan, window)
+    if boite is None:
+        return
+    gauche, haut, droite, bas = boite
+    draw.rectangle([gauche, haut, droite - 1, bas - 1], fill=couleur)
+
+
+def _line(canvas: Image.Image, x: int, y: int, count: int,
+          vertical: bool) -> np.ndarray | None:
+    """Une ligne de pixels lue dans l'image, ou `None` si elle en sort.
+
+    Une carte qui déborde de la fenêtre a son bord dehors : l'écart qui la
+    longe se peindra sans elle plutôt qu'avec du blanc lu hors cadre.
+    """
+    largeur, hauteur = canvas.size
+    if x < 0 or y < 0 or count <= 0:
+        return None
+    if vertical and (x >= largeur or y + count > hauteur):
+        return None
+    if not vertical and (y >= hauteur or x + count > largeur):
+        return None
+    boite = ((x, y, x + 1, y + count) if vertical
+             else (x, y, x + count, y + 1))
+    bande = np.asarray(canvas.crop(boite), dtype=np.uint8)
+    return bande[:, 0, :] if vertical else bande[0, :, :]
+
+
+def _paste(canvas: Image.Image, bloc: np.ndarray, x: int, y: int) -> None:
+    if bloc.size:
+        canvas.paste(Image.fromarray(bloc), (x, y))
+
+
+def _paint_chameleon(canvas: Image.Image, grid: np.ndarray, plan: PosterPlan,
+                     window) -> None:
+    """Peint les écarts, les croisées et la bordure d'après les cartes voisines.
+
+    Tout se lit dans l'image déjà composée : un écart n'a besoin que des deux
+    lignes de pixels qui le bordent, une croisée que de ses quatre coins. C'est
+    ce qui permet de traiter la pleine résolution sans copier le poster.
+    """
+    settings = plan.settings
+    if not (settings.chameleon_gaps or settings.chameleon_border):
+        return
+    gap = plan.gap_px
+    x0, y0, _, _ = window
+    card_w, card_h = plan.card_px
+
+    def coin(r: int, c: int, droite: bool, bas: bool):
+        """Le pixel d'angle d'une case, lu dans l'image."""
+        ox, oy = plan.card_origin(r, c)
+        x = ox - x0 + (card_w - 1 if droite else 0)
+        y = oy - y0 + (card_h - 1 if bas else 0)
+        ligne = _line(canvas, x, y, 1, vertical=True)
+        return None if ligne is None else ligne[0]
+
+    if settings.chameleon_gaps and gap > 0:
+        for r in range(plan.rows):
+            for c in range(plan.cols):
+                _paint_gaps_of(canvas, plan, window, r, c)
+        for r in range(plan.rows - 1):
+            for c in range(plan.cols - 1):
+                # ⚠️ Une croisée n'existe qu'**à l'intérieur d'une feuille** :
+                # d'une feuille à l'autre, les deux cases ne se touchent pas et
+                # le carré qui les sépare est du papier, pas un écart.
+                if (plan.panel_of(r, c) != plan.panel_of(r + 1, c + 1)
+                        or plan.panel_of(r, c) != plan.panel_of(r, c + 1)):
+                    continue
+                coins = (coin(r, c, True, True), coin(r, c + 1, False, True),
+                         coin(r + 1, c, True, False),
+                         coin(r + 1, c + 1, False, False))
+                if any(pixel is None for pixel in coins):
+                    continue
+                ox, oy = plan.card_origin(r, c)
+                _paste(canvas, chameleon.crossing(*coins, gap, gap),
+                       ox - x0 + card_w, oy - y0 + card_h)
+
+    if settings.chameleon_border and gap > 0:
+        _paint_border(canvas, plan, window)
+
+
+def _paint_gaps_of(canvas: Image.Image, plan: PosterPlan, window,
+                   r: int, c: int) -> None:
+    """Les deux écarts qui suivent une case : celui de droite, celui du bas."""
+    x0, y0, _, _ = window
+    card_w, card_h = plan.card_px
+    gap = plan.gap_px
+    ox, oy = plan.card_origin(r, c)
+
+    if c + 1 < plan.cols and plan.panel_of(r, c) == plan.panel_of(r, c + 1):
+        gauche = _line(canvas, ox - x0 + card_w - 1, oy - y0, card_h, True)
+        voisin = plan.card_origin(r, c + 1)
+        droite = _line(canvas, voisin[0] - x0, voisin[1] - y0, card_h, True)
+        if gauche is not None and droite is not None:
+            _paste(canvas, chameleon.gradient_between(gauche, droite, gap, True),
+                   ox - x0 + card_w, oy - y0)
+
+    if r + 1 < plan.rows and plan.panel_of(r, c) == plan.panel_of(r + 1, c):
+        haut = _line(canvas, ox - x0, oy - y0 + card_h - 1, card_w, False)
+        voisin = plan.card_origin(r + 1, c)
+        bas = _line(canvas, voisin[0] - x0, voisin[1] - y0, card_w, False)
+        if haut is not None and bas is not None:
+            _paste(canvas, chameleon.gradient_between(haut, bas, gap, False),
+                   ox - x0, oy - y0 + card_h)
+
+
+def _paint_border(canvas: Image.Image, plan: PosterPlan, window) -> None:
+    """La bande qui cerne la mosaïque, du bord des cartes vers le fond.
+
+    Large comme l'écart : la mosaïque paraît cernée du même liseré que ce qui
+    la traverse, et le reste de la marge garde le fond.
+
+    ⚠️ **Le bord se lit d'un seul tenant, et non carte par carte.** Une bande
+    par carte laissait un trou au-dessus de chaque écart : la mosaïque était
+    cernée d'un liseré à créneaux. Lue sur toute la largeur du morceau, la
+    ligne de bord porte déjà la couleur des écarts, qui viennent d'être peints.
+
+    Les quatre coins se mélangent en bilinéaire, du pixel d'angle vers le fond :
+    laissés au fond, ils faisaient quatre encoches sombres.
+    """
+    boite = _mosaic_box(plan, window)
+    if boite is None:
+        return
+    gauche, haut, droite, bas = boite
+    gap = plan.gap_px
+    fond = plan.settings.background
+    largeur, hauteur = droite - gauche, bas - haut
+
+    ligne_haut = _line(canvas, gauche, haut, largeur, False)
+    ligne_bas = _line(canvas, gauche, bas - 1, largeur, False)
+    ligne_gauche = _line(canvas, gauche, haut, hauteur, True)
+    ligne_droite = _line(canvas, droite - 1, haut, hauteur, True)
+
+    if ligne_haut is not None:
+        _paste(canvas, chameleon.border_band(ligne_haut, fond, gap, False, False),
+               gauche, haut - gap)
+    if ligne_bas is not None:
+        _paste(canvas, chameleon.border_band(ligne_bas, fond, gap, False, True),
+               gauche, bas)
+    if ligne_gauche is not None:
+        _paste(canvas, chameleon.border_band(ligne_gauche, fond, gap, True, False),
+               gauche - gap, haut)
+    if ligne_droite is not None:
+        _paste(canvas, chameleon.border_band(ligne_droite, fond, gap, True, True),
+               droite, haut)
+
+    for x, y, dedans in ((gauche - gap, haut - gap, 3), (droite, haut - gap, 2),
+                         (gauche - gap, bas, 1), (droite, bas, 0)):
+        angle = _line(canvas,
+                      gauche if dedans in (1, 3) else droite - 1,
+                      haut if dedans in (2, 3) else bas - 1, 1, True)
+        if angle is None:
+            continue
+        coins = [fond, fond, fond, fond]
+        coins[dedans] = angle[0]
+        _paste(canvas, chameleon.crossing(*coins, gap, gap), x, y)
+
+
+def _mosaic_box(plan: PosterPlan, window) -> tuple[int, int, int, int] | None:
+    """L'étendue de la mosaïque dans cette fenêtre, en coordonnées d'image."""
     x0, y0, x1, y1 = window
     card_w, card_h = plan.card_px
-    gauche = haut = None
-    droite = bas = None
+    gauche = haut = droite = bas = None
     for r in range(plan.rows):
         for c in range(plan.cols):
             ox, oy = plan.card_origin(r, c)
@@ -350,9 +516,8 @@ def _fill_gaps(draw, plan: PosterPlan, window) -> None:
             droite = ox + card_w if droite is None else max(droite, ox + card_w)
             bas = oy + card_h if bas is None else max(bas, oy + card_h)
     if gauche is None:
-        return
-    draw.rectangle([gauche - x0, haut - y0, droite - x0 - 1, bas - y0 - 1],
-                   fill=couleur)
+        return None
+    return (gauche - x0, haut - y0, droite - x0, bas - y0)
 
 
 def _draw_crop_marks(image: Image.Image, plan: PosterPlan, panel: int) -> None:
