@@ -210,9 +210,10 @@ def test_the_wheel_zooms_around_the_cursor(ecran):
         "le coin visé doit rester sous le curseur, pas revenir en haut à gauche")
 
 
-def test_dragging_scrolls_instead_of_moving_a_sheet(ecran):
-    """Le glissement sert à se promener dans l'image ; déplacer un bout de
-    grille reste à l'étape 2."""
+def test_dragging_the_preview_scrolls_it(ecran):
+    """⚠️ **Les gestes se prennent sur l'aperçu, pas sur le cadre.** C'est lui
+    que la souris survole : posés sur le cadre, le clic et la molette ne lui
+    arrivaient jamais, et rien ne bougeait."""
     from PySide6.QtCore import QPoint, Qt
     from PySide6.QtTest import QTest
 
@@ -224,13 +225,44 @@ def test_dragging_scrolls_instead_of_moving_a_sheet(ecran):
     barre.setValue(barre.maximum() // 2)
     depart = barre.value()
 
-    vue = widget._scroll.viewport()
-    QTest.mousePress(vue, Qt.LeftButton, pos=QPoint(200, 150))
-    QTest.mouseMove(vue, QPoint(120, 150))
-    QTest.mouseRelease(vue, Qt.LeftButton, pos=QPoint(120, 150))
+    # Sur l'aperçu lui-même, là où la main de l'utilisateur se pose.
+    QTest.mousePress(widget._preview, Qt.LeftButton, pos=QPoint(200, 150))
+    QTest.mouseMove(widget._preview, QPoint(120, 150))
+    QTest.mouseRelease(widget._preview, Qt.LeftButton, pos=QPoint(120, 150))
 
     assert barre.value() > depart, "le glissement n'a pas fait défiler"
-    assert not widget._preview._draggable
+    assert not widget._preview._draggable, "déplacer une feuille reste à l'étape 2"
+
+
+def test_the_preview_wears_the_move_cursor(ecran):
+    """La croix directionnelle dit que ça se déplace, comme une fenêtre qu'on
+    tire."""
+    from PySide6.QtCore import Qt
+
+    widget, _, _ = ecran
+    assert widget._preview.cursor().shape() == Qt.SizeAllCursor
+
+
+def test_the_wheel_over_the_preview_zooms(ecran):
+    """Elle aussi arrivait au cadre et jamais à l'image."""
+    from PySide6.QtCore import QPoint, QPointF, Qt
+    from PySide6.QtGui import QWheelEvent
+    from PySide6.QtWidgets import QApplication
+
+    widget, _, _ = ecran
+    widget.resize(900, 600)
+    widget.show()
+    avant = widget._zoom
+
+    place = QPointF(120, 90)
+    roue = QWheelEvent(place, widget._preview.mapToGlobal(QPoint(120, 90)),
+                       QPoint(0, 0), QPoint(0, 120), Qt.NoButton,
+                       Qt.NoModifier, Qt.NoScrollPhase, False)
+    # ⚠️ `sendEvent` et non `event()` : appeler la méthode saute les filtres,
+    # c'est-à-dire précisément ce qu'on teste.
+    QApplication.sendEvent(widget._preview, roue)
+
+    assert widget._zoom > avant
 
 
 def test_the_preview_paints_the_real_arrangement(ecran):

@@ -311,6 +311,11 @@ class Section(QWidget):
 class PreviewView(QScrollArea):
     """Le cadre de l'aperçu : molette pour zoomer, glissement pour se déplacer.
 
+    ⚠️ **Les gestes se prennent sur l'aperçu, pas sur le cadre.** C'est lui que
+    la souris survole : posés sur le cadre, le clic et la molette ne lui
+    arrivaient jamais, et rien ne bougeait. On l'écoute donc directement, par
+    un filtre d'événements.
+
     ⚠️ **Le zoom garde le point sous le curseur.** Sans cela, agrandir renvoyait
     à chaque cran vers le coin haut-gauche, et il fallait retrouver à la main
     l'endroit qu'on regardait.
@@ -322,41 +327,57 @@ class PreviewView(QScrollArea):
         super().__init__(parent)
         self._pan_from = None
         self._bars_at_press = (0, 0)
-        self.setCursor(Qt.OpenHandCursor)
 
-    def wheelEvent(self, event) -> None:
+    def setWidget(self, widget) -> None:
+        super().setWidget(widget)
+        # La croix directionnelle dit que ça se déplace, comme une fenêtre
+        # qu'on tire. Posée sur l'aperçu, elle se voit là où la souris est.
+        widget.setCursor(Qt.SizeAllCursor)
+        widget.installEventFilter(self)
+
+    def eventFilter(self, objet, event) -> bool:
+        if objet is not self.widget():
+            return super().eventFilter(objet, event)
+        if event.type() == QEvent.Wheel:
+            return self._on_wheel(event)
+        if event.type() == QEvent.MouseButtonPress:
+            return self._on_press(event)
+        if event.type() == QEvent.MouseMove:
+            return self._on_move(event)
+        if event.type() == QEvent.MouseButtonRelease:
+            self._pan_from = None
+            return False
+        return super().eventFilter(objet, event)
+
+    def _on_wheel(self, event) -> bool:
         crans = event.angleDelta().y()
         if not crans:
-            super().wheelEvent(event)
-            return
+            return False
+        # Le point visé se lit dans le cadre : c'est lui qui défile.
+        vise = self.widget().mapTo(self.viewport(), event.position().toPoint())
         facteur = ZOOM_STEP if crans > 0 else 1 / ZOOM_STEP
-        self.zoom_requested.emit(facteur, event.position())
-        event.accept()
+        self.zoom_requested.emit(facteur, QPointF(vise))
+        return True
 
-    def mousePressEvent(self, event) -> None:
+    def _on_press(self, event) -> bool:
         if event.button() != Qt.LeftButton:
-            super().mousePressEvent(event)
-            return
-        self._pan_from = event.position()
+            return False
+        # ⚠️ **La position se lit à l'écran.** Celle du widget bouge avec lui
+        # quand on le fait défiler : l'écart calculé s'annulait au tour suivant,
+        # et l'image tremblait sur place au lieu de suivre la souris.
+        self._pan_from = event.globalPosition()
         self._bars_at_press = (self.horizontalScrollBar().value(),
                                self.verticalScrollBar().value())
-        self.setCursor(Qt.ClosedHandCursor)
-        event.accept()
+        return True
 
-    def mouseMoveEvent(self, event) -> None:
+    def _on_move(self, event) -> bool:
         if self._pan_from is None:
-            super().mouseMoveEvent(event)
-            return
-        ecart = event.position() - self._pan_from
+            return False
+        ecart = event.globalPosition() - self._pan_from
         x, y = self._bars_at_press
         self.horizontalScrollBar().setValue(int(x - ecart.x()))
         self.verticalScrollBar().setValue(int(y - ecart.y()))
-        event.accept()
-
-    def mouseReleaseEvent(self, event) -> None:
-        self._pan_from = None
-        self.setCursor(Qt.OpenHandCursor)
-        super().mouseReleaseEvent(event)
+        return True
 
 
 class ExportStep(QWidget):
