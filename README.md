@@ -8,6 +8,10 @@ Le but est l'**impression d'un poster** : soit une seule grande feuille, soit
 plusieurs accolées. Sortie typique : une grille 17×17 sur un A2 à 300 DPI, soit une
 image de **4961 × 7016 px**.
 
+> **Projet non officiel**, sans lien avec Nintendo, Creatures ni The Pokémon
+> Company. Les illustrations appartiennent à leurs ayants droit : le code de ce
+> dépôt est libre, elles ne le sont pas.
+
 ## Comment ça marche
 
 1. **Vignettes** : chaque carte est chargée directement en vignette réduite (25 %,
@@ -394,3 +398,9 @@ Deux limitations précédentes ont disparu avec la refonte du cœur : les indice
 peuvent plus se désynchroniser (ils sont attribués à l'insertion), et la couture
 partagée entre deux zones échangées n'est plus comptée deux fois (les deux zones sont
 évaluées en un seul appel).
+
+## Licence
+
+Le code est sous licence [MIT](LICENSE). Cela ne couvre **que le code** : les
+illustrations des cartes ne m'appartiennent pas et ne sont concédées par
+personne ici.
