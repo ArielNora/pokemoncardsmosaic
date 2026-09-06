@@ -589,52 +589,52 @@
 <context>
     <name>ColoursTab</name>
     <message>
-        <location filename="../src/pokemon_mosaic/ui/export_step.py" line="278"/>
+        <location filename="../src/pokemon_mosaic/ui/export_step.py" line="280"/>
         <source>Couleurs des vides</source>
         <translation>Colours of the voids</translation>
     </message>
     <message>
-        <location filename="../src/pokemon_mosaic/ui/export_step.py" line="281"/>
+        <location filename="../src/pokemon_mosaic/ui/export_step.py" line="283"/>
         <source>Autour de la grille</source>
         <translation>Around the grid</translation>
     </message>
     <message>
-        <location filename="../src/pokemon_mosaic/ui/export_step.py" line="282"/>
+        <location filename="../src/pokemon_mosaic/ui/export_step.py" line="284"/>
         <source>Entre les cartes</source>
         <translation>Between the cards</translation>
     </message>
     <message>
-        <location filename="../src/pokemon_mosaic/ui/export_step.py" line="283"/>
+        <location filename="../src/pokemon_mosaic/ui/export_step.py" line="285"/>
         <source>Cases vides</source>
         <translation>Empty cells</translation>
     </message>
     <message>
-        <location filename="../src/pokemon_mosaic/ui/export_step.py" line="286"/>
+        <location filename="../src/pokemon_mosaic/ui/export_step.py" line="288"/>
         <source>Prélever une couleur dans l&apos;image</source>
         <translation>Pick a colour from the image</translation>
     </message>
     <message>
-        <location filename="../src/pokemon_mosaic/ui/export_step.py" line="287"/>
+        <location filename="../src/pokemon_mosaic/ui/export_step.py" line="289"/>
         <source>Caméléon</source>
         <translation>Chameleon</translation>
     </message>
     <message>
-        <location filename="../src/pokemon_mosaic/ui/export_step.py" line="288"/>
+        <location filename="../src/pokemon_mosaic/ui/export_step.py" line="290"/>
         <source>Écarts entre les cartes</source>
         <translation>Gaps between the cards</translation>
     </message>
     <message>
-        <location filename="../src/pokemon_mosaic/ui/export_step.py" line="289"/>
+        <location filename="../src/pokemon_mosaic/ui/export_step.py" line="291"/>
         <source>Pourtour de la grille</source>
         <translation>Around the grid</translation>
     </message>
     <message>
-        <location filename="../src/pokemon_mosaic/ui/export_step.py" line="291"/>
+        <location filename="../src/pokemon_mosaic/ui/export_step.py" line="293"/>
         <source>Chaque écart passe d&apos;un bord de carte à l&apos;autre en dégradé, au lieu d&apos;un aplat.</source>
         <translation>Each gap fades from one card edge to the other, instead of a flat colour.</translation>
     </message>
     <message>
-        <location filename="../src/pokemon_mosaic/ui/export_step.py" line="294"/>
+        <location filename="../src/pokemon_mosaic/ui/export_step.py" line="296"/>
         <source>Une bande large comme l&apos;écart cerne la mosaïque, du bord des cartes vers la couleur du fond.</source>
         <translation>A band as wide as the gap surrounds the mosaic, from the card edges towards the background colour.</translation>
     </message>
@@ -766,52 +766,57 @@
 <context>
     <name>ExportStep</name>
     <message>
-        <location filename="../src/pokemon_mosaic/ui/export_step.py" line="682"/>
+        <location filename="../src/pokemon_mosaic/ui/export_step.py" line="724"/>
         <source>Cliquez dans l&apos;image pour prélever une couleur.</source>
         <translation>Click in the image to pick a colour.</translation>
     </message>
     <message>
-        <location filename="../src/pokemon_mosaic/ui/export_step.py" line="758"/>
+        <location filename="../src/pokemon_mosaic/ui/export_step.py" line="811"/>
         <source>Derniers ajustements avant l&apos;export</source>
         <translation>Final touches before exporting</translation>
     </message>
     <message>
-        <location filename="../src/pokemon_mosaic/ui/export_step.py" line="762"/>
+        <location filename="../src/pokemon_mosaic/ui/export_step.py" line="815"/>
         <source>Ajuster</source>
         <translation>Fit</translation>
     </message>
     <message>
-        <location filename="../src/pokemon_mosaic/ui/export_step.py" line="764"/>
+        <location filename="../src/pokemon_mosaic/ui/export_step.py" line="817"/>
+        <source>Molette ou pincement pour zoomer, glissement pour se déplacer.</source>
+        <translation>Wheel or pinch to zoom, drag to move around.</translation>
+    </message>
+    <message>
+        <location filename="../src/pokemon_mosaic/ui/export_step.py" line="820"/>
         <source>Exporter cet agencement…</source>
         <translation>Export this arrangement…</translation>
     </message>
     <message>
-        <location filename="../src/pokemon_mosaic/ui/export_step.py" line="765"/>
+        <location filename="../src/pokemon_mosaic/ui/export_step.py" line="821"/>
         <source>Annuler l&apos;export</source>
         <translation>Cancel the export</translation>
     </message>
     <message>
-        <location filename="../src/pokemon_mosaic/ui/export_step.py" line="818"/>
+        <location filename="../src/pokemon_mosaic/ui/export_step.py" line="874"/>
         <source>Aucun agencement gardé.</source>
         <translation>No arrangement kept.</translation>
     </message>
     <message>
-        <location filename="../src/pokemon_mosaic/ui/export_step.py" line="823"/>
+        <location filename="../src/pokemon_mosaic/ui/export_step.py" line="879"/>
         <source>Agencement %1 sur %2, score %3</source>
         <translation>Arrangement %1 of %2, score %3</translation>
     </message>
     <message>
-        <location filename="../src/pokemon_mosaic/ui/export_step.py" line="867"/>
+        <location filename="../src/pokemon_mosaic/ui/export_step.py" line="923"/>
         <source>Export en cours…</source>
         <translation>Exporting…</translation>
     </message>
     <message>
-        <location filename="../src/pokemon_mosaic/ui/export_step.py" line="885"/>
+        <location filename="../src/pokemon_mosaic/ui/export_step.py" line="941"/>
         <source>Panneau %1 / %2 : %3</source>
         <translation>Panel %1 / %2: %3</translation>
     </message>
     <message numerus="yes">
-        <location filename="../src/pokemon_mosaic/ui/export_step.py" line="900"/>
+        <location filename="../src/pokemon_mosaic/ui/export_step.py" line="956"/>
         <source>%n fichier(s) écrit(s) : %1</source>
         <translation>
             <numerusform>%n file written: %1</numerusform>
@@ -819,17 +824,17 @@
         </translation>
     </message>
     <message>
-        <location filename="../src/pokemon_mosaic/ui/export_step.py" line="907"/>
+        <location filename="../src/pokemon_mosaic/ui/export_step.py" line="963"/>
         <source>Export annulé ; les fichiers partiels ont été effacés.</source>
         <translation>Export cancelled; the partial files were removed.</translation>
     </message>
     <message>
-        <location filename="../src/pokemon_mosaic/ui/export_step.py" line="913"/>
+        <location filename="../src/pokemon_mosaic/ui/export_step.py" line="969"/>
         <source>Échec de l&apos;export : %1</source>
         <translation>Export failed: %1</translation>
     </message>
     <message>
-        <location filename="../src/pokemon_mosaic/ui/export_step.py" line="932"/>
+        <location filename="../src/pokemon_mosaic/ui/export_step.py" line="988"/>
         <source>Arrêt en cours : l&apos;export ne répond pas encore.</source>
         <translation>Stopping: the export is not answering yet.</translation>
     </message>
@@ -1126,37 +1131,37 @@
 <context>
     <name>PagePreview</name>
     <message>
-        <location filename="../src/pokemon_mosaic/ui/page_preview.py" line="132"/>
+        <location filename="../src/pokemon_mosaic/ui/page_preview.py" line="145"/>
         <source>Ajouter une feuille à droite</source>
         <translation>Add a sheet on the right</translation>
     </message>
     <message>
-        <location filename="../src/pokemon_mosaic/ui/page_preview.py" line="133"/>
+        <location filename="../src/pokemon_mosaic/ui/page_preview.py" line="146"/>
         <source>Ajouter une ligne de feuilles</source>
         <translation>Add a row of sheets</translation>
     </message>
     <message>
-        <location filename="../src/pokemon_mosaic/ui/page_preview.py" line="135"/>
-        <location filename="../src/pokemon_mosaic/ui/page_preview.py" line="184"/>
+        <location filename="../src/pokemon_mosaic/ui/page_preview.py" line="148"/>
+        <location filename="../src/pokemon_mosaic/ui/page_preview.py" line="197"/>
         <source>Retirer une feuille</source>
         <translation>Remove a sheet</translation>
     </message>
     <message>
-        <location filename="../src/pokemon_mosaic/ui/page_preview.py" line="137"/>
-        <location filename="../src/pokemon_mosaic/ui/page_preview.py" line="188"/>
+        <location filename="../src/pokemon_mosaic/ui/page_preview.py" line="150"/>
+        <location filename="../src/pokemon_mosaic/ui/page_preview.py" line="201"/>
         <source>Retirer une ligne de feuilles</source>
         <translation>Remove a row of sheets</translation>
     </message>
     <message>
-        <location filename="../src/pokemon_mosaic/ui/page_preview.py" line="809"/>
+        <location filename="../src/pokemon_mosaic/ui/page_preview.py" line="852"/>
         <source>carte réelle
 %1 × %2 cm</source>
         <translation>real card
 %1 × %2 cm</translation>
     </message>
     <message>
-        <location filename="../src/pokemon_mosaic/ui/page_preview.py" line="841"/>
-        <location filename="../src/pokemon_mosaic/ui/page_preview.py" line="856"/>
+        <location filename="../src/pokemon_mosaic/ui/page_preview.py" line="884"/>
+        <location filename="../src/pokemon_mosaic/ui/page_preview.py" line="899"/>
         <source>%1 cm</source>
         <translation>%1 cm</translation>
     </message>
@@ -1261,37 +1266,37 @@
 <context>
     <name>PresentationTab</name>
     <message>
-        <location filename="../src/pokemon_mosaic/ui/export_step.py" line="178"/>
+        <location filename="../src/pokemon_mosaic/ui/export_step.py" line="180"/>
         <source>Présentation</source>
         <translation>Presentation</translation>
     </message>
     <message>
-        <location filename="../src/pokemon_mosaic/ui/export_step.py" line="181"/>
+        <location filename="../src/pokemon_mosaic/ui/export_step.py" line="183"/>
         <source>Largeur de la carte (mm)</source>
         <translation>Card width (mm)</translation>
     </message>
     <message>
-        <location filename="../src/pokemon_mosaic/ui/export_step.py" line="182"/>
+        <location filename="../src/pokemon_mosaic/ui/export_step.py" line="184"/>
         <source>Écart entre les cartes (mm)</source>
         <translation>Gap between cards (mm)</translation>
     </message>
     <message>
-        <location filename="../src/pokemon_mosaic/ui/export_step.py" line="183"/>
+        <location filename="../src/pokemon_mosaic/ui/export_step.py" line="185"/>
         <source>Taille réelle</source>
         <translation>Real size</translation>
     </message>
     <message>
-        <location filename="../src/pokemon_mosaic/ui/export_step.py" line="185"/>
+        <location filename="../src/pokemon_mosaic/ui/export_step.py" line="187"/>
         <source>Centrer</source>
         <translation>Centre</translation>
     </message>
     <message>
-        <location filename="../src/pokemon_mosaic/ui/export_step.py" line="187"/>
+        <location filename="../src/pokemon_mosaic/ui/export_step.py" line="189"/>
         <source>Une carte à sa taille réelle, %1 mm de large.</source>
         <translation>A card at its real size, %1 mm wide.</translation>
     </message>
     <message>
-        <location filename="../src/pokemon_mosaic/ui/export_step.py" line="184"/>
+        <location filename="../src/pokemon_mosaic/ui/export_step.py" line="186"/>
         <source>Au plus grand</source>
         <translation>As large as it fits</translation>
     </message>
@@ -1395,22 +1400,22 @@
 <context>
     <name>ResolutionTab</name>
     <message>
-        <location filename="../src/pokemon_mosaic/ui/export_step.py" line="362"/>
+        <location filename="../src/pokemon_mosaic/ui/export_step.py" line="364"/>
         <source>Résolution</source>
         <translation>Resolution</translation>
     </message>
     <message>
-        <location filename="../src/pokemon_mosaic/ui/export_step.py" line="365"/>
+        <location filename="../src/pokemon_mosaic/ui/export_step.py" line="367"/>
         <source>Finesse (DPI)</source>
         <translation>Resolution (DPI)</translation>
     </message>
     <message>
-        <location filename="../src/pokemon_mosaic/ui/export_step.py" line="376"/>
+        <location filename="../src/pokemon_mosaic/ui/export_step.py" line="378"/>
         <source>Chaque feuille fera %1 × %2 pixels.</source>
         <translation>Each sheet will be %1 × %2 pixels.</translation>
     </message>
     <message>
-        <location filename="../src/pokemon_mosaic/ui/export_step.py" line="383"/>
+        <location filename="../src/pokemon_mosaic/ui/export_step.py" line="385"/>
         <source>Au-delà de %1 DPI, l&apos;impression agrandit sans ajouter de détail.</source>
         <translation>Beyond %1 DPI, printing enlarges without adding detail.</translation>
     </message>

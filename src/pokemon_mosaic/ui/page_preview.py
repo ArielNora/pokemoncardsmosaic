@@ -72,6 +72,19 @@ MAX_PANELS = 5
 MAX_PANEL_ROWS = 3
 
 
+def _widened(zone: QRectF, horizontal: bool) -> QRectF:
+    """L'écart élargi d'un pixel vers chaque carte.
+
+    ⚠️ **Un pixel blanc restait le long de chaque carte.** Les rectangles se
+    calculent en flottants et se dessinent en entiers : entre l'arrondi de la
+    carte et celui de l'écart, il restait par endroits une ligne du fond de la
+    feuille. Les cartes se posant **après** les écarts, ce débord se recouvre.
+    """
+    if horizontal:
+        return zone.adjusted(-1, 0, 1, 0)
+    return zone.adjusted(0, -1, 0, 1)
+
+
 def _to_qimage(pixels: np.ndarray) -> QImage:
     """Un petit tableau de pixels en image, pour que Qt l'étire à la demande."""
     data = np.ascontiguousarray(pixels)
@@ -700,23 +713,35 @@ class PagePreview(QWidget):
 
     def _chameleon_gap(self, painter, rects, row: int, col: int, rect: QRectF,
                        horizontal: bool) -> None:
-        voisin = rects.get((row, col + 1) if horizontal else (row + 1, col))
+        """Le dégradé d'un écart, borné à l'écart réglé.
+
+        ⚠️ **Deux cases voisines dans la grille ne le sont pas toujours sur le
+        papier.** À la coupe, la place qui reste sur la feuille peut faire
+        plusieurs centimètres : le dégradé s'y étirait en une large bande, alors
+        que ces deux cartes ne se touchent pas une fois imprimées.
+        """
+        session = self._session
+        suivante = (row, col + 1) if horizontal else (row + 1, col)
+        voisin = rects.get(suivante)
         if voisin is None:
             return
+        if session.panel_of(row, col) != session.panel_of(*suivante):
+            return
+        largeur, hauteur = self._screen_gap()
         if horizontal:
-            zone = QRectF(rect.right(), rect.top(),
-                          voisin.left() - rect.right(), rect.height())
+            ecart = min(voisin.left() - rect.right(), largeur)
+            zone = QRectF(rect.right(), rect.top(), ecart, rect.height())
             debut, fin = self._edge(row, col, "droite"), self._edge(row, col + 1,
                                                                     "gauche")
         else:
-            zone = QRectF(rect.left(), rect.bottom(), rect.width(),
-                          voisin.top() - rect.bottom())
+            ecart = min(voisin.top() - rect.bottom(), hauteur)
+            zone = QRectF(rect.left(), rect.bottom(), rect.width(), ecart)
             debut, fin = self._edge(row, col, "bas"), self._edge(row + 1, col,
                                                                  "haut")
         if debut is None or fin is None or zone.width() <= 0 or zone.height() <= 0:
             return
         bande = chameleon.gradient_between(debut, fin, GRADIENT_STEPS, horizontal)
-        painter.drawImage(zone, _to_qimage(bande))
+        painter.drawImage(_widened(zone, horizontal), _to_qimage(bande))
 
     def _chameleon_crossing(self, painter, rects, row: int, col: int,
                             rect: QRectF) -> None:
@@ -726,9 +751,14 @@ class PagePreview(QWidget):
         diagonale = rects.get((row + 1, col + 1))
         if droite is None or bas is None or diagonale is None:
             return
+        largeur, hauteur = self._screen_gap()
         zone = QRectF(rect.right(), rect.bottom(),
-                      droite.left() - rect.right(), bas.top() - rect.bottom())
+                      min(droite.left() - rect.right(), largeur),
+                      min(bas.top() - rect.bottom(), hauteur))
         if zone.width() <= 0 or zone.height() <= 0:
+            return
+        if (self._session.panel_of(row, col) != self._session.panel_of(row + 1,
+                                                                       col + 1)):
             return
         coins = [self._edge(row, col, "droite"), self._edge(row, col + 1, "gauche"),
                  self._edge(row + 1, col, "droite"),
@@ -737,14 +767,16 @@ class PagePreview(QWidget):
             return
         carre = chameleon.crossing(coins[0][-1], coins[1][-1], coins[2][0],
                                    coins[3][0], GRADIENT_STEPS, GRADIENT_STEPS)
-        painter.drawImage(zone, _to_qimage(carre))
+        # Élargie des deux côtés : une croisée touche quatre cartes, donc quatre
+        # arrondis, et le moindre pixel laissé nu y montre le fond.
+        painter.drawImage(zone.adjusted(-1, -1, 1, 1), _to_qimage(carre))
 
     def _chameleon_border(self, painter, etendue: QRectF, rects) -> None:
         """La bande qui cerne le morceau de mosaïque de cette feuille."""
         session = self._session
         if not rects:
             return
-        largeur = self._gap_width(rects)
+        largeur = min(self._screen_gap())
         if largeur <= 0:
             return
         fond = session.background_colour
@@ -781,16 +813,27 @@ class PagePreview(QWidget):
                                           cote in ("gauche", "droite"), dehors)
             painter.drawImage(zone, _to_qimage(bande))
 
-    def _gap_width(self, rects) -> float:
-        """L'écart entre deux cases voisines, à l'écran."""
-        for (row, col), rect in rects.items():
-            voisin = rects.get((row, col + 1))
-            if voisin is not None and voisin.left() > rect.right():
-                return voisin.left() - rect.right()
-            voisin = rects.get((row + 1, col))
-            if voisin is not None and voisin.top() > rect.bottom():
-                return voisin.top() - rect.bottom()
-        return 0.0
+    def _screen_gap(self) -> tuple[float, float]:
+        """L'écart réglé, en pixels d'écran, dans les deux sens.
+
+        Pris à la géométrie et non mesuré entre deux cases : celles que sépare
+        une coupe sont éloignées de tout ce qui reste de la feuille.
+        """
+        session = self._session
+        geometrie = self._geometry_cache()
+        if geometrie is None:
+            return (0.0, 0.0)
+        rects = self.rects()
+        if rects is None:
+            return (0.0, 0.0)
+        feuille = rects[0]
+        surface = self._sheet_mm()
+        en_mm = MM_PER_INCH / session.dpi
+        return (geometrie.gap * en_mm * feuille.width() / surface[0],
+                geometrie.gap * en_mm * feuille.height() / surface[1])
+
+    def _geometry_cache(self):
+        return self._session.panel_geometry()
 
     def _tile(self, index: int) -> QPixmap | None:
         """La vignette d'une carte, convertie une seule fois."""

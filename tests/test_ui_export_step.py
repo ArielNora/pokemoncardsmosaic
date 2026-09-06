@@ -548,3 +548,75 @@ def test_the_preview_draws_the_chameleon_gaps(ecran):
     )
     assert couleurs[0][0] > couleurs[-1][0], "le rouge s'efface vers le bleu"
     assert couleurs[0][2] < couleurs[-1][2]
+
+
+# --- Le zoom au champ, à la molette et au pavé tactile ----------------------
+
+def test_the_zoom_can_be_typed(ecran):
+    """⚠️ Atteindre 400 % au bouton demandait sept clics."""
+    widget, _, _ = ecran
+    widget.resize(900, 600)
+    widget.show()
+
+    widget._zoom_field.setValue(400)
+
+    assert widget._zoom == pytest.approx(4.0)
+    assert widget._preview.minimumHeight() > 0
+
+
+def test_the_field_follows_the_buttons_without_looping(ecran):
+    """Le champ émet à chaque écriture : sans garde, il rezoomerait sur
+    lui-même."""
+    widget, _, _ = ecran
+    widget.resize(900, 600)
+    widget.show()
+
+    widget._zoom_in.click()
+
+    assert widget._zoom_field.value() == round(widget._zoom * 100)
+    assert widget._zoom == pytest.approx(1.25)
+
+
+def test_two_fingers_sliding_scroll_instead_of_zooming(ecran):
+    """⚠️ Un pavé tactile envoie aussi des événements de molette : traités comme
+    tels, le glissement à deux doigts zoomait au lieu de promener l'image."""
+    from PySide6.QtCore import QPoint, QPointF, Qt
+    from PySide6.QtGui import QWheelEvent
+    from PySide6.QtWidgets import QApplication
+
+    widget, _, _ = ecran
+    widget.resize(900, 600)
+    widget.show()
+    widget._zoom_at(3.0, None)
+    avant = widget._zoom
+
+    place = QPointF(120, 90)
+    # Un delta **en pixels**, ce qu'une molette crantée ne donne jamais.
+    glissement = QWheelEvent(place, widget._preview.mapToGlobal(QPoint(120, 90)),
+                             QPoint(0, -40), QPoint(0, -120), Qt.NoButton,
+                             Qt.NoModifier, Qt.ScrollUpdate, False)
+    QApplication.sendEvent(widget._preview, glissement)
+
+    assert widget._zoom == avant, "le glissement à deux doigts ne zoome pas"
+
+
+def test_a_pinch_zooms(ecran):
+    """Qt remonte le pincement comme un geste natif, jamais comme une molette :
+    sans ce cas, écarter les doigts ne faisait rien."""
+    from PySide6.QtCore import QPoint, QPointF, Qt
+    from PySide6.QtGui import QNativeGestureEvent, QPointingDevice
+    from PySide6.QtWidgets import QApplication
+
+    widget, _, _ = ecran
+    widget.resize(900, 600)
+    widget.show()
+    avant = widget._zoom
+
+    geste = QNativeGestureEvent(
+        Qt.ZoomNativeGesture, QPointingDevice.primaryPointingDevice(),
+        2, QPointF(120, 90), QPointF(120, 90),
+        QPointF(widget._preview.mapToGlobal(QPoint(120, 90))), 0.25, QPoint(),
+        0)
+    QApplication.sendEvent(widget._preview, geste)
+
+    assert widget._zoom > avant

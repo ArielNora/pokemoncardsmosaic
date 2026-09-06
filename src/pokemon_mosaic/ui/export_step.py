@@ -52,6 +52,8 @@ OPEN_SIGN, CLOSED_SIGN = "▾", "▸"
 HEADING_BOOST = 2
 # L'écart entre la loupe et le bord de l'aperçu qu'elle surplombe.
 ZOOM_BAR_MARGIN = 12
+# Le champ du zoom : « 100 % » et ses flèches.
+ZOOM_FIELD_WIDTH = 82
 # Les champs de la présentation : deux tiennent côte à côte dans la colonne.
 FIELD_WIDTH = 96
 # Les boutons de cette colonne, plus bas et plus petits que ceux d'un écran :
@@ -480,6 +482,8 @@ class PreviewView(QScrollArea):
             return super().eventFilter(objet, event)
         if event.type() == QEvent.Wheel:
             return self._on_wheel(event)
+        if event.type() == QEvent.NativeGesture:
+            return self._on_gesture(event)
         if event.type() == QEvent.MouseButtonPress:
             return self._on_press(event)
         if event.type() == QEvent.MouseMove:
@@ -490,14 +494,43 @@ class PreviewView(QScrollArea):
         return super().eventFilter(objet, event)
 
     def _on_wheel(self, event) -> bool:
+        """La molette zoome ; deux doigts qui glissent déplacent.
+
+        ⚠️ **Un pavé tactile envoie aussi des événements de molette.** Traités
+        comme tels, le glissement à deux doigts zoomait au lieu de promener
+        l'image : on les reconnaît à leur delta **en pixels**, qu'une molette
+        crantée ne donne jamais, et on les laisse au cadre, qui sait défiler.
+        Ctrl reste le raccourci du zoom dans les deux cas.
+        """
+        controle = bool(event.modifiers() & Qt.ControlModifier)
+        pave = (not event.pixelDelta().isNull()
+                or event.phase() != Qt.NoScrollPhase)
+        if pave and not controle:
+            return False
         crans = event.angleDelta().y()
         if not crans:
             return False
-        # Le point visé se lit dans le cadre : c'est lui qui défile.
-        vise = self.widget().mapTo(self.viewport(), event.position().toPoint())
         facteur = ZOOM_STEP if crans > 0 else 1 / ZOOM_STEP
-        self.zoom_requested.emit(facteur, QPointF(vise))
+        self.zoom_requested.emit(facteur, self._aimed(event.position()))
         return True
+
+    def _on_gesture(self, event) -> bool:
+        """Le pincement du pavé tactile : deux doigts qui s'écartent zooment.
+
+        Qt le remonte comme un geste natif, jamais comme une molette : sans ce
+        cas, écarter les doigts ne faisait rien du tout.
+        """
+        if event.gestureType() != Qt.ZoomNativeGesture:
+            return False
+        facteur = 1.0 + event.value()
+        if facteur <= 0:
+            return False
+        self.zoom_requested.emit(facteur, self._aimed(event.position()))
+        return True
+
+    def _aimed(self, position) -> QPointF:
+        """Le point visé, lu dans le cadre : c'est lui qui défile."""
+        return QPointF(self.widget().mapTo(self.viewport(), position.toPoint()))
 
     def start_picking(self) -> None:
         """Arme la pipette : le prochain clic prélève au lieu de déplacer."""
@@ -605,6 +638,9 @@ class ExportStep(QWidget):
         # feuilles » reste, et l'étape 2 garde le placement à la main.
         self._preview.set_draggable(False)
         self._zoom = ZOOM_MIN
+        # Vrai le temps d'une recopie du zoom dans son champ : le champ émet à
+        # chaque écriture, et sans ce garde il rezoomerait sur lui-même.
+        self._updating_zoom = False
         self._scroll = PreviewView()
         self._scroll.setWidget(self._preview)
         self._scroll.setWidgetResizable(True)
@@ -621,9 +657,15 @@ class ExportStep(QWidget):
         self._zoom_out = QPushButton("−")
         self._zoom_in = QPushButton("+")
         self._zoom_fit = QPushButton()
-        self._zoom_label = QLabel()
-        self._zoom_label.setMinimumWidth(48)
-        self._zoom_label.setAlignment(Qt.AlignCenter)
+        # ⚠️ **Un champ, et non une étiquette.** Atteindre 400 % au bouton
+        # demandait sept clics : on écrit le nombre.
+        self._zoom_field = QSpinBox()
+        self._zoom_field.setRange(int(ZOOM_MIN * 100), int(ZOOM_MAX * 100))
+        self._zoom_field.setSingleStep(25)
+        self._zoom_field.setSuffix(" %")
+        self._zoom_field.setFixedWidth(ZOOM_FIELD_WIDTH)
+        self._zoom_field.setAlignment(Qt.AlignCenter)
+        self._zoom_field.valueChanged.connect(self._on_zoom_typed)
         for bouton in (self._zoom_out, self._zoom_in):
             bouton.setFixedWidth(32)
         self._zoom_out.clicked.connect(lambda: self._zoom_at(1 / ZOOM_STEP, None))
@@ -634,7 +676,7 @@ class ExportStep(QWidget):
         loupe = QHBoxLayout(self._loupe)
         loupe.setContentsMargins(6, 4, 6, 4)
         loupe.setSpacing(4)
-        for widget in (self._zoom_out, self._zoom_label, self._zoom_in,
+        for widget in (self._zoom_out, self._zoom_field, self._zoom_in,
                        self._zoom_fit):
             loupe.addWidget(widget)
 
@@ -729,8 +771,19 @@ class ExportStep(QWidget):
         else:
             self._preview.setMinimumSize(int(cadre.width() * self._zoom),
                                          int(cadre.height() * self._zoom))
-        self._zoom_label.setText(f"{self._zoom * 100:.0f} %")
+        self._show_zoom()
         self._preview.refresh()
+
+    def _show_zoom(self) -> None:
+        """Recopie le zoom dans le champ, sans le lui faire réémettre."""
+        self._updating_zoom = True
+        self._zoom_field.setValue(round(self._zoom * 100))
+        self._updating_zoom = False
+
+    def _on_zoom_typed(self, pourcentage: int) -> None:
+        if self._updating_zoom:
+            return
+        self._zoom_at((pourcentage / 100) / self._zoom, None)
 
     def resizeEvent(self, event) -> None:
         super().resizeEvent(event)
@@ -760,7 +813,10 @@ class ExportStep(QWidget):
             onglet.retranslate_ui()
             section.retranslate_ui()
         self._zoom_fit.setText(self.tr("Ajuster"))
-        self._zoom_label.setText(f"{self._zoom * 100:.0f} %")
+        self._zoom_field.setToolTip(
+            self.tr("Molette ou pincement pour zoomer, glissement pour se "
+                    "déplacer."))
+        self._show_zoom()
         self._export.setText(self.tr("Exporter cet agencement…"))
         self._cancel_export.setText(self.tr("Annuler l'export"))
         self._saved.retranslate_ui()
