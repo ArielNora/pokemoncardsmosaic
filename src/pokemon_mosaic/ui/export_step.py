@@ -20,6 +20,7 @@ from PySide6.QtCore import QEvent, QPointF, QSize, Qt, Signal
 from PySide6.QtGui import QColor
 from PySide6.QtWidgets import (
     QColorDialog,
+    QDoubleSpinBox,
     QFrame,
     QHBoxLayout,
     QLabel,
@@ -31,10 +32,9 @@ from PySide6.QtWidgets import (
     QWidget,
 )
 
-from ..layout import MM_PER_INCH, max_useful_dpi
+from ..layout import MM_PER_INCH, REAL_CARD_MM, max_useful_dpi
 from . import theme
 from .arrangements_dialog import ArrangementsDialog
-from .big_spin import BigFloatSpin
 from .export_dialog import ExportDialog
 from .exporter import start_export
 from .layout_step import TAB_WIDTH
@@ -51,6 +51,12 @@ OPEN_SIGN, CLOSED_SIGN = "▾", "▸"
 HEADING_BOOST = 2
 # L'écart entre la loupe et le bord de l'aperçu qu'elle surplombe.
 ZOOM_BAR_MARGIN = 12
+# Les champs de la présentation : deux tiennent côte à côte dans la colonne.
+FIELD_WIDTH = 96
+# Les boutons de cette colonne, plus bas et plus petits que ceux d'un écran :
+# ce sont des retouches, pas les décisions de l'étape.
+SMALL_BUTTON_HEIGHT = 24
+SMALL_BUTTON_BOOST = -1
 # Taille de la pastille de couleur d'un bouton.
 SWATCH = QSize(28, 18)
 # Ce qu'on accorde à un fil d'export pour s'arrêter, avant de le dire bloqué.
@@ -83,36 +89,78 @@ class PresentationTab(ExportTab):
 
     def __init__(self, session: Session, parent=None):
         super().__init__(session, parent)
-        self._gap = BigFloatSpin(0.0, 50.0, step=0.5)
-        self._gap.value_changed.connect(self._on_gap)
-        self._width = BigFloatSpin(1.0, 200.0, step=0.5)
-        self._width.value_changed.connect(self._on_width)
+        # ⚠️ **De petits champs, et sur une seule ligne.** Les grands compteurs
+        # de l'étape 2 prenaient chacun cent cinquante pixels de haut : ici on
+        # ne pose pas la mise en page, on la retouche, et la place qu'ils
+        # prenaient revient à l'image.
+        self._gap = QDoubleSpinBox()
+        self._gap.setRange(0.0, 50.0)
+        self._gap.setSingleStep(0.5)
+        self._gap.valueChanged.connect(self._on_gap)
+        self._width = QDoubleSpinBox()
+        self._width.setRange(1.0, 200.0)
+        self._width.setSingleStep(0.5)
+        self._width.valueChanged.connect(self._on_width)
+        self._width_label = QLabel()
+        self._gap_label = QLabel()
+        for champ in (self._width, self._gap):
+            champ.setFixedWidth(FIELD_WIDTH)
+
+        self._real_width = QPushButton()
+        self._real_width.clicked.connect(self._on_real_width)
         self._auto_width = QPushButton()
         self._auto_width.clicked.connect(self._on_auto_width)
         self._centre = QPushButton()
         self._centre.clicked.connect(self._session.center_panels)
+        for bouton in (self._real_width, self._auto_width, self._centre):
+            bouton.setFixedHeight(SMALL_BUTTON_HEIGHT)
+            police = bouton.font()
+            police.setPointSize(police.pointSize() + SMALL_BUTTON_BOOST)
+            bouton.setFont(police)
 
-        # ⚠️ **En colonne, et sans paragraphe.** Le panneau ne s'élargit pas :
-        # deux champs côte à côte et une explication de quatre lignes le
-        # faisaient déborder, au détriment de l'image, qui est ce qu'on est venu
-        # regarder.
+        champs = QHBoxLayout()
+        champs.setSpacing(8)
+        for intitule, champ in ((self._width_label, self._width),
+                                (self._gap_label, self._gap)):
+            colonne = QVBoxLayout()
+            colonne.setSpacing(2)
+            colonne.addWidget(intitule)
+            colonne.addWidget(champ)
+            champs.addLayout(colonne)
+        champs.addStretch(1)
+
+        # Les deux tailles qu'on peut vouloir d'un clic, côte à côte ; le
+        # centrage, qui ne touche pas à la taille, seul sur sa ligne.
+        tailles = QHBoxLayout()
+        tailles.setSpacing(6)
+        tailles.addWidget(self._real_width)
+        tailles.addWidget(self._auto_width)
+
+        centrage = QHBoxLayout()
+        centrage.addStretch(1)
+        centrage.addWidget(self._centre)
+        centrage.addStretch(1)
+
         pile = QVBoxLayout(self)
         pile.setContentsMargins(6, 4, 6, 6)
         pile.setSpacing(6)
-        pile.addWidget(self._width)
-        pile.addWidget(self._auto_width)
-        pile.addWidget(self._gap)
-        pile.addWidget(self._centre)
+        pile.addLayout(champs)
+        pile.addLayout(tailles)
+        pile.addLayout(centrage)
         self.retranslate_ui()
 
     def title(self) -> str:
         return self.tr("Présentation")
 
     def retranslate_ui(self) -> None:
-        self._width.setTitle(self.tr("Largeur d'une carte (mm)"))
-        self._gap.setTitle(self.tr("Écart entre les cartes (mm)"))
+        self._width_label.setText(self.tr("Largeur (mm)"))
+        self._gap_label.setText(self.tr("Écart (mm)"))
+        self._real_width.setText(self.tr("Taille réelle"))
         self._auto_width.setText(self.tr("Au plus grand"))
-        self._centre.setText(self.tr("Centrer sur les feuilles"))
+        self._centre.setText(self.tr("Centrer"))
+        self._real_width.setToolTip(
+            self.tr("Une carte à sa taille réelle, %1 mm de large.")
+            .replace("%1", f"{REAL_CARD_MM[0]:.0f}"))
         self.refresh()
 
     def refresh(self) -> None:
@@ -136,6 +184,10 @@ class PresentationTab(ExportTab):
     def _on_width(self, valeur: float) -> None:
         if not self._updating:
             self._session.set_layout(card_width_mm=valeur)
+
+    def _on_real_width(self) -> None:
+        """La largeur d'une vraie carte : la mosaïque en taille de collection."""
+        self._session.set_layout(card_width_mm=REAL_CARD_MM[0])
 
     def _on_auto_width(self) -> None:
         """Rend la largeur au calcul : la plus grande qui fasse tenir la grille."""

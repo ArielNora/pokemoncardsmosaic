@@ -132,6 +132,36 @@ def test_the_gap_and_the_card_width_stay_open(ecran):
     assert session.card_width_mm is None
 
 
+def test_the_real_size_button_poses_a_real_card(ecran):
+    """La mosaïque en taille de collection : une carte fait ses 63 mm."""
+    from pokemon_mosaic.layout import REAL_CARD_MM
+
+    widget, session, _ = ecran
+
+    widget._tabs[0]._real_width.click()
+
+    assert session.card_width_mm == pytest.approx(REAL_CARD_MM[0])
+
+
+def test_the_two_fields_share_one_line_and_stay_small(ecran):
+    """⚠️ Les grands compteurs de l'étape 2 prenaient cent cinquante pixels de
+    haut chacun : ici on ne pose pas la mise en page, on la retouche."""
+    from pokemon_mosaic.ui.export_step import FIELD_WIDTH
+
+    widget, _, _ = ecran
+    widget.show()
+    presentation = widget._tabs[0]
+
+    assert presentation._width.width() == FIELD_WIDTH
+    assert presentation._gap.width() == FIELD_WIDTH
+    # Même hauteur de départ : ils sont bien sur la même ligne.
+    assert (presentation._width.mapTo(presentation, presentation.rect().topLeft())
+            .y() == presentation._gap.mapTo(
+                presentation, presentation.rect().topLeft()).y())
+    assert presentation._width_label.text() == "Largeur (mm)"
+    assert presentation._gap_label.text() == "Écart (mm)"
+
+
 def test_the_automatic_width_is_shown_in_millimetres(ecran):
     """⚠️ **La géométrie compte en pixels.** Posée telle quelle dans un champ en
     millimètres, la largeur automatique s'affichait écrêtée au maximum."""
