@@ -58,7 +58,7 @@ libre, l'optimiseur peut pivoter le bloc d'un demi-tour et dispose de deux fois 
 de placements. ⚠️ Un demi-tour, pas un miroir : sur un carré, une carte va dans le
 coin **opposé**.
 
-Trois liens sont fournis d'office : Solgaleo–Lunala, Entei–Raikou, et la lignée
+Trois liens sont fournis d'office : Solgaleo-Lunala, Entei-Raikou, et la lignée
 Méga-Jungko-ex / Massko / Arcko en colonne, la plus évoluée en haut.
 
 ## Installation

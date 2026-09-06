@@ -1,4 +1,4 @@
-"""EXPÉRIENCE — contrainte d'adjacence molle, remplacée par src/pokemon_mosaic/.
+"""EXPÉRIENCE : contrainte d'adjacence molle, remplacée par src/pokemon_mosaic/.
 
 Ici, forcer deux cartes à être voisines passe par une pénalité de score
 (`distance × 5000`) qui les attire l'une vers l'autre. Cela oblige à recalculer

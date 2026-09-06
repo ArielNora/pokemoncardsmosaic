@@ -2,10 +2,10 @@
   "_note": "Rognages appliqués après téléchargement, en pixels retirés sur chaque bord. L'image est ensuite ramenée à la taille cible du manifeste. Ajouter une entrée ici suffit : scripts/fetch_cards.py la reprend au prochain passage.",
   "A1-242": {
     "left": 0, "top": 30, "right": 6, "bottom": 10,
-    "why": "Nosferalto — bande blanche franche de 27 px en haut dans la source. Bord haut : 153 -> 119."
+    "why": "Nosferalto, bande blanche franche de 27 px en haut dans la source. Bord haut : 153 -> 119."
   },
   "A1-238": {
     "left": 10, "top": 10, "right": 11, "bottom": 20,
-    "why": "Taupiqueur — blanc délavé sur les quatre bords. Bords : 169 -> 159. Rogner davantage empire, le blanc étant dans l'illustration."
+    "why": "Taupiqueur, blanc délavé sur les quatre bords. Bords : 169 -> 159. Rogner davantage empire, le blanc étant dans l'illustration."
   }
 }

@@ -1,4 +1,4 @@
-"""EXPÉRIENCE — placement greedy, remplacé par src/pokemon_mosaic/.
+"""EXPÉRIENCE : placement greedy, remplacé par src/pokemon_mosaic/.
 
 Remplit la grille case par case en choisissant à chaque fois la meilleure carte
 restante. Rapide mais myope : les dernières cases héritent des rebuts. C'est ce

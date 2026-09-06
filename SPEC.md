@@ -66,7 +66,7 @@ la traduction après coup imposerait de reprendre chaque écran un par un.
 ✅ L'écran affiche les **liens entre cartes** (paires à garder côte à côte).
 ✅ L'utilisateur peut **créer, modifier et désactiver** des liens depuis l'interface.
 ✅ Une **liste de liens par défaut** est fournie : ce sont ceux du code actuel
-(Solgaleo–Lunala, Entei–Raikou).
+(Solgaleo-Lunala, Entei-Raikou).
 
 ✅ Un « lien » signifie : ces cartes restent **adjacentes horizontalement**.
 
@@ -77,7 +77,7 @@ retourner le bloc et dispose donc de deux fois plus de placements possibles.
 
 ✅ **Les liens vivent dans une bibliothèque séparée**, indépendante des préréglages.
 Un préréglage mémorise seulement **lesquels sont actifs**. Rationnel : un lien est un
-travail durable (Solgaleo–Lunala restera vrai indéfiniment) alors qu'un préréglage est
+travail durable (Solgaleo-Lunala restera vrai indéfiniment) alors qu'un préréglage est
 un essai de mise en page, jetable. Les mélanger obligerait à ressaisir tous les liens
 à chaque nouvelle mise en page.
 

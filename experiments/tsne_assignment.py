@@ -1,4 +1,4 @@
-"""EXPÉRIENCE — regroupement par t-SNE, approche distincte du chemin principal.
+"""EXPÉRIENCE : regroupement par t-SNE, approche distincte du chemin principal.
 
 Au lieu de raccorder les bords, on projette chaque carte en 2D par similarité
 visuelle globale (t-SNE sur les pixels bruts), puis on affecte optimalement une

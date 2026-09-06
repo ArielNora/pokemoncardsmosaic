@@ -4,7 +4,7 @@ Ce que le projet attend d'une image de carte, et comment elles circulent.
 
 ## Format
 
-**734 × 1024, WebP qualité 80, illustration seule** — sans cadre, sans bandeau
+**734 × 1024, WebP qualité 80, illustration seule**, sans cadre, sans bandeau
 de nom, sans texte d'attaque. C'est la texture que le jeu compose à l'affichage,
 et c'est elle qui porte les couleurs de bord dont l'algorithme se sert.
 
@@ -20,8 +20,8 @@ l'échelle *avant* d'être rognée. Une source en 717 × 1000 à qui l'on retire
 ## Pourquoi la qualité 80
 
 Mesuré sur les 441 illustrations : **56,5 Mo** au total contre **541 Mo** pour
-les mêmes images sans perte. L'écart médian sur la moyenne RGB d'un bord — la
-seule grandeur dont l'algorithme se sert — vaut **0,45 niveau sur 255**, sous
+les mêmes images sans perte. L'écart médian sur la moyenne RGB d'un bord, la
+seule grandeur dont l'algorithme se sert, vaut **0,45 niveau sur 255**, sous
 l'erreur des vignettes à 25 %, déjà acceptée.
 
 Le WebP avec perte impose un sous-échantillonnage 4:2:0 de la chrominance. La
@@ -66,7 +66,7 @@ découpage par extension permet de ne retélécharger que ce qui a changé.
 
 1. déposer les illustrations dans `data/pokemoncards/<extension>/`, nommées
    `<extension>-<numéro>-<nom>.webp` ;
-2. `uv run python scripts/build_manifest.py` — le catalogue est mis à jour et
+2. `uv run python scripts/build_manifest.py` : le catalogue est mis à jour et
    les champs qu'un fichier ne porte pas (rareté, noms) sont nommés ;
 3. les compléter dans `cards.json` ;
 4. `uv run python scripts/publish_release.py`.

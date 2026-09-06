@@ -51,7 +51,7 @@ line-length = 95
 target-version = "py313"
 
 [tool.ruff.lint]
-# F : imports et variables inutilisés — c'est le gain principal.
+# F : imports et variables inutilisés, c'est le gain principal.
 # I : tri des imports.
 # B : pièges courants (bugbear).
 # La modernisation du typage (UP) est volontairement écartée : elle réécrirait

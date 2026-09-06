@@ -34,6 +34,6 @@ else
 fi
 
 echo
-echo "⚠️ Le paquet n'est pas signé valablement. Il démarre sur cette machine —"
-echo "   construit localement, il n'a pas d'attribut de quarantaine — mais"
+echo "⚠️ Le paquet n'est pas signé valablement. Construit localement, il n'a"
+echo "   pas d'attribut de quarantaine et démarre donc ici, mais"
 echo "   Gatekeeper le refusera ailleurs. Voir paquet/README.md."

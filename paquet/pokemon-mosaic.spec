@@ -1,5 +1,5 @@
 # -*- mode: python ; coding: utf-8 -*-
-"""Recette d'empaquetage — un `.app` macOS autonome.
+"""Recette d'empaquetage : un `.app` macOS autonome.
 
     uv sync --extra package
     uv run pyinstaller paquet/pokemon-mosaic.spec --noconfirm

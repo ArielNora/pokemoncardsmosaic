@@ -69,7 +69,7 @@ git config core.hooksPath .githooks
 
 ## Écriture des textes
 
-**Aucun tiret cadratin.** Ni «» ni « – », nulle part : textes de l'interface,
+**Aucun tiret cadratin.** Ni « — » ni « – », nulle part : textes de l'interface,
 traductions, commentaires, docstrings, messages de commit, documents du dépôt,
 réponses dans la conversation. La ponctuation ordinaire dit la même chose :
 deux-points pour annoncer, virgule pour incise, parenthèses pour l'aparté, point
