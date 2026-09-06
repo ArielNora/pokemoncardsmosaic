@@ -16,9 +16,10 @@ leur place, et le score n'aurait plus de sens.
 
 import os
 
-from PySide6.QtCore import QEvent, QPointF, QSize, Qt, Signal
-from PySide6.QtGui import QColor
+from PySide6.QtCore import QEvent, QPointF, QRect, QSize, Qt, Signal
+from PySide6.QtGui import QColor, QIcon, QPainter, QPen, QPixmap, QPolygonF
 from PySide6.QtWidgets import (
+    QCheckBox,
     QColorDialog,
     QDoubleSpinBox,
     QFrame,
@@ -59,8 +60,28 @@ SMALL_BUTTON_HEIGHT = 24
 SMALL_BUTTON_BOOST = -1
 # Taille de la pastille de couleur d'un bouton.
 SWATCH = QSize(28, 18)
+# La pipette est **dessinée**, et non prise à une police : ni l'émoji goutte ni
+# les caractères de dessin ne sont présents partout, et le bouton sortait vide.
+EYEDROPPER_SIZE = 16
 # Ce qu'on accorde à un fil d'export pour s'arrêter, avant de le dire bloqué.
 SHUTDOWN_TIMEOUT_MS = 5000
+
+
+def eyedropper_icon(palette) -> QIcon:
+    """Une petite pipette : un tube en biais, sa pointe en bas à gauche."""
+    pixmap = QPixmap(EYEDROPPER_SIZE, EYEDROPPER_SIZE)
+    pixmap.fill(Qt.transparent)
+    peintre = QPainter(pixmap)
+    peintre.setRenderHint(QPainter.Antialiasing)
+    encre = palette.windowText().color()
+    peintre.setPen(QPen(encre, 2.2))
+    peintre.drawLine(QPointF(5.5, 10.5), QPointF(12.5, 3.5))
+    peintre.setPen(Qt.NoPen)
+    peintre.setBrush(encre)
+    peintre.drawPolygon(QPolygonF([QPointF(2.5, 13.5), QPointF(7.0, 12.0),
+                                   QPointF(4.0, 9.0)]))
+    peintre.end()
+    return QIcon(pixmap)
 
 
 def _separator() -> QFrame:
@@ -199,14 +220,18 @@ class PresentationTab(ExportTab):
 
 
 class ColoursTab(ExportTab):
-    """Les couleurs de tout ce qui n'est pas une carte."""
+    """Les couleurs de tout ce qui n'est pas une carte, et le mode caméléon."""
 
     ROLES = ("background_colour", "gap_colour", "empty_colour")
+    # Une pipette demandée : l'écran passera en prélèvement, et rendra la
+    # couleur au rôle qui l'attend.
+    eyedropper_requested = Signal(str)
 
     def __init__(self, session: Session, parent=None):
         super().__init__(session, parent)
         self._labels: dict[str, QLabel] = {}
         self._buttons: dict[str, QPushButton] = {}
+        self._droppers: dict[str, QPushButton] = {}
 
         pile = QVBoxLayout(self)
         pile.setContentsMargins(6, 4, 6, 6)
@@ -216,13 +241,37 @@ class ColoursTab(ExportTab):
             bouton = QPushButton()
             bouton.setFixedSize(SWATCH)
             bouton.clicked.connect(lambda _=False, r=role: self._pick(r))
+            # ⚠️ **Une pipette par couleur.** Une seule, pour « la ligne
+            # sélectionnée », aurait demandé de choisir la ligne d'abord : un
+            # état de plus à retenir pour un geste qui doit être direct.
+            pipette = QPushButton()
+            pipette.setFixedSize(SWATCH.height() + 6, SWATCH.height())
+            pipette.clicked.connect(
+                lambda _=False, r=role: self.eyedropper_requested.emit(r))
             self._labels[role] = intitule
             self._buttons[role] = bouton
+            self._droppers[role] = pipette
             ligne = QHBoxLayout()
-            ligne.setSpacing(10)
+            ligne.setSpacing(6)
             ligne.addWidget(bouton)
+            ligne.addWidget(pipette)
             ligne.addWidget(intitule, 1)
             pile.addLayout(ligne)
+
+        pile.addWidget(_separator())
+        self._chameleon_title = QLabel()
+        gras = self._chameleon_title.font()
+        gras.setBold(True)
+        self._chameleon_title.setFont(gras)
+        self._chameleon_gaps = QCheckBox()
+        self._chameleon_gaps.toggled.connect(
+            lambda actif: self._session.set_algorithm(chameleon_gaps=actif))
+        self._chameleon_border = QCheckBox()
+        self._chameleon_border.toggled.connect(
+            lambda actif: self._session.set_algorithm(chameleon_border=actif))
+        pile.addWidget(self._chameleon_title)
+        pile.addWidget(self._chameleon_gaps)
+        pile.addWidget(self._chameleon_border)
         self.retranslate_ui()
 
     def title(self) -> str:
@@ -232,11 +281,42 @@ class ColoursTab(ExportTab):
         self._labels["background_colour"].setText(self.tr("Autour de la grille"))
         self._labels["gap_colour"].setText(self.tr("Entre les cartes"))
         self._labels["empty_colour"].setText(self.tr("Cases vides"))
+        for pipette in self._droppers.values():
+            pipette.setIcon(eyedropper_icon(self.palette()))
+            pipette.setToolTip(self.tr("Prélever une couleur dans l'image"))
+        self._chameleon_title.setText(self.tr("Caméléon"))
+        self._chameleon_gaps.setText(self.tr("Écarts entre les cartes"))
+        self._chameleon_border.setText(self.tr("Pourtour de la grille"))
+        self._chameleon_gaps.setToolTip(
+            self.tr("Chaque écart passe d'un bord de carte à l'autre en "
+                    "dégradé, au lieu d'un aplat."))
+        self._chameleon_border.setToolTip(
+            self.tr("Une bande large comme l'écart cerne la mosaïque, du bord "
+                    "des cartes vers la couleur du fond."))
         self.refresh()
 
     def refresh(self) -> None:
+        session = self._session
         for role, bouton in self._buttons.items():
-            bouton.setStyleSheet(swatch(getattr(self._session, role)))
+            bouton.setStyleSheet(swatch(getattr(session, role)))
+        self._updating = True
+        self._chameleon_gaps.setChecked(session.chameleon_gaps)
+        self._chameleon_border.setChecked(session.chameleon_border)
+        self._updating = False
+        # ⚠️ **Grisée, pas retirée.** Le caméléon remplace la couleur des
+        # écarts ; l'effacer ferait oublier ce qu'on retrouvera en éteignant le
+        # mode.
+        for widget in (self._buttons["gap_colour"], self._droppers["gap_colour"],
+                       self._labels["gap_colour"]):
+            widget.setEnabled(not session.chameleon_gaps)
+
+    def changeEvent(self, event) -> None:
+        """⚠️ Une icône dessinée ne suit pas le mode toute seule : sa couleur
+        est figée dans le pixmap, là où tout ce qui se relit au dessin bascule
+        de lui-même."""
+        super().changeEvent(event)
+        if event.type() == QEvent.PaletteChange:
+            self.retranslate_ui()
 
     def _pick(self, role: str) -> None:
         actuelle = QColor(*getattr(self._session, role))
@@ -378,11 +458,15 @@ class PreviewView(QScrollArea):
     """
 
     zoom_requested = Signal(float, object)   # facteur, point visé dans la vue
+    colour_picked = Signal(object)           # QColor prélevée dans l'image
 
     def __init__(self, parent=None):
         super().__init__(parent)
         self._pan_from = None
         self._bars_at_press = (0, 0)
+        # Vrai le temps d'un prélèvement : le prochain clic prend la couleur
+        # sous le curseur au lieu de saisir l'image.
+        self._picking = False
 
     def setWidget(self, widget) -> None:
         super().setWidget(widget)
@@ -415,9 +499,30 @@ class PreviewView(QScrollArea):
         self.zoom_requested.emit(facteur, QPointF(vise))
         return True
 
+    def start_picking(self) -> None:
+        """Arme la pipette : le prochain clic prélève au lieu de déplacer."""
+        self._picking = True
+        self.widget().setCursor(Qt.CrossCursor)
+
+    def stop_picking(self) -> None:
+        self._picking = False
+        if self.widget() is not None:
+            self.widget().setCursor(Qt.SizeAllCursor)
+
     def _on_press(self, event) -> bool:
         if event.button() != Qt.LeftButton:
             return False
+        if self._picking:
+            # ⚠️ **On prélève dans le dessin, pas dans un modèle.** L'aperçu se
+            # rend à la demande : `grab()` donne exactement ce que l'œil voit,
+            # dégradés du caméléon compris.
+            point = event.position().toPoint()
+            image = self.widget().grab(
+                QRect(point, QSize(1, 1))).toImage()
+            if not image.isNull():
+                self.colour_picked.emit(image.pixelColor(0, 0))
+            self.stop_picking()
+            return True
         # ⚠️ **La position se lit à l'écran.** Celle du widget bouge avec lui
         # quand on le fait défiler : l'écart calculé s'annulait au tour suivant,
         # et l'image tremblait sur place au lieu de suivre la souris.
@@ -505,7 +610,11 @@ class ExportStep(QWidget):
         self._scroll.setWidgetResizable(True)
         self._scroll.setFrameShape(QScrollArea.NoFrame)
         self._scroll.zoom_requested.connect(self._zoom_at)
+        self._scroll.colour_picked.connect(self._on_colour_picked)
         self._scroll.viewport().installEventFilter(self)
+        self._tabs[1].eyedropper_requested.connect(self._start_picking)
+        # Le rôle qu'une pipette armée remplira.
+        self._picking_role = ""
 
         # La loupe se pose **sur** l'image : une barre en dessous lui aurait
         # repris la hauteur qu'on vient de lui donner.
@@ -565,6 +674,19 @@ class ExportStep(QWidget):
         layout.addWidget(self._heading)
         layout.addLayout(milieu, 1)
         self.retranslate_ui()
+
+    def _start_picking(self, role: str) -> None:
+        self._picking_role = role
+        self._scroll.start_picking()
+        self.status_message.emit(
+            self.tr("Cliquez dans l'image pour prélever une couleur."))
+
+    def _on_colour_picked(self, couleur) -> None:
+        if not self._picking_role:
+            return
+        self._session.set_algorithm(**{
+            self._picking_role: (couleur.red(), couleur.green(), couleur.blue())})
+        self._picking_role = ""
 
     def _toggle_section(self, key: str) -> None:
         """Ouvre la section demandée et referme les autres."""

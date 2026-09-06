@@ -14,6 +14,7 @@ from PySide6.QtCore import QPointF, QRect, QRectF, Qt, Signal
 from PySide6.QtGui import QBrush, QColor, QImage, QPainter, QPen, QPixmap
 from PySide6.QtWidgets import QPushButton, QWidget
 
+from .. import chameleon
 from ..layout import MM_PER_INCH, REAL_CARD_MM, cards_on_panel
 from . import theme
 from .wireframe import (
@@ -43,6 +44,10 @@ BOTTOM_ROOM = 42
 # Le contour des cartes s'efface au-delà, faute de quoi la mosaïque devient un
 # aplat de traits où l'on ne distingue plus rien.
 FINE_PEN_ABOVE = 900
+# Le nombre de pas d'un dégradé caméléon à l'écran. Qt étire ensuite l'image à
+# la taille de l'écart : seize suffisent pour que l'œil n'y voie pas de marches,
+# et l'export, lui, en calcule un par pixel.
+GRADIENT_STEPS = 16
 
 # Le bouton d'ajout, à droite de la feuille : sa largeur et l'écart qui l'en
 # sépare. Haut comme un tiers de la feuille, pour se viser sans précision.
@@ -65,6 +70,14 @@ MINUS_ROW_SIZE = (16, 30)
 MAX_PANELS = 5
 # Et de lignes de feuilles. Trois A2 superposés font déjà un mur.
 MAX_PANEL_ROWS = 3
+
+
+def _to_qimage(pixels: np.ndarray) -> QImage:
+    """Un petit tableau de pixels en image, pour que Qt l'étire à la demande."""
+    data = np.ascontiguousarray(pixels)
+    hauteur, largeur, _ = data.shape
+    return QImage(data.data, largeur, hauteur, 3 * largeur,
+                  QImage.Format_RGB888).copy()
 
 
 class PagePreview(QWidget):
@@ -629,7 +642,13 @@ class PagePreview(QWidget):
         etendue = cases[0][2]
         for _row, _col, rect in cases:
             etendue = etendue.united(rect)
-        painter.fillRect(etendue, QColor(*session.gap_colour))
+        if session.chameleon_gaps or session.chameleon_border:
+            # ⚠️ **L'aperçu passe par la même arithmétique que l'export.** Un
+            # dégradé approché à l'écran, moyenné plutôt que pris au pixel,
+            # aurait montré autre chose que ce qui s'imprime.
+            self._draw_chameleon(painter, cases, etendue)
+        else:
+            painter.fillRect(etendue, QColor(*session.gap_colour))
         rows, cols = self._grid.shape
         for row, col, rect in cases:
             if row >= rows or col >= cols:
@@ -643,6 +662,135 @@ class PagePreview(QWidget):
             else:
                 painter.drawPixmap(rect.toRect(), tuile)
         painter.restore()
+
+    def _draw_chameleon(self, painter, cases, etendue: QRectF) -> None:
+        """Les écarts, les croisées et la bordure, tirés des vignettes.
+
+        Les cases ne se suivent pas forcément : d'une feuille à l'autre, deux
+        colonnes voisines sont séparées par du papier, et le dégradé qui les
+        relierait n'aurait aucun sens.
+        """
+        session = self._session
+        rects = {(row, col): rect for row, col, rect in cases}
+        if session.chameleon_gaps:
+            for (row, col), rect in rects.items():
+                self._chameleon_gap(painter, rects, row, col, rect,
+                                    horizontal=True)
+                self._chameleon_gap(painter, rects, row, col, rect,
+                                    horizontal=False)
+                self._chameleon_crossing(painter, rects, row, col, rect)
+        if session.chameleon_border:
+            self._chameleon_border(painter, etendue, rects)
+
+    def _edge(self, row: int, col: int, side: str) -> np.ndarray | None:
+        """La ligne de pixels d'un bord de case, vignette ou case vide."""
+        session = self._session
+        rows, cols = self._grid.shape
+        if not (0 <= row < rows and 0 <= col < cols):
+            return None
+        index = int(self._grid[row, col])
+        creux = (row, col) in set(session.empty_cells()) or index < 0
+        if creux or self._grid_cards is None:
+            hauteur, largeur = self._grid_cards[0].thumbnail.shape[:2]
+            taille = hauteur if side in ("gauche", "droite") else largeur
+            return np.tile(np.array(session.empty_colour, np.uint8), (taille, 1))
+        vignette = self._grid_cards[index].thumbnail
+        return {"gauche": vignette[:, 0, :], "droite": vignette[:, -1, :],
+                "haut": vignette[0, :, :], "bas": vignette[-1, :, :]}[side]
+
+    def _chameleon_gap(self, painter, rects, row: int, col: int, rect: QRectF,
+                       horizontal: bool) -> None:
+        voisin = rects.get((row, col + 1) if horizontal else (row + 1, col))
+        if voisin is None:
+            return
+        if horizontal:
+            zone = QRectF(rect.right(), rect.top(),
+                          voisin.left() - rect.right(), rect.height())
+            debut, fin = self._edge(row, col, "droite"), self._edge(row, col + 1,
+                                                                    "gauche")
+        else:
+            zone = QRectF(rect.left(), rect.bottom(), rect.width(),
+                          voisin.top() - rect.bottom())
+            debut, fin = self._edge(row, col, "bas"), self._edge(row + 1, col,
+                                                                 "haut")
+        if debut is None or fin is None or zone.width() <= 0 or zone.height() <= 0:
+            return
+        bande = chameleon.gradient_between(debut, fin, GRADIENT_STEPS, horizontal)
+        painter.drawImage(zone, _to_qimage(bande))
+
+    def _chameleon_crossing(self, painter, rects, row: int, col: int,
+                            rect: QRectF) -> None:
+        """Le carré où quatre cartes se touchent."""
+        droite = rects.get((row, col + 1))
+        bas = rects.get((row + 1, col))
+        diagonale = rects.get((row + 1, col + 1))
+        if droite is None or bas is None or diagonale is None:
+            return
+        zone = QRectF(rect.right(), rect.bottom(),
+                      droite.left() - rect.right(), bas.top() - rect.bottom())
+        if zone.width() <= 0 or zone.height() <= 0:
+            return
+        coins = [self._edge(row, col, "droite"), self._edge(row, col + 1, "gauche"),
+                 self._edge(row + 1, col, "droite"),
+                 self._edge(row + 1, col + 1, "gauche")]
+        if any(coin is None for coin in coins):
+            return
+        carre = chameleon.crossing(coins[0][-1], coins[1][-1], coins[2][0],
+                                   coins[3][0], GRADIENT_STEPS, GRADIENT_STEPS)
+        painter.drawImage(zone, _to_qimage(carre))
+
+    def _chameleon_border(self, painter, etendue: QRectF, rects) -> None:
+        """La bande qui cerne le morceau de mosaïque de cette feuille."""
+        session = self._session
+        if not rects:
+            return
+        largeur = self._gap_width(rects)
+        if largeur <= 0:
+            return
+        fond = session.background_colour
+        rows = [row for row, _ in rects]
+        cols = [col for _, col in rects]
+        for cote, zone in (
+            ("gauche", QRectF(etendue.left() - largeur, etendue.top(),
+                              largeur, etendue.height())),
+            ("droite", QRectF(etendue.right(), etendue.top(),
+                              largeur, etendue.height())),
+            ("haut", QRectF(etendue.left(), etendue.top() - largeur,
+                            etendue.width(), largeur)),
+            ("bas", QRectF(etendue.left(), etendue.bottom(),
+                           etendue.width(), largeur)),
+        ):
+            lignes = []
+            if cote in ("gauche", "droite"):
+                bord = min(cols) if cote == "gauche" else max(cols)
+                for row in sorted(set(rows)):
+                    ligne = self._edge(row, bord, cote)
+                    if ligne is not None:
+                        lignes.append(ligne)
+            else:
+                bord = min(rows) if cote == "haut" else max(rows)
+                for col in sorted(set(cols)):
+                    ligne = self._edge(bord, col, cote)
+                    if ligne is not None:
+                        lignes.append(ligne)
+            if not lignes:
+                continue
+            bord_pixels = np.concatenate(lignes)
+            dehors = cote in ("droite", "bas")
+            bande = chameleon.border_band(bord_pixels, fond, GRADIENT_STEPS,
+                                          cote in ("gauche", "droite"), dehors)
+            painter.drawImage(zone, _to_qimage(bande))
+
+    def _gap_width(self, rects) -> float:
+        """L'écart entre deux cases voisines, à l'écran."""
+        for (row, col), rect in rects.items():
+            voisin = rects.get((row, col + 1))
+            if voisin is not None and voisin.left() > rect.right():
+                return voisin.left() - rect.right()
+            voisin = rects.get((row + 1, col))
+            if voisin is not None and voisin.top() > rect.bottom():
+                return voisin.top() - rect.bottom()
+        return 0.0
 
     def _tile(self, index: int) -> QPixmap | None:
         """La vignette d'une carte, convertie une seule fois."""

@@ -229,6 +229,10 @@ class ExportDialog(QDialog):
             background=session.background_colour,
             gap_colour=session.gap_colour,
             empty_colour=session.empty_colour,
+            # Le mode caméléon aussi : oublié, le fichier écrit reprenait des
+            # aplats là où l'écran montrait des dégradés.
+            chameleon_gaps=session.chameleon_gaps,
+            chameleon_border=session.chameleon_border,
             jpeg_quality=self._quality.value(),
         )
 

@@ -86,6 +86,7 @@ class Session(QObject):
     ALGORITHM_SETTINGS = frozenset({
         "iterations", "snapshot_every",
         "empty_colour", "gap_colour", "background_colour",
+        "chameleon_gaps", "chameleon_border",
         "stop_on_stagnation", "stagnation_iterations",
         "stop_on_time", "time_budget",
         "use_annealing", "acceptance", "strip_size",
@@ -155,6 +156,11 @@ class Session(QObject):
         self.empty_colour = (255, 255, 255)
         self.gap_colour = (255, 255, 255)
         self.background_colour = (255, 255, 255)
+        # Le mode caméléon : les écarts, et le pourtour de la grille, prennent
+        # la couleur de ce qui les borde au lieu d'un aplat. Voir
+        # `chameleon.py` : c'est un habillage, le calcul n'en sait rien.
+        self.chameleon_gaps = False
+        self.chameleon_border = False
         self.stop_on_stagnation = False
         self.stagnation_iterations = 50_000
         self.stop_on_time = False
@@ -275,6 +281,8 @@ class Session(QObject):
             "empty_colour": list(self.empty_colour),
             "gap_colour": list(self.gap_colour),
             "background_colour": list(self.background_colour),
+            "chameleon_gaps": self.chameleon_gaps,
+            "chameleon_border": self.chameleon_border,
         }
 
     def apply_presentation(self, presentation: dict) -> None:
@@ -287,6 +295,9 @@ class Session(QObject):
         couleurs = {nom: tuple(presentation[nom]) for nom in
                     ("empty_colour", "gap_colour", "background_colour")
                     if presentation.get(nom) is not None}
+        couleurs.update({nom: bool(presentation[nom]) for nom in
+                         ("chameleon_gaps", "chameleon_border")
+                         if nom in presentation})
         mise_en_page = {nom: presentation[nom] for nom in
                         ("paper", "landscape", "dpi", "panels", "panel_rows",
                          "card_width_mm", "card_gap_mm")

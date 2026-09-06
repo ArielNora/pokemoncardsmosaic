@@ -454,3 +454,97 @@ def test_a_stubborn_export_keeps_its_reference(ecran):
 def test_shutdown_is_content_when_nothing_is_running(ecran):
     widget, _, _ = ecran
     assert widget.shutdown() is True
+
+
+# --- Le caméléon et la pipette ----------------------------------------------
+
+def test_the_chameleon_switches_reach_the_session(ecran):
+    widget, session, _ = ecran
+    couleurs = widget._tabs[1]
+
+    couleurs._chameleon_gaps.setChecked(True)
+    assert session.chameleon_gaps
+    couleurs._chameleon_border.setChecked(True)
+    assert session.chameleon_border
+
+    couleurs._chameleon_gaps.setChecked(False)
+    assert not session.chameleon_gaps
+
+
+def test_the_gap_colour_greys_out_under_the_chameleon(ecran):
+    """⚠️ **Grisée, pas retirée.** L'effacer ferait oublier ce qu'on retrouvera
+    en éteignant le mode."""
+    widget, session, _ = ecran
+    couleurs = widget._tabs[1]
+    assert couleurs._buttons["gap_colour"].isEnabled()
+
+    session.set_algorithm(chameleon_gaps=True)
+
+    assert not couleurs._buttons["gap_colour"].isEnabled()
+    assert not couleurs._droppers["gap_colour"].isEnabled()
+    assert couleurs._buttons["background_colour"].isEnabled(), (
+        "les autres couleurs restent réglables"
+    )
+
+    session.set_algorithm(chameleon_gaps=False)
+    assert couleurs._buttons["gap_colour"].isEnabled()
+
+
+def test_the_eyedropper_takes_the_colour_under_the_click(ecran):
+    """On prélève dans le dessin, pas dans un modèle : `grab()` donne
+    exactement ce que l'œil voit."""
+    from PySide6.QtCore import QPoint, Qt
+    from PySide6.QtTest import QTest
+
+    widget, session, _ = ecran
+    session.set_algorithm(background_colour=(10, 200, 30))
+    widget.resize(900, 600)
+    widget.show()
+    widget.enter()
+
+    widget._tabs[1]._droppers["empty_colour"].click()
+    assert widget._picking_role == "empty_colour"
+    assert widget._preview.cursor().shape() == Qt.CrossCursor
+
+    # Un coin de l'aperçu : le fond de la feuille, qu'on vient de teinter.
+    rects = widget._preview.rects()
+    feuille = rects[0]
+    point = QPoint(int(feuille.left() + 8), int(feuille.top() + 8))
+    QTest.mousePress(widget._preview, Qt.LeftButton, pos=point)
+
+    # ⚠️ À une unité près : le dessin est lissé, et la capture d'un widget peut
+    # passer par une mise à l'échelle. C'est la couleur du fond, pas une autre.
+    assert all(abs(pris - voulu) <= 2 for pris, voulu
+               in zip(session.empty_colour, (10, 200, 30), strict=True)), (
+        session.empty_colour)
+    assert widget._picking_role == "", "la pipette se referme après un clic"
+    assert widget._preview.cursor().shape() == Qt.SizeAllCursor
+
+
+def test_the_preview_draws_the_chameleon_gaps(ecran):
+    """⚠️ L'aperçu passe par la même arithmétique que l'export : un dégradé
+    moyenné à l'écran aurait montré autre chose que ce qui s'imprime."""
+    widget, session, jeu = ecran
+    # Deux aplats francs, un écart large : le dégradé doit se voir.
+    for numero, card in enumerate(jeu.cards):
+        card.thumbnail[:] = (255, 0, 0) if numero % 2 == 0 else (0, 0, 255)
+    session.set_layout(card_gap_mm=8.0)
+    session.set_algorithm(gap_colour=(0, 255, 0), chameleon_gaps=True)
+    widget.enter()
+    widget.show()
+
+    image = widget._preview.grab().toImage()
+    cases = widget._preview.grid_cells(widget._preview.rects()[0])
+    premier = next(r for row, col, r in cases if (row, col) == (0, 0))
+    second = next(r for row, col, r in cases if (row, col) == (0, 1))
+    ratio = image.devicePixelRatio() or 1
+    y = int(premier.center().y() * ratio)
+    couleurs = [image.pixelColor(int(x * ratio), y).getRgb()[:3]
+                for x in range(int(premier.right()) + 2, int(second.left()) - 1)]
+
+    assert couleurs, "l'écart est trop étroit pour être mesuré"
+    assert all(couleur != (0, 255, 0) for couleur in couleurs), (
+        "l'aplat de la couleur d'écart ne doit plus se voir"
+    )
+    assert couleurs[0][0] > couleurs[-1][0], "le rouge s'efface vers le bleu"
+    assert couleurs[0][2] < couleurs[-1][2]
