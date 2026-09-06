@@ -63,6 +63,14 @@ SWATCH = QSize(28, 18)
 SHUTDOWN_TIMEOUT_MS = 5000
 
 
+def _separator() -> QFrame:
+    """Un trait horizontal, pour séparer deux sujets d'une même section."""
+    trait = QFrame()
+    trait.setFrameShape(QFrame.HLine)
+    trait.setFrameShadow(QFrame.Sunken)
+    return trait
+
+
 def swatch(colour) -> str:
     """La feuille de style d'un bouton qui montre sa couleur."""
     return (f"background: rgb({colour[0]}, {colour[1]}, {colour[2]});"
@@ -118,19 +126,10 @@ class PresentationTab(ExportTab):
             police.setPointSize(police.pointSize() + SMALL_BUTTON_BOOST)
             bouton.setFont(police)
 
-        champs = QHBoxLayout()
-        champs.setSpacing(8)
-        for intitule, champ in ((self._width_label, self._width),
-                                (self._gap_label, self._gap)):
-            colonne = QVBoxLayout()
-            colonne.setSpacing(2)
-            colonne.addWidget(intitule)
-            colonne.addWidget(champ)
-            champs.addLayout(colonne)
-        champs.addStretch(1)
-
-        # Les deux tailles qu'on peut vouloir d'un clic, côte à côte ; le
-        # centrage, qui ne touche pas à la taille, seul sur sa ligne.
+        # ⚠️ **Un sujet par bloc, séparés d'un trait.** La largeur et ses deux
+        # boutons vont ensemble, l'écart est autre chose, et le centrage ne
+        # touche à aucune taille : tout à la file, on cliquait « Au plus grand »
+        # en croyant agir sur l'écart au-dessus duquel il se trouvait.
         tailles = QHBoxLayout()
         tailles.setSpacing(6)
         tailles.addWidget(self._real_width)
@@ -144,8 +143,13 @@ class PresentationTab(ExportTab):
         pile = QVBoxLayout(self)
         pile.setContentsMargins(6, 4, 6, 6)
         pile.setSpacing(6)
-        pile.addLayout(champs)
+        pile.addWidget(self._width_label)
+        pile.addWidget(self._width)
         pile.addLayout(tailles)
+        pile.addWidget(_separator())
+        pile.addWidget(self._gap_label)
+        pile.addWidget(self._gap)
+        pile.addWidget(_separator())
         pile.addLayout(centrage)
         self.retranslate_ui()
 
@@ -153,8 +157,8 @@ class PresentationTab(ExportTab):
         return self.tr("Présentation")
 
     def retranslate_ui(self) -> None:
-        self._width_label.setText(self.tr("Largeur (mm)"))
-        self._gap_label.setText(self.tr("Écart (mm)"))
+        self._width_label.setText(self.tr("Largeur de la carte (mm)"))
+        self._gap_label.setText(self.tr("Écart entre les cartes (mm)"))
         self._real_width.setText(self.tr("Taille réelle"))
         self._auto_width.setText(self.tr("Au plus grand"))
         self._centre.setText(self.tr("Centrer"))

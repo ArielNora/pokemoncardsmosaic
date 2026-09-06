@@ -143,9 +143,13 @@ def test_the_real_size_button_poses_a_real_card(ecran):
     assert session.card_width_mm == pytest.approx(REAL_CARD_MM[0])
 
 
-def test_the_two_fields_share_one_line_and_stay_small(ecran):
+def test_the_fields_stay_small_and_each_subject_has_its_block(ecran):
     """⚠️ Les grands compteurs de l'étape 2 prenaient cent cinquante pixels de
-    haut chacun : ici on ne pose pas la mise en page, on la retouche."""
+    haut chacun : ici on ne pose pas la mise en page, on la retouche. ⚠️ Et tout
+    à la file, on cliquait « Au plus grand » en croyant agir sur l'écart au-dessus
+    duquel il se trouvait : un trait sépare désormais les sujets."""
+    from PySide6.QtWidgets import QFrame
+
     from pokemon_mosaic.ui.export_step import FIELD_WIDTH
 
     widget, _, _ = ecran
@@ -154,12 +158,21 @@ def test_the_two_fields_share_one_line_and_stay_small(ecran):
 
     assert presentation._width.width() == FIELD_WIDTH
     assert presentation._gap.width() == FIELD_WIDTH
-    # Même hauteur de départ : ils sont bien sur la même ligne.
-    assert (presentation._width.mapTo(presentation, presentation.rect().topLeft())
-            .y() == presentation._gap.mapTo(
-                presentation, presentation.rect().topLeft()).y())
-    assert presentation._width_label.text() == "Largeur (mm)"
-    assert presentation._gap_label.text() == "Écart (mm)"
+    assert presentation._width_label.text() == "Largeur de la carte (mm)"
+    assert presentation._gap_label.text() == "Écart entre les cartes (mm)"
+
+    traits = [enfant for enfant in presentation.findChildren(QFrame)
+              if enfant.frameShape() == QFrame.HLine]
+    assert len(traits) == 2, "un trait après la largeur, un après l'écart"
+
+    # L'ordre de haut en bas : largeur, ses boutons, trait, écart, trait, centrer.
+    def hauteur(widget_):
+        return widget_.mapTo(presentation, widget_.rect().topLeft()).y()
+
+    assert (hauteur(presentation._width_label) < hauteur(presentation._width)
+            < hauteur(presentation._real_width) < hauteur(traits[0])
+            < hauteur(presentation._gap_label) < hauteur(presentation._gap)
+            < hauteur(traits[1]) < hauteur(presentation._centre))
 
 
 def test_the_automatic_width_is_shown_in_millimetres(ecran):
