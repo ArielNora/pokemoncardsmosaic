@@ -660,3 +660,45 @@ def test_no_hairline_inside_the_mosaic_without_a_gap(ecran):
 
         blancs = int((dedans == 255).all(axis=2).sum())
         assert blancs == 0, f"{blancs} pixels de fond dans la mosaïque à {hauteur}"
+
+
+# --- Ce qui déborde, et l'aura du bouton ------------------------------------
+
+def test_cards_outside_the_pages_are_said_and_block_the_export(ecran):
+    """⚠️ La grille est arrêtée, mais l'écart, la taille des cartes et le nombre
+    de feuilles se règlent encore ici : on peut pousser des cartes hors des
+    pages d'un clic sans que rien ne le dise."""
+    widget, session, _ = ecran
+    widget.enter()
+    assert widget._export.isEnabled() and widget._warning.isHidden()
+
+    session.set_layout(card_width_mm=120.0)
+
+    assert not widget._warning.isHidden()
+    assert "sortent des pages" in widget._warning.text()
+    assert widget._warning.property("role") == "error"
+    assert not widget._export.isEnabled(), "écrire un poster amputé n'a pas de sens"
+
+    session.set_layout(card_width_mm=None)
+    assert widget._warning.isHidden()
+    assert widget._export.isEnabled()
+
+
+def test_the_export_button_wears_the_aura_of_its_state(ecran):
+    """La même que « Suivant » avait sur les autres étapes, et il n'y a plus de
+    « Suivant » ici."""
+    from pokemon_mosaic.ui import theme
+
+    widget, session, _ = ecran
+    couleurs = theme.colours(widget.palette())
+    widget.enter()
+
+    assert widget._export_glow.color().name() == couleurs["ok"]
+    pret = (widget._export_glow.color().alpha(), widget._export_glow.blurRadius())
+
+    session.set_layout(card_width_mm=120.0)
+
+    assert widget._export_glow.color().name() == couleurs["error"]
+    attente = (widget._export_glow.color().alpha(),
+               widget._export_glow.blurRadius())
+    assert pret > attente, "le rouge reste le plus discret des deux"

@@ -321,6 +321,26 @@ def test_the_window_walks_four_steps(fenetre):
         "Cartes", "Paramètres", "Exécution", "Export"]
 
 
+def test_the_last_step_hides_next_without_moving_back(fenetre, tmp_path):
+    """⚠️ Sa place reste tenue : sans cela « Précédent » glissait vers le bord
+    droit en arrivant à l'export, et sautait de nouveau en revenant."""
+    w, session = fenetre
+    session.set_cards(card_set_in(tmp_path, {"s": ["a"]}), str(tmp_path))
+    w.resize(1100, 760)
+    w.show()
+    avant = w._back.x()
+
+    w._stack.setCurrentIndex(w._stack.count() - 1)
+    w.layout().activate()
+
+    assert not w._next.isVisible(), "il n'y a plus d'écran après"
+    assert w._back.x() == avant, "« Précédent » n'a pas à bouger"
+
+    w._stack.setCurrentIndex(0)
+    w.layout().activate()
+    assert w._next.isVisible()
+
+
 def test_the_last_step_has_no_aura_at_all(fenetre, tmp_path):
     """⚠️ Le bouton y est éteint parce qu'il n'y a plus d'écran après, et non
     parce qu'il manque quelque chose : une aura rouge y accuserait un travail

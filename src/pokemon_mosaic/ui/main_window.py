@@ -192,6 +192,9 @@ class MainWindow(QMainWindow):
         bottom.addWidget(self._language_box)
         bottom.addStretch(1)
         bottom.addWidget(self._back)
+        politique = self._next.sizePolicy()
+        politique.setRetainSizeWhenHidden(True)
+        self._next.setSizePolicy(politique)
         bottom.addWidget(self._next)
 
         layout = QVBoxLayout()
@@ -250,8 +253,12 @@ class MainWindow(QMainWindow):
         # Sans carte, les trois écrans suivants n'ont rien à afficher : la grille
         # se dimensionne sur le nombre de cartes, les réglages projettent des
         # chiffres à partir d'elles, et l'exécution n'a rien à assembler.
-        avancable = (current < self._stack.count() - 1
-                     and self._session.total_cards > 0)
+        dernier = current == self._stack.count() - 1
+        # ⚠️ **Pas de « Suivant » à la dernière étape**, et sa place reste
+        # tenue : sans cela « Précédent » glissait vers le bord droit en
+        # arrivant à l'export, et sautait de nouveau en revenant.
+        self._next.setVisible(not dernier)
+        avancable = not dernier and self._session.total_cards > 0
         # Un écran peut refuser de laisser passer : l'étape 2 exige que la partie
         # affichée soit complète : toutes ses cases vides placées, par exemple.
         peut = getattr(self._stack.currentWidget(), "can_advance", None)

@@ -23,6 +23,7 @@ from PySide6.QtWidgets import (
     QColorDialog,
     QDoubleSpinBox,
     QFrame,
+    QGraphicsDropShadowEffect,
     QHBoxLayout,
     QLabel,
     QProgressBar,
@@ -33,7 +34,7 @@ from PySide6.QtWidgets import (
     QWidget,
 )
 
-from ..layout import MM_PER_INCH, REAL_CARD_MM, max_useful_dpi
+from ..layout import MM_PER_INCH, REAL_CARD_MM, grid_fits, max_useful_dpi
 from . import theme
 from .arrangements_dialog import ArrangementsDialog
 from .export_dialog import ExportDialog
@@ -696,10 +697,31 @@ class ExportStep(QWidget):
         self._export_progress.hide()
         self._summary = QLabel()
         self._summary.setWordWrap(True)
+        # ⚠️ **Ce qui déborde ne s'imprimera pas.** La grille est arrêtée, mais
+        # l'écart, la taille des cartes et le nombre de feuilles se règlent
+        # encore ici : on peut donc, d'un clic, pousser des cartes hors des
+        # pages sans que rien ne le dise.
+        self._warning = QLabel()
+        self._warning.setWordWrap(True)
+        theme.mark(self._warning, "error")
+        gras = self._warning.font()
+        gras.setBold(True)
+        self._warning.setFont(gras)
+        self._warning.hide()
+
+        # L'aura du bouton d'export, verte quand il est prêt, rouge quand
+        # quelque chose manque : la même que « Suivant » avait sur les autres
+        # étapes, et il n'y a plus de « Suivant » ici.
+        self._export_glow = QGraphicsDropShadowEffect(self._export)
+        self._export_glow.setOffset(0, 0)
+        self._export.setGraphicsEffect(self._export_glow)
 
         droite = QVBoxLayout()
-        droite.setContentsMargins(0, 0, 0, 0)
+        # L'aura du bouton déborde : sans cette place, elle serait rognée par
+        # le bord du panneau.
+        droite.setContentsMargins(0, 0, theme.GLOW_ROOM, theme.GLOW_ROOM)
         droite.addWidget(self._saved, 1)
+        droite.addWidget(self._warning)
         droite.addWidget(self._summary)
         droite.addWidget(self._export)
         droite.addWidget(self._cancel_export)
@@ -868,13 +890,27 @@ class ExportStep(QWidget):
         self._preview.refresh()
         self._update_summary()
 
+    def _fits_the_pages(self) -> bool:
+        """La mosaïque tient-elle sur les feuilles, à la taille courante ?"""
+        session = self._session
+        return grid_fits(session.panels, session.cols, session.rows,
+                         session.panel_geometry(), session.panel_rows)
+
     def _update_summary(self) -> None:
         saved = self.current_saved()
+        tient = self._fits_the_pages()
+        self._warning.setVisible(not tient)
+        self._warning.setText(
+            "" if tient else
+            self.tr("Des cartes sortent des pages : ajoutez une feuille, "
+                    "réduisez la taille des cartes ou l'écart."))
         if saved is None:
             self._summary.setText(self.tr("Aucun agencement gardé."))
             self._export.setEnabled(False)
+            self._update_glow(False)
             return
-        self._export.setEnabled(self._export_thread is None)
+        self._export.setEnabled(self._export_thread is None and tient)
+        self._update_glow(self._export.isEnabled())
         self._summary.setText(
             self.tr("Agencement %1 sur %2, score %3")
              .replace("%1", str((self._slot or 0) + 1))
@@ -894,6 +930,18 @@ class ExportStep(QWidget):
             dialogue.deleteLater()
 
     # --- Écriture ---------------------------------------------------------
+
+    def _update_glow(self, pret: bool) -> None:
+        """Verte quand on peut écrire, rouge quand il manque quelque chose."""
+        theme.set_glow(self._export_glow, self.palette(), pret)
+
+    def changeEvent(self, event) -> None:
+        """⚠️ Une couleur figée dans un effet ne suit pas le mode : elle garde
+        la teinte qu'on lui a posée, verte foncée sur une fenêtre devenue
+        claire."""
+        super().changeEvent(event)
+        if event.type() == QEvent.PaletteChange:
+            self._update_summary()
 
     def _open_export(self) -> None:
         saved = self.current_saved()
