@@ -17,11 +17,9 @@ import os
 
 from PySide6.QtCore import QStandardPaths
 from PySide6.QtWidgets import (
-    QCheckBox,
     QComboBox,
     QDialog,
     QDialogButtonBox,
-    QDoubleSpinBox,
     QFileDialog,
     QFormLayout,
     QHBoxLayout,
@@ -38,6 +36,15 @@ from .session import Session
 
 # Extension par format, dans l'ordre d'affichage.
 FORMATS = (("PNG", ".png"), ("JPEG", ".jpg"), ("PDF", ".pdf"))
+
+
+# Le nom de base des fichiers, quand l'utilisateur n'en donne pas.
+DEFAULT_BASENAME = "poster"
+
+
+def _default_folder() -> str:
+    return QStandardPaths.writableLocation(
+        QStandardPaths.PicturesLocation) or os.getcwd()
 
 
 class ExportDialog(QDialog):
@@ -59,43 +66,24 @@ class ExportDialog(QDialog):
             self._format.addItem(name, extension)
         self._format.currentIndexChanged.connect(self._on_format_changed)
 
-        self._full_resolution = QCheckBox()
-        self._full_resolution.setChecked(True)
-        self._full_resolution.stateChanged.connect(self._update_plan)
-
-        # Écrite dans la session sur-le-champ : les aperçus de l'étape 2
-        # calculent leur géométrie à cette résolution, et se tromperaient d'un
-        # arrondi si le fichier partait à une autre.
-        self._dpi = QSpinBox()
-        self._dpi.setRange(50, 1200)
-        self._dpi.setSingleStep(50)
-        self._dpi.setValue(self._session.dpi)
-        # Un préréglage écrit à la main peut porter une finesse hors bornes : le
-        # champ l'a écrêtée, et la session doit apprendre ce qu'il a accepté.
-        if self._dpi.value() != self._session.dpi:
-            self._session.set_layout(dpi=self._dpi.value())
-        self._dpi.valueChanged.connect(self._on_dpi_changed)
-
         self._quality = QSpinBox()
         self._quality.setRange(1, 100)
         self._quality.setValue(95)
 
-        self._overlap = QDoubleSpinBox()
-        self._overlap.setRange(0.0, 50.0)
-        self._overlap.setDecimals(1)
-        self._overlap.setSingleStep(1.0)
-        self._overlap.setSuffix(" mm")
-        self._overlap.valueChanged.connect(self._update_plan)
-
-        self._crop_marks = QCheckBox()
-
-        self._path = QLineEdit(self._default_path())
-        self._path.textChanged.connect(self._update_plan)
+        # ⚠️ **Le dossier et le nom, séparés.** Un seul champ de chemin
+        # mélangeait les deux, et l'extension y menait sa propre vie : on
+        # pouvait laisser « .png » en ayant choisi JPEG. Le nom est celui de
+        # base, les feuilles y ajoutant « page1 », « page2 ».
+        self._folder = QLineEdit(_default_folder())
+        self._folder.textChanged.connect(self._update_plan)
         self._browse = QPushButton()
-        self._browse.clicked.connect(lambda: self._pick_file())
-        path_row = QHBoxLayout()
-        path_row.addWidget(self._path, 1)
-        path_row.addWidget(self._browse)
+        self._browse.clicked.connect(self._pick_folder)
+        folder_row = QHBoxLayout()
+        folder_row.addWidget(self._folder, 1)
+        folder_row.addWidget(self._browse)
+
+        self._basename = QLineEdit(DEFAULT_BASENAME)
+        self._basename.textChanged.connect(self._update_plan)
 
         self._layout_recap = QLabel()
         self._plan_label = QLabel()
@@ -111,18 +99,12 @@ class ExportDialog(QDialog):
         self._form.addRow(self._layout_row, self._layout_recap)
         self._format_row = QLabel()
         self._form.addRow(self._format_row, self._format)
-        self._dpi_row = QLabel()
-        self._form.addRow(self._dpi_row, self._dpi)
-        self._resolution_row = QLabel()
-        self._form.addRow(self._resolution_row, self._full_resolution)
         self._quality_row = QLabel()
         self._form.addRow(self._quality_row, self._quality)
-        self._overlap_row = QLabel()
-        self._form.addRow(self._overlap_row, self._overlap)
-        self._marks_row = QLabel()
-        self._form.addRow(self._marks_row, self._crop_marks)
-        self._file_row = QLabel()
-        self._form.addRow(self._file_row, path_row)
+        self._folder_row = QLabel()
+        self._form.addRow(self._folder_row, folder_row)
+        self._name_row = QLabel()
+        self._form.addRow(self._name_row, self._basename)
 
         self._buttons = QDialogButtonBox(
             QDialogButtonBox.Ok | QDialogButtonBox.Cancel
@@ -144,29 +126,16 @@ class ExportDialog(QDialog):
         self.setWindowTitle(self.tr("Exporter le poster"))
         self._layout_row.setText(self.tr("Mise en page"))
         self._format_row.setText(self.tr("Format"))
-        self._dpi_row.setText(self.tr("Finesse (DPI)"))
-        self._dpi.setToolTip(
-            self.tr("Combien de points par pouce l'imprimante recevra. Elle ne "
-                    "change rien aux dimensions du poster, seulement au poids du "
-                    "fichier et à la netteté.")
-        )
-        self._resolution_row.setText(self.tr("Résolution"))
         self._quality_row.setText(self.tr("Qualité JPEG"))
-        self._overlap_row.setText(self.tr("Chevauchement"))
-        self._marks_row.setText(self.tr("Repères de coupe"))
-        self._file_row.setText(self.tr("Fichier"))
+        self._folder_row.setText(self.tr("Dossier"))
+        self._name_row.setText(self.tr("Nom des fichiers"))
+        self._basename.setToolTip(
+            self.tr("Le nom de base. Une feuille seule le porte tel quel ; "
+                    "plusieurs y ajoutent « page1 », « page2 »."))
         self._browse.setText(self.tr("Parcourir…"))
-        self._full_resolution.setText(
-            self.tr("Pleine résolution (relit les images d'origine)")
-        )
-        self._crop_marks.setText(self.tr("Tracer les repères aux angles"))
         self._update_plan()
 
     # --- Réglages ---------------------------------------------------------
-
-    def _default_path(self) -> str:
-        folder = QStandardPaths.writableLocation(QStandardPaths.PicturesLocation)
-        return os.path.join(folder or os.getcwd(), "poster.png")
 
     def _extension(self) -> str:
         return self._format.currentData()
@@ -176,27 +145,13 @@ class ExportDialog(QDialog):
         is_jpeg = extension in (".jpg", ".jpeg")
         self._quality.setVisible(is_jpeg)
         self._quality_row.setVisible(is_jpeg)
-        # L'extension suit le format choisi : laisser « poster.png » alors que
-        # JPEG est sélectionné écrirait un PNG sans le dire.
-        base = os.path.splitext(self._path.text())[0]
-        if base:
-            self._path.setText(base + extension)
         self._update_plan()
 
-    def _on_dpi_changed(self, dpi: int) -> None:
-        self._session.set_layout(dpi=dpi)
-        self._update_plan()
-
-    def _pick_file(self) -> None:
-        name = self._format.currentText()
-        extension = self._extension()
-        chosen, _ = QFileDialog.getSaveFileName(
-            self, self.tr("Enregistrer le poster"), self._path.text(),
-            f"{name} (*{extension})"
-        )
+    def _pick_folder(self) -> None:
+        chosen = QFileDialog.getExistingDirectory(
+            self, self.tr("Où écrire le poster"), self._folder.text())
         if chosen:
-            base = os.path.splitext(chosen)[0]
-            self._path.setText(base + extension)
+            self._folder.setText(chosen)
 
     def settings(self) -> PosterSettings:
         session = self._session
@@ -207,7 +162,7 @@ class ExportDialog(QDialog):
             # imprimé un A2 à la place de ce que l'écran montrait.
             paper_size_mm=session.paper_size_mm,
             landscape=session.landscape,
-            dpi=self._dpi.value(),
+            dpi=session.dpi,
             panels=session.panels,
             panel_rows=session.panel_rows,
             # ⚠️ Les déplacements aussi : sans eux, le fichier écrit remettrait
@@ -220,8 +175,10 @@ class ExportDialog(QDialog):
             # régler.
             card_width_mm=session.card_width_mm,
             card_gap_mm=session.card_gap_mm,
-            overlap_mm=self._overlap.value(),
-            crop_marks=self._crop_marks.isChecked(),
+            # ⚠️ Le chevauchement et les repères viennent de la session : ils
+            # se règlent à l'onglet « Coupe », et non plus ici.
+            overlap_mm=session.overlap_mm,
+            crop_marks=session.crop_marks,
             # ⚠️ **Les trois couleurs, et pas la seule des cases vides.** Le
             # fond et l'écart entre les cartes se règlent à l'étape d'export :
             # oubliés ici, le fichier serait blanc là où l'écran montrait une
@@ -237,10 +194,13 @@ class ExportDialog(QDialog):
         )
 
     def path(self) -> str:
-        return self._path.text().strip()
+        """Le chemin du premier fichier : dossier, nom de base, extension."""
+        nom = self._basename.text().strip() or DEFAULT_BASENAME
+        return os.path.join(self._folder.text().strip(),
+                            nom + self._extension())
 
     def full_resolution(self) -> bool:
-        return self._full_resolution.isChecked()
+        return self._session.full_resolution
 
     # --- Aperçu chiffré ---------------------------------------------------
 
@@ -252,7 +212,6 @@ class ExportDialog(QDialog):
         largeur, hauteur = session.paper_mm()
         feuille = session.paper or f"{largeur / 10:.1f} × {hauteur / 10:.1f} cm"
         self._layout_recap.setText(f"{feuille} {orientation} : {panels}")
-        self._overlap.setEnabled(session.panel_count() > 1)
 
         try:
             plan = self._plan = plan_poster(self._grid, self._cards, self.settings())
@@ -284,9 +243,9 @@ class ExportDialog(QDialog):
     def _show_targets(self) -> None:
         """Nomme les fichiers qui seront écrits, et signale ceux qui existent.
 
-        Avec plusieurs panneaux, choisir « poster.png » écrit en réalité
-        « poster_1of2.png » et « poster_2of2.png » : aucun sélecteur de fichier
-        ne prévient de leur écrasement.
+        Avec plusieurs feuilles, le nom « poster » écrit en réalité
+        « poster_page1sur2.png » et « poster_page2sur2.png » : rien d'autre ne
+        prévient de leur écrasement.
         """
         try:
             targets = panel_paths(self.path(), self._session.panels,
@@ -305,10 +264,10 @@ class ExportDialog(QDialog):
     # --- Validation -------------------------------------------------------
 
     def _try_accept(self) -> None:
-        path = self.path()
-        if not path:
-            self._warnings.setText(self.tr("Choisissez un fichier de destination."))
+        if not self._folder.text().strip():
+            self._warnings.setText(self.tr("Choisissez un dossier de destination."))
             return
+        path = self.path()
         if self._plan is None:
             # Le plan est déjà affiché en clair : accepter lancerait un fil de
             # fond pour qu'il échoue aussitôt sur la même erreur.

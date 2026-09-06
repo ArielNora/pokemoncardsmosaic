@@ -222,11 +222,11 @@ def test_an_offset_for_a_sheet_that_does_not_exist_is_ignored():
 def test_the_files_say_which_sheet_goes_where():
     """Sur plusieurs lignes, un numéro seul ne dirait plus où coller quoi."""
     assert panel_paths("/x/poster.png", 1, 1) == ["/x/poster.png"]
-    assert panel_paths("/x/poster.png", 2) == ["/x/poster_1of2.png",
-                                               "/x/poster_2of2.png"]
+    assert panel_paths("/x/poster.png", 2) == ["/x/poster_page1sur2.png",
+                                               "/x/poster_page2sur2.png"]
     noms = panel_paths("/x/poster.png", 2, 2)
-    assert noms == ["/x/poster_l1c1sur2x2.png", "/x/poster_l1c2sur2x2.png",
-                    "/x/poster_l2c1sur2x2.png", "/x/poster_l2c2sur2x2.png"]
+    assert noms == ["/x/poster_page1sur4_l1c1.png", "/x/poster_page2sur4_l1c2.png",
+                    "/x/poster_page3sur4_l2c1.png", "/x/poster_page4sur4_l2c2.png"]
 
 
 def test_the_poster_is_as_tall_as_its_sheet_rows():
@@ -313,7 +313,8 @@ def test_panels_are_written_as_numbered_files(tmp_path):
         small_grid(4, 4), card_set(16), settings,
         str(tmp_path / "poster.png"), full_resolution=False,
     )
-    assert [w.split("/")[-1] for w in written] == ["poster_1of2.png", "poster_2of2.png"]
+    assert [w.split("/")[-1] for w in written] == ["poster_page1sur2.png",
+                                                   "poster_page2sur2.png"]
 
 
 def test_a_grid_of_sheets_writes_one_file_per_sheet(tmp_path):
@@ -325,7 +326,7 @@ def test_a_grid_of_sheets_writes_one_file_per_sheet(tmp_path):
     )
     assert len(written) == 6
     assert [os.path.basename(w) for w in written][:2] == [
-        "poster_l1c1sur2x3.png", "poster_l1c2sur2x3.png"]
+        "poster_page1sur6_l1c1.png", "poster_page2sur6_l1c2.png"]
     from PIL import Image
 
     for chemin in written:
@@ -369,8 +370,8 @@ def test_a_card_straddling_the_cut_is_written_on_both_panels(tmp_path):
 
 def test_panel_paths_names_each_panel():
     assert panel_paths("/tmp/poster.png", 1) == ["/tmp/poster.png"]
-    assert panel_paths("/tmp/poster.png", 2) == ["/tmp/poster_1of2.png",
-                                                 "/tmp/poster_2of2.png"]
+    assert panel_paths("/tmp/poster.png", 2) == ["/tmp/poster_page1sur2.png",
+                                                 "/tmp/poster_page2sur2.png"]
 
 
 def test_panel_paths_refuses_an_unknown_format():
@@ -391,7 +392,7 @@ def test_each_panel_is_written_before_the_next_is_rendered(tmp_path):
     )
     # Au démarrage du second panneau, le premier est déjà sur le disque.
     assert seen[0] == (0, [])
-    assert seen[1] == (1, ["poster_1of2.png"])
+    assert seen[1] == (1, ["poster_page1sur2.png"])
     assert seen[2][0] == 2 and len(seen[2][1]) == 2
 
 
@@ -418,7 +419,7 @@ def test_a_cancelled_export_leaves_no_file_behind(tmp_path):
             check_cancelled=cancel_during_the_second_panel,
         )
     # Le test ne vaut que si un fichier existait bel et bien au moment de l'arrêt.
-    assert written_before_cancelling == ["poster_1of2.png"]
+    assert written_before_cancelling == ["poster_page1sur2.png"]
     assert list(tmp_path.glob("*.png")) == []
 
 

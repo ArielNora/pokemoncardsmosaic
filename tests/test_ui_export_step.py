@@ -62,16 +62,18 @@ def test_only_the_selected_slot_is_outlined(ecran):
     assert widget.current_saved() is session.saved[1]
 
 
-def test_the_three_sections_are_there_and_only_one_unfolds(ecran):
+def test_the_sections_are_there_and_only_one_unfolds(ecran):
     """⚠️ Deux sections dépliées font défiler la colonne, et l'œil ne sait plus
     où regarder."""
     widget, _, _ = ecran
     assert [section.key() for section in widget._sections] == [
-        "Présentation", "Couleurs des vides", "Résolution"]
-    assert [section.is_open() for section in widget._sections] == [True, False, False]
+        "Présentation", "Couleurs des vides", "Coupe", "Résolution"]
+    assert [section.is_open() for section in widget._sections] == [
+        True, False, False, False]
 
     widget._toggle_section("Résolution")
-    assert [section.is_open() for section in widget._sections] == [False, False, True]
+    assert [section.is_open() for section in widget._sections] == [
+        False, False, False, True]
 
     # Recliquer la même la referme : rien ne reste ouvert par force.
     widget._toggle_section("Résolution")
@@ -206,7 +208,7 @@ def test_the_three_colours_reach_the_session(ecran):
 
 def test_the_resolution_tab_writes_the_dpi_and_counts_the_pixels(ecran):
     widget, session, _ = ecran
-    resolution = widget._tabs[2]
+    resolution = widget._tabs[3]
 
     resolution._dpi.setValue(150)
 
@@ -765,3 +767,87 @@ def test_leaving_the_mode_gives_the_drag_back_to_the_view(ecran):
     glisser(widget._preview, (200, 150), (120, 150))
 
     assert barre.value() > depart
+
+
+# --- Coupe, source des images et finesse utile ------------------------------
+
+def test_the_cut_tab_writes_the_overlap_and_the_marks(ecran):
+    """Ils vivaient dans le dialogue d'écriture, où on les découvrait au
+    dernier moment."""
+    widget, session, _ = ecran
+    session.set_layout(panels=2)
+    coupe = widget._tabs[2]
+    coupe.refresh()
+
+    coupe._overlap.setValue(7.5)
+    coupe._crop_marks.setChecked(True)
+
+    assert session.overlap_mm == pytest.approx(7.5)
+    assert session.crop_marks
+
+
+def test_a_single_sheet_leaves_the_cut_settings_inert(ecran):
+    """Une feuille seule ne se raboute à rien : les réglages restent visibles
+    mais inertes, plutôt que de disparaître."""
+    widget, session, _ = ecran
+    coupe = widget._tabs[2]
+
+    session.set_layout(panels=1, panel_rows=1)
+    coupe.refresh()
+    assert not coupe._overlap.isEnabled() and not coupe._crop_marks.isEnabled()
+    assert "rien à rabouter" in coupe._note.text()
+
+    session.set_layout(panels=2)
+    coupe.refresh()
+    assert coupe._overlap.isEnabled() and coupe._crop_marks.isEnabled()
+
+
+def test_the_dpi_stops_at_the_useful_maximum(ecran):
+    """⚠️ Au premier essai, on montait à 1200 dpi sans rien y gagner qu'un
+    fichier quatre fois plus lourd."""
+    widget, session, _ = ecran
+    resolution = widget._tabs[3]
+    resolution.refresh()
+
+    utile = session.useful_dpi()
+    assert resolution._dpi.maximum() == round(utile)
+    assert "Finesse utile" in resolution._pixels.text()
+    # ⚠️ Posé exactement sur le plafond, on lisait qu'on était déjà au-delà :
+    # la comparaison se fait sur la valeur arrondie, celle qui borne le champ.
+    session.set_layout(dpi=round(utile))
+    resolution.refresh()
+    assert "Au-delà" not in resolution._pixels.text()
+
+    resolution._beyond.setChecked(True)
+    assert resolution._dpi.maximum() == 1200, "le passe-droit lève la borne"
+
+
+def test_the_source_changes_the_useful_maximum(ecran):
+    """Les vignettes font le quart des images d'origine : la finesse utile
+    suit."""
+    widget, session, _ = ecran
+    resolution = widget._tabs[3]
+
+    resolution._full.setChecked(True)
+    origine = session.useful_dpi()
+    plein = resolution._dpi.maximum()
+
+    resolution._full.setChecked(False)
+
+    assert not session.full_resolution
+    assert session.useful_dpi() < origine
+    assert resolution._dpi.maximum() < plein
+
+
+def test_a_dpi_above_the_new_maximum_comes_back_corrected(ecran):
+    """Le champ écrête : la session doit apprendre ce qu'il a accepté, sans
+    quoi le fichier partirait à une finesse que l'écran n'affiche plus."""
+    widget, session, _ = ecran
+    resolution = widget._tabs[3]
+    resolution._beyond.setChecked(True)
+    session.set_layout(dpi=1200)
+
+    resolution._beyond.setChecked(False)
+
+    assert session.dpi == resolution._dpi.value()
+    assert session.dpi <= round(session.useful_dpi())

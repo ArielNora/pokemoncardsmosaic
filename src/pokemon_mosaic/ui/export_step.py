@@ -34,7 +34,7 @@ from PySide6.QtWidgets import (
     QWidget,
 )
 
-from ..layout import MM_PER_INCH, REAL_CARD_MM, grid_fits, max_useful_dpi
+from ..layout import MM_PER_INCH, REAL_CARD_MM, grid_fits
 from . import theme
 from .arrangements_dialog import ArrangementsDialog
 from .export_dialog import ExportDialog
@@ -55,6 +55,8 @@ HEADING_BOOST = 2
 ZOOM_BAR_MARGIN = 12
 # Le champ du zoom : « 100 % » et ses flèches.
 ZOOM_FIELD_WIDTH = 82
+# La finesse la plus haute qu'on accepte de taper, passe-droit compris.
+DPI_CEILING = 1200
 # Les champs de la présentation : deux tiennent côte à côte dans la colonne.
 FIELD_WIDTH = 96
 # Les boutons de cette colonne, plus bas et plus petits que ceux d'un écran :
@@ -331,6 +333,70 @@ class ColoursTab(ExportTab):
                 **{role: (choisie.red(), choisie.green(), choisie.blue())})
 
 
+class CutTab(ExportTab):
+    """Ce que le raboutage demande : chevauchement et repères de coupe.
+
+    Deux réglages qui ne servent qu'à **plusieurs feuilles**, et qui n'ont rien
+    à voir avec les couleurs ni avec la finesse : ils vivaient dans le dialogue
+    d'écriture, où on les découvrait au dernier moment.
+    """
+
+    def __init__(self, session: Session, parent=None):
+        super().__init__(session, parent)
+        self._overlap = QDoubleSpinBox()
+        self._overlap.setRange(0.0, 50.0)
+        self._overlap.setDecimals(1)
+        self._overlap.setSingleStep(1.0)
+        self._overlap.setSuffix(" mm")
+        self._overlap.setFixedWidth(FIELD_WIDTH)
+        self._overlap.valueChanged.connect(self._on_overlap)
+        self._overlap_label = QLabel()
+        self._crop_marks = QCheckBox()
+        self._crop_marks.toggled.connect(
+            lambda actif: self._session.set_algorithm(crop_marks=actif))
+        self._note = QLabel()
+        self._note.setWordWrap(True)
+
+        pile = QVBoxLayout(self)
+        pile.setContentsMargins(6, 4, 6, 6)
+        pile.setSpacing(6)
+        pile.addWidget(self._overlap_label)
+        pile.addWidget(self._overlap)
+        pile.addWidget(self._crop_marks)
+        pile.addWidget(self._note)
+        self.retranslate_ui()
+
+    def title(self) -> str:
+        return self.tr("Coupe")
+
+    def retranslate_ui(self) -> None:
+        self._overlap_label.setText(self.tr("Chevauchement (mm)"))
+        self._crop_marks.setText(self.tr("Repères de coupe"))
+        self.refresh()
+
+    def refresh(self) -> None:
+        session = self._session
+        self._updating = True
+        self._overlap.setValue(session.overlap_mm)
+        self._crop_marks.setChecked(session.crop_marks)
+        self._updating = False
+        # ⚠️ Une feuille seule ne se raboute à rien : les deux réglages restent
+        # visibles, mais inertes, plutôt que de disparaître et de laisser
+        # croire qu'ils n'existent pas.
+        plusieurs = session.panel_count() > 1
+        for widget in (self._overlap, self._overlap_label, self._crop_marks):
+            widget.setEnabled(plusieurs)
+        self._note.setText(
+            self.tr("Une bande commune à deux feuilles voisines, pour les "
+                    "rabouter sans laisser de blanc, et de discrets repères aux "
+                    "angles pour rogner droit.") if plusieurs
+            else self.tr("Une seule feuille : rien à rabouter."))
+
+    def _on_overlap(self, valeur: float) -> None:
+        if not self._updating:
+            self._session.set_algorithm(overlap_mm=valeur)
+
+
 class ResolutionTab(ExportTab):
     """La finesse d'impression, et ce qu'elle donne en pixels.
 
@@ -342,12 +408,21 @@ class ResolutionTab(ExportTab):
     def __init__(self, session: Session, parent=None):
         super().__init__(session, parent)
         self._dpi = QSpinBox()
-        self._dpi.setRange(50, 1200)
+        self._dpi.setRange(50, DPI_CEILING)
         self._dpi.setSingleStep(50)
         self._dpi.valueChanged.connect(self._on_dpi)
         self._dpi_label = QLabel()
         self._pixels = QLabel()
         self._pixels.setWordWrap(True)
+
+        # ⚠️ **La source commande la finesse utile.** Les vignettes font le
+        # quart des images d'origine : au-delà, l'impression agrandit du vide.
+        self._full = QCheckBox()
+        self._full.toggled.connect(
+            lambda actif: self._session.set_algorithm(full_resolution=actif))
+        self._beyond = QCheckBox()
+        self._beyond.toggled.connect(
+            lambda actif: self._session.set_algorithm(beyond_useful_dpi=actif))
 
         finesse = QHBoxLayout()
         finesse.setSpacing(8)
@@ -357,7 +432,9 @@ class ResolutionTab(ExportTab):
         pile = QVBoxLayout(self)
         pile.setContentsMargins(6, 4, 6, 6)
         pile.setSpacing(6)
+        pile.addWidget(self._full)
         pile.addLayout(finesse)
+        pile.addWidget(self._beyond)
         pile.addWidget(self._pixels)
         self.retranslate_ui()
 
@@ -366,26 +443,47 @@ class ResolutionTab(ExportTab):
 
     def retranslate_ui(self) -> None:
         self._dpi_label.setText(self.tr("Finesse (DPI)"))
+        self._full.setText(self.tr("Images d'origine"))
+        self._full.setToolTip(
+            self.tr("Décochée, l'export se contente des vignettes : rapide, "
+                    "mais flou à l'impression."))
+        self._beyond.setText(self.tr("Aller plus loin"))
+        self._beyond.setToolTip(
+            self.tr("Dépasser la finesse utile. Au-delà, les cartes sont "
+                    "agrandies sans gagner un pixel de détail."))
         self.refresh()
 
     def refresh(self) -> None:
         self._updating = True
         session = self._session
+        self._full.setChecked(session.full_resolution)
+        self._beyond.setChecked(session.beyond_useful_dpi)
+        # ⚠️ **Le champ s'arrête à la finesse utile**, sauf passe-droit : au
+        # premier essai, on montait à 1200 dpi sans rien y gagner qu'un fichier
+        # quatre fois plus lourd.
+        utile = session.useful_dpi()
+        plafond = (DPI_CEILING if session.beyond_useful_dpi or utile == float("inf")
+                   else max(50, min(DPI_CEILING, round(utile))))
+        self._dpi.setMaximum(plafond)
         self._dpi.setValue(session.dpi)
         self._updating = False
+        # Le champ a pu écrêter : la session doit apprendre ce qu'il a accepté.
+        if self._dpi.value() != session.dpi:
+            session.set_layout(dpi=self._dpi.value())
         largeur, hauteur = session.paper_mm()
         pixels_l = round(largeur / 25.4 * session.dpi)
         pixels_h = round(hauteur / 25.4 * session.dpi)
         texte = (self.tr("Chaque feuille fera %1 × %2 pixels.")
                  .replace("%1", str(pixels_l)).replace("%2", str(pixels_h)))
-        cartes = session.card_set
-        if cartes is not None and len(cartes):
-            utile = max_useful_dpi(session.paper_mm(), session.cols,
-                                   cartes.full_size[0])
-            if session.dpi > utile:
-                texte += " " + (self.tr("Au-delà de %1 DPI, l'impression "
-                                        "agrandit sans ajouter de détail.")
-                                .replace("%1", f"{utile:.0f}"))
+        if utile != float("inf"):
+            texte += " " + (self.tr("Finesse utile : %1 DPI.")
+                            .replace("%1", f"{utile:.0f}"))
+            # ⚠️ Comparé à la valeur **arrondie**, celle-là même qui borne le
+            # champ : sinon, posé exactement sur le plafond, on lisait qu'on
+            # était déjà au-delà.
+            if session.dpi > round(utile):
+                texte += " " + self.tr("Au-delà, l'impression agrandit sans "
+                                       "ajouter de détail.")
         self._pixels.setText(texte)
 
     def _on_dpi(self, valeur: int) -> None:
@@ -613,6 +711,7 @@ class ExportStep(QWidget):
     def _build(self) -> None:
         self._tabs = [PresentationTab(self._session),
                       ColoursTab(self._session),
+                      CutTab(self._session),
                       ResolutionTab(self._session)]
 
         # ⚠️ **Les réglages se replient.** Trois panneaux ouverts d'un coup

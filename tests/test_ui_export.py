@@ -112,44 +112,38 @@ def test_a_sheet_without_a_name_still_exports(step):
     assert "40.0 × 30.0 cm" in dialog._layout_recap.text()
 
 
-def test_the_resolution_is_chosen_here_and_written_to_the_session(dialog, session):
-    """⚠️ La finesse était demandée à l'étape 2, avant que la mosaïque n'existe :
-    elle n'y changeait rien de visible, et il fallait deviner le poids d'un
-    fichier qu'on n'avait pas encore décrit. Elle se choisit devant lui."""
-    dialog._dpi.setValue(300)
-    assert dialog.settings().dpi == 300
-    # Écrite dans la session : les aperçus arrondissent leurs pixels comme
-    # l'export, et un préréglage la retrouve.
-    assert session.dpi == 300
+def test_the_dialog_takes_the_printing_choices_from_the_session(dialog, session):
+    """⚠️ **Le dialogue ne garde que l'écriture** : le format, le dossier et le
+    nom. La finesse, le chevauchement, les repères et la source des images se
+    règlent aux onglets, devant l'image, et non au dernier moment."""
+    session.set_layout(dpi=200)
+    session.set_algorithm(overlap_mm=7.5, crop_marks=True, full_resolution=False)
+
+    reglages = dialog.settings()
+
+    assert reglages.dpi == 200
+    assert reglages.overlap_mm == 7.5 and reglages.crop_marks
+    assert dialog.full_resolution() is False
 
 
-def test_a_resolution_outside_the_field_bounds_comes_back_corrected(step):
-    """Un préréglage écrit à la main peut porter n'importe quoi."""
-    from pokemon_mosaic.ui.export_dialog import ExportDialog
-
-    widget, session = step
-    session.set_layout(dpi=5000)
-    dialog = ExportDialog(session, grid_of(widget), widget._cards)
-    assert dialog._dpi.value() == 1200
-    assert session.dpi == 1200
-    assert dialog.settings().dpi == 1200
-
-
-def test_the_dialog_owns_the_printing_choices(dialog):
-    dialog._overlap.setValue(7.5)
-    dialog._crop_marks.setChecked(True)
-    settings = dialog.settings()
-    assert settings.overlap_mm == 7.5 and settings.crop_marks
-
-
-def test_changing_the_format_rewrites_the_extension(dialog, tmp_path):
-    """Laisser « poster.png » alors que JPEG est choisi écrirait un PNG sans
-    le dire : c'est l'extension qui décide du format à l'écriture."""
-    dialog._path.setText(str(tmp_path / "poster.png"))
+def test_the_extension_follows_the_chosen_format(dialog):
+    """Le nom n'en porte plus : c'est le format qui la donne, et laisser
+    « .png » en ayant choisi JPEG écrirait un PNG sans le dire."""
+    dialog._basename.setText("essai")
     dialog._format.setCurrentIndex(1)       # JPEG
-    assert dialog.path().endswith(".jpg")
+    assert dialog.path().endswith("essai.jpg")
     dialog._format.setCurrentIndex(2)       # PDF
-    assert dialog.path().endswith(".pdf")
+    assert dialog.path().endswith("essai.pdf")
+
+
+def test_the_folder_and_the_base_name_make_the_path(dialog, tmp_path):
+    dialog._folder.setText(str(tmp_path))
+    dialog._basename.setText("mon poster")
+
+    assert dialog.path() == str(tmp_path / "mon poster.png")
+
+    dialog._basename.setText("   ")
+    assert dialog.path().endswith("poster.png"), "un nom vide reprend le défaut"
 
 
 def test_the_dialog_names_the_files_that_will_be_written(step, session, tmp_path):
@@ -162,18 +156,18 @@ def test_the_dialog_names_the_files_that_will_be_written(step, session, tmp_path
     # une grille de 5 colonnes ne se couperait pas en deux.
     session.set_layout(panels=2)
     dialog = ExportDialog(session, grid_of(widget)[:, :4], widget._cards)
-    dialog._path.setText(str(tmp_path / "poster.png"))
-    assert "poster_1of2.png" in dialog._files.text()
-    assert "poster_2of2.png" in dialog._files.text()
+    dialog._folder.setText(str(tmp_path))
+    assert "poster_page1sur2.png" in dialog._files.text()
+    assert "poster_page2sur2.png" in dialog._files.text()
 
 
 def test_the_dialog_warns_about_an_existing_file(dialog, tmp_path):
     target = tmp_path / "poster.png"
-    dialog._path.setText(str(target))
+    dialog._folder.setText(str(tmp_path))
     assert "écrasé" not in dialog._files.text()
     target.write_bytes(b"")
-    dialog._path.setText("")                # force un rafraîchissement
-    dialog._path.setText(str(target))
+    dialog._folder.setText("")              # force un rafraîchissement
+    dialog._folder.setText(str(tmp_path))
     assert "écrasé" in dialog._files.text()
 
 
@@ -198,7 +192,7 @@ def test_an_impossible_plan_cannot_be_validated(dialog, session, tmp_path,
 
     from pokemon_mosaic.ui import export_dialog as module
 
-    dialog._path.setText(str(tmp_path / "poster.png"))
+    dialog._folder.setText(str(tmp_path))
     assert dialog._buttons.button(QDialogButtonBox.Ok).isEnabled()
 
     def refuse(*_a, **_k):
@@ -220,7 +214,7 @@ def test_an_impossible_plan_cannot_be_validated(dialog, session, tmp_path,
 def test_an_empty_destination_is_refused(dialog):
     from PySide6.QtWidgets import QDialog
 
-    dialog._path.setText("")
+    dialog._folder.setText("")
     dialog._try_accept()
     assert dialog.result() != QDialog.Accepted
     assert dialog._warnings.text()

@@ -26,6 +26,7 @@ from ..layout import (
     distribute_empty_cells,
     format_name,
     grid_geometry,
+    max_useful_dpi,
 )
 from ..links import DEFAULT_LINKS, Link, LinkLibrary, resolve_links
 from ..optimize import StopConditions, select_cards
@@ -87,6 +88,7 @@ class Session(QObject):
         "iterations", "snapshot_every",
         "empty_colour", "gap_colour", "background_colour",
         "chameleon_gaps", "chameleon_border",
+        "overlap_mm", "crop_marks", "full_resolution", "beyond_useful_dpi",
         "stop_on_stagnation", "stagnation_iterations",
         "stop_on_time", "time_budget",
         "use_annealing", "acceptance", "strip_size",
@@ -161,6 +163,17 @@ class Session(QObject):
         # `chameleon.py` : c'est un habillage, le calcul n'en sait rien.
         self.chameleon_gaps = False
         self.chameleon_border = False
+        # Ce que l'écriture du fichier demande, et qui se règle désormais dans
+        # les onglets plutôt que dans le dialogue : celui-ci ne garde que le
+        # format, le dossier et le nom.
+        self.overlap_mm = 0.0
+        self.crop_marks = False
+        # Relire les images d'origine, ou se contenter des vignettes. Change la
+        # finesse utile d'un facteur quatre : les vignettes font le quart.
+        self.full_resolution = True
+        # ⚠️ Passer outre le maximum utile : au-delà, l'impression agrandit sans
+        # ajouter un pixel de détail. Le champ s'y arrête, cette case le libère.
+        self.beyond_useful_dpi = False
         self.stop_on_stagnation = False
         self.stagnation_iterations = 50_000
         self.stop_on_time = False
@@ -261,6 +274,19 @@ class Session(QObject):
              for ligne in arrangement.grid], dtype=int)
         return SavedGrid(grille, subset, iteration=0, score=arrangement.score)
 
+    def useful_dpi(self) -> float:
+        """La finesse au-delà de laquelle on agrandit sans gagner de détail.
+
+        Elle dépend de la **source** : les vignettes font le quart des images
+        d'origine, donc le quart de la finesse utile.
+        """
+        cartes = self.card_set
+        if cartes is None or not len(cartes):
+            return float("inf")
+        source = (cartes.full_size[0] if self.full_resolution
+                  else cartes.thumb_size[0])
+        return max_useful_dpi(self.paper_mm(), max(1, self.cols), source)
+
     def presentation(self) -> dict:
         """L'habillage du poster : tout ce que l'étape d'export laisse régler.
 
@@ -283,6 +309,10 @@ class Session(QObject):
             "background_colour": list(self.background_colour),
             "chameleon_gaps": self.chameleon_gaps,
             "chameleon_border": self.chameleon_border,
+            "overlap_mm": self.overlap_mm,
+            "crop_marks": self.crop_marks,
+            "full_resolution": self.full_resolution,
+            "beyond_useful_dpi": self.beyond_useful_dpi,
         }
 
     def apply_presentation(self, presentation: dict) -> None:
@@ -296,8 +326,11 @@ class Session(QObject):
                     ("empty_colour", "gap_colour", "background_colour")
                     if presentation.get(nom) is not None}
         couleurs.update({nom: bool(presentation[nom]) for nom in
-                         ("chameleon_gaps", "chameleon_border")
+                         ("chameleon_gaps", "chameleon_border", "crop_marks",
+                          "full_resolution", "beyond_useful_dpi")
                          if nom in presentation})
+        if "overlap_mm" in presentation:
+            couleurs["overlap_mm"] = float(presentation["overlap_mm"])
         mise_en_page = {nom: presentation[nom] for nom in
                         ("paper", "landscape", "dpi", "panels", "panel_rows",
                          "card_width_mm", "card_gap_mm")

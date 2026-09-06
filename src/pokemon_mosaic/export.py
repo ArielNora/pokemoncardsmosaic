@@ -582,24 +582,28 @@ def panel_paths(path: str, panels: int, panel_rows: int = 1) -> list[str]:
     """Chemins des fichiers que produirait un export vers `path`.
 
     Sert aussi à prévenir l'utilisateur de ce qui va être écrasé : avec plusieurs
-    panneaux, choisir « poster.png » écrit en réalité « poster_1of2.png » et
-    « poster_2of2.png », qu'aucun sélecteur de fichier ne signale.
+    feuilles, choisir « poster.png » écrit en réalité « poster_page1sur2.png » et
+    « poster_page2sur2.png », qu'aucun sélecteur de fichier ne signale.
 
-    Sur plusieurs lignes de feuilles, un numéro seul ne dirait plus où coller
-    quoi : le nom porte alors la ligne et la colonne, « poster_l2c3sur2x3.png ».
+    Les feuilles sont **numérotées dans l'ordre de lecture**, celui-là même que
+    l'aperçu inscrit sur chacune. Sur plusieurs lignes, le numéro seul ne dirait
+    plus où coller quoi : le nom porte alors aussi la ligne et la colonne,
+    « poster_page4sur6_l2c1.png ».
     """
     base, extension = os.path.splitext(path)
     extension = extension.lower()
     if extension not in SUPPORTED_EXTENSIONS:
         raise ValueError(f"Format non géré : {extension} (attendu .png, .jpg ou .pdf)")
-    if panels == 1 and panel_rows == 1:
+    total = panels * panel_rows
+    if total == 1:
         return [f"{base}{extension}"]
     if panel_rows == 1:
-        return [f"{base}_{panel}of{panels}{extension}"
-                for panel in range(1, panels + 1)]
-    return [f"{base}_l{ligne}c{colonne}sur{panel_rows}x{panels}{extension}"
-            for ligne in range(1, panel_rows + 1)
-            for colonne in range(1, panels + 1)]
+        return [f"{base}_page{numero}sur{total}{extension}"
+                for numero in range(1, total + 1)]
+    return [f"{base}_page{ligne * panels + colonne + 1}sur{total}"
+            f"_l{ligne + 1}c{colonne + 1}{extension}"
+            for ligne in range(panel_rows)
+            for colonne in range(panels)]
 
 
 def export_poster(
