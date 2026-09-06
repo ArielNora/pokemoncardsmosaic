@@ -228,9 +228,9 @@ def test_the_zoom_enlarges_the_preview_inside_its_scroll_area(ecran):
     assert widget._preview.minimumHeight() > avant
     assert widget._scroll.widget() is widget._preview
 
-    widget._zoom_fit.click()
+    widget._zoom_field.setValue(100)
     assert widget._zoom == 1.0
-    assert widget._preview.minimumHeight() == 0, "ajusté, l'aperçu suit le cadre"
+    assert widget._preview.minimumHeight() == 0, "à 100 %, l'aperçu suit le cadre"
 
 
 def test_the_wheel_zooms_around_the_cursor(ecran):
@@ -257,9 +257,6 @@ def test_dragging_the_preview_scrolls_it(ecran):
     """⚠️ **Les gestes se prennent sur l'aperçu, pas sur le cadre.** C'est lui
     que la souris survole : posés sur le cadre, le clic et la molette ne lui
     arrivaient jamais, et rien ne bougeait."""
-    from PySide6.QtCore import QPoint, Qt
-    from PySide6.QtTest import QTest
-
     widget, _, _ = ecran
     widget.resize(900, 600)
     widget.show()
@@ -269,12 +266,11 @@ def test_dragging_the_preview_scrolls_it(ecran):
     depart = barre.value()
 
     # Sur l'aperçu lui-même, là où la main de l'utilisateur se pose.
-    QTest.mousePress(widget._preview, Qt.LeftButton, pos=QPoint(200, 150))
-    QTest.mouseMove(widget._preview, QPoint(120, 150))
-    QTest.mouseRelease(widget._preview, Qt.LeftButton, pos=QPoint(120, 150))
+    glisser(widget._preview, (200, 150), (120, 150))
 
     assert barre.value() > depart, "le glissement n'a pas fait défiler"
-    assert not widget._preview._draggable, "déplacer une feuille reste à l'étape 2"
+    assert not widget._preview._draggable, (
+        "hors du mode « Ajuster », la grille ne se déplace pas")
 
 
 def test_the_preview_wears_the_move_cursor(ecran):
@@ -702,3 +698,70 @@ def test_the_export_button_wears_the_aura_of_its_state(ecran):
     attente = (widget._export_glow.color().alpha(),
                widget._export_glow.blurRadius())
     assert pret > attente, "le rouge reste le plus discret des deux"
+
+
+def glisser(widget, depart, arrivee):
+    """Un vrai geste, envoyé par l'application : bouton **tenu** pendant le
+    trajet, sans quoi l'aperçu ignore le mouvement, et passage par les filtres,
+    qui sont précisément ce qu'on veut éprouver."""
+    from PySide6.QtCore import QPointF, Qt
+    from PySide6.QtGui import QMouseEvent
+    from PySide6.QtWidgets import QApplication
+
+    def envoyer(type_, point, boutons):
+        QApplication.sendEvent(widget, QMouseEvent(
+            type_, QPointF(*point), widget.mapToGlobal(QPointF(*point)),
+            Qt.LeftButton, boutons, Qt.NoModifier))
+
+    envoyer(QMouseEvent.Type.MouseButtonPress, depart, Qt.LeftButton)
+    envoyer(QMouseEvent.Type.MouseMove, arrivee, Qt.LeftButton)
+    envoyer(QMouseEvent.Type.MouseButtonRelease, arrivee, Qt.NoButton)
+
+
+def test_adjusting_hands_the_drag_to_the_grid(ecran):
+    """⚠️ Les deux gestes sont le même, cliquer et tirer : il faut dire lequel
+    on veut, et le bouton reste enfoncé tant que c'est celui-là."""
+    from PySide6.QtCore import Qt
+
+    widget, session, _ = ecran
+    widget.resize(900, 600)
+    widget.show()
+    widget.enter()
+
+    widget._adjust.setChecked(True)
+
+    assert widget._adjust.property("role") == "active", "le mode se voit"
+    assert widget._preview._draggable
+    assert widget._preview.cursor().shape() == Qt.OpenHandCursor
+
+    # La mosaïque se déplace dans sa feuille, et le cadre ne prend plus le
+    # glissement : les deux gestes ne peuvent pas avoir lieu ensemble.
+    assert not widget._scroll._panning
+    cases = widget._preview.grid_cells(widget._preview.rects()[0])
+    depart = cases[0][2].center()
+    glisser(widget._preview, (depart.x(), depart.y()),
+            (depart.x(), depart.y() + 12))
+
+    assert session.panel_offsets, "la mosaïque n'a pas bougé sur sa feuille"
+
+
+def test_leaving_the_mode_gives_the_drag_back_to_the_view(ecran):
+    from PySide6.QtCore import Qt
+
+    widget, _, _ = ecran
+    widget.resize(900, 600)
+    widget.show()
+    widget._adjust.setChecked(True)
+    widget._adjust.setChecked(False)
+
+    assert widget._adjust.property("role") == ""
+    assert not widget._preview._draggable
+    assert widget._preview.cursor().shape() == Qt.SizeAllCursor
+
+    widget._zoom_at(3.0, None)
+    barre = widget._scroll.horizontalScrollBar()
+    barre.setValue(barre.maximum() // 2)
+    depart = barre.value()
+    glisser(widget._preview, (200, 150), (120, 150))
+
+    assert barre.value() > depart

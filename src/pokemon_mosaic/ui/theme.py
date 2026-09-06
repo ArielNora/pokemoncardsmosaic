@@ -281,6 +281,16 @@ QLabel[role="banner"] {{
     border-radius: 4px;
     padding: 6px;
 }}
+/* Un bouton qui reste **enfoncé** : un mode qu'on allume et qu'on éteint, et
+   non une action qu'on déclenche. Le bleu de la sélection le dit, celui-là même
+   qui marque une ligne choisie ailleurs dans l'application. */
+QPushButton[role="active"] {{
+    background: {c["button_hover_border"]};
+    border: 1px solid {c["button_hover_border"]};
+    color: palette(highlighted-text);
+    font-weight: bold;
+}}
+
 /* Les cases des agencements gardés. Vide, la case est en creux et sans
    promesse ; occupée, elle se clique ; affichée, elle porte un trait franc. */
 QFrame[role="slot-empty"] {{

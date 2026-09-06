@@ -470,6 +470,9 @@ class PreviewView(QScrollArea):
         # Vrai le temps d'un prélèvement : le prochain clic prend la couleur
         # sous le curseur au lieu de saisir l'image.
         self._picking = False
+        # Faux quand la souris appartient à la grille : c'est alors l'aperçu qui
+        # reçoit le glissement, pour déplacer la mosaïque dans sa feuille.
+        self._panning = True
 
     def setWidget(self, widget) -> None:
         super().setWidget(widget)
@@ -533,6 +536,12 @@ class PreviewView(QScrollArea):
         """Le point visé, lu dans le cadre : c'est lui qui défile."""
         return QPointF(self.widget().mapTo(self.viewport(), position.toPoint()))
 
+    def set_panning(self, actif: bool) -> None:
+        self._panning = bool(actif)
+        if self.widget() is not None and not self._picking:
+            self.widget().setCursor(Qt.SizeAllCursor if actif
+                                    else Qt.OpenHandCursor)
+
     def start_picking(self) -> None:
         """Arme la pipette : le prochain clic prélève au lieu de déplacer."""
         self._picking = True
@@ -545,6 +554,9 @@ class PreviewView(QScrollArea):
 
     def _on_press(self, event) -> bool:
         if event.button() != Qt.LeftButton:
+            return False
+        if not self._picking and not self._panning:
+            # La grille prend le geste : l'aperçu sait le faire lui-même.
             return False
         if self._picking:
             # ⚠️ **On prélève dans le dessin, pas dans un modèle.** L'aperçu se
@@ -566,7 +578,7 @@ class PreviewView(QScrollArea):
         return True
 
     def _on_move(self, event) -> bool:
-        if self._pan_from is None:
+        if self._pan_from is None or not self._panning:
             return False
         ecart = event.globalPosition() - self._pan_from
         x, y = self._bars_at_press
@@ -634,10 +646,10 @@ class ExportStep(QWidget):
             lambda combien: self._session.set_layout(panels=combien))
         self._preview.panel_rows_requested.connect(
             lambda combien: self._session.set_layout(panel_rows=combien))
-        # ⚠️ **On ne déplace plus un bout de grille à la souris ici.** Le
-        # glissement sert à se promener dans l'image ; « Centrer sur les
-        # feuilles » reste, et l'étape 2 garde le placement à la main.
+        # Le glissement sert à se promener dans l'image, sauf en mode
+        # « Ajuster », où il rend la souris à la grille.
         self._preview.set_draggable(False)
+        self._preview.panel_moved.connect(self._session.move_panel)
         self._zoom = ZOOM_MIN
         # Vrai le temps d'une recopie du zoom dans son champ : le champ émet à
         # chaque écriture, et sans ce garde il rezoomerait sur lui-même.
@@ -657,7 +669,13 @@ class ExportStep(QWidget):
         # repris la hauteur qu'on vient de lui donner.
         self._zoom_out = QPushButton("−")
         self._zoom_in = QPushButton("+")
-        self._zoom_fit = QPushButton()
+        # ⚠️ **« Ajuster » est un mode, pas une action.** Enfoncé, il rend le
+        # glissement à la grille : on la déplace dans sa feuille, comme à
+        # l'onglet « Emplacement de la grille ». Le zoom, lui, se remet à 100 %
+        # dans son champ.
+        self._adjust = QPushButton()
+        self._adjust.setCheckable(True)
+        self._adjust.toggled.connect(self._set_adjusting)
         # ⚠️ **Un champ, et non une étiquette.** Atteindre 400 % au bouton
         # demandait sept clics : on écrit le nombre.
         self._zoom_field = QSpinBox()
@@ -671,14 +689,13 @@ class ExportStep(QWidget):
             bouton.setFixedWidth(32)
         self._zoom_out.clicked.connect(lambda: self._zoom_at(1 / ZOOM_STEP, None))
         self._zoom_in.clicked.connect(lambda: self._zoom_at(ZOOM_STEP, None))
-        self._zoom_fit.clicked.connect(self._fit)
         self._loupe = QWidget(self._scroll)
         theme.mark(self._loupe, "floating-bar")
         loupe = QHBoxLayout(self._loupe)
         loupe.setContentsMargins(6, 4, 6, 4)
         loupe.setSpacing(4)
         for widget in (self._zoom_out, self._zoom_field, self._zoom_in,
-                       self._zoom_fit):
+                       self._adjust):
             loupe.addWidget(widget)
 
         self._saved = SavedColumn(self._session, removable=False)
@@ -759,9 +776,6 @@ class ExportStep(QWidget):
 
     # --- Le zoom et le déplacement ----------------------------------------
 
-    def _fit(self) -> None:
-        self._zoom_at(ZOOM_MIN / self._zoom, None)
-
     def _zoom_at(self, facteur: float, point) -> None:
         """Zoome autour d'un point de la vue, ou de son centre.
 
@@ -795,6 +809,19 @@ class ExportStep(QWidget):
                                          int(cadre.height() * self._zoom))
         self._show_zoom()
         self._preview.refresh()
+
+    def _set_adjusting(self, actif: bool) -> None:
+        """Passe la souris à la grille, ou la rend au déplacement de la vue.
+
+        Les deux gestes sont le même : cliquer et tirer. Il faut donc dire
+        lequel on veut, et le bouton reste enfoncé tant que c'est celui-là.
+        """
+        theme.mark(self._adjust, "active" if actif else "")
+        self._preview.set_draggable(actif)
+        self._scroll.set_panning(not actif)
+        self.status_message.emit(
+            self.tr("Tirez la mosaïque pour la placer sur sa feuille.")
+            if actif else "")
 
     def _show_zoom(self) -> None:
         """Recopie le zoom dans le champ, sans le lui faire réémettre."""
@@ -834,7 +861,9 @@ class ExportStep(QWidget):
         for onglet, section in zip(self._tabs, self._sections, strict=True):
             onglet.retranslate_ui()
             section.retranslate_ui()
-        self._zoom_fit.setText(self.tr("Ajuster"))
+        self._adjust.setText(self.tr("Ajuster"))
+        self._adjust.setToolTip(
+            self.tr("Déplacer la mosaïque dans sa feuille, à la souris."))
         self._zoom_field.setToolTip(
             self.tr("Molette ou pincement pour zoomer, glissement pour se "
                     "déplacer."))
