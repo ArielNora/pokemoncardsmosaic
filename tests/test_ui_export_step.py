@@ -620,3 +620,43 @@ def test_a_pinch_zooms(ecran):
     QApplication.sendEvent(widget._preview, geste)
 
     assert widget._zoom > avant
+
+
+def test_no_hairline_inside_the_mosaic_without_a_gap(ecran):
+    """⚠️ `toRect()` arrondit la position et la taille séparément : sans écart,
+    des lignes du fond apparaissaient entre les cartes, et changeaient de place
+    à chaque cran de zoom. Mesuré : 73 des 74 hauteurs essayées en montraient.
+    """
+    import numpy as np
+    from PySide6.QtGui import QImage
+
+    widget, session, jeu = ecran
+    for numero, card in enumerate(jeu.cards):
+        card.thumbnail[:] = (255, 0, 0) if numero % 2 == 0 else (0, 0, 255)
+    session.set_layout(card_gap_mm=0.0)
+    session.set_algorithm(background_colour=(255, 255, 255))
+    widget.enter()
+    widget.show()
+
+    for hauteur in (483, 517, 561, 604):
+        widget.resize(900, hauteur)
+        widget._preview.refresh()
+        image = widget._preview.grab().toImage().convertToFormat(
+            QImage.Format_RGB888)
+        ratio = image.devicePixelRatio() or 1
+        # ⚠️ Chaque ligne est complétée à un multiple de quatre octets : passer
+        # par `bytesPerLine` puis rogner, sinon le tableau ne se reforme pas.
+        brut = np.frombuffer(image.constBits(), np.uint8).reshape(
+            image.height(), image.bytesPerLine())
+        pixels = brut[:, :image.width() * 3].reshape(
+            image.height(), image.width(), 3)
+
+        cases = widget._preview.grid_cells(widget._preview.rects()[0])
+        boite = cases[0][2]
+        for _row, _col, rect in cases:
+            boite = boite.united(rect)
+        dedans = pixels[int(boite.top() * ratio) + 2:int(boite.bottom() * ratio) - 2,
+                        int(boite.left() * ratio) + 2:int(boite.right() * ratio) - 2]
+
+        blancs = int((dedans == 255).all(axis=2).sum())
+        assert blancs == 0, f"{blancs} pixels de fond dans la mosaïque à {hauteur}"

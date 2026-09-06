@@ -72,6 +72,20 @@ MAX_PANELS = 5
 MAX_PANEL_ROWS = 3
 
 
+def _aligned(rect: QRectF) -> QRect:
+    """Un rectangle calé sur les pixels, **par ses bords** et non par sa taille.
+
+    ⚠️ **`toRect()` arrondit la position et la taille séparément.** Deux cases
+    voisines pouvaient alors se rejoindre à un pixel près : sans écart, une
+    ligne du fond apparaissait entre elles, et changeait de place à chaque cran
+    de zoom. En arrondissant les deux bords, le bord droit de l'une tombe
+    exactement sur le bord gauche de l'autre, qui est le même nombre.
+    """
+    gauche, haut = round(rect.left()), round(rect.top())
+    return QRect(gauche, haut,
+                 round(rect.right()) - gauche, round(rect.bottom()) - haut)
+
+
 def _widened(zone: QRectF, horizontal: bool) -> QRectF:
     """L'écart élargi d'un pixel vers chaque carte.
 
@@ -666,14 +680,15 @@ class PagePreview(QWidget):
         for row, col, rect in cases:
             if row >= rows or col >= cols:
                 continue
+            case = _aligned(rect)
             if (row, col) in vides:
-                painter.fillRect(rect, QColor(*session.empty_colour))
+                painter.fillRect(case, QColor(*session.empty_colour))
                 continue
             tuile = self._tile(int(self._grid[row, col]))
             if tuile is None:
-                painter.fillRect(rect, QColor(*session.empty_colour))
+                painter.fillRect(case, QColor(*session.empty_colour))
             else:
-                painter.drawPixmap(rect.toRect(), tuile)
+                painter.drawPixmap(case, tuile)
         painter.restore()
 
     def _draw_chameleon(self, painter, cases, etendue: QRectF) -> None:
