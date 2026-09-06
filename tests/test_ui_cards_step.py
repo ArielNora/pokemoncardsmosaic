@@ -952,3 +952,69 @@ def test_inverting_repaints_even_when_the_count_is_unchanged(step, tmp_path):
 def test_the_invert_button_hides_while_no_card_is_loaded(step):
     ecran, _ = step
     assert not ecran._invert.isEnabled()
+
+
+# --- Les messages passagers, sur la ligne de navigation --------------------
+
+def test_no_status_bar_leaves_an_empty_band_at_the_bottom(fenetre):
+    """La `QStatusBar` réservait une bande vide sous « Suivant » pendant tout le
+    temps où rien n'avait à se dire, et éloignait la navigation du bas de la
+    fenêtre."""
+    from PySide6.QtWidgets import QStatusBar
+
+    w, _ = fenetre
+    w.resize(900, 600)
+    w.show()
+
+    assert w.findChild(QStatusBar) is None
+    # La ligne du bas touche le bas de la fenêtre, à la marge d'aura près.
+    from pokemon_mosaic.ui import theme
+    reste = w.height() - w._next.mapTo(w, w._next.rect().bottomLeft()).y()
+    assert reste <= 2 * theme.GLOW_ROOM + 2
+
+
+def test_a_long_message_never_pushes_the_navigation(fenetre):
+    """⚠️ Un chemin de fichier ou une liste de panneaux écrits se coupent par la
+    fin : ils n'élargissent pas la fenêtre et ne repoussent pas « Suivant »."""
+    w, _ = fenetre
+    w.show()
+    place, large = w._next.x(), w.width()
+
+    w._show_status("Panneau 1 / 6 : " + "poster_page1sur6_l1c1.png " * 40)
+    w.layout().activate()
+
+    assert w._next.x() == place
+    # Le texte affiché est coupé, le message entier reste accessible.
+    assert w._status.text() != w._status.message()
+    assert w._status.text().endswith("…")
+    assert w._status.toolTip() == w._status.message()
+
+    # La fenêtre elle-même n'a pas grandi pour loger le message.
+    assert w.width() == large
+
+
+def test_a_message_clears_itself(fenetre):
+    """Il informe en passant : laissé à l'écran, il finirait par décrire un état
+    révolu."""
+    w, _ = fenetre
+    w._show_status("Lecture du catalogue…")
+    assert w._status.message()
+
+    w._status._timer.timeout.emit()
+
+    assert w._status.message() == ""
+    assert w._status.text() == ""
+
+
+def test_setting_the_text_directly_survives_a_resize(fenetre):
+    """⚠️ La coupure relit `_full`, et lui seul : un texte posé à côté de lui
+    aurait disparu au premier redimensionnement, sans rien pour le signaler."""
+    w, _ = fenetre
+    w.show()
+    largeur = w.width()
+
+    w._status.setText("Lecture du catalogue…")
+    w.resize(largeur + 200, w.height())
+    w.layout().activate()
+
+    assert w._status.text() == "Lecture du catalogue…"

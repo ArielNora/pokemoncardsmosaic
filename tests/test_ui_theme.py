@@ -122,7 +122,7 @@ def test_no_role_shares_its_colour_between_the_two_schemes():
 
 # --- Lisibilité ------------------------------------------------------------
 
-TEXTES = ("warning", "error", "ok")
+TEXTES = ("warning", "error", "ok", "status")
 
 
 @pytest.mark.parametrize("role", TEXTES)

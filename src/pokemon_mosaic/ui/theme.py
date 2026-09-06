@@ -30,6 +30,9 @@ LIGHT = {
     "ok": "#1b6b2a",                # 5,7:1, #2e7d32 n'atteignait que 4,5:1
     # L'onglet qui n'a rien à valider : le gris des choses qu'on ajuste.
     "neutral": "#8a8a8a",
+    # ⚠️ **Le message passager porte du texte**, il lui faut donc 4,5:1 et non
+    # les 3:1 d'une teinte : `neutral` n'atteignait que 3,0:1 sur fond clair.
+    "status": "#6a6a6a",           # 4,7:1
     "banner_bg": "#fff8e1",
     "banner_fg": "#5a4500",
     "banner_border": "#e0c060",
@@ -53,6 +56,7 @@ DARK = {
     "error": "#ff7a7a",
     "ok": "#6ecb85",
     "neutral": "#9a9a9a",
+    "status": "#9a9a9a",           # 5,5:1 sur fond sombre, le gris suffit
     "banner_bg": "#3a3220",
     "banner_fg": "#f2dda0",
     "banner_border": "#6b5a2a",
@@ -274,6 +278,9 @@ def stylesheet(palette: QPalette) -> str:
 QLabel[role="warning"] {{ color: {c["warning"]}; }}
 QLabel[role="error"] {{ color: {c["error"]}; }}
 QLabel[role="ok"] {{ color: {c["ok"]}; }}
+/* Le message passager de la ligne de navigation : il informe sans réclamer,
+   donc plus discret que le texte courant, et jamais coloré comme un état. */
+QLabel[role="status"] {{ color: {c["status"]}; }}
 QLabel[role="banner"] {{
     background: {c["banner_bg"]};
     color: {c["banner_fg"]};

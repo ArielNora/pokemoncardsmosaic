@@ -3,7 +3,8 @@
 import os
 from pathlib import Path
 
-from PySide6.QtCore import QEvent, QSettings, QStandardPaths, Qt
+from PySide6.QtCore import QEvent, QSettings, QStandardPaths, Qt, QTimer
+from PySide6.QtGui import QFontMetrics
 from PySide6.QtWidgets import (
     QComboBox,
     QGraphicsDropShadowEffect,
@@ -12,7 +13,6 @@ from PySide6.QtWidgets import (
     QMainWindow,
     QPushButton,
     QStackedWidget,
-    QStatusBar,
     QVBoxLayout,
     QWidget,
 )
@@ -36,8 +36,57 @@ from .session import Session
 GLOW_ROOM = theme.GLOW_ROOM
 
 
+class StatusLine(QLabel):
+    """Le message passager de la fenêtre, sur la ligne de navigation.
+
+    ⚠️ **Il ne pousse jamais rien.** Le texte est coupé par la fin à la largeur
+    reçue, et c'est ce texte coupé qui donne sa taille voulue : un chemin de
+    fichier ou une liste de panneaux écrits n'élargissent donc pas la fenêtre et
+    ne repoussent pas « Suivant ». Le message entier reste lisible en infobulle.
+    """
+
+    DURATION = 8000
+
+    def __init__(self, parent=None):
+        super().__init__(parent)
+        theme.mark(self, "status")
+        self._full = ""
+        self._timer = QTimer(self)
+        self._timer.setSingleShot(True)
+        self._timer.timeout.connect(lambda: self.show_message(""))
+
+    def show_message(self, message: str) -> None:
+        """Affiche un message, effacé de lui-même au bout de `DURATION`."""
+        self._full = message
+        self.setToolTip(message)
+        self._elide()
+        self._timer.stop()
+        if message:
+            self._timer.start(self.DURATION)
+
+    def setText(self, text: str) -> None:
+        """⚠️ Passe par `show_message`, sinon le texte disparaîtrait au premier
+        redimensionnement : c'est `_full` que la coupure relit, et lui seul."""
+        self.show_message(text)
+
+    def message(self) -> str:
+        """Le message entier, avant coupure."""
+        return self._full
+
+    def resizeEvent(self, event):
+        super().resizeEvent(event)
+        self._elide()
+
+    def _elide(self) -> None:
+        largeur = max(0, self.width())
+        coupe = QFontMetrics(self.font()).elidedText(
+            self._full, Qt.ElideRight, largeur
+        )
+        super().setText(coupe)
+
+
 class MainWindow(QMainWindow):
-    """Coquille de l'application : navigation, langue, barre d'état."""
+    """Coquille de l'application : navigation, langue, messages."""
 
     STEP_COUNT = 4
 
@@ -190,7 +239,12 @@ class MainWindow(QMainWindow):
         bottom.setSpacing(GLOW_ROOM)
         bottom.addWidget(self._language_label)
         bottom.addWidget(self._language_box)
-        bottom.addStretch(1)
+        # ⚠️ **Pas de `QStatusBar`.** Elle réservait une bande vide sous les
+        # boutons pendant tout le temps où rien n'avait à se dire, et éloignait
+        # la navigation du bas de la fenêtre. Les messages tiennent dans la
+        # place libre de cette ligne, qui n'était occupée que par un ressort.
+        self._status = StatusLine()
+        bottom.addWidget(self._status, 1)
         bottom.addWidget(self._back)
         politique = self._next.sizePolicy()
         politique.setRetainSizeWhenHidden(True)
@@ -205,7 +259,6 @@ class MainWindow(QMainWindow):
         central = QWidget()
         central.setLayout(layout)
         self.setCentralWidget(central)
-        self.setStatusBar(QStatusBar())
 
         self.resize(1100, 760)
         self._update_navigation()
@@ -245,7 +298,7 @@ class MainWindow(QMainWindow):
         self._language.set_language(self._language_box.itemData(index))
 
     def _show_status(self, message: str) -> None:
-        self.statusBar().showMessage(message, 8000)
+        self._status.show_message(message)
 
     def _update_navigation(self) -> None:
         current = self._stack.currentIndex()
