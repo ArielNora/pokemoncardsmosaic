@@ -423,6 +423,11 @@ class ResolutionTab(ExportTab):
         self._beyond = QCheckBox()
         self._beyond.toggled.connect(
             lambda actif: self._session.set_algorithm(beyond_useful_dpi=actif))
+        # La phrase se pose sous le champ, là où le regard vient de s'arrêter,
+        # et non dans le décompte de pixels deux lignes plus bas.
+        self._limite = QLabel()
+        self._limite.setWordWrap(True)
+        theme.mark(self._limite, "warning")
 
         finesse = QHBoxLayout()
         finesse.setSpacing(8)
@@ -434,6 +439,7 @@ class ResolutionTab(ExportTab):
         pile.setSpacing(6)
         pile.addWidget(self._full)
         pile.addLayout(finesse)
+        pile.addWidget(self._limite)
         pile.addWidget(self._beyond)
         pile.addWidget(self._pixels)
         self.retranslate_ui()
@@ -465,7 +471,17 @@ class ResolutionTab(ExportTab):
         plafond = (DPI_CEILING if session.beyond_useful_dpi or utile == float("inf")
                    else max(50, min(DPI_CEILING, round(utile))))
         self._dpi.setMaximum(plafond)
-        self._dpi.setValue(session.dpi)
+        # ⚠️ **La finesse part au maximum utile**, et non à 300 : c'est la
+        # valeur que l'on veut presque toujours, la seule qui rende tout le
+        # détail des images sans peser pour rien. Elle ne suit plus le maximum
+        # dès que quelqu'un a posé la sienne, et **sans carte il n'y a pas de
+        # maximum** : l'écran se construit avant le chargement, et le plafond
+        # sans source vaut 1200, qu'on aurait posé pour de bon.
+        # ⚠️ Elle suit la finesse **utile**, jamais le plafond levé par « Aller
+        # plus loin » : cocher la case pour débloquer le champ aurait quadruplé
+        # le poids du fichier d'un coup, sans rien demander.
+        suit = not session.dpi_chosen and utile != float("inf")
+        self._dpi.setValue(min(plafond, round(utile)) if suit else session.dpi)
         self._updating = False
         # Le champ a pu écrêter : la session doit apprendre ce qu'il a accepté.
         if self._dpi.value() != session.dpi:
@@ -478,17 +494,19 @@ class ResolutionTab(ExportTab):
         if utile != float("inf"):
             texte += " " + (self.tr("Finesse utile : %1 DPI.")
                             .replace("%1", f"{utile:.0f}"))
-            # ⚠️ Comparé à la valeur **arrondie**, celle-là même qui borne le
-            # champ : sinon, posé exactement sur le plafond, on lisait qu'on
-            # était déjà au-delà.
-            if session.dpi > round(utile):
-                texte += " " + self.tr("Au-delà, l'impression agrandit sans "
-                                       "ajouter de détail.")
         self._pixels.setText(texte)
+        # ⚠️ Comparé à la valeur **arrondie**, celle-là même qui borne le champ :
+        # sinon, posé exactement sur le plafond, la phrase manquait alors que la
+        # flèche du haut était déjà éteinte.
+        self._limite.setText(
+            self.tr("Finesse utile atteinte : au-delà, l'impression agrandit "
+                    "les cartes sans ajouter de détail."))
+        self._limite.setVisible(utile != float("inf")
+                                and session.dpi >= round(utile))
 
     def _on_dpi(self, valeur: int) -> None:
         if not self._updating:
-            self._session.set_layout(dpi=valeur)
+            self._session.choose_dpi(valeur)
 
 
 class Section(QWidget):
@@ -995,6 +1013,10 @@ class ExportStep(QWidget):
             premier = self._session.first_saved()
             if premier is not None:
                 self.show_slot(premier)
+        # Les onglets ne se rafraîchissent qu'au changement de mise en page :
+        # en arrivant, la finesse utile a pu changer sans qu'ils l'apprennent.
+        for onglet in self._tabs:
+            onglet.refresh()
         self._refresh_preview()
 
     def current_saved(self):

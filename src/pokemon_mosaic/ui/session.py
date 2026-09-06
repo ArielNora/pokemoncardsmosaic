@@ -124,6 +124,11 @@ class Session(QObject):
         self.paper = "A2"
         self.landscape = False
         self.dpi = DEFAULT_DPI
+        # ⚠️ **Tant que personne n'a choisi**, la finesse suit le maximum utile,
+        # que l'étape d'export repose à chaque passage. `DEFAULT_DPI` n'est
+        # qu'un point de départ pour le temps où il n'y a pas encore de cartes :
+        # le maximum se calcule sur elles.
+        self.dpi_chosen = False
         # Feuilles côte à côte, et lignes de feuilles superposées : le poster
         # est leur somme. Une coupe ne tombe jamais sur une carte, dans un sens
         # comme dans l'autre.
@@ -274,6 +279,15 @@ class Session(QObject):
              for ligne in arrangement.grid], dtype=int)
         return SavedGrid(grille, subset, iteration=0, score=arrangement.score)
 
+    def choose_dpi(self, value: int) -> None:
+        """La finesse posée par l'utilisateur : elle cesse de suivre le maximum.
+
+        Sans ce partage, un changement de format ou de source ramènerait au
+        maximum une valeur qu'on venait de baisser exprès.
+        """
+        self.dpi_chosen = True
+        self.set_layout(dpi=value)
+
     def useful_dpi(self) -> float:
         """La finesse au-delà de laquelle on agrandit sans gagner de détail.
 
@@ -338,6 +352,10 @@ class Session(QObject):
         if presentation.get("paper_size_mm"):
             mise_en_page["paper_size_mm"] = tuple(presentation["paper_size_mm"])
         if mise_en_page:
+            # ⚠️ **Le drapeau se lève avant.** La finesse d'un agencement gardé
+            # est un choix, pas un défaut ; et `set_layout` prévient l'écran,
+            # qui reposerait le maximum avant que le drapeau soit levé.
+            self.dpi_chosen = self.dpi_chosen or "dpi" in mise_en_page
             self.set_layout(**mise_en_page)
         if couleurs:
             self.set_algorithm(**couleurs)

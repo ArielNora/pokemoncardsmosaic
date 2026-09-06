@@ -822,6 +822,106 @@ def test_the_dpi_stops_at_the_useful_maximum(ecran):
     assert resolution._dpi.maximum() == 1200, "le passe-droit lève la borne"
 
 
+def test_the_dpi_starts_at_the_useful_maximum(ecran):
+    """⚠️ **La finesse part au maximum utile**, et non aux 300 DPI du départ :
+    c'est la valeur que l'on veut presque toujours, la seule qui rende tout le
+    détail des images sans peser pour rien."""
+    from PySide6.QtWidgets import QAbstractSpinBox
+
+    widget, session, _ = ecran
+    resolution = widget._tabs[3]
+    # Sur une feuille plus petite, les cartes le sont aussi, et la finesse utile
+    # passe au-dessus des 300 DPI de départ : c'est là que l'ancien défaut se
+    # voyait, il restait en dessous sans rien dire.
+    session.set_layout(paper="A4")
+    resolution.refresh()
+
+    utile = round(session.useful_dpi())
+    assert utile > 300
+    assert resolution._dpi.value() == utile
+    assert session.dpi == utile, "la session apprend ce que le champ a posé"
+    # Arrivé au plafond, la flèche du haut s'éteint, et une phrase le dit.
+    assert not (resolution._dpi.stepEnabled() & QAbstractSpinBox.StepUpEnabled)
+    assert not resolution._limite.isHidden()
+    assert "Finesse utile atteinte" in resolution._limite.text()
+
+
+def test_without_cards_the_dpi_keeps_its_default(qt_app):
+    """⚠️ **Sans carte il n'y a pas de maximum.** L'écran se construit avant le
+    chargement, et le plafond sans source vaut 1200 : suivre le maximum l'aurait
+    posé pour de bon, et le premier export serait parti à 1200 DPI."""
+    from pokemon_mosaic.layout import DEFAULT_DPI
+    from pokemon_mosaic.ui.export_step import ExportStep
+    from pokemon_mosaic.ui.session import Session
+
+    session = Session()
+    widget = ExportStep(session)
+
+    assert session.useful_dpi() == float("inf")
+    assert session.dpi == DEFAULT_DPI
+    assert widget._tabs[3]._dpi.value() == DEFAULT_DPI
+
+
+def test_going_further_unlocks_the_field_without_moving_the_value(ecran):
+    """⚠️ La finesse suit le maximum **utile**, jamais le plafond levé par
+    « Aller plus loin » : cocher la case pour débloquer le champ aurait
+    quadruplé le poids du fichier d'un coup, sans rien demander."""
+    widget, session, _ = ecran
+    resolution = widget._tabs[3]
+    resolution.refresh()
+    utile = round(session.useful_dpi())
+
+    resolution._beyond.setChecked(True)
+
+    assert resolution._dpi.maximum() == 1200
+    assert session.dpi == utile and resolution._dpi.value() == utile
+
+
+def test_below_the_maximum_nothing_warns(ecran):
+    """La phrase dit une limite atteinte : sous la limite, elle n'a rien à
+    dire, et la flèche du haut sert de nouveau."""
+    from PySide6.QtWidgets import QAbstractSpinBox
+
+    widget, session, _ = ecran
+    resolution = widget._tabs[3]
+    resolution.refresh()
+
+    resolution._dpi.setValue(round(session.useful_dpi()) - 50)
+
+    assert resolution._limite.isHidden()
+    assert resolution._dpi.stepEnabled() & QAbstractSpinBox.StepUpEnabled
+
+
+def test_a_chosen_dpi_stops_following_the_maximum(ecran):
+    """Sans ce partage, un changement de format ou de source ramènerait au
+    maximum une valeur qu'on venait de baisser exprès."""
+    widget, session, _ = ecran
+    resolution = widget._tabs[3]
+    resolution.refresh()
+
+    resolution._dpi.setValue(150)
+    assert session.dpi_chosen
+    session.set_layout(paper="A3")
+    resolution.refresh()
+
+    assert session.dpi == 150 and resolution._dpi.value() == 150
+
+
+def test_the_dpi_of_a_kept_arrangement_is_a_choice(ecran):
+    """Un agencement gardé porte la finesse qu'on lui avait donnée : la
+    reposer, c'est choisir, et non repartir du maximum."""
+    widget, session, _ = ecran
+    resolution = widget._tabs[3]
+    resolution.refresh()
+    habillage = dict(session.presentation(), dpi=150)
+
+    session.dpi_chosen = False
+    session.apply_presentation(habillage)
+    resolution.refresh()
+
+    assert session.dpi == 150 and resolution._dpi.value() == 150
+
+
 def test_the_source_changes_the_useful_maximum(ecran):
     """Les vignettes font le quart des images d'origine : la finesse utile
     suit."""
