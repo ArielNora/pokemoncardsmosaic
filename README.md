@@ -12,6 +12,14 @@ image de **4961 × 7016 px**.
 > Company. Les illustrations appartiennent à leurs ayants droit : le code de ce
 > dépôt est libre, elles ne le sont pas.
 
+| Départ, cartes tirées au hasard | Après optimisation |
+|---|---|
+| ![Grille de départ](docs/exemple-avant.webp) | ![Grille optimisée](docs/exemple-apres.webp) |
+
+Une grille 21×21, 441 cartes, montrée en vignette. Les illustrations sont
+reproduites ici à titre d'illustration du résultat ; toute demande de leurs
+ayants droit sera suivie de leur retrait.
+
 ## Comment ça marche
 
 1. **Vignettes** : chaque carte est chargée directement en vignette réduite (25 %,
