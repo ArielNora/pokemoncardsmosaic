@@ -270,6 +270,9 @@ def load_cards(
             on_folder(batch_folder, list(batch))
         batch.clear()
 
+    # Les fichiers traités, réussis ou non : c'est ce que compte la progression,
+    # sans quoi une carte sautée l'empêchait d'atteindre son total.
+    traitees = 0
     for path in readable:
         if check_cancelled is not None:
             check_cancelled()
@@ -286,14 +289,24 @@ def load_cards(
                     img.convert("RGB").resize(thumb_size, Image.Resampling.BOX)
                 )
         except Exception as e:  # noqa: BLE001 - idem : on saute la carte.
-            print(f"  Erreur de traitement, ignorée : {path} ({e})")
+            # ⚠️ **Porté, et non imprimé**, comme à la première passe. Un fichier
+            # dont l'en-tête se lit mais dont les données sont tronquées, un
+            # téléchargement interrompu, passait la première passe et
+            # disparaissait ici : un `print` que personne ne lit depuis le
+            # paquet, `has_warnings` faux, et une carte en moins sans un mot.
+            raison = str(e).replace(path, os.path.basename(path))
+            unreadable.append(f"{os.path.basename(path)} : {raison}")
+            traitees += 1
+            if progress is not None:
+                progress(traitees, len(readable))
             continue
         card = Card(path=path, index=len(cards), thumbnail=thumb)
         card.calculate_features(strip_size)
         cards.append(card)
         batch.append(card)
+        traitees += 1
         if progress is not None:
-            progress(len(cards), len(readable))
+            progress(traitees, len(readable))
 
     flush()
     return CardSet(cards=cards, full_size=full_size, thumb_size=thumb_size,

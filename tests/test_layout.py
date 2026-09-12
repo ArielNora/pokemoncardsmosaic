@@ -333,6 +333,37 @@ def test_load_cards_reports_folders_and_progress(tmp_path):
     assert steps == [(1, 2), (2, 2)]
 
 
+def test_a_card_that_breaks_while_decoding_is_reported(tmp_path):
+    """⚠️ Un fichier dont l'en-tête se lit mais dont les données sont tronquées,
+    un téléchargement interrompu, passait la première passe et disparaissait à
+    la seconde : un `print` que personne ne lit depuis le paquet, et
+    `has_warnings` faux. Reproduit à toutes les coupes de 33 à 95 %."""
+    import numpy as np
+    from PIL import Image
+
+    from pokemon_mosaic.cards import load_cards
+
+    dossier = tmp_path / "ext"
+    dossier.mkdir()
+    # Du bruit : un JPEG qui ne tient pas en quelques octets, pour que la coupe
+    # tombe dans les données et laisse l'en-tête intact.
+    bruit = np.random.default_rng(0).integers(0, 255, (84, 60, 3), dtype=np.uint8)
+    for nom in ("a", "b", "c"):
+        Image.fromarray(bruit).save(dossier / f"{nom}.jpg", quality=95)
+    abime = dossier / "b.jpg"
+    abime.write_bytes(abime.read_bytes()[: abime.stat().st_size * 2 // 3])
+    etapes = []
+
+    cartes = load_cards(str(tmp_path), progress=lambda fait, total: etapes.append((fait, total)))
+
+    assert [carte.name for carte in cartes] == ["a", "c"]
+    assert [carte.index for carte in cartes] == [0, 1]
+    assert cartes.has_warnings
+    (message,) = cartes.unreadable
+    assert message.startswith("b.jpg : ") and str(tmp_path) not in message
+    assert etapes[-1] == (3, 3), "la progression doit atteindre son total"
+
+
 def test_load_cards_can_be_cancelled_during_the_header_pass(tmp_path):
     """La première passe est purement séquentielle : sans point d'annulation,
     un chargement lancé sur une grande arborescence serait impossible à arrêter.
