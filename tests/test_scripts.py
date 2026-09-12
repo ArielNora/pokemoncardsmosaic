@@ -209,6 +209,67 @@ def test_weight_and_digest_are_recomputed_for_a_known_card(tmp_path):
     assert carte["sha256"] != "0" * 64
 
 
+def test_a_renamed_card_keeps_its_rarity_and_names(tmp_path):
+    """⚠️ L'en-tête promettait qu'une carte garde rareté et noms « quel que soit
+    son fichier ». Indexée par son seul chemin, une carte renommée passait pour
+    nouvelle, et l'ancienne entrée disparaissait avec ce qu'on avait saisi à la
+    main. Reproduit par l'audit."""
+    from pokemon_mosaic.mirror import digest_of
+
+    ancien = "a1-puissance-genetique/a1-227-bulbizarre.webp"
+    fichier = depose(tmp_path, ancien)
+    connue = {"path": ancien, "id": "A1-227", "set": "A1", "number": 227,
+              "rarity": "AR", "language": "fr", "names": {"fr": "Bulbizarre"},
+              "bytes": fichier.stat().st_size, "sha256": digest_of(str(fichier))}
+    # Hors de la convention de nommage : aucun identifiant ne s'en déduit, seul
+    # le contenu peut la reconnaître.
+    nouveau = "a1-puissance-genetique/bulbizarre.webp"
+    fichier.rename(tmp_path / nouveau)
+    renommees = []
+
+    produit, nouvelles, disparues = build.build(catalogue([connue]), str(tmp_path),
+                                                renommees)
+
+    (carte,) = produit["cards"]
+    assert carte["path"] == nouveau
+    assert carte["rarity"] == "AR" and carte["names"] == {"fr": "Bulbizarre"}
+    assert nouvelles == [] and disparues == []
+    assert renommees == [(ancien, nouveau)]
+
+
+def test_a_reencoded_card_is_recognised_by_its_identifier(tmp_path):
+    """D'autres octets, mais le même identifiant : une image réencodée sous un
+    autre nom reste la même carte."""
+    connue = {"path": "a1-puissance-genetique/a1-227-bulbizarre.webp",
+              "id": "A1-227", "set": "A1", "rarity": "AR",
+              "names": {"fr": "Bulbizarre"}, "bytes": 1, "sha256": "0" * 64}
+    depose(tmp_path, "a1-puissance-genetique/a1-227-bulbizarre-v2.webp", taille=(22, 30))
+
+    produit, nouvelles, disparues = build.build(catalogue([connue]), str(tmp_path))
+
+    (carte,) = produit["cards"]
+    assert carte["rarity"] == "AR"
+    assert nouvelles == [] and disparues == []
+
+
+def test_a_present_card_is_never_taken_over(tmp_path):
+    """Seule une carte disparue se reprend : un second fichier au même numéro, à
+    côté d'une carte toujours là, est une carte nouvelle."""
+    chemin = "a1-puissance-genetique/a1-227-bulbizarre.webp"
+    depose(tmp_path, chemin)
+    connue = {"path": chemin, "id": "A1-227", "set": "A1", "rarity": "AR",
+              "names": {"fr": "x"}, "bytes": 1, "sha256": "0" * 64}
+    autre = "a1-puissance-genetique/a1-227-bulbizarre-alt.webp"
+    depose(tmp_path, autre)
+
+    produit, nouvelles, _ = build.build(catalogue([connue]), str(tmp_path))
+
+    assert [relatif for relatif, _ in nouvelles] == [autre]
+    par_chemin = {carte["path"]: carte for carte in produit["cards"]}
+    assert par_chemin[chemin]["rarity"] == "AR"
+    assert par_chemin[autre]["rarity"] == ""
+
+
 def test_a_card_described_but_absent_is_reported(tmp_path):
     """Et non retirée en silence : une image effacée par mégarde ressemble à un
     dossier incomplet, pas à une décision."""

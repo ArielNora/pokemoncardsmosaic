@@ -128,27 +128,66 @@ def trous(card: dict) -> list[str]:
     return manquants
 
 
-def build(manifest: dict, images: str) -> tuple[dict, list, list]:
-    """Rend (manifeste, cartes nouvelles, cartes disparues)."""
+def _reprise(relatif: str, empreinte: str, disparues: dict,
+             dossiers: dict) -> tuple[str, dict] | None:
+    """La carte disparue que ce fichier continue : même contenu, un simple
+    renommage ; à défaut même identifiant, une image réencodée."""
+    for chemin, card in sorted(disparues.items()):
+        if card.get("sha256") == empreinte:
+            return chemin, card
+    identifiant = derive(relatif, dossiers).get("id")
+    if identifiant:
+        for chemin, card in sorted(disparues.items()):
+            if card.get("id") == identifiant:
+                return chemin, card
+    return None
+
+
+def build(manifest: dict, images: str,
+          renommees: list | None = None) -> tuple[dict, list, list]:
+    """Rend (manifeste, cartes nouvelles, cartes disparues).
+
+    `renommees`, s'il est donné, reçoit les couples (ancien chemin, nouveau
+    chemin) des cartes reconnues sous un autre nom.
+    """
     connues = {card["path"]: card for card in manifest.get("cards", [])}
     dossiers = {dossier: jeu
                 for jeu, dossier in (manifest.get("sets") or {}).items()}
 
     presentes = scan(images)
+    # ⚠️ **Une carte déplacée ou renommée garde sa rareté et ses noms**, comme
+    # l'en-tête le promet. Indexée par son seul chemin, elle passait pour
+    # nouvelle, l'entrée ancienne disparaissait, et ce qu'on avait saisi à la
+    # main était à refaire. Seule une carte **disparue** peut être reprise, et
+    # une seule fois : une carte encore présente garde son entrée.
+    chemins_presents = {relatif for relatif, _ in presentes}
+    disparues_connues = {chemin: card for chemin, card in connues.items()
+                         if chemin not in chemins_presents}
     cartes, nouvelles = [], []
     for relatif, absolu in presentes:
-        card = dict(connues.get(relatif) or derive(relatif, dossiers))
-        if not card:
-            nouvelles.append((relatif, "nom de fichier hors convention"))
-            continue
-        if relatif not in connues:
-            nouvelles.append((relatif, ", ".join(trous(card)) or "complète"))
+        empreinte = digest_of(absolu)
+        if relatif in connues:
+            card = dict(connues[relatif])
+        else:
+            reprise = _reprise(relatif, empreinte, disparues_connues, dossiers)
+            if reprise is not None:
+                ancien, reprise_card = reprise
+                card = dict(reprise_card)
+                del disparues_connues[ancien]
+                if renommees is not None:
+                    renommees.append((ancien, relatif))
+            else:
+                card = dict(derive(relatif, dossiers))
+                if not card:
+                    nouvelles.append((relatif, "nom de fichier hors convention"))
+                    continue
+                nouvelles.append((relatif, ", ".join(trous(card)) or "complète"))
         card["path"] = relatif
         card["bytes"] = os.path.getsize(absolu)
-        card["sha256"] = digest_of(absolu)
+        card["sha256"] = empreinte
         cartes.append(card)
 
-    disparues = sorted(set(connues) - {relatif for relatif, _ in presentes})
+    disparues = sorted(disparues_connues)
 
     # Le tri final est celui du chemin, comme le balayage : le fichier produit
     # ne doit pas dépendre de l'ordre dans lequel les cartes ont été ajoutées.
@@ -187,10 +226,13 @@ def main(argv=None) -> int:
 
     manifest = read_manifest(args.manifest)
     ancien = len(manifest.get("cards", []))
-    produit, nouvelles, disparues = build(manifest, args.images)
+    renommees: list[tuple[str, str]] = []
+    produit, nouvelles, disparues = build(manifest, args.images, renommees)
 
     print(f"{len(produit['cards'])} cartes dans {args.images}/ "
           f"({ancien} au catalogue précédent)")
+    for avant, apres in renommees:
+        print(f"  ~ {apres} : reprend {avant}, rareté et noms compris")
     for relatif, raison in nouvelles:
         print(f"  + {relatif} : à compléter : {raison}")
     for relatif in disparues:
