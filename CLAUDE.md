@@ -98,6 +98,11 @@ test de non-régression.
   que sur une partie des cartes, utiliser `select_cards()`, qui renumérote les
   cartes **et** traduit les liens. `CardSet.subset()` seul laisse les liens
   pointer sur d'autres cartes, sans erreur ni signe visible.
+- **Le disque ignore la casse.** Celui de macOS confond « Essai » et « essai »,
+  et les deux formes d'un accent : comparer deux noms de fichier par
+  `name_key()` (`presets.py`), et n'effacer un « ancien » fichier qu'après
+  `same_file()`. Deux pertes de données sont passées ainsi, les tests écrits sur
+  des noms qui ne différaient que par des lettres.
 - **Traduction.** `lupdate` n'extrait que les `tr()` portant une chaîne littérale.
   `self.tr(variable)` reste non traduit sans que rien ne le signale. Après toute
   modification de texte :

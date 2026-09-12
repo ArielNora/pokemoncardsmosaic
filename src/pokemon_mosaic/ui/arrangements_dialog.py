@@ -436,10 +436,14 @@ class ArrangementsDialog(QDialog):
             QMessageBox.warning(self, self.tr("Fichier illisible"), str(erreur))
             return
         nom = unique_name(self._directory, arrangement.name or os.path.basename(chemin))
-        save_arrangement(self._directory, Arrangement(
-            name=nom, cards=arrangement.cards, grid=arrangement.grid,
-            presentation=arrangement.presentation, score=arrangement.score,
-            saved_at=arrangement.saved_at))
+        try:
+            save_arrangement(self._directory, Arrangement(
+                name=nom, cards=arrangement.cards, grid=arrangement.grid,
+                presentation=arrangement.presentation, score=arrangement.score,
+                saved_at=arrangement.saved_at))
+        except OSError as erreur:
+            QMessageBox.warning(self, self.tr("Écriture impossible"), str(erreur))
+            return
         self.reload(select=nom)
 
     def _rename_current(self) -> None:
@@ -449,11 +453,19 @@ class ArrangementsDialog(QDialog):
         nom, valide = QInputDialog.getText(
             self, self.tr("Renommer l'agencement"), self.tr("Nom"),
             text=arrangement.name)
-        if not valide or not nom.strip() or nom == arrangement.name:
+        nom = nom.strip()
+        if not valide or not nom or nom == arrangement.name:
             return
-        rename_arrangement(self._directory, arrangement.name,
-                           unique_name(self._directory, nom.strip()))
-        self.reload(select=nom.strip())
+        # ⚠️ **Le nom rendu, et non le nom tapé.** Pris par un autre, il reçoit
+        # un suffixe : sélectionner le nom tapé désignait l'autre agencement, et
+        # « Supprimer » l'aurait visé.
+        nouveau = unique_name(self._directory, nom, ignore=arrangement.name)
+        try:
+            rename_arrangement(self._directory, arrangement.name, nouveau)
+        except OSError as erreur:
+            QMessageBox.warning(self, self.tr("Renommage impossible"), str(erreur))
+            return
+        self.reload(select=nouveau)
 
     def _delete_current(self) -> None:
         arrangement = self.current()
@@ -466,5 +478,10 @@ class ArrangementsDialog(QDialog):
             .replace("%1", arrangement.name),
             QMessageBox.Yes | QMessageBox.No, QMessageBox.No)
         if reponse == QMessageBox.Yes:
-            delete_arrangement(self._directory, arrangement.name)
+            try:
+                delete_arrangement(self._directory, arrangement.name)
+            except OSError as erreur:
+                QMessageBox.warning(self, self.tr("Suppression impossible"),
+                                    str(erreur))
+                return
             self.reload()

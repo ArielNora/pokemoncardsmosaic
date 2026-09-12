@@ -178,3 +178,26 @@ def test_saving_unlocks_on_the_very_first_batch(qt_app, tmp_path):
     session.start_loading(str(tmp_path / "cartes"))
     session.append_cards(jeu.cards)
     assert barre._save.isEnabled()
+
+
+def test_a_name_differing_only_by_case_asks_before_replacing(bar, tmp_path,
+                                                            monkeypatch):
+    """⚠️ « essai » écrasait « Essai » sans rien demander : le doublon se
+    cherchait au nom exact, et le disque de macOS confond les deux."""
+    vus = []
+    monkeypatch.setattr(QMessageBox, "question", staticmethod(
+        lambda *a, **k: vus.append(a[2]) or QMessageBox.No))
+
+    bar.save_current("Essai")
+    bar.save_current("essai")
+
+    assert vus and "Essai" in vus[0], "la confirmation doit nommer celui qu'on remplace"
+    assert list_presets(str(tmp_path / "presets")) == ["Essai"]
+
+
+def test_confirming_a_case_only_replacement_keeps_a_single_preset(bar, yes, tmp_path):
+    bar.save_current("Essai")
+    bar.save_current("essai")
+
+    assert list_presets(str(tmp_path / "presets")) == ["essai"]
+    assert bar._names.currentText() == "essai"

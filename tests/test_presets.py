@@ -477,3 +477,19 @@ def test_applying_an_old_preset_does_not_flatten_a_rectangle(session):
 
     session.apply_preset(ancien)
     assert session.links.active[0].shape == (1, 2)
+
+
+def test_replacing_a_preset_that_differs_by_case_leaves_one(tmp_path):
+    """Remplacer « Essai » par « essai » laisse un seul préréglage, quel que soit
+    le disque. ⚠️ Là où la casse compte, les deux fichiers coexistaient ; sur
+    celui de macOS, effacer l'ancien emportait ce qu'on venait d'écrire."""
+    from pokemon_mosaic.presets import existing_name, replace_preset
+
+    save_preset(str(tmp_path), Preset(name="Essai", excluded=("a/un.png",)))
+    assert existing_name(str(tmp_path), "ESSAI") == "Essai"
+    assert existing_name(str(tmp_path), "autre") is None
+
+    replace_preset(str(tmp_path), Preset(name="essai"), "Essai")
+
+    assert list_presets(str(tmp_path)) == ["essai"]
+    assert load_preset(str(tmp_path), "essai").excluded == ()

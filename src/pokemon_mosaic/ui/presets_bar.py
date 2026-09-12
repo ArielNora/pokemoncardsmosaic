@@ -16,7 +16,14 @@ from PySide6.QtWidgets import (
     QWidget,
 )
 
-from ..presets import delete_preset, list_presets, load_preset, save_preset
+from ..presets import (
+    delete_preset,
+    existing_name,
+    list_presets,
+    load_preset,
+    replace_preset,
+    save_preset,
+)
 from .session import Session
 
 
@@ -106,11 +113,18 @@ class PresetsBar(QWidget):
         name = name.strip()
         if not name:
             return
-        if name in list_presets(self._directory) and not self._confirm_overwrite(name):
+        # ⚠️ **L'homonyme se cherche casse et accents confondus** : « essai »
+        # écrasait « Essai » sans rien demander, le disque les confondant.
+        existant = existing_name(self._directory, name)
+        if existant is not None and not self._confirm_overwrite(existant):
             return
 
         try:
-            save_preset(self._directory, self._session.to_preset(name))
+            preset = self._session.to_preset(name)
+            if existant is None:
+                save_preset(self._directory, preset)
+            else:
+                replace_preset(self._directory, preset, existant)
         except (OSError, ValueError) as error:
             self.status_message.emit(
                 self.tr("Échec de l'enregistrement : %1").replace("%1", str(error))

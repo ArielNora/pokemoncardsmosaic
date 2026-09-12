@@ -18,6 +18,7 @@ import contextlib
 import json
 import os
 import re
+import unicodedata
 from dataclasses import asdict, dataclass, field
 
 FORMAT_VERSION = 1
@@ -112,6 +113,26 @@ def _encode(caractere: str) -> str:
     `_5f`, le code de `_` lui-même.
     """
     return f"_{ord(caractere):x}_"
+
+
+def name_key(name: str) -> str:
+    """La forme sous laquelle deux noms désignent le même fichier.
+
+    ⚠️ **Le disque de macOS ignore la casse, et la forme des accents.** « Essai »
+    et « essai » y sont un seul fichier, comme un « é » composé et décomposé.
+    Comparer les noms tels quels laissait un préréglage en écraser un autre sans
+    confirmation, et renommer un agencement par la seule casse effaçait son
+    fichier. On compare donc ce que le disque compare.
+    """
+    return unicodedata.normalize("NFC", name).casefold()
+
+
+def same_file(premier: str, second: str) -> bool:
+    """Deux chemins désignent-ils le même fichier ? Faux si l'un manque."""
+    try:
+        return os.path.samefile(premier, second)
+    except OSError:
+        return False
 
 
 def safe_filename(name: str) -> str:
@@ -230,3 +251,27 @@ def list_presets(directory: str) -> list[str]:
             # entière inutilisable.
             continue
     return sorted(names)
+
+
+def existing_name(directory: str, name: str) -> str | None:
+    """Le préréglage que ce nom remplacerait, casse et accents confondus."""
+    cle = name_key(name)
+    return next((un for un in list_presets(directory) if name_key(un) == cle),
+                None)
+
+
+def replace_preset(directory: str, preset: Preset, replaced: str) -> str:
+    """Écrit le préréglage à la place de `replaced`, qui peut ne différer que
+    par la casse.
+
+    ⚠️ **Deux disques, deux comportements.** Là où la casse compte, les deux
+    fichiers coexisteraient et « remplacer » n'aurait rien remplacé ; sur celui
+    de macOS, c'est un seul fichier, et l'effacer après coup emporterait ce
+    qu'on vient d'écrire.
+    """
+    path = save_preset(directory, preset)
+    if replaced != preset.name:
+        ancien = _existing_path(directory, replaced)
+        if os.path.exists(ancien) and not same_file(ancien, path):
+            os.remove(ancien)
+    return path

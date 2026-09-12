@@ -412,3 +412,60 @@ def test_closing_abandons_the_preview_and_waits_for_its_thread(
 
     assert widget._pool.activeThreadCount() == 0, "l'aperçu en cours tourne encore"
     assert not apercu_retenu.is_set()
+
+
+# --- Renommer, supprimer : le bon agencement, et les erreurs dites ------------
+
+def test_renaming_selects_the_name_actually_written(menu, monkeypatch):
+    """Renommer vers un nom pris donne « B (2) » : sélectionner le nom tapé
+    désignait l'autre agencement, que « Supprimer » aurait visé."""
+    from PySide6.QtWidgets import QInputDialog
+
+    widget, _, bibliotheque = menu
+    range_un(bibliotheque, "B", saved_at="2026-09-04T09:00:00")
+    widget.reload(select="essai")
+    monkeypatch.setattr(QInputDialog, "getText", lambda *a, **k: ("B", True))
+
+    widget._rename_current()
+
+    assert widget.current().name == "B (2)"
+
+
+def test_renaming_by_case_alone_from_the_menu(menu, monkeypatch):
+    """⚠️ « essai » en « ESSAI » effaçait l'agencement sur le disque de macOS."""
+    from PySide6.QtWidgets import QInputDialog
+
+    widget, _, bibliotheque = menu
+    monkeypatch.setattr(QInputDialog, "getText", lambda *a, **k: ("ESSAI", True))
+
+    widget._rename_current()
+
+    assert [un.name for un in list_arrangements(bibliotheque)] == ["ESSAI"]
+    assert widget.current().name == "ESSAI"
+
+
+@pytest.mark.parametrize("geste, fonction", [
+    ("_rename_current", "rename_arrangement"),
+    ("_delete_current", "delete_arrangement"),
+])
+def test_a_disk_error_is_reported_not_raised(menu, monkeypatch, geste, fonction):
+    """Une erreur disque sortait du slot sans message : le geste semblait ne rien
+    faire, et la trace n'allait nulle part depuis le paquet `.app`."""
+    from PySide6.QtWidgets import QInputDialog, QMessageBox
+
+    from pokemon_mosaic.ui import arrangements_dialog as module
+
+    widget, _, _ = menu
+
+    def refus(*a, **k):
+        raise OSError("disque plein")
+
+    monkeypatch.setattr(module, fonction, refus)
+    monkeypatch.setattr(QInputDialog, "getText", lambda *a, **k: ("autre", True))
+    monkeypatch.setattr(QMessageBox, "question", lambda *a, **k: QMessageBox.Yes)
+    vus = []
+    monkeypatch.setattr(QMessageBox, "warning", lambda *a, **k: vus.append(a[2]))
+
+    getattr(widget, geste)()
+
+    assert vus == ["disque plein"]

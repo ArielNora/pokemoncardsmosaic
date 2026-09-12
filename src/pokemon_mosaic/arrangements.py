@@ -25,7 +25,7 @@ import os
 from dataclasses import dataclass, field
 from datetime import datetime
 
-from .presets import EXTENSION, safe_filename
+from .presets import EXTENSION, name_key, safe_filename, same_file
 from .scoring import EMPTY
 
 FORMAT_VERSION = 1
@@ -126,17 +126,23 @@ def default_name(shape: tuple[int, int], score: float,
             f"score {score:.0f}")
 
 
-def unique_name(directory: str, name: str) -> str:
+def unique_name(directory: str, name: str, ignore: str | None = None) -> str:
     """Le nom demandé, suffixé s'il est déjà pris.
 
     Deux calculs peuvent tomber dans la même minute sur la même forme et le même
     score arrondi : sans cela, le second écraserait le premier en silence.
+
+    ⚠️ **« Pris » se juge comme le disque en juge**, casse et accents confondus
+    (voir `name_key`) : importer « PREMIER » écrasait « Premier ». `ignore`
+    écarte l'agencement qu'on renomme, qui peut changer sa propre casse sans
+    devenir « essai (2) ».
     """
-    pris = {existant.name for existant in list_arrangements(directory)}
-    if name not in pris:
+    pris = {name_key(existant.name) for existant in list_arrangements(directory)
+            if existant.name != ignore}
+    if name_key(name) not in pris:
         return name
     numero = 2
-    while f"{name} ({numero})" in pris:
+    while name_key(f"{name} ({numero})") in pris:
         numero += 1
     return f"{name} ({numero})"
 
@@ -180,15 +186,19 @@ def rename_arrangement(directory: str, name: str, nouveau: str) -> str:
     séparément laisserait deux vérités, et la liste, qui lit le contenu,
     montrerait un agencement introuvable par son fichier.
     """
-    ancien = read_arrangement(path_of(directory, name))
+    ancien_chemin = path_of(directory, name)
+    ancien = read_arrangement(ancien_chemin)
     nouveau_chemin = save_arrangement(
         directory, Arrangement(
             name=nouveau, cards=ancien.cards, grid=ancien.grid,
             presentation=ancien.presentation, score=ancien.score,
             saved_at=ancien.saved_at))
-    if nouveau != name:
+    # ⚠️ **Un autre nom, mais peut-être le même fichier.** Sur le disque de
+    # macOS, « Essai » et « essai » n'en font qu'un : l'effacer après l'avoir
+    # réécrit emportait l'agencement, sans erreur.
+    if nouveau != name and not same_file(ancien_chemin, nouveau_chemin):
         with contextlib.suppress(OSError):
-            os.remove(path_of(directory, name))
+            os.remove(ancien_chemin)
     return nouveau_chemin
 
 

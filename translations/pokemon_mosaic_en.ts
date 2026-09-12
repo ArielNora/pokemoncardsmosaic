@@ -112,42 +112,42 @@
 <context>
     <name>ArrangementsDialog</name>
     <message>
-        <location filename="../src/pokemon_mosaic/ui/arrangements_dialog.py" line="244"/>
+        <location filename="../src/pokemon_mosaic/ui/arrangements_dialog.py" line="245"/>
         <source>Agencements enregistrés</source>
         <translation>Kept arrangements</translation>
     </message>
     <message>
-        <location filename="../src/pokemon_mosaic/ui/arrangements_dialog.py" line="245"/>
+        <location filename="../src/pokemon_mosaic/ui/arrangements_dialog.py" line="246"/>
         <source>Mettre dans une case</source>
         <translation>Put in a slot</translation>
     </message>
     <message>
-        <location filename="../src/pokemon_mosaic/ui/arrangements_dialog.py" line="246"/>
+        <location filename="../src/pokemon_mosaic/ui/arrangements_dialog.py" line="247"/>
         <source>Exporter en JSON…</source>
         <translation>Export as JSON…</translation>
     </message>
     <message>
-        <location filename="../src/pokemon_mosaic/ui/arrangements_dialog.py" line="247"/>
+        <location filename="../src/pokemon_mosaic/ui/arrangements_dialog.py" line="248"/>
         <source>Importer un JSON…</source>
         <translation>Import a JSON…</translation>
     </message>
     <message>
-        <location filename="../src/pokemon_mosaic/ui/arrangements_dialog.py" line="248"/>
+        <location filename="../src/pokemon_mosaic/ui/arrangements_dialog.py" line="249"/>
         <source>Renommer…</source>
         <translation>Rename…</translation>
     </message>
     <message>
-        <location filename="../src/pokemon_mosaic/ui/arrangements_dialog.py" line="249"/>
+        <location filename="../src/pokemon_mosaic/ui/arrangements_dialog.py" line="250"/>
         <source>Supprimer…</source>
         <translation>Delete…</translation>
     </message>
     <message>
-        <location filename="../src/pokemon_mosaic/ui/arrangements_dialog.py" line="250"/>
+        <location filename="../src/pokemon_mosaic/ui/arrangements_dialog.py" line="251"/>
         <source>Fermer</source>
         <translation>Close</translation>
     </message>
     <message numerus="yes">
-        <location filename="../src/pokemon_mosaic/ui/arrangements_dialog.py" line="263"/>
+        <location filename="../src/pokemon_mosaic/ui/arrangements_dialog.py" line="264"/>
         <source>%n carte(s) manquante(s)</source>
         <translation>
             <numerusform>%n missing card</numerusform>
@@ -155,17 +155,17 @@
         </translation>
     </message>
     <message>
-        <location filename="../src/pokemon_mosaic/ui/arrangements_dialog.py" line="287"/>
+        <location filename="../src/pokemon_mosaic/ui/arrangements_dialog.py" line="288"/>
         <source>Aucun agencement enregistré.</source>
         <translation>No arrangement kept yet.</translation>
     </message>
     <message>
-        <location filename="../src/pokemon_mosaic/ui/arrangements_dialog.py" line="297"/>
+        <location filename="../src/pokemon_mosaic/ui/arrangements_dialog.py" line="298"/>
         <source>%1 : %2 × %3 cartes, score %4</source>
         <translation>%1: %2 × %3 cards, score %4</translation>
     </message>
     <message numerus="yes">
-        <location filename="../src/pokemon_mosaic/ui/arrangements_dialog.py" line="307"/>
+        <location filename="../src/pokemon_mosaic/ui/arrangements_dialog.py" line="308"/>
         <source>%n carte(s) de cet agencement manquent au catalogue : il ne peut pas être ouvert.</source>
         <translation>
             <numerusform>%n card of this arrangement is missing from the catalogue: it cannot be opened.</numerusform>
@@ -173,17 +173,17 @@
         </translation>
     </message>
     <message>
-        <location filename="../src/pokemon_mosaic/ui/arrangements_dialog.py" line="393"/>
+        <location filename="../src/pokemon_mosaic/ui/arrangements_dialog.py" line="394"/>
         <source>Agencement incomplet</source>
         <translation>Incomplete arrangement</translation>
     </message>
     <message>
-        <location filename="../src/pokemon_mosaic/ui/arrangements_dialog.py" line="400"/>
+        <location filename="../src/pokemon_mosaic/ui/arrangements_dialog.py" line="401"/>
         <source>Aucune case libre</source>
         <translation>No free slot</translation>
     </message>
     <message numerus="yes">
-        <location filename="../src/pokemon_mosaic/ui/arrangements_dialog.py" line="401"/>
+        <location filename="../src/pokemon_mosaic/ui/arrangements_dialog.py" line="402"/>
         <source>Les %n case(s) sont prises : videz-en une pour ouvrir celui-ci.</source>
         <translation>
             <numerusform>The %n slot is taken: empty one to open this arrangement.</numerusform>
@@ -191,50 +191,61 @@
         </translation>
     </message>
     <message>
-        <location filename="../src/pokemon_mosaic/ui/arrangements_dialog.py" line="411"/>
+        <location filename="../src/pokemon_mosaic/ui/arrangements_dialog.py" line="412"/>
         <source>Exporter l&apos;agencement</source>
         <translation>Export the arrangement</translation>
     </message>
     <message>
-        <location filename="../src/pokemon_mosaic/ui/arrangements_dialog.py" line="413"/>
-        <location filename="../src/pokemon_mosaic/ui/arrangements_dialog.py" line="429"/>
+        <location filename="../src/pokemon_mosaic/ui/arrangements_dialog.py" line="414"/>
+        <location filename="../src/pokemon_mosaic/ui/arrangements_dialog.py" line="430"/>
         <source>Agencement (*.json)</source>
         <translation>Arrangement (*.json)</translation>
     </message>
     <message>
-        <location filename="../src/pokemon_mosaic/ui/arrangements_dialog.py" line="419"/>
+        <location filename="../src/pokemon_mosaic/ui/arrangements_dialog.py" line="420"/>
+        <location filename="../src/pokemon_mosaic/ui/arrangements_dialog.py" line="445"/>
         <source>Écriture impossible</source>
         <translation>Cannot write</translation>
     </message>
     <message>
-        <location filename="../src/pokemon_mosaic/ui/arrangements_dialog.py" line="428"/>
+        <location filename="../src/pokemon_mosaic/ui/arrangements_dialog.py" line="429"/>
         <source>Importer un agencement</source>
         <translation>Import an arrangement</translation>
     </message>
     <message>
-        <location filename="../src/pokemon_mosaic/ui/arrangements_dialog.py" line="435"/>
+        <location filename="../src/pokemon_mosaic/ui/arrangements_dialog.py" line="436"/>
         <source>Fichier illisible</source>
         <translation>Unreadable file</translation>
     </message>
     <message>
-        <location filename="../src/pokemon_mosaic/ui/arrangements_dialog.py" line="449"/>
+        <location filename="../src/pokemon_mosaic/ui/arrangements_dialog.py" line="454"/>
         <source>Renommer l&apos;agencement</source>
         <translation>Rename the arrangement</translation>
     </message>
     <message>
-        <location filename="../src/pokemon_mosaic/ui/arrangements_dialog.py" line="449"/>
+        <location filename="../src/pokemon_mosaic/ui/arrangements_dialog.py" line="454"/>
         <source>Nom</source>
         <translation>Name</translation>
     </message>
     <message>
-        <location filename="../src/pokemon_mosaic/ui/arrangements_dialog.py" line="462"/>
+        <location filename="../src/pokemon_mosaic/ui/arrangements_dialog.py" line="466"/>
+        <source>Renommage impossible</source>
+        <translation>Cannot rename</translation>
+    </message>
+    <message>
+        <location filename="../src/pokemon_mosaic/ui/arrangements_dialog.py" line="475"/>
         <source>Supprimer cet agencement ?</source>
         <translation>Delete this arrangement?</translation>
     </message>
     <message>
-        <location filename="../src/pokemon_mosaic/ui/arrangements_dialog.py" line="463"/>
+        <location filename="../src/pokemon_mosaic/ui/arrangements_dialog.py" line="476"/>
         <source>« %1 » sera effacé de la bibliothèque. Le calcul ne redonne pas deux fois le même.</source>
         <translation>“%1” will be erased from the library. No run gives the same one twice.</translation>
+    </message>
+    <message>
+        <location filename="../src/pokemon_mosaic/ui/arrangements_dialog.py" line="484"/>
+        <source>Suppression impossible</source>
+        <translation>Cannot delete</translation>
     </message>
 </context>
 <context>
@@ -346,12 +357,12 @@
         <translation>Folders</translation>
     </message>
     <message>
-        <location filename="../src/pokemon_mosaic/ui/cards_step.py" line="744"/>
+        <location filename="../src/pokemon_mosaic/ui/cards_step.py" line="760"/>
         <source>Tout inclure</source>
         <translation>Include all</translation>
     </message>
     <message>
-        <location filename="../src/pokemon_mosaic/ui/cards_step.py" line="745"/>
+        <location filename="../src/pokemon_mosaic/ui/cards_step.py" line="761"/>
         <source>Tout exclure</source>
         <translation>Exclude all</translation>
     </message>
@@ -406,7 +417,7 @@
         <translation>Search a card by name…</translation>
     </message>
     <message numerus="yes">
-        <location filename="../src/pokemon_mosaic/ui/cards_step.py" line="376"/>
+        <location filename="../src/pokemon_mosaic/ui/cards_step.py" line="378"/>
         <source>, et %n autre(s) format(s)</source>
         <translation>
             <numerusform>, and %n other size</numerusform>
@@ -414,62 +425,62 @@
         </translation>
     </message>
     <message>
-        <location filename="../src/pokemon_mosaic/ui/cards_step.py" line="379"/>
+        <location filename="../src/pokemon_mosaic/ui/cards_step.py" line="381"/>
         <source>%1 carte(s) ne sont pas au format %2 : %3. Elles seront étirées à ce format, ce qui déforme l&apos;illustration et fausse les couleurs de bord dont l&apos;assemblage se sert.</source>
         <translation>%1 card(s) are not %2: %3. They will be stretched to that size, which distorts the artwork and skews the edge colours the assembly relies on.</translation>
     </message>
     <message>
-        <location filename="../src/pokemon_mosaic/ui/cards_step.py" line="386"/>
+        <location filename="../src/pokemon_mosaic/ui/cards_step.py" line="388"/>
         <source>%1 fichier(s) illisibles, ignorés : %2</source>
         <translation>%1 unreadable file(s), skipped: %2</translation>
     </message>
     <message>
-        <location filename="../src/pokemon_mosaic/ui/cards_step.py" line="396"/>
+        <location filename="../src/pokemon_mosaic/ui/cards_step.py" line="398"/>
         <source>Dossier contenant les cartes</source>
         <translation>Folder containing the cards</translation>
     </message>
     <message>
-        <location filename="../src/pokemon_mosaic/ui/cards_step.py" line="426"/>
+        <location filename="../src/pokemon_mosaic/ui/cards_step.py" line="435"/>
         <source>Chargement des cartes…</source>
         <translation>Loading cards…</translation>
     </message>
     <message>
-        <location filename="../src/pokemon_mosaic/ui/cards_step.py" line="455"/>
+        <location filename="../src/pokemon_mosaic/ui/cards_step.py" line="471"/>
         <source>Où déposer les cartes</source>
         <translation>Where to put the cards</translation>
     </message>
     <message>
-        <location filename="../src/pokemon_mosaic/ui/cards_step.py" line="474"/>
+        <location filename="../src/pokemon_mosaic/ui/cards_step.py" line="490"/>
         <source>Lecture du catalogue…</source>
         <translation>Reading the card list…</translation>
     </message>
     <message>
-        <location filename="../src/pokemon_mosaic/ui/cards_step.py" line="489"/>
+        <location filename="../src/pokemon_mosaic/ui/cards_step.py" line="505"/>
         <source>Arrêt demandé…</source>
         <translation>Stopping…</translation>
     </message>
     <message>
-        <location filename="../src/pokemon_mosaic/ui/cards_step.py" line="493"/>
+        <location filename="../src/pokemon_mosaic/ui/cards_step.py" line="509"/>
         <source>Le dossier est déjà complet.</source>
         <translation>The folder is already complete.</translation>
     </message>
     <message>
-        <location filename="../src/pokemon_mosaic/ui/cards_step.py" line="498"/>
+        <location filename="../src/pokemon_mosaic/ui/cards_step.py" line="514"/>
         <source>%1 carte(s) à récupérer, %2 Mo…</source>
         <translation>%1 card(s) to fetch, %2 MB…</translation>
     </message>
     <message>
-        <location filename="../src/pokemon_mosaic/ui/cards_step.py" line="506"/>
+        <location filename="../src/pokemon_mosaic/ui/cards_step.py" line="522"/>
         <source>Téléchargement : %1</source>
         <translation>Downloading: %1</translation>
     </message>
     <message>
-        <location filename="../src/pokemon_mosaic/ui/cards_step.py" line="526"/>
+        <location filename="../src/pokemon_mosaic/ui/cards_step.py" line="542"/>
         <source>%1 échec(s), dont %2 : %3</source>
         <translation>%1 failure(s), including %2: %3</translation>
     </message>
     <message numerus="yes">
-        <location filename="../src/pokemon_mosaic/ui/cards_step.py" line="531"/>
+        <location filename="../src/pokemon_mosaic/ui/cards_step.py" line="547"/>
         <source>%n carte(s) récupérée(s).</source>
         <translation>
             <numerusform>%n card fetched.</numerusform>
@@ -477,12 +488,12 @@
         </translation>
     </message>
     <message>
-        <location filename="../src/pokemon_mosaic/ui/cards_step.py" line="549"/>
+        <location filename="../src/pokemon_mosaic/ui/cards_step.py" line="565"/>
         <source>Téléchargement impossible : %1</source>
         <translation>Download failed: %1</translation>
     </message>
     <message numerus="yes">
-        <location filename="../src/pokemon_mosaic/ui/cards_step.py" line="582"/>
+        <location filename="../src/pokemon_mosaic/ui/cards_step.py" line="598"/>
         <source>%n carte(s) chargée(s).</source>
         <translation>
             <numerusform>%n card loaded.</numerusform>
@@ -490,22 +501,22 @@
         </translation>
     </message>
     <message>
-        <location filename="../src/pokemon_mosaic/ui/cards_step.py" line="593"/>
+        <location filename="../src/pokemon_mosaic/ui/cards_step.py" line="609"/>
         <source>Échec du chargement : %1</source>
         <translation>Loading failed: %1</translation>
     </message>
     <message>
-        <location filename="../src/pokemon_mosaic/ui/cards_step.py" line="622"/>
+        <location filename="../src/pokemon_mosaic/ui/cards_step.py" line="638"/>
         <source>Arrêt en cours : le chargement ne répond pas encore.</source>
         <translation>Stopping: the loading is not responding yet.</translation>
     </message>
     <message>
-        <location filename="../src/pokemon_mosaic/ui/cards_step.py" line="652"/>
+        <location filename="../src/pokemon_mosaic/ui/cards_step.py" line="668"/>
         <source>Série %1  (%2)</source>
         <translation>Series %1  (%2)</translation>
     </message>
     <message numerus="yes">
-        <location filename="../src/pokemon_mosaic/ui/cards_step.py" line="740"/>
+        <location filename="../src/pokemon_mosaic/ui/cards_step.py" line="756"/>
         <source>Inclure les %n affichée(s)</source>
         <translation>
             <numerusform>Include the %n shown</numerusform>
@@ -513,7 +524,7 @@
         </translation>
     </message>
     <message numerus="yes">
-        <location filename="../src/pokemon_mosaic/ui/cards_step.py" line="742"/>
+        <location filename="../src/pokemon_mosaic/ui/cards_step.py" line="758"/>
         <source>Exclure les %n affichée(s)</source>
         <translation>
             <numerusform>Exclude the %n shown</numerusform>
@@ -521,22 +532,22 @@
         </translation>
     </message>
     <message>
-        <location filename="../src/pokemon_mosaic/ui/cards_step.py" line="749"/>
+        <location filename="../src/pokemon_mosaic/ui/cards_step.py" line="765"/>
         <source>Inverser</source>
         <translation>Invert</translation>
     </message>
     <message>
-        <location filename="../src/pokemon_mosaic/ui/cards_step.py" line="751"/>
+        <location filename="../src/pokemon_mosaic/ui/cards_step.py" line="767"/>
         <source>Les cartes affichées changent de camp : les incluses sortent, les exclues rentrent.</source>
         <translation>The shown cards swap sides: the included ones drop out, the excluded ones come back.</translation>
     </message>
     <message>
-        <location filename="../src/pokemon_mosaic/ui/cards_step.py" line="754"/>
+        <location filename="../src/pokemon_mosaic/ui/cards_step.py" line="770"/>
         <source>Toutes les cartes changent de camp : les incluses sortent, les exclues rentrent.</source>
         <translation>Every card swaps sides: the included ones drop out, the excluded ones come back.</translation>
     </message>
     <message numerus="yes">
-        <location filename="../src/pokemon_mosaic/ui/cards_step.py" line="792"/>
+        <location filename="../src/pokemon_mosaic/ui/cards_step.py" line="808"/>
         <source>%n carte(s) trouvée(s)</source>
         <translation>
             <numerusform>%n card found</numerusform>
@@ -545,7 +556,7 @@
     </message>
     <message>
         <location filename="../src/pokemon_mosaic/ui/cards_step.py" line="283"/>
-        <location filename="../src/pokemon_mosaic/ui/cards_step.py" line="778"/>
+        <location filename="../src/pokemon_mosaic/ui/cards_step.py" line="794"/>
         <source>Aucune carte chargée</source>
         <translation>No cards loaded</translation>
     </message>
@@ -560,7 +571,7 @@
         <translation>Exclude the set</translation>
     </message>
     <message numerus="yes">
-        <location filename="../src/pokemon_mosaic/ui/cards_step.py" line="539"/>
+        <location filename="../src/pokemon_mosaic/ui/cards_step.py" line="555"/>
         <source>Téléchargement interrompu : %n carte(s) récupérée(s).</source>
         <translation>
             <numerusform>Download interrupted: %n card retrieved.</numerusform>
@@ -568,17 +579,17 @@
         </translation>
     </message>
     <message>
-        <location filename="../src/pokemon_mosaic/ui/cards_step.py" line="780"/>
+        <location filename="../src/pokemon_mosaic/ui/cards_step.py" line="796"/>
         <source>%1 cartes retenues sur %2</source>
         <translation>%1 of %2 cards kept</translation>
     </message>
     <message>
-        <location filename="../src/pokemon_mosaic/ui/cards_step.py" line="786"/>
+        <location filename="../src/pokemon_mosaic/ui/cards_step.py" line="802"/>
         <source>filtré sur %1</source>
         <translation>filtered on %1</translation>
     </message>
     <message numerus="yes">
-        <location filename="../src/pokemon_mosaic/ui/cards_step.py" line="788"/>
+        <location filename="../src/pokemon_mosaic/ui/cards_step.py" line="804"/>
         <source>filtré sur %n dossiers</source>
         <translation>
             <numerusform>filtered on %n folder</numerusform>
@@ -1322,67 +1333,67 @@
 <context>
     <name>PresetsBar</name>
     <message>
-        <location filename="../src/pokemon_mosaic/ui/presets_bar.py" line="65"/>
+        <location filename="../src/pokemon_mosaic/ui/presets_bar.py" line="72"/>
         <source>Préréglage</source>
         <translation>Preset</translation>
     </message>
     <message>
-        <location filename="../src/pokemon_mosaic/ui/presets_bar.py" line="66"/>
+        <location filename="../src/pokemon_mosaic/ui/presets_bar.py" line="73"/>
         <source>Charger</source>
         <translation>Load</translation>
     </message>
     <message>
-        <location filename="../src/pokemon_mosaic/ui/presets_bar.py" line="67"/>
+        <location filename="../src/pokemon_mosaic/ui/presets_bar.py" line="74"/>
         <source>Enregistrer…</source>
         <translation>Save…</translation>
     </message>
     <message>
-        <location filename="../src/pokemon_mosaic/ui/presets_bar.py" line="68"/>
+        <location filename="../src/pokemon_mosaic/ui/presets_bar.py" line="75"/>
         <source>Supprimer</source>
         <translation>Delete</translation>
     </message>
     <message>
-        <location filename="../src/pokemon_mosaic/ui/presets_bar.py" line="70"/>
+        <location filename="../src/pokemon_mosaic/ui/presets_bar.py" line="77"/>
         <source>Enregistre la sélection, les liens actifs, la grille et les réglages sous un nom.</source>
         <translation>Saves the selection, the active links, the grid and the settings under a name.</translation>
     </message>
     <message>
-        <location filename="../src/pokemon_mosaic/ui/presets_bar.py" line="101"/>
+        <location filename="../src/pokemon_mosaic/ui/presets_bar.py" line="108"/>
         <source>Enregistrer le préréglage</source>
         <translation>Save the preset</translation>
     </message>
     <message>
-        <location filename="../src/pokemon_mosaic/ui/presets_bar.py" line="101"/>
+        <location filename="../src/pokemon_mosaic/ui/presets_bar.py" line="108"/>
         <source>Nom</source>
         <translation>Name</translation>
     </message>
     <message>
-        <location filename="../src/pokemon_mosaic/ui/presets_bar.py" line="116"/>
+        <location filename="../src/pokemon_mosaic/ui/presets_bar.py" line="130"/>
         <source>Échec de l&apos;enregistrement : %1</source>
         <translation>Saving failed: %1</translation>
     </message>
     <message>
-        <location filename="../src/pokemon_mosaic/ui/presets_bar.py" line="121"/>
+        <location filename="../src/pokemon_mosaic/ui/presets_bar.py" line="135"/>
         <source>Préréglage « %1 » enregistré.</source>
         <translation>Preset “%1” saved.</translation>
     </message>
     <message>
-        <location filename="../src/pokemon_mosaic/ui/presets_bar.py" line="126"/>
+        <location filename="../src/pokemon_mosaic/ui/presets_bar.py" line="140"/>
         <source>Remplacer le préréglage</source>
         <translation>Replace the preset</translation>
     </message>
     <message>
-        <location filename="../src/pokemon_mosaic/ui/presets_bar.py" line="127"/>
+        <location filename="../src/pokemon_mosaic/ui/presets_bar.py" line="141"/>
         <source>« %1 » existe déjà. Le remplacer ?</source>
         <translation>“%1” already exists. Replace it?</translation>
     </message>
     <message>
-        <location filename="../src/pokemon_mosaic/ui/presets_bar.py" line="139"/>
+        <location filename="../src/pokemon_mosaic/ui/presets_bar.py" line="153"/>
         <source>Préréglage illisible : %1</source>
         <translation>Unreadable preset: %1</translation>
     </message>
     <message numerus="yes">
-        <location filename="../src/pokemon_mosaic/ui/presets_bar.py" line="148"/>
+        <location filename="../src/pokemon_mosaic/ui/presets_bar.py" line="162"/>
         <source>Préréglage « %1 » chargé : %n carte(s) introuvable(s).</source>
         <translation>
             <numerusform>Preset “%1” loaded: %n card not found.</numerusform>
@@ -1390,27 +1401,27 @@
         </translation>
     </message>
     <message>
-        <location filename="../src/pokemon_mosaic/ui/presets_bar.py" line="153"/>
+        <location filename="../src/pokemon_mosaic/ui/presets_bar.py" line="167"/>
         <source>Préréglage « %1 » chargé.</source>
         <translation>Preset “%1” loaded.</translation>
     </message>
     <message>
-        <location filename="../src/pokemon_mosaic/ui/presets_bar.py" line="161"/>
+        <location filename="../src/pokemon_mosaic/ui/presets_bar.py" line="175"/>
         <source>Supprimer le préréglage</source>
         <translation>Delete the preset</translation>
     </message>
     <message>
-        <location filename="../src/pokemon_mosaic/ui/presets_bar.py" line="162"/>
+        <location filename="../src/pokemon_mosaic/ui/presets_bar.py" line="176"/>
         <source>Supprimer « %1 » ? La bibliothèque de liens n&apos;est pas touchée.</source>
         <translation>Delete “%1”? The link library is left untouched.</translation>
     </message>
     <message>
-        <location filename="../src/pokemon_mosaic/ui/presets_bar.py" line="171"/>
+        <location filename="../src/pokemon_mosaic/ui/presets_bar.py" line="185"/>
         <source>Échec de la suppression : %1</source>
         <translation>Deletion failed: %1</translation>
     </message>
     <message>
-        <location filename="../src/pokemon_mosaic/ui/presets_bar.py" line="176"/>
+        <location filename="../src/pokemon_mosaic/ui/presets_bar.py" line="190"/>
         <source>Préréglage « %1 » supprimé.</source>
         <translation>Preset “%1” deleted.</translation>
     </message>

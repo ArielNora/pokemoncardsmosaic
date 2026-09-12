@@ -147,3 +147,29 @@ def test_an_interrupted_write_leaves_the_previous_file_intact(tmp_path, monkeypa
 
 def test_the_library_of_a_folder_that_does_not_exist_is_empty(tmp_path):
     assert list_arrangements(str(tmp_path / "jamais")) == []
+
+
+# --- Des noms que le disque confond ------------------------------------------
+
+def test_names_the_disk_confuses_are_taken(tmp_path):
+    """⚠️ Le disque de macOS ignore la casse et la forme des accents : importer
+    « PREMIER » écrasait « Premier », sans rien demander."""
+    save_arrangement(str(tmp_path), un_agencement("Premier"))
+    assert unique_name(str(tmp_path), "PREMIER") == "PREMIER (2)"
+
+    save_arrangement(str(tmp_path), un_agencement("été"))       # composé
+    decompose = "été"
+    assert unique_name(str(tmp_path), decompose) == f"{decompose} (2)"
+
+
+def test_renaming_by_case_alone_keeps_the_arrangement(tmp_path):
+    """⚠️ Mesuré avant correction : renommer « Essai » en « essai » effaçait le
+    fichier, que le disque de macOS confond avec le nouveau. Et l'agencement
+    renommé peut changer sa propre casse sans devenir « essai (2) »."""
+    save_arrangement(str(tmp_path), un_agencement("Essai"))
+
+    nouveau = unique_name(str(tmp_path), "essai", ignore="Essai")
+    assert nouveau == "essai"
+    rename_arrangement(str(tmp_path), "Essai", nouveau)
+
+    assert [un.name for un in list_arrangements(str(tmp_path))] == ["essai"]
