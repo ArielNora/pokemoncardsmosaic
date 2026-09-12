@@ -29,7 +29,8 @@ LIGHT = {
     "error": "#a03030",
     "ok": "#1b6b2a",                # 5,7:1, #2e7d32 n'atteignait que 4,5:1
     # L'onglet qui n'a rien à valider : le gris des choses qu'on ajuste.
-    "neutral": "#8a8a8a",
+    # #8a8a8a ne donnait au contour d'un onglet neutre non choisi que 2,54:1.
+    "neutral": "#737373",
     # ⚠️ **Le message passager porte du texte**, il lui faut donc 4,5:1 et non
     # les 3:1 d'une teinte : `neutral` n'atteignait que 3,0:1 sur fond clair.
     "status": "#6a6a6a",           # 4,7:1
@@ -38,7 +39,7 @@ LIGHT = {
     "banner_border": "#e0c060",
     "cell_border": "#666666",
     "empty_border": "#828282",   # 3,2:1, #999 n'atteignait que 2,5:1
-    "empty_text": "#6e6e6e",
+    "empty_text": "#666666",   # 4,5:1 sur empty_bg, #6e6e6e n'atteignait que 4,0:1
     "empty_bg": "#e4e4e4",
     "button_bg": "#fbfbfb",
     "button_border": "#b6b6b6",
@@ -82,7 +83,9 @@ DARK = {
 PALETTE_LIGHT = {
     "window": "#efefef", "window_text": "#1a1a1a",
     "base": "#ffffff", "alt_base": "#f5f5f5",
-    "text": "#1a1a1a", "placeholder": "#8a8a8a",
+    # Le texte indicatif d'un champ se lit comme un texte : #8a8a8a ne donnait que
+    # 3,45:1 sur le blanc du champ.
+    "text": "#1a1a1a", "placeholder": "#767676",
     "button": "#fbfbfb", "button_text": "#1a1a1a",
     "highlight": "#3573b9", "highlight_text": "#ffffff",
     "tooltip_bg": "#fdfdf2", "tooltip_text": "#1a1a1a",
@@ -92,7 +95,7 @@ PALETTE_LIGHT = {
 PALETTE_DARK = {
     "window": "#252525", "window_text": "#e6e6e6",
     "base": "#1c1c1c", "alt_base": "#232323",
-    "text": "#e6e6e6", "placeholder": "#7d7d7d",
+    "text": "#e6e6e6", "placeholder": "#848484",   # #7d7d7d : 4,1:1
     "button": "#3b3b3b", "button_text": "#e6e6e6",
     "highlight": "#3a78c2", "highlight_text": "#ffffff",
     "tooltip_bg": "#2f2f2f", "tooltip_text": "#e6e6e6",
@@ -291,9 +294,11 @@ QLabel[role="banner"] {{
 /* Un bouton qui reste **enfoncé** : un mode qu'on allume et qu'on éteint, et
    non une action qu'on déclenche. Le bleu de la sélection le dit, celui-là même
    qui marque une ligne choisie ailleurs dans l'application. */
+/* ⚠️ Le bleu de la sélection, et non celui du survol : le texte blanc n'y
+   tenait que 3,8:1 en clair et 2,3:1 en sombre, en gras de surcroît. */
 QPushButton[role="active"] {{
-    background: {c["button_hover_border"]};
-    border: 1px solid {c["button_hover_border"]};
+    background: palette(highlight);
+    border: 1px solid palette(highlight);
     color: palette(highlighted-text);
     font-weight: bold;
 }}

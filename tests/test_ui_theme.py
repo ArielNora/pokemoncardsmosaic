@@ -150,6 +150,44 @@ def test_the_editor_outlines_stand_out_from_the_background(role):
     assert contraste(theme.DARK[role], theme.REFERENCE_BG["dark"]) >= 3.0
 
 
+def test_the_active_button_label_is_legible_on_its_blue():
+    """⚠️ Le bouton « Ajuster » enfoncé posait son texte blanc sur le bleu du
+    survol : 3,79:1 en clair, 2,26:1 en sombre. Il prend celui de la sélection."""
+    for palette in (theme.PALETTE_LIGHT, theme.PALETTE_DARK):
+        assert contraste(palette["highlight_text"], palette["highlight"]) >= 4.5
+    feuille = theme.stylesheet(theme.qt_palette(False))
+    regle = feuille[feuille.index('QPushButton[role="active"]'):]
+    # Le fond, et non le seul contour : c'est sur lui que se pose le texte.
+    assert "background: palette(highlight);" in regle[: regle.index("}")]
+
+
+def test_the_text_of_an_empty_cell_is_legible_on_it():
+    """Le libellé « vide » se pose sur le fond des cases vides, et l'étiquette
+    de la carte réelle sur celui de la fenêtre : 4,0:1 et 4,4:1 en clair."""
+    for table, palette in ((theme.LIGHT, theme.PALETTE_LIGHT),
+                           (theme.DARK, theme.PALETTE_DARK)):
+        assert contraste(table["empty_text"], table["empty_bg"]) >= 4.5
+        assert contraste(table["empty_text"], palette["window"]) >= 4.5
+
+
+def test_the_placeholder_text_is_legible_in_its_field():
+    """Le texte indicatif des champs de recherche : 3,45:1 en clair, 4,1:1 en
+    sombre."""
+    for palette in (theme.PALETTE_LIGHT, theme.PALETTE_DARK):
+        assert contraste(palette["placeholder"], palette["base"]) >= 4.5
+
+
+def test_the_outline_of_a_neutral_tab_stands_out():
+    """Le trait porte l'état de l'onglet : non choisi, celui d'un onglet neutre
+    tombait à 2,54:1 sur la fenêtre en clair, sous le seuil d'un trait."""
+    for sombre, palette in ((False, theme.PALETTE_LIGHT), (True, theme.PALETTE_DARK)):
+        qt = theme.qt_palette(sombre)
+        for choisi in (False, True):
+            fond, contour, _ = theme.tab_box("neutral", qt, choisi)
+            assert contraste(contour, palette["window"]) >= 3.0, (sombre, choisi)
+            assert contraste(palette["text"], fond) >= 4.5, (sombre, choisi)
+
+
 # --- Détection du mode -----------------------------------------------------
 
 def test_a_dark_window_selects_the_dark_table():
