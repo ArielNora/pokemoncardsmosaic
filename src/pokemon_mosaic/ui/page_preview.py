@@ -706,7 +706,7 @@ class PagePreview(QWidget):
             # ⚠️ **L'aperçu passe par la même arithmétique que l'export.** Un
             # dégradé approché à l'écran, moyenné plutôt que pris au pixel,
             # aurait montré autre chose que ce qui s'imprime.
-            self._draw_chameleon(painter, cases, morceaux, etendues)
+            self._draw_chameleon(painter, feuille, cases, morceaux, etendues)
         rows, cols = self._grid.shape
         for row, col, rect in cases:
             if row >= rows or col >= cols:
@@ -723,7 +723,8 @@ class PagePreview(QWidget):
                 painter.drawPixmap(case, tuile)
         painter.restore()
 
-    def _draw_chameleon(self, painter, cases, morceaux, etendues) -> None:
+    def _draw_chameleon(self, painter, feuille: QRectF, cases, morceaux,
+                        etendues) -> None:
         """Les écarts, les croisées et la bordure, tirés des vignettes.
 
         Les cases ne se suivent pas forcément : d'une feuille à l'autre, deux
@@ -740,10 +741,23 @@ class PagePreview(QWidget):
                                     horizontal=False)
                 self._chameleon_crossing(painter, rects, row, col, rect)
         if session.chameleon_border:
+            largeur = feuille.width() / max(1, session.panels)
+            hauteur = feuille.height() / max(1, session.panel_rows)
             for index, siennes in morceaux.items():
+                # ⚠️ **Rognée à sa feuille.** Deux morceaux qui se touchent à la
+                # coupe : la bande du premier débordait sur la feuille voisine
+                # et repeignait ses écarts d'un trait clair. Sur le papier, elle
+                # tombe au-delà du bord et ne s'imprime pas.
+                ligne, colonne = divmod(index, max(1, session.panels))
+                painter.save()
+                painter.setClipRect(
+                    QRectF(feuille.left() + colonne * largeur,
+                           feuille.top() + ligne * hauteur, largeur, hauteur),
+                    Qt.IntersectClip)
                 self._chameleon_border(
                     painter, etendues[index],
                     {(row, col): rect for row, col, rect in siennes})
+                painter.restore()
 
     def _edge(self, row: int, col: int, side: str) -> np.ndarray | None:
         """La ligne de pixels d'un bord de case, vignette ou case vide."""

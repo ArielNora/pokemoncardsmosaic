@@ -1180,3 +1180,26 @@ def test_the_chameleon_border_fills_its_corners(deux_morceaux):
 
     assert _pixel(widget, coin.right() + ecart / 2, coin.top() - ecart / 2) != FOND
 
+
+def test_the_border_of_a_piece_stops_at_its_sheet(ecran):
+    """Deux morceaux qui se touchent à la coupe : la bordure du premier
+    repeignait d'un trait clair l'écart entre deux rangées de la feuille
+    voisine. Vu sur une capture, pas par les tests."""
+    widget, session, _ = ecran
+    # ⚠️ **Un écart large.** À 8 mm, la bande ne faisait que 2 px à l'écran,
+    # cachés sous le trait de coupe qui en déborde d'autant.
+    session.set_layout(panels=2, card_gap_mm=30.0)
+    session.set_algorithm(gap_colour=(0, 0, 250), background_colour=FOND,
+                          chameleon_border=True)
+    cases = _cases(widget)
+    premiere = min(col for col in range(5) if session.panel_of(0, col, (4, 5)) == 1)
+    haut, bas = cases[0, premiere], cases[1, premiere]
+    assert haut.left() - cases[0, premiere - 1].right() < 1, "les morceaux se touchent"
+    ecart = widget._preview._screen_gap()[0]
+    assert ecart >= 7, "la bande doit dépasser le trait de coupe"
+
+    # Au-delà du trait de coupe, dans la bande qui débordait.
+    point = (haut.left() + (ecart + 3) / 2, (haut.bottom() + bas.top()) / 2)
+
+    assert _pixel(widget, *point) == (0, 0, 250)
+
