@@ -350,7 +350,9 @@ class CardsStep(QWidget):
         self._search.setVisible(garni)
         # La mise à jour vise un dossier : sans dossier connu, elle n'a pas de
         # cible. Le bouton de l'état vide, lui, en demande un.
-        self._update_catalogue.setEnabled(bool(self._session.data_dir))
+        # Ni pendant un chargement : la mise à jour se termine par un autre.
+        self._update_catalogue.setEnabled(bool(self._session.data_dir)
+                                          and not self._busy())
         self._update_catalogue.setVisible(garni)
         # La fenêtre décide de « Suivant », ce qui vient de changer peut
         # l'autoriser comme le lui retirer.
@@ -419,10 +421,17 @@ class CardsStep(QWidget):
         return self._loading or self._download_thread is not None
 
     def load(self, directory: str) -> None:
+        # ⚠️ **Un chargement à la fois.** Deux fils versaient leurs lots dans la
+        # même session, chacun numérotant ses cartes à partir de zéro : des
+        # indices en double, et des distances qui désignaient d'autres cartes,
+        # sans la moindre erreur. Les boutons qui en lancent un sont grisés
+        # pendant ; ce refus garde le cas où un appel passerait quand même.
+        if self._loading:
+            return
         self._loading = True
         self._progress.show()
         self._progress.setRange(0, 0)  # indéterminé le temps de lire les en-têtes
-        self._choose_folder.setEnabled(False)
+        self._set_sources_enabled(False)
         self.status_message.emit(self.tr("Chargement des cartes…"))
         # On ne vide surtout pas la session ici : `start_loading` efface les cartes,
         # la sélection ET les liens. Si le dossier se révélait inexploitable, tout
@@ -436,6 +445,13 @@ class CardsStep(QWidget):
             strip_size=self._session.strip_size,
         )
         self.advance_state_changed.emit()
+
+    def _set_sources_enabled(self, actif: bool) -> None:
+        """Les gestes qui lancent un chargement : l'écran vide en compte deux,
+        la galerie deux autres, et tous doivent se taire pendant qu'on charge."""
+        for bouton in (self._choose_folder, self._download, self._locate):
+            bouton.setEnabled(actif)
+        self._update_catalogue.setEnabled(actif and bool(self._session.data_dir))
 
     # --- Téléchargement ---------------------------------------------------
 
@@ -568,7 +584,7 @@ class CardsStep(QWidget):
     def _on_loaded(self, card_set) -> None:
         self._loading = False
         self._progress.hide()
-        self._choose_folder.setEnabled(True)
+        self._set_sources_enabled(True)
         self._awaiting_first_batch = False
         self._session.finish_loading(card_set)
         # Les liens fournis d'office ne peuvent être posés qu'une fois les cartes
@@ -585,7 +601,7 @@ class CardsStep(QWidget):
     def _on_failed(self, message: str) -> None:
         self._loading = False
         self._progress.hide()
-        self._choose_folder.setEnabled(True)
+        self._set_sources_enabled(True)
         # Rien n'a été vidé : la sélection et les liens précédents sont intacts.
         self._awaiting_first_batch = False
         self._update_state()

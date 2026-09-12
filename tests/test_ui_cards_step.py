@@ -1018,3 +1018,66 @@ def test_setting_the_text_directly_survives_a_resize(fenetre):
     w.layout().activate()
 
     assert w._status.text() == "Lecture du catalogue…"
+
+
+# --- Un chargement à la fois ------------------------------------------------
+
+def attendre_chargement(ecran, delai=10.0):
+    """Laisse le fil de chargement finir, et ses signaux arriver."""
+    import time
+
+    from PySide6.QtWidgets import QApplication
+
+    fin = time.monotonic() + delai
+    while ecran._loading or (ecran._thread is not None and ecran._thread.isRunning()):
+        assert time.monotonic() < fin, "le chargement ne finit pas"
+        QApplication.processEvents()
+        time.sleep(0.01)
+    QApplication.processEvents()
+
+
+def test_a_second_load_never_starts_during_the_first(step, tmp_path):
+    """⚠️ Deux fils versaient leurs lots dans la même session, chacun numérotant
+    ses cartes à partir de zéro : des indices en double, et des distances qui
+    désignaient d'autres cartes, sans erreur. Mesuré avant correction : 24
+    cartes pour deux dossiers de 12, et `index == position` faux."""
+    ecran, session = step
+    six = [f"c{i}" for i in range(6)]
+    depose(tmp_path / "A", {"a1": six, "a2": six})
+    depose(tmp_path / "B", {"b1": six, "b2": six})
+
+    ecran.load(str(tmp_path / "A"))
+    # Les lots n'arrivent qu'avec la boucle d'événements : rien n'a encore fini.
+    for bouton in (ecran._choose_folder, ecran._download, ecran._locate):
+        assert not bouton.isEnabled(), bouton.text()
+    premier = ecran._thread
+    ecran.load(str(tmp_path / "B"))
+    assert ecran._thread is premier, "un second fil est parti"
+
+    attendre_chargement(ecran)
+
+    cartes = session.card_set.cards
+    assert len(cartes) == 12
+    assert all(carte.index == rang for rang, carte in enumerate(cartes))
+    assert session.data_dir == str(tmp_path / "A")
+    for bouton in (ecran._choose_folder, ecran._download, ecran._locate,
+                   ecran._update_catalogue):
+        assert bouton.isEnabled(), bouton.text()
+
+
+def test_the_update_stays_off_while_a_reload_runs(step, tmp_path):
+    """La mise à jour se termine par un chargement : l'offrir pendant un autre
+    rouvrait le même mélange. L'état se recalcule à chaque lot arrivé, et ne
+    doit pas la rallumer en chemin."""
+    ecran, _ = step
+    depose(tmp_path / "A", {"a1": ["c0", "c1"]})
+    ecran.load(str(tmp_path / "A"))
+    attendre_chargement(ecran)
+    assert ecran._update_catalogue.isEnabled()
+
+    ecran.load(str(tmp_path / "A"))
+    ecran._update_state()           # ce qu'un lot arrivé déclenche
+    assert not ecran._update_catalogue.isEnabled()
+
+    attendre_chargement(ecran)
+    assert ecran._update_catalogue.isEnabled()
