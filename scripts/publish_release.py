@@ -25,6 +25,7 @@ import argparse
 import hashlib
 import json
 import os
+import shutil
 import subprocess
 import sys
 import zipfile
@@ -169,7 +170,8 @@ def main(argv=None) -> int:
     parser.add_argument("--out", default=os.path.join("data", "miroir"))
     parser.add_argument("--repo", default=DEFAULT_REPO)
     parser.add_argument("--dry-run", action="store_true",
-                        help="construit les archives sans rien publier")
+                        help="construit archives et catalogue dans --out, sans "
+                             "rien publier ni toucher au catalogue suivi")
     args = parser.parse_args(argv)
 
     with open(args.manifest, encoding="utf-8") as handle:
@@ -200,25 +202,49 @@ def main(argv=None) -> int:
         "url": f"https://github.com/{args.repo}/releases/download/{TAG}",
         "sets": mirror,
     }
-    with open(args.manifest, "w", encoding="utf-8") as handle:
+    # ⚠️ **Le catalogue suivi par git ne change qu'après une publication
+    # réussie.** Il était réécrit d'office, avant `--dry-run` et avant le
+    # contrôle de `gh` : il annonçait alors des empreintes d'archives jamais
+    # publiées, qui dépendent en plus de la date des images. Une fois commité,
+    # `fetch_cards.py` jugeait altérée chaque extension en ligne. Il se prépare
+    # donc à côté des archives, sous le nom de l'asset, part de là, et ne
+    # remplace l'original qu'au retour de `gh`.
+    prepare = os.path.join(args.out, MANIFEST_ASSET)
+    # Un `--out` qui contiendrait le catalogue suivi ferait de lui le catalogue
+    # « préparé » : `--dry-run` le réécrirait en disant le contraire, et la copie
+    # finale d'un fichier sur lui-même lèverait après une publication réussie.
+    # Nom comparé casse repliée : le disque de macOS confond les deux.
+    if (os.path.samefile(os.path.dirname(os.path.abspath(args.manifest)), args.out)
+            and os.path.basename(args.manifest).casefold()
+            == MANIFEST_ASSET.casefold()):
+        raise SystemExit(f"--out ({args.out}) contient le catalogue suivi : "
+                         f"choisissez un autre dossier pour les archives.")
+    with open(prepare, "w", encoding="utf-8") as handle:
         json.dump(manifest, handle, ensure_ascii=False, indent=1, sort_keys=True)
         handle.write("\n")
-    print(f"  {args.manifest} porte désormais l'adresse du miroir")
+    print(f"  catalogue préparé : {prepare}")
 
     if args.dry_run:
-        print("\n--dry-run : rien n'a été publié.")
+        print(f"\n--dry-run : rien n'a été publié, et {args.manifest} n'a pas changé.")
         return 0
 
     empeche = gh_available()
     if empeche:
         print(f"\nPublication impossible : {empeche}", file=sys.stderr)
-        print("Les archives sont prêtes ; relancez sans --dry-run une fois "
-              "connecté.", file=sys.stderr)
+        print(f"Archives et catalogue sont prêts dans {args.out}/ ; {args.manifest} "
+              f"n'a pas changé. Relancez une fois connecté.", file=sys.stderr)
         return 1
 
     print(f"\nPublication sur {args.repo}, balise {TAG} …")
-    return publish(args.repo, args.out, mirror, release_notes(manifest, mirror),
-                   args.manifest)
+    code = publish(args.repo, args.out, mirror, release_notes(manifest, mirror),
+                   prepare)
+    if code != 0:
+        print(f"\nPublication échouée (code {code}) : {args.manifest} n'a pas "
+              f"changé.", file=sys.stderr)
+        return code
+    shutil.copyfile(prepare, args.manifest)
+    print(f"  {args.manifest} porte désormais l'adresse du miroir")
+    return 0
 
 
 if __name__ == "__main__":

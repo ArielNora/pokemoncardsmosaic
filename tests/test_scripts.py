@@ -6,6 +6,7 @@ son chemin. La récupération, elle, vit dans le paquet, voir `test_mirror.py`.
 
 import io
 import json
+import os
 import sys
 from pathlib import Path
 
@@ -390,3 +391,88 @@ def test_an_empty_collection_is_never_green(monkeypatch, capsys, code, sortie, a
 
     assert lanceur.main([]) == attendu
     assert ("illisible" in capsys.readouterr().out) == (attendu == 1)
+
+
+# --- La publication du miroir ------------------------------------------------
+
+publie = load("publish_release")
+
+
+def catalogue_publiable(racine: Path) -> Path:
+    """Une carte réelle sur le disque, et le `cards.json` qui la décrit."""
+    from pokemon_mosaic.mirror import digest_of
+
+    images = racine / "images"
+    image = depose(images, "a1/a1-001-bulbizarre.webp")
+    carte = {"path": "a1/a1-001-bulbizarre.webp", "set": "A1",
+             "bytes": image.stat().st_size, "sha256": digest_of(str(image))}
+    chemin = racine / "cards.json"
+    chemin.write_text(json.dumps(catalogue([carte])), encoding="utf-8")
+    return chemin
+
+
+def arguments(racine: Path, *extra):
+    return ["--manifest", str(racine / "cards.json"), "--images",
+            str(racine / "images"), "--out", str(racine / "miroir"), *extra]
+
+
+def test_a_dry_run_leaves_the_tracked_catalogue_alone(tmp_path):
+    """⚠️ `--dry-run` réécrivait `cards.json`, suivi par git, avec les empreintes
+    d'archives jamais publiées, qui dépendent en plus de la date des images. Une
+    fois commité, `fetch_cards.py` jugeait altérée chaque extension en ligne."""
+    suivi = catalogue_publiable(tmp_path)
+    avant = suivi.read_bytes()
+
+    assert publie.main(arguments(tmp_path, "--dry-run")) == 0
+
+    assert suivi.read_bytes() == avant
+    prepare = json.loads((tmp_path / "miroir" / publie.MANIFEST_ASSET)
+                         .read_text(encoding="utf-8"))
+    assert "A1" in prepare["mirror"]["sets"]
+
+
+def test_without_gh_the_tracked_catalogue_is_untouched(tmp_path, monkeypatch):
+    suivi = catalogue_publiable(tmp_path)
+    avant = suivi.read_bytes()
+    monkeypatch.setattr(publie, "gh_available", lambda: "`gh` n'est pas installé.")
+
+    assert publie.main(arguments(tmp_path)) == 1
+    assert suivi.read_bytes() == avant
+
+
+@pytest.mark.parametrize("code", [0, 1])
+def test_the_catalogue_changes_only_after_a_successful_publish(tmp_path, monkeypatch,
+                                                              code):
+    """C'est le catalogue préparé qui part, sous le nom de l'asset ; l'original ne
+    le rejoint que si `gh` a réussi."""
+    suivi = catalogue_publiable(tmp_path)
+    avant = suivi.read_bytes()
+    envoyes = []
+    monkeypatch.setattr(publie, "gh_available", lambda: None)
+    monkeypatch.setattr(publie, "publish",
+                        lambda repo, out, mirror, notes, manifest_path:
+                        envoyes.append(manifest_path) or code)
+
+    assert publie.main(arguments(tmp_path)) == code
+
+    (envoye,) = envoyes
+    assert os.path.basename(envoye) == publie.MANIFEST_ASSET
+    assert os.path.dirname(envoye) == str(tmp_path / "miroir")
+    if code == 0:
+        assert "mirror" in json.loads(suivi.read_text(encoding="utf-8"))
+    else:
+        assert suivi.read_bytes() == avant
+
+
+def test_an_output_folder_holding_the_tracked_catalogue_is_refused(tmp_path):
+    """Le catalogue « préparé » y serait le catalogue suivi lui-même : `--dry-run`
+    le réécrivait en disant le contraire, et la copie finale d'un fichier sur
+    lui-même levait après une publication réussie."""
+    suivi = catalogue_publiable(tmp_path)
+    avant = suivi.read_bytes()
+    args = ["--manifest", str(suivi), "--images", str(tmp_path / "images"),
+            "--out", str(tmp_path), "--dry-run"]
+
+    with pytest.raises(SystemExit, match="catalogue suivi"):
+        publie.main(args)
+    assert suivi.read_bytes() == avant
