@@ -356,6 +356,16 @@ def grid_geometry(
     per_panel = max(1, math.ceil(cols / panels))
     while per_panel <= paper_w_px:
         card_w = max(1, (paper_w_px - (per_panel - 1) * gap) // per_panel)
+        # ⚠️ **Il faut que ces cartes tiennent vraiment en largeur.** Quand les
+        # écarts à eux seuls dépassent la feuille, la largeur retombait sur le
+        # plancher d'un pixel et le nombre demandé était rendu tel quel :
+        # `grid_fits` répondait que la grille tenait, et les dernières colonnes
+        # sortaient de la feuille sans le moindre avertissement. Reproduit : 21
+        # colonnes sur A4 avec 11 mm d'écart, dont 19 seulement tiennent. Plus de
+        # cartes par feuille ne tiendraient pas mieux : on passe au repli, qui
+        # rend ce que la feuille loge vraiment.
+        if cards_across(paper_w_px, card_w, gap) < per_panel:
+            break
         card_h = math.floor(card_w / card_aspect)
         # ⚠️ **La hauteur se répartit sur les lignes de feuilles**, comme la
         # largeur sur les colonnes : ce n'est plus « tout tient sur une

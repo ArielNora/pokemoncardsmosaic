@@ -507,3 +507,30 @@ def test_a_fixed_card_width_is_obeyed_even_when_it_overflows():
     g = grid_geometry(paper, 1, 11, 13, CARD_ASPECT, 300, card_width_mm=63.0)
     assert g.card_w == mm_to_pixels(63.0, 300)
     assert not grid_fits(1, 11, 13, g)
+
+
+def test_gaps_wider_than_the_sheet_never_claim_the_grid_fits():
+    """⚠️ Quand les écarts à eux seuls dépassaient la feuille, la carte retombait
+    sur le plancher d'un pixel et le nombre de colonnes demandé était rendu tel
+    quel : la grille « tenait », et les dernières colonnes sortaient de la feuille
+    sans avertissement. Reproduit par l'audit : 21 colonnes sur A4 avec 11 mm
+    d'écart, dont 19 seulement tiennent."""
+    import numpy as np
+
+    from pokemon_mosaic.cards import Card, CardSet
+    from pokemon_mosaic.export import PosterSettings, plan_poster
+    from pokemon_mosaic.layout import cards_across, grid_fits, grid_geometry
+
+    a4 = paper_size_mm("A4")
+    geometrie = grid_geometry(a4, 1, 21, 21, CARD_ASPECT, 300, None, 11.0, 1)
+
+    tiennent = cards_across(mm_to_pixels(a4[0], 300), geometrie.card_w, geometrie.gap)
+    assert geometrie.per_panel <= tiennent < 21
+    assert not grid_fits(1, 21, 21, geometrie)
+
+    vignette = np.full((10, 7, 3), 200, np.uint8)
+    cartes = CardSet([Card(path=f"/x/{i}.webp", index=i, thumbnail=vignette)
+                      for i in range(441)], (734, 1024), (7, 10))
+    plan = plan_poster(np.arange(441).reshape(21, 21), cartes,
+                       PosterSettings(paper="A4", card_gap_mm=11.0))
+    assert any("déborde" in avertissement for avertissement in plan.warnings)
