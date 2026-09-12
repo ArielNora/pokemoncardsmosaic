@@ -95,6 +95,11 @@ def is_current(path: str, card: dict) -> bool:
 # --- Manifeste ------------------------------------------------------------
 
 
+# Une racine fictive pour éprouver un chemin du catalogue à la lecture : ce qui
+# compte n'est pas le dossier où l'on écrira, mais que le chemin n'en remonte pas.
+_RACINE_DE_CONTROLE = os.path.abspath(os.sep + "catalogue")
+
+
 def validate_manifest(manifest) -> dict:
     """Contrôle la forme d'un manifeste. Rend le manifeste, ou lève `ValueError`."""
     if not isinstance(manifest, dict):
@@ -115,6 +120,17 @@ def validate_manifest(manifest) -> dict:
             raise ValueError(
                 f"Carte {nom} : champ(s) manquant(s) {', '.join(manquants)}."
             )
+        # ⚠️ **Un chemin qui sort du dossier rend le catalogue illisible, dès la
+        # lecture.** `target_path` le refusait à l'écriture, mais `missing_cards`
+        # le passait en silence : pour le même catalogue, `fetch_cards --check`
+        # le comptait « à refaire » et sortait en 1, quand le mode normal
+        # répondait « Rien à faire » et sortait en 0. Éprouvé ici par la même
+        # règle, il est refusé pareil partout.
+        try:
+            target_path(_RACINE_DE_CONTROLE, card["path"])
+        except (ValueError, AttributeError, TypeError) as erreur:
+            nom = card.get("id", f"en position {position}")
+            raise ValueError(f"Carte {nom} : chemin refusé ({erreur}).") from erreur
     return manifest
 
 

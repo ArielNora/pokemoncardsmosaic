@@ -123,6 +123,31 @@ def test_an_absolute_path_is_neutralised_not_refused(tmp_path):
             == str(tmp_path / "absolu.webp"))
 
 
+@pytest.mark.parametrize("relatif", [
+    "../evade.webp",
+    "a1/../../evade.webp",
+])
+def test_a_manifest_with_a_path_leaving_the_folder_is_unreadable(relatif):
+    """⚠️ `missing_cards` passait un tel chemin en silence : pour le même
+    catalogue, `--check` le comptait « à refaire » et sortait en 1, le mode
+    normal répondait « Rien à faire » et sortait en 0. Refusé dès la lecture,
+    il l'est pareil partout."""
+    manifest, _ = manifeste({"A1": ["a1/un.webp"]})
+    manifest["cards"][0]["path"] = relatif
+
+    with pytest.raises(ValueError, match="hors du dossier"):
+        mirror.validate_manifest(manifest)
+
+
+def test_an_absolute_path_still_passes_validation():
+    """Il est neutralisé à l'écriture, retombant dans le dossier de sortie : le
+    refuser à la lecture changerait ce que le test précédent décrit."""
+    manifest, _ = manifeste({"A1": ["a1/un.webp"]})
+    manifest["cards"][0]["path"] = "/absolu.webp"
+
+    assert mirror.validate_manifest(manifest) is manifest
+
+
 def test_a_normal_path_stays_inside(tmp_path):
     attendu = tmp_path / "a1" / "carte.webp"
     assert mirror.target_path(str(tmp_path), "a1/carte.webp") == str(attendu)

@@ -654,3 +654,25 @@ def test_a_new_release_is_created_with_its_notes(tmp_path, monkeypatch):
     assert code == 0
     assert [commande[2] for commande in gh.commandes] == ["view", "create"]
     assert "--notes-file" in gh.commandes[1]
+
+
+# --- La récupération : --check et le mode normal disent la même chose ------------
+
+recupere = load("fetch_cards")
+
+
+def test_check_and_fetch_agree_on_a_path_leaving_the_folder(tmp_path, capsys):
+    """⚠️ Reproduit par l'audit, pour le même catalogue : `--check` sortait en 1
+    en comptant la carte « à refaire », le mode normal en 0 en affirmant les
+    cartes toutes présentes. Refusé à la lecture, les deux sortent en 1 et
+    disent pourquoi, sans toucher au réseau."""
+    fichier = tmp_path / "cards.json"
+    fichier.write_text(json.dumps(catalogue([
+        {"path": "../evade.webp", "set": "A1", "bytes": 1, "sha256": "0" * 64},
+    ])), encoding="utf-8")
+    sortie = tmp_path / "cartes"
+
+    for mode in (["--check"], []):
+        code = recupere.main(["--manifest", str(fichier), "--output", str(sortie), *mode])
+        assert code == 1, mode
+        assert "hors du dossier" in capsys.readouterr().err, mode
