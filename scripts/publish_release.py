@@ -22,7 +22,6 @@ le compte professionnel, que le dépôt maintient par un verrou local.
 """
 
 import argparse
-import hashlib
 import json
 import os
 import shutil
@@ -32,7 +31,7 @@ import zipfile
 
 sys.path.insert(0, os.path.join(os.path.dirname(__file__), "..", "src"))
 from pokemon_mosaic.artwork import MANIFEST_VERSION
-from pokemon_mosaic.mirror import MANIFEST_ASSET, MIRROR_REPO, MIRROR_TAG
+from pokemon_mosaic.mirror import MANIFEST_ASSET, MIRROR_REPO, MIRROR_TAG, digest_of
 
 DEFAULT_MANIFEST = "cards.json"
 DEFAULT_IMAGES = os.path.join("data", "pokemoncards")
@@ -41,14 +40,6 @@ DEFAULT_IMAGES = os.path.join("data", "pokemoncards")
 # sans code ni historique : un signalement ne viserait que lui.
 DEFAULT_REPO = MIRROR_REPO
 TAG = MIRROR_TAG
-
-
-def digest_of(path: str) -> str:
-    sha = hashlib.sha256()
-    with open(path, "rb") as handle:
-        for block in iter(lambda: handle.read(1 << 20), b""):
-            sha.update(block)
-    return sha.hexdigest()
 
 
 def build_archives(manifest: dict, images: str, out: str) -> dict:
