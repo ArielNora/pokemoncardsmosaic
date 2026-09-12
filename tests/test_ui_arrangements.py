@@ -206,3 +206,209 @@ def test_an_empty_library_says_so(session, bibliotheque):
     assert widget.current() is None
     assert not widget._open.isEnabled()
     assert "Aucun" in widget._title.text()
+
+
+# --- La liste d'abord, l'aperçu ensuite ------------------------------------
+
+def attendre(condition, delai=5.0):
+    """Laisse tourner la boucle d'événements jusqu'à ce que la condition tienne."""
+    import time
+
+    from PySide6.QtWidgets import QApplication
+
+    fin = time.monotonic() + delai
+    while not condition():
+        assert time.monotonic() < fin, "rien n'est venu"
+        QApplication.processEvents()
+        time.sleep(0.005)
+
+
+def retenu(porte, vrai):
+    """Un aperçu qui ne se termine qu'une fois la porte ouverte, ou abandonné.
+
+    Chaque démarrage laisse dans `porte.demarres` sa fonction « périmé ? ».
+    """
+    import time
+
+    def compose(grid, tiles, tile_shape, empty_colour, fit=None,
+                cancelled=lambda: False):
+        porte.demarres.append(cancelled)
+        while not porte.is_set():
+            if cancelled():
+                return None
+            time.sleep(0.005)
+        return vrai(grid, tiles, tile_shape, empty_colour, fit=fit,
+                    cancelled=cancelled)
+    return compose
+
+
+@pytest.fixture
+def apercu_retenu(monkeypatch):
+    """La porte de l'aperçu, ouverte en fin de test quoi qu'il arrive."""
+    import threading
+
+    from pokemon_mosaic.ui import arrangements_dialog as module
+
+    porte = threading.Event()
+    porte.demarres = []
+    monkeypatch.setattr(module, "compose_arrangement",
+                        retenu(porte, module.compose_arrangement))
+    yield porte
+    porte.set()
+
+
+def test_resolving_paths_reads_the_catalogue_once(session, monkeypatch):
+    """⚠️ Une carte cherchée refaisait un `relpath` sur tout le catalogue : le
+    menu mettait 34 s à s'ouvrir sur dix agencements de 441 cartes."""
+    import os
+
+    vrai, appels = os.path.relpath, []
+    monkeypatch.setattr(os.path, "relpath",
+                        lambda *a, **k: appels.append(1) or vrai(*a, **k))
+    arrangement = Arrangement(
+        name="long", grid=((0,),),
+        cards=("a/un.webp", "a/deux.webp", "a/trois.webp", "a/quatre.webp") * 25)
+
+    assert session.missing_cards(arrangement) == []
+    assert len(appels) <= len(session.card_set)
+
+
+def test_the_path_table_follows_the_catalogue(session, tmp_path):
+    """La table se refait quand le jeu change : un lot qui arrive, ou un autre
+    dossier qui remplace le premier."""
+    assert session.index_of_path("a/deux.webp") == 1
+
+    cinquieme = card_set_in(tmp_path, ["un", "deux", "trois", "quatre", "cinq"])[4]
+    session.append_cards([cinquieme])
+    assert session.index_of_path("a/cinq.webp") == 4
+
+    ailleurs = tmp_path / "ailleurs"
+    session.set_cards(card_set_in(ailleurs, ["seul"]), str(ailleurs / "cartes"))
+    assert session.index_of_path("a/seul.webp") == 0
+    assert session.index_of_path("a/deux.webp") is None
+
+
+def test_the_window_opens_on_the_list_before_any_preview(session, bibliotheque,
+                                                         apercu_retenu):
+    """⚠️ **La sélection n'attend pas l'image.** Liste, titre et cartes sont là
+    tout de suite ; l'aperçu arrive ensuite, l'attente tournant à sa place."""
+    from pokemon_mosaic.ui.arrangements_dialog import ArrangementsDialog
+
+    range_un(bibliotheque)
+    widget = ArrangementsDialog(session, bibliotheque)
+    try:
+        assert widget._list.count() == 1
+        assert "essai" in widget._title.text()
+        assert widget._cards.count() == 2
+        assert widget._image.pixmap().isNull()
+        assert not widget._spinner.isHidden()
+
+        apercu_retenu.set()
+        attendre(lambda: widget._spinner.isHidden())
+
+        assert not widget._image.pixmap().isNull()
+    finally:
+        apercu_retenu.set()
+        widget.done(0)
+
+
+def test_only_the_last_selection_gets_its_preview(session, bibliotheque,
+                                                  apercu_retenu):
+    """Parcourir la liste lance une demande par ligne : seule compte la
+    dernière. ⚠️ L'image affichée s'efface dès qu'on quitte sa ligne : laissée
+    le temps du calcul, elle se lirait sous le titre du nouvel agencement."""
+    from pokemon_mosaic.ui.arrangements_dialog import ArrangementsDialog
+
+    # « un » est noir, « quatre » gris : l'image dit laquelle est arrivée.
+    range_un(bibliotheque, "sombre", cards=("a/un.webp",), grid=((0,),),
+             saved_at="2026-09-05T18:00:00")
+    range_un(bibliotheque, "clair", cards=("a/quatre.webp",), grid=((0,),),
+             saved_at="2026-09-06T18:00:00")
+    widget = ArrangementsDialog(session, bibliotheque)
+    try:
+        assert widget.current().name == "clair"
+        apercu_retenu.set()
+        attendre(lambda: widget._spinner.isHidden())
+        assert not widget._image.pixmap().isNull()
+
+        apercu_retenu.clear()
+        widget._list.setCurrentRow(1)
+        assert widget.current().name == "sombre"
+        assert widget._image.pixmap().isNull(), "l'image du clair traîne encore"
+        assert not widget._spinner.isHidden()
+
+        apercu_retenu.set()
+        attendre(lambda: widget._spinner.isHidden())
+
+        image = widget._image.pixmap().toImage()
+        assert image.pixelColor(image.width() // 2, image.height() // 2).red() < 15
+    finally:
+        apercu_retenu.set()
+        widget.done(0)
+
+def test_an_image_for_an_older_request_is_ignored(session, bibliotheque,
+                                                  apercu_retenu):
+    """⚠️ Le calcul peut émettre juste avant qu'on change de ligne : son image
+    arrive après la nouvelle demande, et se poserait sous le mauvais titre,
+    l'attente éteinte."""
+    from PySide6.QtGui import QColor, QImage
+
+    from pokemon_mosaic.ui.arrangements_dialog import ArrangementsDialog
+
+    range_un(bibliotheque)
+    widget = ArrangementsDialog(session, bibliotheque)
+    try:
+        image = QImage(10, 10, QImage.Format_RGB888)
+        image.fill(QColor("red"))
+
+        widget._on_preview(widget._preview.token - 1, image)
+        assert widget._image.pixmap().isNull()
+        assert not widget._spinner.isHidden()
+
+        widget._on_preview(widget._preview.token, image)
+        assert not widget._image.pixmap().isNull()
+        assert widget._spinner.isHidden()
+    finally:
+        apercu_retenu.set()
+        widget.done(0)
+
+
+def test_opening_computes_a_single_preview(session, bibliotheque, apercu_retenu):
+    """Seul l'agencement sélectionné charge son aperçu, et une seule fois : la
+    liste remplie redemandait l'image de la ligne qu'elle venait de choisir, et
+    le premier calcul partait pour rien."""
+    from pokemon_mosaic.ui.arrangements_dialog import ArrangementsDialog
+
+    range_un(bibliotheque)
+    range_un(bibliotheque, "second", saved_at="2026-09-06T09:00:00")
+    widget = ArrangementsDialog(session, bibliotheque)
+    try:
+        apercu_retenu.set()
+        attendre(lambda: widget._spinner.isHidden())
+        widget._pool.waitForDone()
+
+        assert len(apercu_retenu.demarres) == 1
+    finally:
+        apercu_retenu.set()
+        widget.done(0)
+
+
+def test_closing_abandons_the_preview_and_waits_for_its_thread(
+        session, bibliotheque, apercu_retenu):
+    """⚠️ Un fil détruit en plein calcul fait abandonner le processus par Qt :
+    la fenêtre attend l'aperçu, qui s'abandonne à sa rangée suivante.
+
+    On attend l'aperçu **en cours**, et non le premier fil venu : un aperçu déjà
+    périmé s'arrête de lui-même, et le test passait sans que la fermeture ait
+    rien demandé."""
+    from pokemon_mosaic.ui.arrangements_dialog import ArrangementsDialog
+
+    range_un(bibliotheque)
+    widget = ArrangementsDialog(session, bibliotheque)
+    attendre(lambda: widget._pool.activeThreadCount() == 1 and any(
+        not perime() for perime in apercu_retenu.demarres))
+
+    widget.done(0)
+
+    assert widget._pool.activeThreadCount() == 0, "l'aperçu en cours tourne encore"
+    assert not apercu_retenu.is_set()

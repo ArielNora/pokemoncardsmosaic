@@ -112,42 +112,42 @@
 <context>
     <name>ArrangementsDialog</name>
     <message>
-        <location filename="../src/pokemon_mosaic/ui/arrangements_dialog.py" line="174"/>
+        <location filename="../src/pokemon_mosaic/ui/arrangements_dialog.py" line="244"/>
         <source>Agencements enregistrés</source>
         <translation>Kept arrangements</translation>
     </message>
     <message>
-        <location filename="../src/pokemon_mosaic/ui/arrangements_dialog.py" line="175"/>
+        <location filename="../src/pokemon_mosaic/ui/arrangements_dialog.py" line="245"/>
         <source>Mettre dans une case</source>
         <translation>Put in a slot</translation>
     </message>
     <message>
-        <location filename="../src/pokemon_mosaic/ui/arrangements_dialog.py" line="176"/>
+        <location filename="../src/pokemon_mosaic/ui/arrangements_dialog.py" line="246"/>
         <source>Exporter en JSON…</source>
         <translation>Export as JSON…</translation>
     </message>
     <message>
-        <location filename="../src/pokemon_mosaic/ui/arrangements_dialog.py" line="177"/>
+        <location filename="../src/pokemon_mosaic/ui/arrangements_dialog.py" line="247"/>
         <source>Importer un JSON…</source>
         <translation>Import a JSON…</translation>
     </message>
     <message>
-        <location filename="../src/pokemon_mosaic/ui/arrangements_dialog.py" line="178"/>
+        <location filename="../src/pokemon_mosaic/ui/arrangements_dialog.py" line="248"/>
         <source>Renommer…</source>
         <translation>Rename…</translation>
     </message>
     <message>
-        <location filename="../src/pokemon_mosaic/ui/arrangements_dialog.py" line="179"/>
+        <location filename="../src/pokemon_mosaic/ui/arrangements_dialog.py" line="249"/>
         <source>Supprimer…</source>
         <translation>Delete…</translation>
     </message>
     <message>
-        <location filename="../src/pokemon_mosaic/ui/arrangements_dialog.py" line="180"/>
+        <location filename="../src/pokemon_mosaic/ui/arrangements_dialog.py" line="250"/>
         <source>Fermer</source>
         <translation>Close</translation>
     </message>
     <message numerus="yes">
-        <location filename="../src/pokemon_mosaic/ui/arrangements_dialog.py" line="193"/>
+        <location filename="../src/pokemon_mosaic/ui/arrangements_dialog.py" line="263"/>
         <source>%n carte(s) manquante(s)</source>
         <translation>
             <numerusform>%n missing card</numerusform>
@@ -155,17 +155,17 @@
         </translation>
     </message>
     <message>
-        <location filename="../src/pokemon_mosaic/ui/arrangements_dialog.py" line="212"/>
+        <location filename="../src/pokemon_mosaic/ui/arrangements_dialog.py" line="287"/>
         <source>Aucun agencement enregistré.</source>
         <translation>No arrangement kept yet.</translation>
     </message>
     <message>
-        <location filename="../src/pokemon_mosaic/ui/arrangements_dialog.py" line="222"/>
+        <location filename="../src/pokemon_mosaic/ui/arrangements_dialog.py" line="297"/>
         <source>%1 : %2 × %3 cartes, score %4</source>
         <translation>%1: %2 × %3 cards, score %4</translation>
     </message>
     <message numerus="yes">
-        <location filename="../src/pokemon_mosaic/ui/arrangements_dialog.py" line="232"/>
+        <location filename="../src/pokemon_mosaic/ui/arrangements_dialog.py" line="307"/>
         <source>%n carte(s) de cet agencement manquent au catalogue : il ne peut pas être ouvert.</source>
         <translation>
             <numerusform>%n card of this arrangement is missing from the catalogue: it cannot be opened.</numerusform>
@@ -173,17 +173,17 @@
         </translation>
     </message>
     <message>
-        <location filename="../src/pokemon_mosaic/ui/arrangements_dialog.py" line="259"/>
+        <location filename="../src/pokemon_mosaic/ui/arrangements_dialog.py" line="393"/>
         <source>Agencement incomplet</source>
         <translation>Incomplete arrangement</translation>
     </message>
     <message>
-        <location filename="../src/pokemon_mosaic/ui/arrangements_dialog.py" line="266"/>
+        <location filename="../src/pokemon_mosaic/ui/arrangements_dialog.py" line="400"/>
         <source>Aucune case libre</source>
         <translation>No free slot</translation>
     </message>
     <message numerus="yes">
-        <location filename="../src/pokemon_mosaic/ui/arrangements_dialog.py" line="267"/>
+        <location filename="../src/pokemon_mosaic/ui/arrangements_dialog.py" line="401"/>
         <source>Les %n case(s) sont prises : videz-en une pour ouvrir celui-ci.</source>
         <translation>
             <numerusform>The %n slot is taken: empty one to open this arrangement.</numerusform>
@@ -191,48 +191,48 @@
         </translation>
     </message>
     <message>
-        <location filename="../src/pokemon_mosaic/ui/arrangements_dialog.py" line="277"/>
+        <location filename="../src/pokemon_mosaic/ui/arrangements_dialog.py" line="411"/>
         <source>Exporter l&apos;agencement</source>
         <translation>Export the arrangement</translation>
     </message>
     <message>
-        <location filename="../src/pokemon_mosaic/ui/arrangements_dialog.py" line="279"/>
-        <location filename="../src/pokemon_mosaic/ui/arrangements_dialog.py" line="295"/>
+        <location filename="../src/pokemon_mosaic/ui/arrangements_dialog.py" line="413"/>
+        <location filename="../src/pokemon_mosaic/ui/arrangements_dialog.py" line="429"/>
         <source>Agencement (*.json)</source>
         <translation>Arrangement (*.json)</translation>
     </message>
     <message>
-        <location filename="../src/pokemon_mosaic/ui/arrangements_dialog.py" line="285"/>
+        <location filename="../src/pokemon_mosaic/ui/arrangements_dialog.py" line="419"/>
         <source>Écriture impossible</source>
         <translation>Cannot write</translation>
     </message>
     <message>
-        <location filename="../src/pokemon_mosaic/ui/arrangements_dialog.py" line="294"/>
+        <location filename="../src/pokemon_mosaic/ui/arrangements_dialog.py" line="428"/>
         <source>Importer un agencement</source>
         <translation>Import an arrangement</translation>
     </message>
     <message>
-        <location filename="../src/pokemon_mosaic/ui/arrangements_dialog.py" line="301"/>
+        <location filename="../src/pokemon_mosaic/ui/arrangements_dialog.py" line="435"/>
         <source>Fichier illisible</source>
         <translation>Unreadable file</translation>
     </message>
     <message>
-        <location filename="../src/pokemon_mosaic/ui/arrangements_dialog.py" line="315"/>
+        <location filename="../src/pokemon_mosaic/ui/arrangements_dialog.py" line="449"/>
         <source>Renommer l&apos;agencement</source>
         <translation>Rename the arrangement</translation>
     </message>
     <message>
-        <location filename="../src/pokemon_mosaic/ui/arrangements_dialog.py" line="315"/>
+        <location filename="../src/pokemon_mosaic/ui/arrangements_dialog.py" line="449"/>
         <source>Nom</source>
         <translation>Name</translation>
     </message>
     <message>
-        <location filename="../src/pokemon_mosaic/ui/arrangements_dialog.py" line="328"/>
+        <location filename="../src/pokemon_mosaic/ui/arrangements_dialog.py" line="462"/>
         <source>Supprimer cet agencement ?</source>
         <translation>Delete this arrangement?</translation>
     </message>
     <message>
-        <location filename="../src/pokemon_mosaic/ui/arrangements_dialog.py" line="329"/>
+        <location filename="../src/pokemon_mosaic/ui/arrangements_dialog.py" line="463"/>
         <source>« %1 » sera effacé de la bibliothèque. Le calcul ne redonne pas deux fois le même.</source>
         <translation>“%1” will be erased from the library. No run gives the same one twice.</translation>
     </message>

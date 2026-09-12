@@ -107,6 +107,9 @@ class Session(QObject):
     def __init__(self):
         super().__init__()
         self.card_set: CardSet | None = None
+        # Le rang de chaque carte par son chemin relatif, refait quand le jeu
+        # change : voir `index_of_path`.
+        self._path_table: dict[str, int] | None = None
         self.data_dir: str | None = None
         self._excluded: set[int] = set()
         self._folder_of: dict[int, str] = {}
@@ -368,6 +371,7 @@ class Session(QObject):
         """Vide la session et prépare l'arrivée des cartes, dossier par dossier."""
         self.data_dir = data_dir
         self.card_set = CardSet(cards=[], full_size=(0, 0), thumb_size=(0, 0))
+        self._path_table = None
         self._excluded.clear()
         self._folder_of.clear()
         # Les liens désignent des indices de cartes : conservés d'un dossier à
@@ -391,6 +395,7 @@ class Session(QObject):
             card.calculate_features(self.strip_size)
 
         self.card_set.cards.extend(cards)
+        self._path_table = None
         for card in cards:
             # Le nom de dossier seul ne suffit pas : deux séries peuvent avoir un
             # « 0_promo ». On garde le chemin relatif à la racine.
@@ -476,13 +481,22 @@ class Session(QObject):
         return os.path.relpath(self.card_set[index].path, self.data_dir)
 
     def index_of_path(self, relative: str) -> int | None:
+        """Le rang d'une carte désignée par son chemin relatif au dossier.
+
+        ⚠️ **Une table, et non un parcours.** Chercher carte par carte refaisait
+        un `relpath` sur tout le catalogue à chaque appel : le menu des
+        agencements, qui compte les cartes absentes de chacun, mettait 34 s à
+        s'ouvrir sur dix agencements de 441 cartes. La table se refait quand le
+        jeu change, remplacé par un autre dossier ou grossi d'un lot.
+        """
         if not self.card_set:
             return None
-        return next(
-            (card.index for card in self.card_set
-             if os.path.relpath(card.path, self.data_dir) == relative),
-            None,
-        )
+        if self._path_table is None:
+            self._path_table = {}
+            for card in self.card_set:
+                self._path_table.setdefault(
+                    os.path.relpath(card.path, self.data_dir), card.index)
+        return self._path_table.get(relative)
 
     # --- Dossiers ---------------------------------------------------------
 

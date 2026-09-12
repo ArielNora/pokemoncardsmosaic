@@ -13,7 +13,7 @@ elle ne le laisse pas passer à l'export.
 import os
 
 import numpy as np
-from PySide6.QtCore import QSize, Qt
+from PySide6.QtCore import QObject, QSize, Qt, QThreadPool, Signal, Slot
 from PySide6.QtGui import QColor, QImage, QPainter, QPen, QPixmap
 from PySide6.QtWidgets import (
     QDialog,
@@ -42,6 +42,7 @@ from ..arrangements import (
 from ..scoring import EMPTY
 from . import theme
 from .session import MAX_SAVED, Session
+from .spinner import Spinner
 
 DIALOG_SIZE = QSize(1000, 660)
 # L'aperçu d'un agencement dans la fenêtre. Assez grand pour reconnaître une
@@ -50,34 +51,50 @@ PREVIEW = QSize(360, 460)
 # La croix des cartes absentes, dessinée par-dessus la case qu'elles occupaient.
 MISSING_FILL = QColor(120, 30, 30)
 MISSING_CROSS = QColor(255, 90, 90)
+# Ce qu'on accorde à l'aperçu en cours pour s'arrêter quand la fenêtre se ferme.
+# Il s'abandonne à la rangée suivante : quelques millisecondes en pratique.
+SHUTDOWN_TIMEOUT_MS = 5000
 
 
-def arrangement_image(arrangement: Arrangement, session: Session,
-                      empty_colour) -> QImage | None:
-    """La mosaïque d'un agencement, croix rouge là où une carte manque.
+def arrangement_tiles(arrangement: Arrangement, session: Session) -> list:
+    """Les vignettes de l'agencement, rang par rang, `None` pour une absente.
 
-    Dessinée depuis le catalogue de celui qui regarde, et non depuis des images
-    enregistrées : un agencement ne transporte pas les cartes, il les nomme.
+    ⚠️ **Résolues dans le fil de l'interface.** La table des chemins de la
+    session se refait quand un lot de cartes arrive, et un lot arrive dans ce
+    fil-là : le calcul de fond ne reçoit donc que des vignettes déjà trouvées.
     """
-    if not arrangement.grid:
-        return None
     cartes = session.card_set
-    if cartes is None or not len(cartes):
-        return None
-    tile_h, tile_w = cartes[0].thumbnail.shape[:2]
-    rows, cols = len(arrangement.grid), len(arrangement.grid[0])
+    tuiles = []
+    for chemin in arrangement.cards:
+        index = session.index_of_path(chemin)
+        tuiles.append(None if index is None else cartes[index].thumbnail)
+    return tuiles
+
+
+def compose_arrangement(grid, tiles, tile_shape, empty_colour, fit=None,
+                        cancelled=lambda: False) -> QImage | None:
+    """Assemble la mosaïque, croix rouge là où une vignette manque.
+
+    Sans rien lire de la session : c'est ce qui permet de la calculer hors du
+    fil de l'interface. `fit` rend l'image déjà réduite ; `cancelled`, relu à
+    chaque rangée, abandonne un aperçu que plus personne n'attend.
+    """
+    tile_h, tile_w = tile_shape
+    rows, cols = len(grid), len(grid[0])
     canvas = np.full((rows * tile_h, cols * tile_w, 3), empty_colour, np.uint8)
     manquantes = []
-    for row, ligne in enumerate(arrangement.grid):
+    for row, ligne in enumerate(grid):
+        if cancelled():
+            return None
         for col, case in enumerate(ligne):
             if case == EMPTY:
                 continue
-            index = session.index_of_path(arrangement.cards[case])
-            if index is None:
+            vignette = tiles[case]
+            if vignette is None:
                 manquantes.append((row, col))
                 continue
             canvas[row * tile_h:(row + 1) * tile_h,
-                   col * tile_w:(col + 1) * tile_w] = cartes[index].thumbnail
+                   col * tile_w:(col + 1) * tile_w] = vignette
 
     canvas = np.ascontiguousarray(canvas)
     hauteur, largeur, _ = canvas.shape
@@ -92,7 +109,45 @@ def arrangement_image(arrangement: Arrangement, session: Session,
             peintre.drawLine(x, y, x + tile_w, y + tile_h)
             peintre.drawLine(x + tile_w, y, x, y + tile_h)
         peintre.end()
+    if fit is not None:
+        image = image.scaled(fit, Qt.KeepAspectRatio, Qt.SmoothTransformation)
     return image
+
+
+def arrangement_image(arrangement: Arrangement, session: Session,
+                      empty_colour) -> QImage | None:
+    """La mosaïque d'un agencement, croix rouge là où une carte manque.
+
+    Dessinée depuis le catalogue de celui qui regarde, et non depuis des images
+    enregistrées : un agencement ne transporte pas les cartes, il les nomme.
+    """
+    if not arrangement.grid:
+        return None
+    cartes = session.card_set
+    if cartes is None or not len(cartes):
+        return None
+    return compose_arrangement(arrangement.grid,
+                               arrangement_tiles(arrangement, session),
+                               cartes[0].thumbnail.shape[:2], empty_colour)
+
+
+class _PreviewCourier(QObject):
+    """Porte l'aperçu du fil de fond jusqu'à la fenêtre.
+
+    ⚠️ **Un objet à part, et non la fenêtre.** Le calcul peut finir après elle :
+    émettre sur une fenêtre détruite planterait, alors qu'un messager dont le
+    destinataire a disparu se tait, Qt ayant défait la connexion.
+    """
+
+    ready = Signal(int, QImage)
+
+
+class _PreviewState:
+    """Le jeton de l'aperçu attendu, relu par le fil de fond à chaque rangée."""
+
+    def __init__(self):
+        self.token = 0
+        self.stopped = False
 
 
 class ArrangementsDialog(QDialog):
@@ -103,6 +158,16 @@ class ArrangementsDialog(QDialog):
         self._session = session
         self._directory = directory
         self._arrangements: list[Arrangement] = []
+        # ⚠️ **Un seul aperçu à la fois, et le dernier demandé.** Parcourir la
+        # liste au clavier lance une demande par ligne : en parallèle, autant de
+        # mosaïques de 62 Mo en mémoire. La réserve de fils appartient à la
+        # fenêtre, qui l'attend en disparaissant : Qt abandonne le processus si
+        # l'on détruit un fil en plein calcul.
+        self._pool = QThreadPool(self)
+        self._pool.setMaxThreadCount(1)
+        self._preview = _PreviewState()
+        self._courier = _PreviewCourier()
+        self._courier.ready.connect(self._on_preview)
         self._build()
         self.reload()
 
@@ -121,6 +186,12 @@ class ArrangementsDialog(QDialog):
         self._image = QLabel()
         self._image.setAlignment(Qt.AlignCenter)
         self._image.setFixedSize(PREVIEW)
+        # L'animation se pose par-dessus l'aperçu, au centre : elle dit que
+        # l'image arrive à l'endroit même où elle arrivera.
+        self._spinner = Spinner(self._image)
+        self._spinner.move((PREVIEW.width() - self._spinner.width()) // 2,
+                           (PREVIEW.height() - self._spinner.height()) // 2)
+        self._spinner.hide()
         self._missing = QLabel()
         self._missing.setWordWrap(True)
         theme.mark(self._missing, "warning")
@@ -196,7 +267,12 @@ class ArrangementsDialog(QDialog):
             rangs = [rang for rang, un in enumerate(self._arrangements)
                      if un.name == select]
             self._list.setCurrentRow(rangs[0] if rangs else 0)
-        self._show_current()
+        else:
+            # ⚠️ **La ligne choisie se montre par son signal**, qui part dès
+            # qu'on la pose sur une liste tout juste vidée. L'appeler en plus
+            # lançait un second aperçu, le premier partant pour rien. Seule une
+            # liste restée vide ne change pas de ligne, et doit se dire à la main.
+            self._show_current()
 
     def current(self) -> Arrangement | None:
         rang = self._list.currentRow()
@@ -211,7 +287,7 @@ class ArrangementsDialog(QDialog):
         if arrangement is None:
             self._title.setText(self.tr("Aucun agencement enregistré."))
             self._missing.setText("")
-            self._image.setPixmap(QPixmap())
+            self._request_preview(None)
             self._cards.clear()
             self._open.setEnabled(False)
             return
@@ -232,11 +308,6 @@ class ArrangementsDialog(QDialog):
             self.tr("%n carte(s) de cet agencement manquent au catalogue : "
                     "il ne peut pas être ouvert.", "", len(manquantes))
         )
-        image = arrangement_image(arrangement, self._session,
-                                  self._session.empty_colour)
-        self._image.setPixmap(QPixmap() if image is None else QPixmap.fromImage(
-            image.scaled(PREVIEW, Qt.KeepAspectRatio, Qt.SmoothTransformation)))
-
         self._cards.clear()
         absentes = set(manquantes)
         for chemin in sorted(arrangement.cards, key=lambda c: (c not in absentes, c)):
@@ -245,6 +316,70 @@ class ArrangementsDialog(QDialog):
             if chemin in absentes:
                 item.setForeground(QColor(theme.colours(self.palette())["error"]))
             self._cards.addItem(item)
+        # ⚠️ **La sélection n'attend pas l'image.** Tout ce qui précède est déjà
+        # à l'écran ; l'aperçu, plusieurs dixièmes de seconde sur 441 cartes,
+        # se calcule en fond.
+        self._request_preview(arrangement)
+
+    # --- L'aperçu ---------------------------------------------------------
+
+    def _request_preview(self, arrangement: Arrangement | None) -> None:
+        """Demande l'aperçu en fond, et fait tourner l'attente en son centre.
+
+        ⚠️ **L'ancienne image s'efface tout de suite.** Laissée le temps du
+        calcul, elle se lirait sous le titre du nouvel agencement.
+        """
+        self._preview.token += 1
+        # Les demandes pas encore commencées sont périmées ; celle qui tourne
+        # le verra à sa prochaine rangée.
+        self._pool.clear()
+        self._image.setPixmap(QPixmap())
+        cartes = self._session.card_set
+        if (arrangement is None or not arrangement.grid
+                or cartes is None or not len(cartes)):
+            self._spinner.hide()
+            return
+
+        jeton, etat, messager = self._preview.token, self._preview, self._courier
+        grille = arrangement.grid
+        tuiles = arrangement_tiles(arrangement, self._session)
+        forme = cartes[0].thumbnail.shape[:2]
+        couleur = self._session.empty_colour
+
+        def perime() -> bool:
+            return etat.stopped or etat.token != jeton
+
+        def calcul() -> None:
+            # Rien ici ne touche la fenêtre : elle peut disparaître pendant.
+            try:
+                image = compose_arrangement(grille, tuiles, forme, couleur,
+                                            fit=PREVIEW, cancelled=perime)
+            except Exception:  # noqa: BLE001 - l'attente ne doit pas tourner à vide
+                # Volontairement large : une exception perdue dans un fil de
+                # fond laisserait l'animation tourner pour toujours.
+                image = QImage()
+            if image is not None and not perime():
+                messager.ready.emit(jeton, image)
+
+        self._spinner.show()
+        self._pool.start(calcul)
+
+    @Slot(int, QImage)
+    def _on_preview(self, token: int, image: QImage) -> None:
+        """⚠️ **Le jeton se revérifie à l'arrivée.** Le calcul a pu émettre juste
+        avant qu'on change de ligne : son image arrive après la nouvelle
+        demande, et se poserait sous le mauvais titre, l'attente éteinte."""
+        if token != self._preview.token:
+            return
+        self._image.setPixmap(QPixmap.fromImage(image))
+        self._spinner.hide()
+
+    def done(self, result: int) -> None:
+        """Referme la fenêtre une fois l'aperçu en cours abandonné."""
+        self._preview.stopped = True
+        self._pool.clear()
+        self._pool.waitForDone(SHUTDOWN_TIMEOUT_MS)
+        super().done(result)
 
     # --- Les gestes -------------------------------------------------------
 
