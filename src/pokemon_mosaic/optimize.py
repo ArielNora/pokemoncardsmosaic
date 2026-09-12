@@ -289,10 +289,17 @@ def optimize_grid(
         # départ : le réenregistrer ferait un doublon aux compteurs remis à zéro.
         timeline.record(grid, 0, 0, score, 0.0)
 
+    # ⚠️ **Les tours réellement joués**, et non le dernier indice de boucle plus
+    # un. Un arrêt sur contrôle part au début d'un tour, avant toute tentative :
+    # compter `iteration + 1` en annonçait une de plus, et chaque « Prolonger »
+    # après un arrêt décalait d'autant l'itération de la timeline et
+    # l'avancement du recuit. Sortie normale : toutes ont été jouées.
+    done = total_iterations
     for iteration in range(total_iterations):
         if iteration % CHECK_INTERVAL == 0:
             if control is not None and not control.checkpoint():
                 stopped_by = StopReason.REQUESTED
+                done = iteration
                 break
             # Le temps passé en pause est retranché : suspendre le calcul pour
             # examiner la timeline ne doit pas consommer le budget de temps.
@@ -301,6 +308,7 @@ def optimize_grid(
             )
             if reason:
                 stopped_by = reason
+                done = iteration
                 break
 
         # 1. Objet source : une carte seule, ou le bloc auquel elle appartient.
@@ -372,15 +380,17 @@ def optimize_grid(
     # accepte beaucoup à chaud et presque plus à froid, donc les derniers échanges
     # n'atteignent jamais le seuil de cadence. L'état finalement retenu,
     # celui que l'utilisateur voudra exporter, serait absent de la timeline.
-    if timeline is not None:
+    # Sans tentative, la grille n'a pas bougé depuis le dernier cliché : en
+    # imposer un second n'ajouterait qu'un doublon à la timeline.
+    if timeline is not None and done > 0:
         timeline.record(
-            grid, base_iteration + iteration + 1, base_accepted + accepted,
+            grid, base_iteration + done, base_accepted + accepted,
             best_score, base_elapsed + elapsed_now(),
         )
 
     return OptimizationResult(
         accepted=accepted,
-        attempted=iteration + 1,
+        attempted=done,
         initial_score=initial_score,
         final_score=best_score,
         stopped_by=stopped_by,

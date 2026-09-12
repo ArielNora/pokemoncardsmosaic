@@ -187,3 +187,21 @@ def test_a_reused_control_does_not_charge_the_previous_pause(problem):
                            control=control)
     assert second.elapsed > 0, f"durée négative : {second.elapsed}"
     assert second.elapsed < 0.3
+
+
+def test_a_stop_before_the_first_turn_counts_no_attempt(problem):
+    """⚠️ L'arrêt demandé part au début d'un tour, avant toute tentative : le
+    compte en annonçait une de trop, et un cliché final en double au rang 1."""
+    from pokemon_mosaic.timeline import Timeline
+
+    distances, grid = problem
+    control = RunControl()
+    control.stop()
+    timeline = Timeline(every=1_000_000, max_snapshots=None)
+
+    result = optimize_grid(grid, distances, iterations=1_000_000,
+                           rng=random.Random(0), control=control, timeline=timeline)
+
+    assert result.stopped_by == "arrêt demandé"
+    assert result.attempted == 0
+    assert [snapshot.iteration for snapshot in timeline] == [0]

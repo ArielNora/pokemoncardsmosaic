@@ -160,6 +160,61 @@ def test_running_to_the_end_reports_it():
     assert result.attempted == 2000
 
 
+def test_a_stop_counts_only_the_attempts_really_made():
+    """⚠️ Le contrôle d'arrêt part au début d'un tour, avant toute tentative : le
+    calcul en annonçait une de plus. Objectif atteint dès le départ : 1 tentative
+    au lieu de 0, et un cliché final en double, au rang 1. Reproduit par l'audit."""
+    cards = make_cards(30)
+    distances = EdgeDistances(cards)
+    grid = np.arange(30).reshape(5, 6)
+    timeline = Timeline(every=1_000_000, max_snapshots=None)
+
+    result = optimize_grid(
+        grid, distances, iterations=5000, rng=random.Random(0), timeline=timeline,
+        stop=StopConditions(max_iterations=5000,
+                            target_score=grid_score(grid, distances) + 1),
+    )
+
+    assert result.stopped_by == "score atteint"
+    assert result.attempted == 0
+    assert [snapshot.iteration for snapshot in timeline] == [0]
+
+
+def test_a_stagnation_stop_counts_the_turns_played():
+    """L'arrêt tombe au contrôle d'un tour, avant qu'il soit joué : le cliché
+    final et le compte des tentatives doivent en être au même rang."""
+    cards = make_cards(30)
+    distances = EdgeDistances(cards)
+    grid = np.arange(30).reshape(5, 6)
+    timeline = Timeline(every=1_000_000, max_snapshots=None)
+
+    result = optimize_grid(
+        grid, distances, iterations=500000, rng=random.Random(0), timeline=timeline,
+        stop=StopConditions(max_iterations=500000, stagnation_iterations=1),
+    )
+
+    assert result.stopped_by == "stagnation"
+    assert result.attempted > 0 and result.attempted % 1000 == 0
+    assert timeline[-1].iteration == result.attempted
+
+
+def test_prolonging_a_stopped_run_does_not_drift():
+    """Chaque « Prolonger » après un arrêt ajoutait 1 à l'itération de la
+    timeline, et décalait d'autant l'avancement du recuit."""
+    cards = make_cards(30)
+    distances = EdgeDistances(cards)
+    grid = np.arange(30).reshape(5, 6)
+    timeline = Timeline(every=1_000_000, max_snapshots=None)
+    stop = StopConditions(max_iterations=500000, stagnation_iterations=1)
+
+    premier = optimize_grid(grid, distances, iterations=500000, rng=random.Random(0),
+                            timeline=timeline, stop=stop)
+    second = optimize_grid(grid, distances, iterations=500000, rng=random.Random(1),
+                           timeline=timeline, stop=stop)
+
+    assert timeline[-1].iteration == premier.attempted + second.attempted
+
+
 # --- Timeline -------------------------------------------------------------
 
 def test_timeline_records_by_accepted_swaps_not_attempts():
