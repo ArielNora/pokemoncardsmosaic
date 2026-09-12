@@ -22,12 +22,12 @@ from ..layout import (
     MM_PER_INCH,
     PAPER_FORMATS_MM,
     GridFit,
+    card_useful_dpi,
     cards_on_panel,
     clamp_offset_mm,
     distribute_empty_cells,
     format_name,
     grid_geometry,
-    max_useful_dpi,
 )
 from ..links import DEFAULT_LINKS, Link, LinkLibrary, resolve_links
 from ..optimize import StopConditions, select_cards
@@ -45,6 +45,14 @@ _SERIE = re.compile(r"^(?:promo-)?([a-z])(?=\d|-|$)", re.IGNORECASE)
 # comparer des essais sans transformer l'export en bibliothèque, et quatre cases
 # se lisent d'un coup d'œil en colonne sans la faire défiler.
 MAX_SAVED = 4
+
+# La finesse à laquelle se mesure la carte pour calculer sa finesse utile.
+# ⚠️ **Fixe, et non celle de la session.** La largeur de carte en pixels dépend
+# de la finesse par ses arrondis : mesurée à la finesse courante, la finesse
+# utile bougerait avec celle qu'elle sert à régler, et l'onglet « Résolution »,
+# qui s'y cale, pourrait osciller entre deux valeurs. À 1200, l'arrondi pèse
+# moins d'un centième de millimètre.
+USEFUL_DPI_REFERENCE = 1200
 
 # Les bornes d'un habillage relu, celles des champs qui le règlent : côtés de la
 # feuille de 1 à 200 cm, carte de 1 à 2000 mm et écart de 0 à 100 mm (étape 2),
@@ -355,7 +363,15 @@ class Session(QObject):
             return float("inf")
         source = (cartes.full_size[0] if self.full_resolution
                   else cartes.thumb_size[0])
-        return max_useful_dpi(self.paper_mm(), max(1, self.cols), source)
+        # ⚠️ **La carte réelle, écart et largeur imposée compris**, et non la
+        # feuille divisée par les colonnes : avec un écart, la carte est plus
+        # étroite, et son plafond plus haut. La finesse proposée d'office était
+        # donc trop basse dès qu'on écartait les cartes.
+        geometrie = grid_geometry(
+            self.paper_mm(), self.panels, max(1, self.cols), max(1, self.rows),
+            self._card_aspect(), USEFUL_DPI_REFERENCE, self.card_width_mm,
+            self.card_gap_mm, self.panel_rows)
+        return card_useful_dpi(geometrie.card_w, USEFUL_DPI_REFERENCE, source)
 
     def presentation(self) -> dict:
         """L'habillage du poster : tout ce que l'étape d'export laisse régler.
@@ -706,14 +722,17 @@ class Session(QObject):
                     and cards_on_panel(self.rows, geometrie.rows_per_panel,
                                        ligne))
 
+    def _card_aspect(self) -> float:
+        """Largeur sur hauteur d'une carte : celle du jeu chargé, sinon l'usuelle."""
+        if self.card_set and self.card_set.full_size[1]:
+            return self.card_set.full_size[0] / self.card_set.full_size[1]
+        return 713 / 984
+
     def panel_geometry(self):
         """La géométrie des cartes pour la mise en page courante."""
-        aspect = 713 / 984
-        if self.card_set and self.card_set.full_size[1]:
-            aspect = self.card_set.full_size[0] / self.card_set.full_size[1]
         return grid_geometry(
             self.paper_mm(), self.panels, max(1, self.cols), max(1, self.rows),
-            aspect, self.dpi, self.card_width_mm, self.card_gap_mm,
+            self._card_aspect(), self.dpi, self.card_width_mm, self.card_gap_mm,
             self.panel_rows)
 
     def panel_of(self, row: int, col: int) -> int:

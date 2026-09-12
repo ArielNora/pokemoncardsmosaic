@@ -634,3 +634,25 @@ def test_the_corners_of_the_border_are_not_left_black():
     coin = (x + card_w + 1, y + card_h + 1)
 
     assert image.getpixel(coin) != (0, 0, 0)
+
+
+# --- La finesse utile se mesure sur la carte réelle --------------------------
+
+@pytest.mark.parametrize("ecart, averti", [(0.0, True), (5.0, False)])
+def test_the_useful_dpi_warning_follows_the_real_card(ecart, averti):
+    """⚠️ Le plafond prenait la feuille divisée par les colonnes, sans l'écart.
+    Mesuré par l'audit sur A2, grille 21×21, à 1000 DPI : 932 annoncés avec ou
+    sans écart, alors qu'avec 5 mm d'écart la carte de 599 px en supporte 1225,
+    et l'export avertissait à tort. Sans écart, la carte de 787 px n'en supporte
+    que 933, et l'avertissement est juste."""
+    cartes = make_cards(441)
+    for carte in cartes:
+        # `plan_poster` ne lit que la taille source : des vignettes de quelques
+        # pixels suffisent, là où celles d'une carte réelle pèseraient 62 Mo.
+        carte.thumbnail = np.zeros((4, 3, 3), np.uint8)
+    jeu = CardSet(cards=cartes, full_size=(734, 1024), thumb_size=(3, 4))
+
+    plan = plan_poster(np.arange(441).reshape(21, 21), jeu,
+                       PosterSettings(paper="A2", card_gap_mm=ecart, dpi=1000))
+
+    assert any("maximum utile" in w for w in plan.warnings) == averti

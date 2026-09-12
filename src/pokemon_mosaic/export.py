@@ -23,10 +23,10 @@ from .cards import CardSet, load_full_image
 from .layout import (
     DEFAULT_DPI,
     MM_PER_INCH,
+    card_useful_dpi,
     cards_on_panel,
     clamp_offset_mm,
     grid_geometry,
-    max_useful_dpi,
     mm_to_pixels,
     paper_size_mm,
 )
@@ -224,7 +224,7 @@ def plan_poster(
                 if settings.panel_rows == 1 else 0)
 
     warnings: list[str] = []
-    ceiling = max_useful_dpi(settings.paper_mm, per_panel, cards.full_size[0])
+    ceiling = card_useful_dpi(card_px[0], settings.dpi, cards.full_size[0])
     if settings.dpi > ceiling:
         warnings.append(
             f"{settings.dpi} DPI dépasse le maximum utile ({ceiling:.0f} DPI pour ce "

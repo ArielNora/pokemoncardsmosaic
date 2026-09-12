@@ -478,3 +478,18 @@ def max_useful_dpi(
         return float("inf")
     card_width_mm = paper[0] / cols
     return source_card_width_px / (card_width_mm / MM_PER_INCH)
+
+
+def card_useful_dpi(card_w_px: int, dpi: int, source_card_width_px: int) -> float:
+    """DPI au-delà duquel une carte de `card_w_px` pixels, posée à `dpi`, est
+    agrandie sans gagner de détail.
+
+    ⚠️ **La carte réelle, et non la feuille divisée par les colonnes.**
+    `max_useful_dpi` ignore l'écart et la largeur imposée : la carte réelle est
+    plus étroite, donc son plafond plus haut. Mesuré par l'audit sur A2, grille
+    21×21 : 932 DPI annoncés avec ou sans écart, alors qu'avec 5 mm d'écart la
+    carte de 599 px en supporte 1225, et l'export avertissait à tort à 1000.
+    """
+    if card_w_px <= 0 or source_card_width_px <= 0:
+        return float("inf")
+    return source_card_width_px * dpi / card_w_px

@@ -951,3 +951,44 @@ def test_a_dpi_above_the_new_maximum_comes_back_corrected(ecran):
 
     assert session.dpi == resolution._dpi.value()
     assert session.dpi <= round(session.useful_dpi())
+
+
+def test_the_useful_dpi_follows_the_real_card_not_the_session_dpi(qt_app):
+    """⚠️ La finesse utile prenait la feuille divisée par les colonnes : un écart,
+    ou une largeur imposée plus étroite, la laissait trop basse, et la finesse
+    proposée d'office aussi. Et mesurée à la finesse courante, elle bougerait avec
+    celle qu'elle sert à régler, par les arrondis. Trouvé en cherchant : sur A2,
+    grille 5×4, écart de 3,6 mm, 223 DPI donnait 224 pour maximum et 224 donnait
+    223. Une session seule, sans écran qui recale sa finesse à chaque changement."""
+    from pokemon_mosaic.ui.session import Session
+
+    session = Session()
+    session.set_cards(card_set(20), "/fake")
+    session.set_layout(cols=5, rows=4, paper="A2", card_gap_mm=3.6, dpi=223)
+    a_223 = session.useful_dpi()
+    session.set_layout(dpi=224)
+    assert session.dpi == 224
+    assert session.useful_dpi() == a_223, "elle suit la finesse qu'elle règle"
+
+    session.set_layout(card_gap_mm=0.0)
+    sans_ecart = session.useful_dpi()
+    assert a_223 > sans_ecart, "un écart rétrécit la carte, et relève son plafond"
+
+    largeur_auto = session.panel_geometry().card_w / session.dpi * 25.4
+    session.set_layout(card_width_mm=largeur_auto / 2)
+    assert session.useful_dpi() > sans_ecart * 1.9, "une carte deux fois plus étroite"
+
+
+def test_the_resolution_tab_settles_on_the_useful_maximum(ecran):
+    """L'onglet cale la finesse sur le maximum utile arrondi : si ce maximum
+    bougeait avec la finesse posée, deux rafraîchissements ne s'accorderaient
+    pas. Sur A2, grille 5×4, écart de 3,6 mm, il oscillait entre 223 et 224."""
+    widget, session, _ = ecran
+    session.set_layout(paper="A2", card_gap_mm=3.6)
+    resolution = widget._tabs[3]
+
+    resolution.refresh()
+    posee = session.dpi
+    resolution.refresh()
+
+    assert session.dpi == posee == round(session.useful_dpi()), "l'onglet oscille"
