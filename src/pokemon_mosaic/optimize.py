@@ -460,7 +460,8 @@ def build_initial_grid(
     empty_cells: Sequence[Cell] = (),
     rng: random.Random | None = None,
 ) -> np.ndarray:
-    """Pose les cases vides, puis les blocs imposés, puis les cartes libres.
+    """Pose les cases vides données, les blocs imposés, les cases vides qui
+    manquent, puis les cartes libres.
 
     `shape` est (colonnes, lignes). Sans `shape`, la grille est déduite de la
     factorisation du nombre de cartes : comportement de la ligne de commande.
@@ -469,7 +470,8 @@ def build_initial_grid(
     cols, rows = shape or calculate_grid_dims(len(cards))
     grid = np.full((rows, cols), EMPTY, dtype=int)
 
-    # 1. Cases vides : elles sont figées, donc réservées avant tout le reste.
+    # 1. Cases vides données : elles sont figées, donc réservées avant tout le
+    # reste.
     reserved = set()
     for r, c in empty_cells:
         if not (0 <= r < rows and 0 <= c < cols):
@@ -483,17 +485,6 @@ def build_initial_grid(
             f"{len(cards)} cartes pour seulement {capacity} cases disponibles "
             f"({rows}×{cols} moins {len(reserved)} vides)."
         )
-
-    # S'il manque des cases vides pour combler la grille, on complète par la
-    # répartition régulière. Sans cela, les trous surnuméraires apparaîtraient là
-    # où le remplissage ligne par ligne s'arrête, agglutinés dans le coin bas
-    # droit, à rebours de la dispersion que distribute_empty_cells construit.
-    missing = capacity - len(cards)
-    if missing > 0:
-        for cell in distribute_empty_cells((rows, cols), len(reserved) + missing):
-            if len(reserved) >= rows * cols - len(cards):
-                break
-            reserved.add(cell)
 
     # 2. Blocs imposés, posés au premier emplacement libre.
     check_links_fit(groups, cols, rows)
@@ -544,7 +535,25 @@ def build_initial_grid(
                 f"de {cols}×{rows} avec {len(reserved)} case(s) vide(s)."
             )
 
-    # 3. Cartes libres dans les cases restantes, en ordre aléatoire.
+    # 3. Les cases vides qui manquent pour combler la grille, posées **après**
+    # les blocs. ⚠️ Réservées avant eux, elles pouvaient couper tous les
+    # emplacements d'un bloc et rendre « impossible » une grille réalisable.
+    # Reproduit par l'audit : 10 cartes et un lien 3×3 dans une grille de 4×3,
+    # les trous tombaient en (0, 0) et (1, 2), sur les deux seules places du bloc.
+    # La répartition régulière reste la règle pour les cases qu'elle désigne
+    # encore libres : sans elle, les trous s'agglutineraient où le remplissage
+    # s'arrête, dans le coin bas droit. Quand un bloc couvre une case du motif,
+    # le trou qui lui revenait n'est pas réservé : les cartes libres remplissent
+    # alors les cases en ordre de lecture, et il reste en fin de grille.
+    cible = rows * cols - len(cards)
+    if len(reserved) < cible:
+        for cell in distribute_empty_cells((rows, cols), cible):
+            if len(reserved) >= cible:
+                break
+            if cell not in reserved and grid[cell] == EMPTY:
+                reserved.add(cell)
+
+    # 4. Cartes libres dans les cases restantes, en ordre aléatoire.
     available = [card.index for card in cards if card.index not in used]
     rng.shuffle(available)
     for r in range(rows):

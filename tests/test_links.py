@@ -164,6 +164,34 @@ def test_build_initial_grid_places_links_and_empty_cells():
     assert sorted(v for v in grid.flatten() if v != EMPTY) == list(range(20))
 
 
+def test_extra_holes_never_take_the_only_place_of_a_block():
+    """⚠️ Les trous ajoutés d'office étaient réservés avant les blocs. Reproduit
+    par l'audit : 10 cartes et un lien 3×3 dans une grille de 4×3, les trous
+    tombaient en (0, 0) et (1, 2), sur les deux seules places du bloc, et la
+    construction levait alors qu'une disposition valide existe. Le bloc posé,
+    tout le reste est forcé : la carte 9 et les deux trous n'ont qu'une colonne."""
+    cards_set = _card_set(10)
+    library = LinkLibrary()
+    library.add(Link(cards=tuple(range(9)), shape=(3, 3)))
+
+    grid = build_initial_grid(cards_set, shape=(4, 3), links=library,
+                              rng=random.Random(0))
+
+    assert grid.tolist() == [[0, 1, 2, 9], [3, 4, 5, EMPTY], [6, 7, 8, EMPTY]]
+
+
+def test_without_blocks_extra_holes_keep_the_regular_pattern():
+    """Poser les trous après les blocs ne doit rien changer quand il n'y en a pas :
+    ils tombent sur la répartition régulière, et non agglutinés où le
+    remplissage s'arrête."""
+    from pokemon_mosaic.layout import distribute_empty_cells
+
+    grid = build_initial_grid(_card_set(20), shape=(5, 5), rng=random.Random(0))
+
+    trous = {tuple(int(v) for v in cell) for cell in np.argwhere(grid == EMPTY)}
+    assert trous == set(distribute_empty_cells((5, 5), 5))
+
+
 def test_build_initial_grid_rejects_an_impossible_layout():
     cards_set = _card_set(20)
     with pytest.raises(ValueError, match="cases disponibles"):
