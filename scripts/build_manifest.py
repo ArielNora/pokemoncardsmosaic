@@ -128,6 +128,23 @@ def trous(card: dict) -> list[str]:
     return manquants
 
 
+def identifiants_en_double(cartes: list[dict]) -> dict[str, list[str]]:
+    """Les identifiants portés par plusieurs cartes, avec leurs chemins triés.
+
+    ⚠️ Deux fichiers au même numéro, `a1-227-bulbizarre.webp` et
+    `a1-227-bulbizarre-alt.webp`, donnaient deux cartes au même `id` sans que
+    rien ne le signale : le rapport ne les présentait que comme « à
+    compléter ». L'application ne lit pas encore cet identifiant, mais le
+    catalogue le promet unique.
+    """
+    par_id: dict[str, list[str]] = {}
+    for card in cartes:
+        if card.get("id"):
+            par_id.setdefault(card["id"], []).append(card["path"])
+    return {identifiant: sorted(chemins)
+            for identifiant, chemins in sorted(par_id.items()) if len(chemins) > 1}
+
+
 def _reprise(relatif: str, empreinte: str, disparues: dict,
              dossiers: dict) -> tuple[str, dict] | None:
     """La carte disparue que ce fichier continue : même contenu, un simple
@@ -244,9 +261,16 @@ def main(argv=None) -> int:
               f"{args.manifest} avant de publier : l'interface les affichera "
               f"sans nom.", file=sys.stderr)
 
+    doubles = identifiants_en_double(produit["cards"])
+    if doubles:
+        print(f"\n⚠️ {len(doubles)} identifiant(s) portés par plusieurs cartes : "
+              f"renommez l'un des fichiers, ou corrigez son numéro.", file=sys.stderr)
+        for identifiant, chemins in doubles.items():
+            print(f"  {identifiant} : {', '.join(chemins)}", file=sys.stderr)
+
     if args.check:
         print("\n--check : rien n'a été écrit.")
-        return 1 if incompletes or disparues else 0
+        return 1 if incompletes or disparues or doubles else 0
 
     with open(args.manifest, "w", encoding="utf-8") as handle:
         json.dump(produit, handle, ensure_ascii=False, indent=1, sort_keys=True)

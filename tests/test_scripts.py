@@ -270,6 +270,41 @@ def test_a_present_card_is_never_taken_over(tmp_path):
     assert par_chemin[autre]["rarity"] == ""
 
 
+def test_duplicate_identifiers_are_reported(tmp_path):
+    """⚠️ Deux fichiers au même numéro donnaient deux cartes au même `id`, que le
+    rapport ne présentait que comme « à compléter ». Reproduit par l'audit."""
+    for nom in ("a1-227-bulbizarre.webp", "a1-227-bulbizarre-alt.webp"):
+        depose(tmp_path, f"a1-puissance-genetique/{nom}")
+
+    produit, _, _ = build.build(catalogue([]), str(tmp_path))
+
+    assert build.identifiants_en_double(produit["cards"]) == {"A1-227": [
+        "a1-puissance-genetique/a1-227-bulbizarre-alt.webp",
+        "a1-puissance-genetique/a1-227-bulbizarre.webp",
+    ]}
+
+
+def test_check_fails_on_duplicate_identifiers_alone(tmp_path, capsys):
+    """Cartes complètes, décrites et présentes : rien d'autre ne ferait échouer
+    `--check`, dont l'échec tient donc au seul identifiant en double."""
+    rarete = next(iter(artwork.RARITIES))
+    images = tmp_path / "images"
+    cartes = []
+    for nom in ("a1-227-bulbizarre.webp", "a1-227-bulbizarre-alt.webp"):
+        chemin = f"a1-puissance-genetique/{nom}"
+        depose(images, chemin)
+        cartes.append({"path": chemin, "id": "A1-227", "set": "A1", "number": 227,
+                       "rarity": rarete, "language": "fr",
+                       "names": {"fr": "Bulbizarre"}, "bytes": 1, "sha256": "0" * 64})
+    fichier = tmp_path / "cards.json"
+    fichier.write_text(json.dumps(catalogue(cartes)), encoding="utf-8")
+
+    code = build.main(["--images", str(images), "--manifest", str(fichier), "--check"])
+
+    assert code == 1
+    assert "A1-227" in capsys.readouterr().err
+
+
 def test_a_card_described_but_absent_is_reported(tmp_path):
     """Et non retirée en silence : une image effacée par mégarde ressemble à un
     dossier incomplet, pas à une décision."""
