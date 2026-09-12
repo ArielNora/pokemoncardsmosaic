@@ -64,6 +64,9 @@ class CardsStep(QWidget):
         self._session = session
         self._thread = None
         self._worker = None
+        # Exclusions et liens figés par chemin avant de recharger le dossier
+        # courant, reposés une fois le chargement fini.
+        self._keep_after_reload = None
         # ⚠️ **Un drapeau, et non l'état du fil.** On ne lâche pas la référence
         # d'un `QThread` qui n'a pas fini : Qt abandonne le processus, et
         # `isRunning()` peut être encore vrai à l'instant où le chargement
@@ -546,7 +549,7 @@ class CardsStep(QWidget):
             self.status_message.emit(
                 self.tr("%n carte(s) récupérée(s).", "", ecrites))
         if dossier:
-            self.load(dossier)
+            self._reload_after_download(dossier, ecrites)
 
     def _on_download_cancelled(self, ecrites: int) -> None:
         dossier = self._download_dir
@@ -557,7 +560,27 @@ class CardsStep(QWidget):
         # Ce qui est arrivé est bon : chaque image a été vérifiée avant écriture.
         # Le dossier est simplement incomplet, et une relance le complètera.
         if dossier and ecrites:
-            self.load(dossier)
+            self._reload_after_download(dossier, ecrites)
+
+    def _reload_after_download(self, dossier: str, ecrites: int) -> None:
+        """Charge ce qui vient d'arriver, sans défaire le travail en cours.
+
+        ⚠️ **La mise à jour rechargeait tout, et tout effaçait.** Un chargement
+        repart d'une session vide : les exclusions posées carte par carte et les
+        liens composés à la main disparaissaient, même quand rien n'était
+        arrivé. Reproduit : trois cartes exclues et un lien, puis « Mettre à
+        jour le catalogue » sur un dossier complet, et plus rien. Rien d'arrivé
+        dans le dossier courant : on ne recharge pas. Des cartes arrivées : on
+        recharge, et exclusions et liens reviennent par leur chemin.
+        """
+        courant = self._session.data_dir
+        meme_dossier = (courant is not None
+                        and os.path.abspath(dossier) == os.path.abspath(courant))
+        if meme_dossier and not ecrites:
+            return
+        if meme_dossier:
+            self._keep_after_reload = self._session.selection_by_path()
+        self.load(dossier)
 
     def _on_download_failed(self, message: str) -> None:
         self._end_download()
@@ -597,17 +620,35 @@ class CardsStep(QWidget):
         self.status_message.emit(
             self.tr("%n carte(s) chargée(s).", "", len(card_set))
         )
+        self._restore_kept_selection()
 
     def _on_failed(self, message: str) -> None:
         self._loading = False
         self._progress.hide()
         self._set_sources_enabled(True)
-        # Rien n'a été vidé : la sélection et les liens précédents sont intacts.
+        # Rien n'a été vidé : la sélection et les liens précédents sont intacts,
+        # sauf si le premier lot est arrivé, auquel cas la session a été remplacée.
+        remplacee = not self._awaiting_first_batch
         self._awaiting_first_batch = False
+        if remplacee:
+            self._restore_kept_selection()
+        else:
+            self._keep_after_reload = None
         self._update_state()
         self.status_message.emit(
             self.tr("Échec du chargement : %1").replace("%1", message)
         )
+
+    def _restore_kept_selection(self) -> None:
+        """Repose ce qu'on avait figé avant de recharger le dossier courant."""
+        garde, self._keep_after_reload = self._keep_after_reload, None
+        if garde is None:
+            return
+        manquants = self._session.restore_selection(*garde)
+        if manquants:
+            self.status_message.emit(
+                self.tr("%n carte(s) exclue(s) ou liée(s) ont disparu du dossier : "
+                        "leur réglage n'a pas été repris.", "", len(set(manquants))))
 
     def shutdown(self) -> bool:
         """Interrompt le chargement. Rend faux s'il ne s'est pas arrêté.

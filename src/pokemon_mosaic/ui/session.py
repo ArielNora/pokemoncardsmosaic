@@ -1051,6 +1051,76 @@ class Session(QObject):
         self.links_changed.emit()
         return missing
 
+    def selection_by_path(self) -> tuple[tuple[str, ...],
+                                         tuple[tuple[LinkRef, bool], ...]]:
+        """Les exclusions et **tous** les liens, désignés par chemin.
+
+        Ce qui doit survivre au rechargement du même dossier, où les indices se
+        décalent dès qu'une carte arrive. ⚠️ Un préréglage ne garde que les liens
+        actifs : un lien composé puis désactivé s'y serait perdu.
+        """
+        exclues = tuple(sorted(self.relative_path(index) for index in self._excluded))
+        liens = tuple(
+            (LinkRef(cards=tuple(self.relative_path(index) for index in link.cards),
+                     shape=link.shape, ordered=link.ordered, name=link.name),
+             link.enabled)
+            for link in self.links.links)
+        return exclues, liens
+
+    def restore_selection(self, excluded, links) -> list[str]:
+        """Repose exclusions et liens après le rechargement du même dossier.
+
+        Les cartes arrivées depuis sont retenues, comme toute carte nouvelle. Un
+        chemin disparu est rendu, et le lien qui le portait est écarté.
+        """
+        manquants: list[str] = []
+        voulues = set()
+        for chemin in excluded:
+            index = self.index_of_path(chemin)
+            if index is None:
+                manquants.append(chemin)
+            else:
+                voulues.add(index)
+        self.set_excluded(voulues, True)
+        self.set_excluded(set(range(self.total_cards)) - voulues, False)
+
+        # ⚠️ **Un lien fourni d'office dont les cartes viennent d'arriver reste
+        # actif**, comme au premier chargement. Il n'existait pas avant, donc ne
+        # figure pas dans ce qu'on repose : le reprendre tel quel l'aurait
+        # désactivé, alors qu'un chargement neuf l'aurait laissé en place.
+        connus = {ref.cards for ref, _ in links}
+        arrives = []
+        for link in self.links.active:
+            chemins = tuple(self.relative_path(index) for index in link.cards)
+            if chemins not in connus:
+                arrives.append(LinkRef(cards=chemins, shape=link.shape,
+                                       ordered=link.ordered, name=link.name))
+        manquants.extend(self._apply_links(
+            [ref for ref, actif in links if actif] + arrives))
+        presents = {link.cards for link in self.links.links}
+        for ref, actif in links:
+            if actif:
+                continue
+            indices = [self.index_of_path(chemin) for chemin in ref.cards]
+            if None in indices:
+                manquants.extend(chemin for chemin, index
+                                 in zip(ref.cards, indices, strict=True)
+                                 if index is None)
+                continue
+            if tuple(indices) in presents:
+                continue
+            try:
+                self.links.add(Link(cards=tuple(indices), shape=ref.shape,
+                                    ordered=ref.ordered, enabled=False,
+                                    name=ref.name))
+            except ValueError:
+                # Un lien désactivé ne devrait gêner personne ; si la
+                # bibliothèque le refuse quand même, on le dit plutôt que de
+                # faire échouer la reprise du reste.
+                manquants.extend(ref.cards)
+        self.links_changed.emit()
+        return manquants
+
     # --- Préréglages ------------------------------------------------------
 
     def to_preset(self, name: str) -> Preset:

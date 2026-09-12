@@ -1081,3 +1081,85 @@ def test_the_update_stays_off_while_a_reload_runs(step, tmp_path):
 
     attendre_chargement(ecran)
     assert ecran._update_catalogue.isEnabled()
+
+
+# --- La mise à jour ne défait pas le travail en cours --------------------------
+
+def test_an_update_that_brings_nothing_does_not_reload(step, tmp_path):
+    """⚠️ Reproduit : trois cartes exclues et un lien, puis « Mettre à jour le
+    catalogue » sur un dossier complet, et plus rien. Rien n'est arrivé : il n'y
+    a rien à recharger, donc rien à effacer."""
+    ecran, session = step
+    depose(tmp_path, {"a1": ["c0", "c1", "c2", "c3"]})
+    ecran.load(str(tmp_path))
+    attendre_chargement(ecran)
+    session.set_excluded([0, 1], True)
+
+    ecran._download_dir = str(tmp_path)
+    ecran._on_downloaded(0, [])
+
+    assert not ecran._loading, "rien n'est arrivé : aucun chargement ne part"
+    assert sorted(session._excluded) == [0, 1]
+
+
+def test_an_update_that_brings_cards_keeps_exclusions_and_links(step, tmp_path):
+    """Des cartes arrivent : il faut recharger, mais exclusions et liens, actifs
+    comme désactivés, reviennent **par leur chemin**. La carte « b9 » arrive
+    avant les autres dans l'ordre du dossier et décale tous les indices : une
+    reprise par indice désignerait d'autres cartes."""
+    import os
+
+    from pokemon_mosaic.links import Link
+
+    ecran, session = step
+    depose(tmp_path, {"a1": ["c0", "c1", "c2", "c3"]})
+    ecran.load(str(tmp_path))
+    attendre_chargement(ecran)
+    rang = {session.relative_path(i): i for i in range(session.total_cards)}
+
+    def chemin(nom):
+        return os.path.join("a1", f"{nom}.webp")
+
+    session.set_excluded([rang[chemin("c0")]], True)
+    session.add_link(Link(cards=(rang[chemin("c1")], rang[chemin("c2")])))
+    session.add_link(Link(cards=(rang[chemin("c0")], rang[chemin("c3")]), enabled=False))
+
+    depose(tmp_path, {"a1": ["b9"]})
+    ecran._download_dir = str(tmp_path)
+    ecran._on_downloaded(1, [])
+    attendre_chargement(ecran)
+
+    assert session.total_cards == 5
+    assert session.index_of_path(chemin("b9")) == 0, "les indices se sont bien décalés"
+    assert sorted(session.relative_path(i) for i in session._excluded) == [chemin("c0")]
+    liens = {(tuple(session.relative_path(i) for i in lien.cards), lien.enabled)
+             for lien in session.links.links}
+    assert ((chemin("c1"), chemin("c2")), True) in liens
+    assert ((chemin("c0"), chemin("c3")), False) in liens
+    assert not session.is_excluded(session.index_of_path(chemin("b9")))
+
+
+def test_a_link_whose_cards_just_arrived_stays_active(qt_app, tmp_path):
+    """⚠️ Un lien fourni d'office dont les cartes arrivent avec la mise à jour
+    est posé actif au rechargement, comme au premier chargement. La reprise ne
+    le connaissait pas, ses cartes n'existant pas encore : elle le désactivait."""
+    import os
+
+    from pokemon_mosaic.links import Link
+    from pokemon_mosaic.ui.session import Session
+
+    session = Session()
+    avant = card_set_in(tmp_path, {"a1": ["c0", "c1"]})
+    session.set_cards(avant, str(tmp_path))
+    garde = session.selection_by_path()
+
+    # Le rechargement : deux cartes de plus, et le lien d'office qui les vise.
+    apres = card_set_in(tmp_path, {"a1": ["c0", "c1", "c2", "c3"]})
+    session.set_cards(apres, str(tmp_path))
+    session.add_link(Link(cards=(2, 3)))
+
+    session.restore_selection(*garde)
+
+    actifs = {tuple(session.relative_path(i) for i in lien.cards)
+              for lien in session.links.active}
+    assert (os.path.join("a1", "c2.png"), os.path.join("a1", "c3.png")) in actifs
