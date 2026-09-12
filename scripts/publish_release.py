@@ -63,6 +63,28 @@ def build_archives(manifest: dict, images: str, out: str) -> dict:
     for card in manifest["cards"]:
         par_jeu.setdefault(card["set"], []).append(card)
 
+    # ⚠️ **Une extension, un dossier, une archive.** L'archive porte le nom du
+    # dossier : deux extensions rangées ensemble écrivaient la même, la seconde
+    # écrasant la première, et le catalogue publié annonçait pour la première
+    # une empreinte que plus aucun fichier ne portait. Chez tous les clients, la
+    # récupération la jugeait alors altérée. Une extension répartie sur deux
+    # dossiers, elle, aurait une archive nommée d'après un seul. Les deux cas
+    # sont refusés avant d'écrire quoi que ce soit.
+    dossiers_de: dict[str, set[str]] = {}
+    jeux_de: dict[str, set[str]] = {}
+    for jeu, cartes in par_jeu.items():
+        for card in cartes:
+            dossier = os.path.dirname(card["path"])
+            dossiers_de.setdefault(jeu, set()).add(dossier)
+            jeux_de.setdefault(dossier, set()).add(jeu)
+    lignes = [f"  l'extension {jeu} est répartie sur {', '.join(sorted(dossiers))}"
+              for jeu, dossiers in sorted(dossiers_de.items()) if len(dossiers) > 1]
+    lignes += [f"  le dossier {dossier} mêle {', '.join(sorted(jeux))}"
+               for dossier, jeux in sorted(jeux_de.items()) if len(jeux) > 1]
+    if lignes:
+        raise SystemExit("Une extension par dossier, sans quoi deux archives "
+                         "porteraient le même nom :\n" + "\n".join(lignes))
+
     mirror = {}
     for jeu, cartes in sorted(par_jeu.items()):
         dossier = os.path.dirname(cartes[0]["path"])

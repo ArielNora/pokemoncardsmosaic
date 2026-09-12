@@ -476,3 +476,32 @@ def test_an_output_folder_holding_the_tracked_catalogue_is_refused(tmp_path):
     with pytest.raises(SystemExit, match="catalogue suivi"):
         publie.main(args)
     assert suivi.read_bytes() == avant
+
+
+@pytest.mark.parametrize("cartes, message", [
+    ([("promo/promo-a-001-pikachu.webp", "PROMO-A"),
+      ("promo/promo-b-001-mew.webp", "PROMO-B")],
+     "le dossier promo mêle PROMO-A, PROMO-B"),
+    ([("a1/a1-001-bulbizarre.webp", "A1"),
+      ("a1-bis/a1-002-herbizarre.webp", "A1")],
+     "l'extension A1 est répartie sur a1, a1-bis"),
+])
+def test_one_set_per_folder_or_archives_would_collide(tmp_path, cartes, message):
+    """⚠️ L'archive porte le nom du dossier. Reproduit par l'audit : deux
+    extensions dans `promo/` écrivaient toutes deux `promo.zip`, qui ne contenait
+    plus que PROMO-B, et PROMO-A annonçait une empreinte que plus aucun fichier
+    ne portait. Le refus tombe avant d'écrire la moindre archive."""
+    from pokemon_mosaic.mirror import digest_of
+
+    images = tmp_path / "images"
+    fiches = []
+    for chemin, jeu in cartes:
+        image = depose(images, chemin)
+        fiches.append({"path": chemin, "set": jeu, "bytes": image.stat().st_size,
+                       "sha256": digest_of(str(image))})
+
+    with pytest.raises(SystemExit) as refus:
+        publie.build_archives(catalogue(fiches), str(images), str(tmp_path / "miroir"))
+
+    assert message in str(refus.value)
+    assert not list((tmp_path / "miroir").glob("*.zip"))
