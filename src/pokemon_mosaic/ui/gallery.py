@@ -133,7 +133,10 @@ class CardGalleryModel(QAbstractListModel):
         if role == Qt.DecorationRole:
             return self._pixmap_for(card.index)
         if role == Qt.ToolTipRole:
-            state = "exclue" if self._session.is_excluded(card.index) else "incluse"
+            # `tr` et non une chaîne nue : `lupdate` ne voyait pas celle-ci, et
+            # l'infobulle restait en français dans l'interface anglaise.
+            state = (self.tr("exclue") if self._session.is_excluded(card.index)
+                     else self.tr("incluse"))
             return f"{card.name}\n{self._session.folder_of(card.index)}\n({state})"
         if role == Qt.UserRole:
             return card.index

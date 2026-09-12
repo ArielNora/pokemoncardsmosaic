@@ -270,6 +270,19 @@
     </message>
 </context>
 <context>
+    <name>CardGalleryModel</name>
+    <message>
+        <location filename="../src/pokemon_mosaic/ui/gallery.py" line="138"/>
+        <source>exclue</source>
+        <translation>excluded</translation>
+    </message>
+    <message>
+        <location filename="../src/pokemon_mosaic/ui/gallery.py" line="139"/>
+        <source>incluse</source>
+        <translation>included</translation>
+    </message>
+</context>
+<context>
     <name>CardSizeTab</name>
     <message>
         <location filename="../src/pokemon_mosaic/ui/layout_tabs.py" line="602"/>
@@ -851,22 +864,22 @@
         <translation>No arrangement kept.</translation>
     </message>
     <message>
-        <location filename="../src/pokemon_mosaic/ui/export_step.py" line="1065"/>
+        <location filename="../src/pokemon_mosaic/ui/export_step.py" line="1070"/>
         <source>Agencement %1 sur %2, score %3</source>
         <translation>Arrangement %1 of %2, score %3</translation>
     </message>
     <message>
-        <location filename="../src/pokemon_mosaic/ui/export_step.py" line="1121"/>
+        <location filename="../src/pokemon_mosaic/ui/export_step.py" line="1126"/>
         <source>Export en cours…</source>
         <translation>Exporting…</translation>
     </message>
     <message>
-        <location filename="../src/pokemon_mosaic/ui/export_step.py" line="1139"/>
+        <location filename="../src/pokemon_mosaic/ui/export_step.py" line="1144"/>
         <source>Panneau %1 / %2 : %3</source>
         <translation>Panel %1 / %2: %3</translation>
     </message>
     <message numerus="yes">
-        <location filename="../src/pokemon_mosaic/ui/export_step.py" line="1154"/>
+        <location filename="../src/pokemon_mosaic/ui/export_step.py" line="1159"/>
         <source>%n fichier(s) écrit(s) : %1</source>
         <translation>
             <numerusform>%n file written: %1</numerusform>
@@ -874,17 +887,17 @@
         </translation>
     </message>
     <message>
-        <location filename="../src/pokemon_mosaic/ui/export_step.py" line="1161"/>
+        <location filename="../src/pokemon_mosaic/ui/export_step.py" line="1166"/>
         <source>Export annulé ; les fichiers partiels ont été effacés.</source>
         <translation>Export cancelled; the partial files were removed.</translation>
     </message>
     <message>
-        <location filename="../src/pokemon_mosaic/ui/export_step.py" line="1167"/>
+        <location filename="../src/pokemon_mosaic/ui/export_step.py" line="1172"/>
         <source>Échec de l&apos;export : %1</source>
         <translation>Export failed: %1</translation>
     </message>
     <message>
-        <location filename="../src/pokemon_mosaic/ui/export_step.py" line="1186"/>
+        <location filename="../src/pokemon_mosaic/ui/export_step.py" line="1191"/>
         <source>Arrêt en cours : l&apos;export ne répond pas encore.</source>
         <translation>Stopping: the export is not answering yet.</translation>
     </message>

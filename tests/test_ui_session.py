@@ -182,6 +182,28 @@ def test_filter_on_several_folders(gallery_model):
     assert model.rowCount() == 5
 
 
+def test_the_tooltip_state_follows_the_language(qt_app, gallery_model):
+    """⚠️ L'état « exclue » / « incluse » était une chaîne nue, que `lupdate` ne
+    voyait pas : l'infobulle restait en français dans l'interface anglaise."""
+    from PySide6.QtCore import Qt
+
+    from pokemon_mosaic.ui.i18n import TRANSLATIONS_DIR, LanguageManager
+
+    if not (TRANSLATIONS_DIR / "pokemon_mosaic_en.qm").exists():
+        pytest.skip("traductions non compilées (pyside6-lrelease)")
+    model, session = gallery_model
+    session.set_excluded([0], True)
+    manager = LanguageManager(qt_app)
+    try:
+        manager.set_language("en")
+        exclue = model.data(model.index(0), Qt.ToolTipRole)
+        incluse = model.data(model.index(1), Qt.ToolTipRole)
+    finally:
+        manager.uninstall()
+
+    assert exclue.endswith("(excluded)") and incluse.endswith("(included)")
+
+
 def test_new_cards_respect_the_active_filter(session, tmp_path):
     """Le filtre de l'utilisateur ne doit pas être perdu quand un dossier arrive."""
     from pokemon_mosaic.ui.gallery import CardGalleryModel
