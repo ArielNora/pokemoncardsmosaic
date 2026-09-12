@@ -1010,3 +1010,89 @@ def test_the_summary_counts_among_the_kept_arrangements(ecran):
 
     assert "Agencement 2 sur 2" in widget._summary.text()
 
+
+# --- La forme vient de l'agencement ---------------------------------------
+#
+# ⚠️ Décidé par l'utilisateur : à l'export, colonnes, lignes et cases vides se
+# lisent dans l'agencement affiché, que l'étape 2 a pu quitter depuis.
+
+def test_the_preview_draws_the_shape_of_the_arrangement(ecran):
+    """Un 5×4 gardé, puis une grille passée en 2×2 à l'étape 2 : l'aperçu
+    dessinait quatre cases, alors que le fichier écrit en porte vingt."""
+    widget, session, _ = ecran
+    session.set_layout(cols=2, rows=2)
+    widget.enter()
+    widget.show()
+
+    cases = widget._preview.grid_cells(widget._preview.rects()[0])
+
+    assert len(cases) == 20
+    assert {(row, col) for row, col, _ in cases} == {
+        (row, col) for row in range(4) for col in range(5)}
+
+
+def test_an_empty_cell_of_step_two_does_not_hide_a_card(ecran):
+    """Les cases vides se lisent dans la grille : une case vide de la session,
+    absente de l'agencement, peignait une vraie carte à la couleur du vide."""
+    widget, session, _ = ecran
+    session.set_excluded([19], True)
+    session.toggle_empty_cell(0, 0)
+    assert (0, 0) in session.empty_cells()
+    session.set_algorithm(empty_colour=(0, 250, 0))
+    widget.enter()
+    widget.show()
+
+    image = widget._preview.grab().toImage()
+    cases = widget._preview.grid_cells(widget._preview.rects()[0])
+    rect = next(r for row, col, r in cases if (row, col) == (0, 0))
+    ratio = image.devicePixelRatio() or 1
+    point = image.pixelColor(int(rect.center().x() * ratio),
+                             int(rect.center().y() * ratio))
+
+    assert point.getRgb()[:3] == (90, 90, 90)
+
+
+def test_the_tabs_measure_the_arrangement(ecran):
+    """La largeur des cartes et la finesse utile affichées sont celles de
+    l'agencement, celles-là mêmes que l'export emploiera."""
+    widget, session, _ = ecran
+    session.set_layout(cols=2, rows=2)
+    widget.enter()
+
+    utile = session.useful_dpi((4, 5))
+    assert round(utile) != round(session.useful_dpi())
+    assert f"{utile:.0f} DPI" in widget._tabs[3]._pixels.text()
+    largeur = session.panel_geometry((4, 5)).card_w * 25.4 / session.dpi
+    assert widget._tabs[0]._width.value() == pytest.approx(largeur, abs=0.01)
+
+
+def test_centring_centres_the_pieces_of_the_arrangement(ecran):
+    """« Centrer » mesurait la place libre sur la grille de l'étape 2."""
+    widget, session, _ = ecran
+    session.set_layout(panels=2)
+    session.set_layout(cols=2, rows=2)
+    widget.enter()
+
+    widget._tabs[0]._centre.click()
+
+    attendu = {}
+    for index in range(session.panel_count()):
+        if session.panel_carries_cards(index, (4, 5)):
+            libre = session.panel_free_mm(index, (4, 5))
+            attendu[index] = (libre[0] / 2, libre[1] / 2)
+    assert attendu
+    assert session.panel_offsets == pytest.approx(attendu)
+    assert session.panels_are_centred((4, 5))
+
+
+def test_the_overflow_warning_reads_the_arrangement(ecran):
+    """Deux cartes d'un tiers de feuille tiennent en largeur, cinq non : la
+    grille 2×2 de l'étape 2 taisait le débordement de l'agencement 5×4."""
+    widget, session, _ = ecran
+    session.set_layout(cols=2, rows=2)
+    session.set_layout(card_width_mm=session.paper_mm()[0] / 3)
+    widget.enter()
+
+    assert not widget._warning.isHidden()
+    assert not widget._export.isEnabled()
+

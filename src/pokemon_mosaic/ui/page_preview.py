@@ -16,6 +16,7 @@ from PySide6.QtWidgets import QPushButton, QWidget
 
 from .. import chameleon
 from ..layout import MM_PER_INCH, REAL_CARD_MM, cards_on_panel
+from ..scoring import EMPTY
 from . import theme
 from .wireframe import (
     CARD_EDGE,
@@ -348,10 +349,10 @@ class PagePreview(QWidget):
         if cell is None:
             return
         session = self._session
-        index = session.panel_of(*cell)
+        index = session.panel_of(*cell, self.shape())
         self._dragged = index
         self._drag_from = point
-        self._drag_origin = session.panel_position_mm(index)
+        self._drag_origin = session.panel_position_mm(index, self.shape())
         self.setCursor(Qt.ClosedHandCursor)
 
     def _drag_to(self, point) -> None:
@@ -369,6 +370,20 @@ class PagePreview(QWidget):
                               self._drag_origin[1] + dy)
 
     # --- Géométrie --------------------------------------------------------
+
+    def shape(self) -> tuple[int, int] | None:
+        """Lignes et colonnes de l'agencement dessiné, `None` sans agencement.
+
+        ⚠️ **L'agencement porte sa forme**, que l'étape 2 a pu quitter depuis :
+        c'est elle que le fichier écrit suivra, donc elle que l'aperçu dessine.
+        Sans agencement, la session donne la sienne.
+        """
+        return None if self._grid is None else tuple(self._grid.shape)
+
+    def _rows_cols(self) -> tuple[int, int]:
+        forme = self.shape()
+        return forme if forme is not None else (self._session.rows,
+                                                self._session.cols)
 
     def _sheet_mm(self) -> tuple[float, float]:
         """La feuille entière, panneaux compris, dans les deux sens."""
@@ -527,7 +542,7 @@ class PagePreview(QWidget):
         largeur = feuille.width() / max(1, session.panels)
         hauteur = feuille.height() / max(1, session.panel_rows)
         for index in range(session.panel_count()):
-            if not session.panel_carries_cards(index):
+            if not session.panel_carries_cards(index, self.shape()):
                 continue
             ligne, colonne = divmod(index, max(1, session.panels))
             page = QRectF(feuille.left() + colonne * largeur,
@@ -538,15 +553,16 @@ class PagePreview(QWidget):
     def _piece_rect(self, index: int, page: QRectF) -> QRectF:
         """Le morceau de mosaïque que porte une feuille, à l'écran."""
         session = self._session
-        geometrie = session.panel_geometry()
+        rows, cols = self._rows_cols()
+        geometrie = session.panel_geometry(self.shape())
         ligne, colonne = divmod(index, max(1, session.panels))
         paper_w, paper_h = session.paper_mm()
         en_mm = MM_PER_INCH / session.dpi
         vers_x = page.width() / paper_w if paper_w else 0.0
         vers_y = page.height() / paper_h if paper_h else 0.0
-        pose = session.panel_position_mm(index)
-        combien_c = cards_on_panel(session.cols, geometrie.per_panel, colonne)
-        combien_l = cards_on_panel(session.rows, geometrie.rows_per_panel, ligne)
+        pose = session.panel_position_mm(index, self.shape())
+        combien_c = cards_on_panel(cols, geometrie.per_panel, colonne)
+        combien_l = cards_on_panel(rows, geometrie.rows_per_panel, ligne)
 
         def etendue(combien, taille):
             return (combien * taille + max(0, combien - 1) * geometrie.gap) * en_mm
@@ -564,13 +580,15 @@ class PagePreview(QWidget):
         placement qui ne tomberait pas sur ce qu'on voit ne servirait à rien.
         """
         session = self._session
-        if session.cols <= 0 or session.rows <= 0:
+        forme = self.shape()
+        rows, cols = self._rows_cols()
+        if cols <= 0 or rows <= 0:
             return None
         surface = self._sheet_mm()
         # ⚠️ **À la résolution de la session**, jamais à une autre : les
         # arrondis en pixels ne donnent pas le même nombre de cartes par
         # feuille, et le dessin cesserait d'être celui du poster.
-        geometrie = session.panel_geometry()
+        geometrie = session.panel_geometry(forme)
         # Zéro quand la carte ne tient pas sur la feuille : le dessin doit
         # quand même sortir, la ligne d'état étant là pour le dire.
         par_feuille = max(1, geometrie.per_panel)
@@ -590,13 +608,13 @@ class PagePreview(QWidget):
         # seconde version, qui finirait par diverger de celle de l'export.
         # Relevé une fois par feuille : quinze au plus, contre quarante mille
         # cases.
-        places = {index: session.panel_position_mm(index)
+        places = {index: session.panel_position_mm(index, forme)
                   for index in range(session.panel_count())}
 
         cases = []
-        for row in range(session.rows):
+        for row in range(rows):
             feuille_l, dans_l = divmod(row, par_colonne)
-            for col in range(session.cols):
+            for col in range(cols):
                 feuille_c, dans_c = divmod(col, par_feuille)
                 pose = places.get(feuille_l * session.panels + feuille_c,
                                   (0.0, 0.0))
@@ -662,7 +680,6 @@ class PagePreview(QWidget):
         recouvre, c'est-à-dire exactement dans les écarts.
         """
         session = self._session
-        vides = set(session.empty_cells())
         painter.save()
         painter.setClipRect(feuille)
         painter.setPen(Qt.NoPen)
@@ -681,9 +698,10 @@ class PagePreview(QWidget):
             if row >= rows or col >= cols:
                 continue
             case = _aligned(rect)
-            if (row, col) in vides:
-                painter.fillRect(case, QColor(*session.empty_colour))
-                continue
+            # ⚠️ **Les cases vides se lisent dans la grille**, jamais dans la
+            # session : celles de l'étape 2 appartiennent à une autre forme, et
+            # une vraie carte y était peinte en case vide. `_tile` rend `None`
+            # sur une case vide, qui prend alors sa couleur.
             tuile = self._tile(int(self._grid[row, col]))
             if tuile is None:
                 painter.fillRect(case, QColor(*session.empty_colour))
@@ -717,8 +735,7 @@ class PagePreview(QWidget):
         if not (0 <= row < rows and 0 <= col < cols):
             return None
         index = int(self._grid[row, col])
-        creux = (row, col) in set(session.empty_cells()) or index < 0
-        if creux or self._grid_cards is None:
+        if index == EMPTY or self._grid_cards is None:
             hauteur, largeur = self._grid_cards[0].thumbnail.shape[:2]
             taille = hauteur if side in ("gauche", "droite") else largeur
             return np.tile(np.array(session.empty_colour, np.uint8), (taille, 1))
@@ -740,7 +757,9 @@ class PagePreview(QWidget):
         voisin = rects.get(suivante)
         if voisin is None:
             return
-        if session.panel_of(row, col) != session.panel_of(*suivante):
+        geometrie = self._geometry_cache()
+        if (session.panel_of(row, col, geometry=geometrie)
+                != session.panel_of(*suivante, geometry=geometrie)):
             return
         largeur, hauteur = self._screen_gap()
         if horizontal:
@@ -772,8 +791,9 @@ class PagePreview(QWidget):
                       min(bas.top() - rect.bottom(), hauteur))
         if zone.width() <= 0 or zone.height() <= 0:
             return
-        if (self._session.panel_of(row, col) != self._session.panel_of(row + 1,
-                                                                       col + 1)):
+        geometrie = self._geometry_cache()
+        if (self._session.panel_of(row, col, geometry=geometrie)
+                != self._session.panel_of(row + 1, col + 1, geometry=geometrie)):
             return
         coins = [self._edge(row, col, "droite"), self._edge(row, col + 1, "gauche"),
                  self._edge(row + 1, col, "droite"),
@@ -848,7 +868,7 @@ class PagePreview(QWidget):
                 geometrie.gap * en_mm * feuille.height() / surface[1])
 
     def _geometry_cache(self):
-        return self._session.panel_geometry()
+        return self._session.panel_geometry(self.shape())
 
     def _tile(self, index: int) -> QPixmap | None:
         """La vignette d'une carte, convertie une seule fois."""

@@ -885,7 +885,7 @@ class PlacementTab(LayoutTab):
         self._hint = QLabel()
         self._hint.setWordWrap(True)
         self._center = QPushButton()
-        self._center.clicked.connect(self._session.center_panels)
+        self._center.clicked.connect(lambda: self._session.center_panels())
         self._reset = QPushButton()
         self._reset.clicked.connect(self._put_back)
 

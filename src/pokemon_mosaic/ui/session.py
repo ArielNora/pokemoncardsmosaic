@@ -352,12 +352,14 @@ class Session(QObject):
         self.dpi_chosen = True
         self.set_layout(dpi=value)
 
-    def useful_dpi(self) -> float:
+    def useful_dpi(self, shape: tuple[int, int] | None = None) -> float:
         """La finesse au-delà de laquelle on agrandit sans gagner de détail.
 
         Elle dépend de la **source** : les vignettes font le quart des images
-        d'origine, donc le quart de la finesse utile.
+        d'origine, donc le quart de la finesse utile. `shape`, lignes puis
+        colonnes, est celle de l'agencement exporté, voir `_shape`.
         """
+        rows, cols = self._shape(shape)
         cartes = self.card_set
         if cartes is None or not len(cartes):
             return float("inf")
@@ -368,7 +370,7 @@ class Session(QObject):
         # étroite, et son plafond plus haut. La finesse proposée d'office était
         # donc trop basse dès qu'on écartait les cartes.
         geometrie = grid_geometry(
-            self.paper_mm(), self.panels, max(1, self.cols), max(1, self.rows),
+            self.paper_mm(), self.panels, max(1, cols), max(1, rows),
             self._card_aspect(), USEFUL_DPI_REFERENCE, self.card_width_mm,
             self.card_gap_mm, self.panel_rows)
         return card_useful_dpi(geometrie.card_w, USEFUL_DPI_REFERENCE, source)
@@ -672,55 +674,72 @@ class Session(QObject):
         """Le nombre de feuilles à imprimer, toutes lignes confondues."""
         return self.panels * self.panel_rows
 
-    def move_panel(self, index: int, x_mm: float, y_mm: float) -> None:
+    def _shape(self, shape: tuple[int, int] | None) -> tuple[int, int]:
+        """Lignes et colonnes de la mosaïque mise en page.
+
+        ⚠️ **À l'export, la forme est celle de l'agencement affiché**, et non
+        celle de l'étape 2 : un agencement gardé ou ouvert depuis la
+        bibliothèque peut en avoir une autre, et le fichier écrit suit
+        l'agencement. L'aperçu et ses réglages lisaient la session : un 3×3
+        gardé puis une grille passée en 2×2 se dessinait en quatre cases.
+        `None` garde la forme de la session, celle de l'étape 2.
+        """
+        return (self.rows, self.cols) if shape is None else tuple(shape)
+
+    def move_panel(self, index: int, x_mm: float, y_mm: float,
+                   shape: tuple[int, int] | None = None) -> None:
         """Pose le bout de grille d'une feuille à cet endroit **de sa feuille**.
 
         Les coordonnées partent de son coin haut-gauche, et sont bornées à ce
         qui reste de libre : un bout de grille ne déborde jamais sur la feuille
         voisine, faute de quoi la coupe tomberait en pleine carte.
         """
-        libre = self.panel_free_mm(index)
+        libre = self.panel_free_mm(index, shape)
         borne = clamp_offset_mm((x_mm, y_mm), libre)
         if self.panel_offsets.get(index) == borne:
             return
         self.set_layout(panel_offsets={**self.panel_offsets, index: borne})
 
-    def center_panels(self) -> None:
+    def center_panels(self, shape: tuple[int, int] | None = None) -> None:
         """Pose chaque morceau au milieu de sa feuille.
 
         ⚠️ **Les feuilles vides sont laissées de côté.** Une feuille qui ne
         porte aucune carte : la dernière, quand la grille s'arrête avant, n'a
         rien à centrer, et lui inventer une position la ferait compter parmi
         les feuilles déplacées.
+
+        ⚠️ Jamais branchée telle quelle sur `clicked` : Qt y passerait son
+        booléen en guise de forme.
         """
         places = {}
         for index in range(self.panel_count()):
-            if not self.panel_carries_cards(index):
+            if not self.panel_carries_cards(index, shape):
                 continue
-            libre = self.panel_free_mm(index)
+            libre = self.panel_free_mm(index, shape)
             places[index] = (libre[0] / 2, libre[1] / 2)
         if places != self.panel_offsets:
             self.set_layout(panel_offsets=places)
 
-    def panels_are_centred(self) -> bool:
+    def panels_are_centred(self, shape: tuple[int, int] | None = None) -> bool:
         """Vrai si chaque morceau est déjà au milieu de sa feuille."""
         for index in range(self.panel_count()):
-            if not self.panel_carries_cards(index):
+            if not self.panel_carries_cards(index, shape):
                 continue
-            libre = self.panel_free_mm(index)
-            pose = self.panel_position_mm(index)
+            libre = self.panel_free_mm(index, shape)
+            pose = self.panel_position_mm(index, shape)
             if (abs(pose[0] - libre[0] / 2) > 0.05
                     or abs(pose[1] - libre[1] / 2) > 0.05):
                 return False
         return True
 
-    def panel_carries_cards(self, index: int) -> bool:
+    def panel_carries_cards(self, index: int,
+                            shape: tuple[int, int] | None = None) -> bool:
         """Cette feuille porte-t-elle au moins une carte ?"""
-        geometrie = self.panel_geometry()
+        rows, cols = self._shape(shape)
+        geometrie = self.panel_geometry(shape)
         ligne, colonne = divmod(index, max(1, self.panels))
-        return bool(cards_on_panel(self.cols, geometrie.per_panel, colonne)
-                    and cards_on_panel(self.rows, geometrie.rows_per_panel,
-                                       ligne))
+        return bool(cards_on_panel(cols, geometrie.per_panel, colonne)
+                    and cards_on_panel(rows, geometrie.rows_per_panel, ligne))
 
     def _card_aspect(self) -> float:
         """Largeur sur hauteur d'une carte : celle du jeu chargé, sinon l'usuelle."""
@@ -728,27 +747,34 @@ class Session(QObject):
             return self.card_set.full_size[0] / self.card_set.full_size[1]
         return 713 / 984
 
-    def panel_geometry(self):
+    def panel_geometry(self, shape: tuple[int, int] | None = None):
         """La géométrie des cartes pour la mise en page courante."""
+        rows, cols = self._shape(shape)
         return grid_geometry(
-            self.paper_mm(), self.panels, max(1, self.cols), max(1, self.rows),
+            self.paper_mm(), self.panels, max(1, cols), max(1, rows),
             self._card_aspect(), self.dpi, self.card_width_mm, self.card_gap_mm,
             self.panel_rows)
 
-    def panel_of(self, row: int, col: int) -> int:
+    def panel_of(self, row: int, col: int, shape: tuple[int, int] | None = None,
+                 geometry=None) -> int:
         """La feuille qui porte cette case, lue de gauche à droite.
 
         ⚠️ **Un seul endroit le calcule côté écran.** Le dessin, la saisie à la
         souris et la place libre s'accordaient chacun de leur côté sur la même
         division : trois occasions de diverger pour une formule de deux lignes.
+
+        `geometry`, déjà calculée pour `shape`, évite de la refaire à chaque
+        case quand l'aperçu en interroge des milliers.
         """
-        geometrie = self.panel_geometry()
+        geometrie = geometry or self.panel_geometry(shape)
         return ((row // max(1, geometrie.rows_per_panel)) * self.panels
                 + col // max(1, geometrie.per_panel))
 
-    def panel_free_mm(self, index: int) -> tuple[float, float]:
+    def panel_free_mm(self, index: int,
+                      shape: tuple[int, int] | None = None) -> tuple[float, float]:
         """Place libre autour du bout de grille d'une feuille, en millimètres."""
-        geometrie = self.panel_geometry()
+        rows, cols = self._shape(shape)
+        geometrie = self.panel_geometry(shape)
         ligne, colonne = divmod(index, max(1, self.panels))
         paper_w, paper_h = self.paper_mm()
         en_mm = MM_PER_INCH / self.dpi
@@ -759,12 +785,13 @@ class Session(QObject):
                       + max(0, combien - 1) * geometrie.gap) * en_mm
             return max(0.0, papier - occupe)
 
-        return (libre(self.cols, geometrie.per_panel, colonne,
+        return (libre(cols, geometrie.per_panel, colonne,
                       geometrie.card_w, paper_w),
-                libre(self.rows, geometrie.rows_per_panel, ligne,
+                libre(rows, geometrie.rows_per_panel, ligne,
                       geometrie.card_h, paper_h))
 
-    def panel_default_mm(self, index: int) -> tuple[float, float]:
+    def panel_default_mm(self, index: int,
+                         shape: tuple[int, int] | None = None) -> tuple[float, float]:
         """Où se pose ce bout de grille quand on n'y a pas touché.
 
         Calé à gauche, et centré en hauteur tant qu'il n'y a qu'une ligne de
@@ -773,11 +800,14 @@ class Session(QObject):
         """
         if self.panel_rows > 1:
             return (0.0, 0.0)
-        return (0.0, self.panel_free_mm(index)[1] / 2)
+        return (0.0, self.panel_free_mm(index, shape)[1] / 2)
 
-    def panel_position_mm(self, index: int) -> tuple[float, float]:
+    def panel_position_mm(self, index: int,
+                          shape: tuple[int, int] | None = None) -> tuple[float, float]:
         """Où ce bout de grille se trouve : déplacé s'il l'a été, défaut sinon."""
-        return self.panel_offsets.get(index, self.panel_default_mm(index))
+        if index in self.panel_offsets:
+            return self.panel_offsets[index]
+        return self.panel_default_mm(index, shape)
 
     def sheet_mm(self) -> tuple[float, float]:
         """La surface entière, toutes feuilles mises bout à bout."""

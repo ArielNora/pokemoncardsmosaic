@@ -110,6 +110,12 @@ class ExportTab(QWidget):
         super().__init__(parent)
         self._session = session
         self._updating = False
+        # Lignes et colonnes de l'agencement affiché, `None` sans agencement :
+        # à l'export, la forme vient de lui et non de l'étape 2.
+        self._shape: tuple[int, int] | None = None
+
+    def set_shape(self, shape: tuple[int, int] | None) -> None:
+        self._shape = shape
 
     def title(self) -> str:
         raise NotImplementedError
@@ -145,7 +151,8 @@ class PresentationTab(ExportTab):
         self._auto_width = QPushButton()
         self._auto_width.clicked.connect(self._on_auto_width)
         self._centre = QPushButton()
-        self._centre.clicked.connect(self._session.center_panels)
+        self._centre.clicked.connect(
+            lambda: self._session.center_panels(self._shape))
         for bouton in (self._real_width, self._auto_width, self._centre):
             bouton.setFixedHeight(SMALL_BUTTON_HEIGHT)
             police = bouton.font()
@@ -202,7 +209,7 @@ class PresentationTab(ExportTab):
             # ⚠️ **La géométrie compte en pixels.** Posée telle quelle dans un
             # champ en millimètres, la largeur automatique s'affichait à 200,
             # c'est-à-dire écrêtée au maximum du champ.
-            largeur = (session.panel_geometry().card_w
+            largeur = (session.panel_geometry(self._shape).card_w
                        * MM_PER_INCH / session.dpi)
         self._width.setValue(largeur)
         self._updating = False
@@ -467,7 +474,7 @@ class ResolutionTab(ExportTab):
         # ⚠️ **Le champ s'arrête à la finesse utile**, sauf passe-droit : au
         # premier essai, on montait à 1200 dpi sans rien y gagner qu'un fichier
         # quatre fois plus lourd.
-        utile = session.useful_dpi()
+        utile = session.useful_dpi(self._shape)
         plafond = (DPI_CEILING if session.beyond_useful_dpi or utile == float("inf")
                    else max(50, min(DPI_CEILING, round(utile))))
         self._dpi.setMaximum(plafond)
@@ -766,7 +773,9 @@ class ExportStep(QWidget):
         # Le glissement sert à se promener dans l'image, sauf en mode
         # « Ajuster », où il rend la souris à la grille.
         self._preview.set_draggable(False)
-        self._preview.panel_moved.connect(self._session.move_panel)
+        self._preview.panel_moved.connect(
+            lambda index, x, y: self._session.move_panel(
+                index, x, y, self._preview.shape()))
         self._zoom = ZOOM_MIN
         # Vrai le temps d'une recopie du zoom dans son champ : le champ émet à
         # chaque écriture, et sans ce garde il rezoomerait sur lui-même.
@@ -1000,6 +1009,11 @@ class ExportStep(QWidget):
         self._slot = slot
         self._saved.set_current(slot)
         self._preview.set_arrangement(saved.grid, saved.cards)
+        # La forme change avec l'agencement, et avec elle la largeur des cartes
+        # et la finesse utile que les onglets affichent.
+        for onglet in self._tabs:
+            onglet.set_shape(self._preview.shape())
+            onglet.refresh()
         self._update_summary()
 
     def enter(self) -> None:
@@ -1016,6 +1030,7 @@ class ExportStep(QWidget):
         # Les onglets ne se rafraîchissent qu'au changement de mise en page :
         # en arrivant, la finesse utile a pu changer sans qu'ils l'apprennent.
         for onglet in self._tabs:
+            onglet.set_shape(self._preview.shape())
             onglet.refresh()
         self._refresh_preview()
 
@@ -1043,8 +1058,10 @@ class ExportStep(QWidget):
     def _fits_the_pages(self) -> bool:
         """La mosaïque tient-elle sur les feuilles, à la taille courante ?"""
         session = self._session
-        return grid_fits(session.panels, session.cols, session.rows,
-                         session.panel_geometry(), session.panel_rows)
+        forme = self._preview.shape()
+        rows, cols = forme if forme is not None else (session.rows, session.cols)
+        return grid_fits(session.panels, cols, rows,
+                         session.panel_geometry(forme), session.panel_rows)
 
     def _update_summary(self) -> None:
         saved = self.current_saved()
