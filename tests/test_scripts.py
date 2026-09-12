@@ -305,3 +305,88 @@ def test_the_identifier_keeps_the_digits_as_written(tmp_path):
 
     ids = {carte["id"] for carte in produit["cards"]}
     assert ids == {"PROMO-A-009", "A1-227"}
+
+
+# --- Le lanceur de la suite, par lots bornés -------------------------------
+
+lanceur = load("run_tests")
+
+
+def test_collected_tests_are_grouped_by_file_in_order():
+    """Un identifiant paramétré porte crochets, espaces ou accents : il repart
+    tel quel en argument, sans être découpé."""
+    sortie = (
+        "tests/test_a.py::test_un\n"
+        "tests/test_a.py::test_deux[_rename_current-rename_arrangement]\n"
+        "tests/test_b.py::test_trois[Mustébouée ex]\n"
+        "tests/test_a.py::test_quatre\n"
+        "\n"
+        "4 tests collected in 0.12s\n"
+    )
+
+    groupes = lanceur.grouper(sortie)
+
+    assert list(groupes) == ["tests/test_a.py", "tests/test_b.py"]
+    assert groupes["tests/test_a.py"] == [
+        "tests/test_a.py::test_un",
+        "tests/test_a.py::test_deux[_rename_current-rename_arrangement]",
+        "tests/test_a.py::test_quatre",
+    ]
+    assert groupes["tests/test_b.py"] == ["tests/test_b.py::test_trois[Mustébouée ex]"]
+
+
+def test_batches_never_exceed_their_bound_and_keep_the_order():
+    """L'utilisateur a demandé des lots d'un nombre de tests limité, pour ne pas
+    surcharger sa machine."""
+    identifiants = [f"tests/test_a.py::test_{rang}" for rang in range(155)]
+
+    decoupe = lanceur.lots(identifiants, 50)
+
+    assert [len(lot) for lot in decoupe] == [50, 50, 50, 5]
+    assert [un for lot in decoupe for un in lot] == identifiants
+    assert lanceur.lots(identifiants[:3], 0) == [[un] for un in identifiants[:3]]
+
+
+class FauxResultat:
+    def __init__(self, returncode=0, stdout=""):
+        self.returncode, self.stdout, self.stderr = returncode, stdout, ""
+
+
+def test_the_runner_owns_the_verbosity(monkeypatch):
+    """⚠️ Un `-q` de plus faisait écrire à la collecte un compte par fichier, un
+    `-v` un arbre de modules : l'un comme l'autre faisait répondre « Aucun test
+    retenu » sans en lancer un seul. L'ancien en-tête donnait `-x -q` en exemple."""
+    assert lanceur.options(["-q", "-x", "-vv", "--quiet", "-k", "zoom",
+                            "--verbosity", "2", "--verbosity=3", "--verbose"]) \
+        == ["-x", "-k", "zoom"]
+
+    commandes = []
+
+    def faux_run(commande, **_):
+        commandes.append(commande)
+        if "--collect-only" in commande:
+            return FauxResultat(0, "tests/test_a.py::test_un\n\n1 test collected\n")
+        return FauxResultat(0, "1 passed in 0.01s\n")
+
+    monkeypatch.setattr(lanceur.subprocess, "run", faux_run)
+
+    assert lanceur.main(["-q", "-v", "-k", "un"]) == 0
+    collecte, lot = commandes
+    assert collecte.count("-q") == 1 and "-v" not in collecte
+    assert lot.count("-q") == 1 and "-v" not in lot
+    assert "tests/test_a.py::test_un" in lot
+
+
+@pytest.mark.parametrize("code, sortie, attendu", [
+    (5, "\nno tests collected, 3 deselected\n", 5),
+    (0, "tests/test_a.py: 3\n", 1),
+])
+def test_an_empty_collection_is_never_green(monkeypatch, capsys, code, sortie, attendu):
+    """Rien retenu par `-k` rend 5, comme pytest ; une collecte réussie dont on
+    ne lit aucun identifiant est une erreur, et non « aucun test » : c'est ainsi
+    que le défaut de verbosité passait pour un filtre vide."""
+    monkeypatch.setattr(lanceur.subprocess, "run",
+                        lambda commande, **_: FauxResultat(code, sortie))
+
+    assert lanceur.main([]) == attendu
+    assert ("illisible" in capsys.readouterr().out) == (attendu == 1)

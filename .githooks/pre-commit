@@ -17,9 +17,8 @@ fi
 echo "pre-commit : ruff…"
 .venv/bin/ruff check src tests
 
-# Fichier par fichier plutôt qu'en un bloc : en un seul processus, la
-# QApplication, les widgets, les vignettes et les images d'export s'accumulent.
-# Le pic mémoire passe de 177 à 142 Mo, pour deux secondes de plus.
+# Par lots de tests bornés, un processus par lot, jamais deux à la fois : la
+# machine est juste en mémoire. Les mesures sont dans scripts/run_tests.py.
 echo "pre-commit : pytest…"
 scripts/run_tests.sh
 

@@ -20,7 +20,9 @@ ou les deux. Complémentaire de `/code-review`, qui ne regarde que le diff.
 seuil nettement plus haut que celui de `/code-review`. À lancer **juste avant un
 commit**, comme la revue.
 
-**Pas sur tout le projet d'un coup** : une invocation par grosse partie. Les
+**Pas sur tout le projet d'un coup** : une invocation par grosse partie. Et
+**un lot après l'autre** : les audits lancent des scripts de reproduction, et
+quatre en même temps ont surchargé la machine le 2026-09-12. Les
 découpages qui ont du sens ici :
 
 - la chaîne d'acquisition : `scripts/` + `src/pokemon_mosaic/artwork.py`
@@ -42,19 +44,27 @@ Ses constats se vérifient un par un, comme ceux de toute revue.
 
 ## Lancer les tests
 
-**Fichier par fichier**, pas en un bloc : la machine de l'utilisateur est juste
-en mémoire :
+**Par lots de 50 tests au plus, un processus par lot, l'un après l'autre** : la
+machine de l'utilisateur est juste en mémoire, et il l'a demandé.
 
 ```bash
 scripts/run_tests.sh
 ```
 
-Un processus par fichier de tests, code de sortie 1 si l'un échoue. C'est ce que
-lance le hook `pre-commit`. En un seul processus, la QApplication partagée, les
-widgets, les vignettes et les images d'export s'accumulent : **177 Mo de pic d'un
-bloc contre 142 Mo fichier par fichier**, pour deux secondes de plus.
+C'est ce que lance le hook `pre-commit`, code de sortie 1 si un lot échoue ;
+`TESTS_PAR_LOT=25` resserre les lots. En un seul processus, la QApplication
+partagée, les widgets, les vignettes et les images d'export s'accumulent :
+**177 Mo de pic d'un bloc contre 142 Mo fichier par fichier**.
 
-Pour un fichier seul, `uv run pytest tests/test_x.py` reste le bon geste.
+⚠️ **Rien en parallèle.** Mesuré le 2026-09-12 sur le plus gros fichier : 117 Mo
+d'un bloc, 113 Mo par lots de 50, et le socle d'un processus en fait déjà 108.
+La taille du lot change peu : ce qui surcharge la machine, c'est de lancer
+plusieurs choses à la fois. Deux suites de tests, des tests et des scripts de
+reproduction côte à côte, des contrôles par mutation simultanés, plusieurs
+sous-agents qui exécutent du code : tout cela passe **l'un après l'autre**.
+
+Pour un fichier seul de moins de 50 tests, `uv run pytest tests/test_x.py`
+reste le bon geste.
 
 ⚠️ **Ne pas gonfler les fixtures.** Des vignettes de 178×246 dans une fenêtre de
 900×600, pour tester le zoom, coûtaient 83 Mo à elles seules ; des vignettes de
