@@ -1061,9 +1061,14 @@ class ExportStep(QWidget):
             return
         self._export.setEnabled(self._export_thread is None and tient)
         self._update_glow(self._export.isEnabled())
+        # ⚠️ **Le rang parmi les cases occupées**, et non le numéro de la case :
+        # les cases gardent leur place quand on en vide une, et « Agencement 3
+        # sur 2 » s'affichait après avoir retiré le premier de trois.
+        rang = sum(1 for garde in self._session.saved[: (self._slot or 0) + 1]
+                   if garde is not None)
         self._summary.setText(
             self.tr("Agencement %1 sur %2, score %3")
-             .replace("%1", str((self._slot or 0) + 1))
+             .replace("%1", str(rang))
              .replace("%2", str(self._session.saved_count()))
              .replace("%3", f"{saved.score:.1f}")
         )

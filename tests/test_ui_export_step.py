@@ -992,3 +992,21 @@ def test_the_resolution_tab_settles_on_the_useful_maximum(ecran):
     resolution.refresh()
 
     assert session.dpi == posee == round(session.useful_dpi()), "l'onglet oscille"
+
+
+def test_the_summary_counts_among_the_kept_arrangements(ecran):
+    """⚠️ Le résumé combinait le numéro de la case et le nombre de cases
+    occupées : les cases gardant leur place, retirer le premier de trois
+    agencements puis ouvrir le troisième affichait « Agencement 3 sur 2 ».
+    Reproduit par l'audit."""
+    widget, session, jeu = ecran
+    grille = np.arange(20).reshape(4, 5)
+    session.save_grid(grille, jeu, iteration=200, score=2.0)
+    session.save_grid(grille, jeu, iteration=300, score=3.0)
+    session.remove_saved(0)
+
+    widget.enter()
+    widget.show_slot(2)
+
+    assert "Agencement 2 sur 2" in widget._summary.text()
+
