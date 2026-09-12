@@ -83,7 +83,10 @@ def estimated_snapshots(iterations: int, every: int, annealing: bool,
 
 
 def format_duration(seconds: float) -> str:
+    # ⚠️ Arrondi **avant** de comparer : de 59,5 à 59,99 s, le seuil passait et
+    # l'arrondi de l'affichage donnait « 60 s » au lieu de « 1 min 00 s ».
+    seconds = round(seconds)
     if seconds < 60:
-        return f"{seconds:.0f} s"
-    minutes, rest = divmod(int(seconds), 60)
+        return f"{seconds} s"
+    minutes, rest = divmod(seconds, 60)
     return f"{minutes} min {rest:02d} s"

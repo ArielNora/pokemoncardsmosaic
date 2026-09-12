@@ -189,6 +189,8 @@ def test_snapshot_range_handles_a_zero_cadence():
 
 @pytest.mark.parametrize("seconds,expected", [
     (8.3, "8 s"), (59.4, "59 s"), (60, "1 min 00 s"), (605, "10 min 05 s"),
+    # ⚠️ Arrondi après le seuil, 59,84 s s'affichait « 60 s ».
+    (59.84, "1 min 00 s"),
 ])
 def test_duration_is_readable(seconds, expected):
     assert format_duration(seconds) == expected
