@@ -163,12 +163,21 @@ def publish(repo: str, out: str, mirror: dict, notes: str,
     Le catalogue part en dernier dans la liste mais dans le même appel : une
     release qui porterait les archives sans lui laisserait l'application
     incapable de dire ce qu'elles contiennent.
+
+    ⚠️ **Une release existante se met à jour en entier.** L'envoi `--clobber`
+    remplaçait les fichiers sans toucher aux notes : les chiffres de la première
+    publication, cartes et poids, restaient affichés. Titre et notes suivent donc
+    l'envoi. Les archives d'une extension retirée restaient en ligne sans que
+    rien ne le dise : elles sont listées avec la commande qui les retire, et non
+    retirées d'office, une suppression sur une release publique ne se
+    rattrapant pas.
     """
     archives = [os.path.join(out, entry["archive"]) for entry in mirror.values()]
     archives.append(manifest_path)
     notes_path = os.path.join(out, "notes.md")
     with open(notes_path, "w", encoding="utf-8") as handle:
         handle.write(notes)
+    titre = f"Illustrations : manifeste v{MANIFEST_VERSION}"
 
     existe = subprocess.run(["gh", "release", "view", TAG, "--repo", repo],
                             capture_output=True, text=True,
@@ -178,11 +187,44 @@ def publish(repo: str, out: str, mirror: dict, notes: str,
                     "--repo", repo, "--clobber"]
     else:
         commande = ["gh", "release", "create", TAG, *archives, "--repo", repo,
-                    "--title", f"Illustrations : manifeste v{MANIFEST_VERSION}",
-                    "--notes-file", notes_path]
+                    "--title", titre, "--notes-file", notes_path]
     print("  " + " ".join(commande[:4])
           + f" … ({len(archives) - 1} archives + le catalogue)")
-    return subprocess.run(commande, check=False).returncode
+    code = subprocess.run(commande, check=False).returncode
+    if code != 0 or not existe:
+        return code
+
+    edition = subprocess.run(["gh", "release", "edit", TAG, "--repo", repo,
+                              "--title", titre, "--notes-file", notes_path],
+                             check=False).returncode
+    if edition != 0:
+        # Les fichiers sont en ligne : la publication compte comme faite, et le
+        # catalogue suivi doit les rejoindre. Seules les notes sont en retard.
+        print(f"⚠️ Fichiers envoyés, mais titre et notes n'ont pas pu être mis à "
+              f"jour (code {edition}).", file=sys.stderr)
+    _signal_stale_assets(repo, archives)
+    return 0
+
+
+def _signal_stale_assets(repo: str, envoyes: list[str]) -> None:
+    """Nomme les fichiers en ligne que ce catalogue ne décrit plus."""
+    vue = subprocess.run(["gh", "release", "view", TAG, "--repo", repo,
+                          "--json", "assets"],
+                         capture_output=True, text=True, check=False)
+    if vue.returncode != 0:
+        return
+    try:
+        en_ligne = {asset["name"] for asset in json.loads(vue.stdout)["assets"]}
+    except (ValueError, TypeError, KeyError):
+        return
+    perimes = sorted(en_ligne - {os.path.basename(chemin) for chemin in envoyes})
+    if not perimes:
+        return
+    print(f"\n⚠️ {len(perimes)} fichier(s) en ligne ne correspondent plus au "
+          f"catalogue. Pour les retirer :", file=sys.stderr)
+    for nom in perimes:
+        print(f"  gh release delete-asset {TAG} {nom} --repo {repo} --yes",
+              file=sys.stderr)
 
 
 def main(argv=None) -> int:

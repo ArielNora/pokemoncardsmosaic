@@ -505,3 +505,56 @@ def test_one_set_per_folder_or_archives_would_collide(tmp_path, cartes, message)
 
     assert message in str(refus.value)
     assert not list((tmp_path / "miroir").glob("*.zip"))
+
+
+class FauxGh:
+    """Rejoue `gh` sans réseau : chaque commande est notée, la release dit si
+    elle existe et quels fichiers elle porte."""
+
+    def __init__(self, existe=True, en_ligne=()):
+        self.commandes, self.existe, self.en_ligne = [], existe, en_ligne
+
+    def __call__(self, commande, **_):
+        self.commandes.append(commande)
+        if commande[:3] == ["gh", "release", "view"] and "--json" in commande:
+            return FauxResultat(0, json.dumps(
+                {"assets": [{"name": nom} for nom in self.en_ligne]}))
+        if commande[:3] == ["gh", "release", "view"]:
+            return FauxResultat(0 if self.existe else 1)
+        return FauxResultat(0)
+
+
+MIROIR_A1 = {"A1": {"archive": "a1.zip", "sha256": "0", "bytes": 1, "cards": 1}}
+
+
+def test_updating_a_release_refreshes_its_notes_and_names_stale_files(
+        tmp_path, monkeypatch, capsys):
+    """⚠️ L'envoi `--clobber` laissait les notes de la première publication,
+    cartes et poids compris, et les archives d'une extension retirée restaient
+    en ligne sans que rien ne le dise. On les nomme, sans les supprimer : une
+    suppression sur une release publique ne se rattrape pas."""
+    gh = FauxGh(en_ligne=("a1.zip", "cards.json", "ancienne.zip"))
+    monkeypatch.setattr(publie.subprocess, "run", gh)
+
+    code = publie.publish("moi/miroir", str(tmp_path), MIROIR_A1, "notes",
+                          str(tmp_path / "cards.json"))
+
+    assert code == 0
+    assert [commande[2] for commande in gh.commandes] == ["view", "upload", "edit", "view"]
+    edition = gh.commandes[2]
+    assert "--notes-file" in edition and "--title" in edition
+    alerte = capsys.readouterr().err
+    assert "ancienne.zip" in alerte and "delete-asset" in alerte
+    assert "a1.zip" not in alerte and "cards.json" not in alerte
+
+
+def test_a_new_release_is_created_with_its_notes(tmp_path, monkeypatch):
+    gh = FauxGh(existe=False)
+    monkeypatch.setattr(publie.subprocess, "run", gh)
+
+    code = publie.publish("moi/miroir", str(tmp_path), MIROIR_A1, "notes",
+                          str(tmp_path / "cards.json"))
+
+    assert code == 0
+    assert [commande[2] for commande in gh.commandes] == ["view", "create"]
+    assert "--notes-file" in gh.commandes[1]
