@@ -344,11 +344,8 @@ def _fill_gaps(draw, plan: PosterPlan, window) -> None:
     couleur = plan.settings.gap_colour
     if couleur is None or couleur == plan.settings.background:
         return
-    boite = _mosaic_box(plan, window)
-    if boite is None:
-        return
-    gauche, haut, droite, bas = boite
-    draw.rectangle([gauche, haut, droite - 1, bas - 1], fill=couleur)
+    for gauche, haut, droite, bas in _mosaic_boxes(plan, window):
+        draw.rectangle([gauche, haut, droite - 1, bas - 1], fill=couleur)
 
 
 def _line(canvas: Image.Image, x: int, y: int, count: int,
@@ -462,10 +459,16 @@ def _paint_border(canvas: Image.Image, plan: PosterPlan, window) -> None:
 
     Les quatre coins se mélangent en bilinéaire, du pixel d'angle vers le fond :
     laissés au fond, ils faisaient quatre encoches sombres.
+
+    ⚠️ **Un liseré par morceau de feuille** présent dans la fenêtre : voir
+    `_mosaic_boxes`.
     """
-    boite = _mosaic_box(plan, window)
-    if boite is None:
-        return
+    for boite in _mosaic_boxes(plan, window):
+        _paint_border_of(canvas, plan, boite)
+
+
+def _paint_border_of(canvas: Image.Image, plan: PosterPlan, boite) -> None:
+    """Le liseré d'un morceau de mosaïque, coins compris."""
     gauche, haut, droite, bas = boite
     gap = plan.gap_px
     fond = plan.settings.background
@@ -501,23 +504,35 @@ def _paint_border(canvas: Image.Image, plan: PosterPlan, window) -> None:
         _paste(canvas, chameleon.crossing(*coins, gap, gap), x, y)
 
 
-def _mosaic_box(plan: PosterPlan, window) -> tuple[int, int, int, int] | None:
-    """L'étendue de la mosaïque dans cette fenêtre, en coordonnées d'image."""
+def _mosaic_boxes(plan: PosterPlan, window) -> list[tuple[int, int, int, int]]:
+    """L'étendue de chaque morceau de mosaïque dans cette fenêtre, en
+    coordonnées d'image : un par feuille dont des cartes y apparaissent.
+
+    ⚠️ **Un morceau par feuille, et non une seule boîte.** Avec un chevauchement,
+    la fenêtre d'une feuille montre aussi le bord de sa voisine : réunies, leurs
+    cartes faisaient une boîte qui recouvrait la bande libre entre les deux
+    morceaux. La couleur d'écart s'y peignait et le liseré caméléon se posait au
+    bord de la boîte, et non de la grille. Reproduit par l'audit : sur A6 à deux
+    feuilles, la bande libre virait au rouge dès 10 mm de chevauchement. Chaque
+    morceau garde ses écarts colorés, jusque dans la bande de chevauchement où la
+    voisine se recopie, et le papier entre deux morceaux garde le fond.
+    """
     x0, y0, x1, y1 = window
     card_w, card_h = plan.card_px
-    gauche = haut = droite = bas = None
+    etendues: dict[int, list[int]] = {}
     for r in range(plan.rows):
         for c in range(plan.cols):
             ox, oy = plan.card_origin(r, c)
             if not (ox < x1 and ox + card_w > x0 and oy < y1 and oy + card_h > y0):
                 continue
-            gauche = ox if gauche is None else min(gauche, ox)
-            haut = oy if haut is None else min(haut, oy)
-            droite = ox + card_w if droite is None else max(droite, ox + card_w)
-            bas = oy + card_h if bas is None else max(bas, oy + card_h)
-    if gauche is None:
-        return None
-    return (gauche - x0, haut - y0, droite - x0, bas - y0)
+            boite = etendues.setdefault(plan.panel_of(r, c),
+                                        [ox, oy, ox + card_w, oy + card_h])
+            boite[0] = min(boite[0], ox)
+            boite[1] = min(boite[1], oy)
+            boite[2] = max(boite[2], ox + card_w)
+            boite[3] = max(boite[3], oy + card_h)
+    return [(gauche - x0, haut - y0, droite - x0, bas - y0)
+            for _, (gauche, haut, droite, bas) in sorted(etendues.items())]
 
 
 def _draw_crop_marks(image: Image.Image, plan: PosterPlan, panel: int) -> None:

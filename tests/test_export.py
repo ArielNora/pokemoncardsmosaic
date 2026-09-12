@@ -656,3 +656,63 @@ def test_the_useful_dpi_warning_follows_the_real_card(ecart, averti):
                        PosterSettings(paper="A2", card_gap_mm=ecart, dpi=1000))
 
     assert any("maximum utile" in w for w in plan.warnings) == averti
+
+
+# --- Le chevauchement ne réunit pas deux morceaux de feuille --------------------
+
+ROUGE, BLANC = (255, 0, 0), (255, 255, 255)
+
+
+def deux_feuilles(**reglages):
+    """A6 à 50 DPI, deux feuilles de deux cartes chacune : assez de place à
+    droite du premier morceau pour une bande libre."""
+    from pokemon_mosaic.export import render_panel
+
+    jeu = coloured_cards([(0, 180, 0)] * 12)
+    grille = np.arange(12).reshape(2, 6)
+    reglages = {"gap_colour": ROUGE, "background": BLANC, **reglages}
+    settings = PosterSettings(paper="A6", dpi=50, panels=2, card_width_mm=40,
+                              card_gap_mm=3, **reglages)
+    plan = plan_poster(grille, jeu, settings)
+    return render_panel(grille, jeu, plan, 0, full_resolution=False), plan
+
+
+def test_the_free_band_between_two_pieces_keeps_the_background():
+    """⚠️ La boîte de la mosaïque réunissait toutes les cartes de la fenêtre,
+    voisine comprise : avec un chevauchement, elle recouvrait la bande libre,
+    et la couleur d'écart s'y peignait. Reproduit par l'audit : rouge dès 10 mm,
+    blanc sans chevauchement."""
+    image, plan = deux_feuilles(overlap_mm=10)
+    per = plan.cards_per_panel
+    fin = plan.card_origin(0, per - 1)[0] + plan.card_px[0]
+    x = (fin + plan.settings.paper_px[0]) // 2
+    y = plan.card_origin(0, 0)[1] + plan.card_px[1] // 2
+
+    assert image.getpixel((x, y)) == BLANC
+
+
+def test_the_neighbours_gaps_keep_their_colour_in_the_overlap():
+    """La bande de chevauchement recopie le bord de la voisine, pour qu'on les
+    raboute : ses écarts y gardent la couleur qu'ils ont sur sa propre feuille.
+    Ne garder que les cartes de la feuille rendue les aurait laissés au fond."""
+    image, plan = deux_feuilles(overlap_mm=50)
+    per = plan.cards_per_panel
+    voisine_x, voisine_y = plan.card_origin(0, per)
+    ecart_x = voisine_x + plan.card_px[0] + plan.gap_px // 2
+    assert ecart_x < image.width, "l'écart de la voisine doit tomber dans la bande"
+
+    assert image.getpixel((ecart_x, voisine_y + plan.card_px[1] // 2)) == ROUGE
+
+
+def test_the_chameleon_border_hugs_each_piece():
+    """Posé au bord de la boîte élargie, le liseré manquait à droite du premier
+    morceau, où l'audit ne lisait que du blanc. La couleur d'écart vaut ici le
+    fond : sinon, son aplat recouvrirait ce pixel et masquerait l'absence du
+    liseré."""
+    image, plan = deux_feuilles(overlap_mm=10, chameleon_border=True,
+                                gap_colour=BLANC)
+    per = plan.cards_per_panel
+    fin = plan.card_origin(0, per - 1)[0] + plan.card_px[0]
+    y = plan.card_origin(0, 0)[1] + plan.card_px[1] // 2
+
+    assert image.getpixel((fin, y)) != BLANC
