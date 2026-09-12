@@ -215,10 +215,13 @@ def remember_system(app) -> None:
     """Retient la palette du système, avant que nous ne posions la nôtre.
 
     ⚠️ Sans elle, le repli de `system_is_dark` relit `app.palette()` : devenue
-    **la nôtre** dès le premier `apply`, et confirme donc toujours le mode
-    courant. Sur un bureau où `colorScheme()` rend `Unknown`, une bascule en
-    cours d'exécution ne pouvait plus être détectée : l'application restait
-    définitivement dans le mode où elle avait démarré.
+    **la nôtre** dès le premier `apply`, elle confirme toujours le mode courant,
+    et le repli ne dit plus rien du système.
+
+    ⚠️ **Elle est retenue une fois pour toutes**, au démarrage. Sur un bureau où
+    `colorScheme()` rend `Unknown`, le repli redonne donc le mode de départ :
+    une bascule en cours d'exécution n'y est **pas** suivie. Seule la réponse
+    directe de `colorScheme()` suit les bascules.
     """
     global _SYSTEM_PALETTE
     if _SYSTEM_PALETTE is None:
