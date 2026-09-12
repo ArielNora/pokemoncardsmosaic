@@ -1096,3 +1096,87 @@ def test_the_overflow_warning_reads_the_arrangement(ecran):
     assert not widget._warning.isHidden()
     assert not widget._export.isEnabled()
 
+
+# --- L'aperçu sur plusieurs feuilles ----------------------------------------
+
+GAP_MM = 20.0
+FOND = (250, 250, 250)
+
+
+@pytest.fixture
+def deux_morceaux(ecran):
+    """Une rangée de cinq cartes sur deux feuilles : trois sur la première,
+    deux sur la seconde, du papier entre les deux morceaux."""
+    widget, session, jeu = ecran
+    session.remove_saved(0)
+    session.save_grid(np.arange(5).reshape(1, 5), jeu, iteration=1, score=1.0)
+    session.set_layout(panels=2, card_gap_mm=GAP_MM)
+    largeur = (session.paper_mm()[0] - 2 * GAP_MM) / 3.2
+    session.set_layout(card_width_mm=largeur)
+    session.set_algorithm(gap_colour=(0, 0, 250), background_colour=FOND)
+    assert session.panel_of(0, 2, (1, 5)) == 0
+    assert session.panel_of(0, 3, (1, 5)) == 1
+    return widget, session
+
+
+def _pixel(widget, x, y):
+    widget.enter()
+    widget.show()
+    image = widget._preview.grab().toImage()
+    ratio = image.devicePixelRatio() or 1
+    return image.pixelColor(int(x * ratio), int(y * ratio)).getRgb()[:3]
+
+
+def _cases(widget):
+    widget.enter()
+    widget.show()
+    return {(row, col): rect for row, col, rect
+            in widget._preview.grid_cells(widget._preview.rects()[0])}
+
+
+def test_the_paper_between_two_pieces_keeps_the_background(deux_morceaux):
+    """L'aplat d'écart se peignait sur toute l'étendue, papier entre deux
+    morceaux compris ; l'export le borne à chaque morceau."""
+    widget, _ = deux_morceaux
+    cases = _cases(widget)
+    x = (cases[0, 2].right() + cases[0, 3].left()) / 2
+
+    assert _pixel(widget, x, cases[0, 2].center().y()) == FOND
+
+
+def test_the_gap_colour_shows_with_the_chameleon_border_alone(deux_morceaux):
+    """Bordure caméléon seule cochée : l'aplat d'écart était sauté, et les
+    écarts restaient au fond."""
+    widget, session = deux_morceaux
+    session.set_algorithm(chameleon_border=True)
+    cases = _cases(widget)
+    x = (cases[0, 0].right() + cases[0, 1].left()) / 2
+
+    assert _pixel(widget, x, cases[0, 0].center().y()) == (0, 0, 250)
+
+
+def test_the_chameleon_border_rings_each_piece(deux_morceaux):
+    """La bordure cernait le poster entier : rien au bord intérieur d'un
+    morceau, du côté du papier qui le sépare de l'autre."""
+    widget, session = deux_morceaux
+    session.set_algorithm(chameleon_border=True)
+    cases = _cases(widget)
+    ecart = widget._preview._screen_gap()[0]
+    x = cases[0, 2].right() + ecart / 2
+
+    assert _pixel(widget, x, cases[0, 2].center().y()) != FOND
+
+
+def test_the_chameleon_border_fills_its_corners(deux_morceaux):
+    """Les quatre coins restaient au fond : une encoche à chaque angle.
+
+    Le coin haut-droit du premier morceau : le haut-gauche tombe au bord du
+    papier, les morceaux étant calés à gauche, et le dessin y est rogné."""
+    widget, session = deux_morceaux
+    session.set_algorithm(chameleon_border=True)
+    cases = _cases(widget)
+    ecart = widget._preview._screen_gap()[0]
+    coin = cases[0, 2]
+
+    assert _pixel(widget, coin.right() + ecart / 2, coin.top() - ecart / 2) != FOND
+

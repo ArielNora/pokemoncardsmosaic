@@ -683,16 +683,30 @@ class PagePreview(QWidget):
         painter.save()
         painter.setClipRect(feuille)
         painter.setPen(Qt.NoPen)
-        etendue = cases[0][2]
-        for _row, _col, rect in cases:
-            etendue = etendue.united(rect)
+        # ⚠️ **Un morceau par feuille**, comme à l'export (`_mosaic_boxes`).
+        # D'un seul bloc, l'étendue couvrait le papier entre deux morceaux : la
+        # couleur d'écart s'y peignait, et la bordure caméléon cernait le poster
+        # entier au lieu de chaque morceau.
+        geometrie = self._geometry_cache()
+        morceaux: dict[int, list] = {}
+        for row, col, rect in cases:
+            morceaux.setdefault(session.panel_of(row, col, geometry=geometrie),
+                                []).append((row, col, rect))
+        etendues = {}
+        for index, siennes in morceaux.items():
+            etendue = siennes[0][2]
+            for _row, _col, rect in siennes:
+                etendue = etendue.united(rect)
+            etendues[index] = etendue
+        # ⚠️ **L'aplat d'abord, caméléon ou non**, comme l'export : la seule
+        # bordure cochée sautait l'aplat, et les écarts restaient au fond.
+        for etendue in etendues.values():
+            painter.fillRect(etendue, QColor(*session.gap_colour))
         if session.chameleon_gaps or session.chameleon_border:
             # ⚠️ **L'aperçu passe par la même arithmétique que l'export.** Un
             # dégradé approché à l'écran, moyenné plutôt que pris au pixel,
             # aurait montré autre chose que ce qui s'imprime.
-            self._draw_chameleon(painter, cases, etendue)
-        else:
-            painter.fillRect(etendue, QColor(*session.gap_colour))
+            self._draw_chameleon(painter, cases, morceaux, etendues)
         rows, cols = self._grid.shape
         for row, col, rect in cases:
             if row >= rows or col >= cols:
@@ -709,7 +723,7 @@ class PagePreview(QWidget):
                 painter.drawPixmap(case, tuile)
         painter.restore()
 
-    def _draw_chameleon(self, painter, cases, etendue: QRectF) -> None:
+    def _draw_chameleon(self, painter, cases, morceaux, etendues) -> None:
         """Les écarts, les croisées et la bordure, tirés des vignettes.
 
         Les cases ne se suivent pas forcément : d'une feuille à l'autre, deux
@@ -726,7 +740,10 @@ class PagePreview(QWidget):
                                     horizontal=False)
                 self._chameleon_crossing(painter, rects, row, col, rect)
         if session.chameleon_border:
-            self._chameleon_border(painter, etendue, rects)
+            for index, siennes in morceaux.items():
+                self._chameleon_border(
+                    painter, etendues[index],
+                    {(row, col): rect for row, col, rect in siennes})
 
     def _edge(self, row: int, col: int, side: str) -> np.ndarray | None:
         """La ligne de pixels d'un bord de case, vignette ou case vide."""
@@ -847,6 +864,27 @@ class PagePreview(QWidget):
             bande = chameleon.border_band(bord_pixels, fond, GRADIENT_STEPS,
                                           cote in ("gauche", "droite"), dehors)
             painter.drawImage(zone, _to_qimage(bande))
+
+        # ⚠️ **Les quatre coins aussi**, mélangés du pixel d'angle vers le fond
+        # comme à l'export : laissés au fond, ils faisaient quatre encoches.
+        # `dedans` est le coin du carré qui touche la carte.
+        haut, bas, gauche, droite = min(rows), max(rows), min(cols), max(cols)
+        for zone, dedans, bord, bout in (
+            (QRectF(etendue.left() - largeur, etendue.top() - largeur,
+                    largeur, largeur), 3, self._edge(haut, gauche, "gauche"), 0),
+            (QRectF(etendue.right(), etendue.top() - largeur, largeur, largeur),
+             2, self._edge(haut, droite, "droite"), 0),
+            (QRectF(etendue.left() - largeur, etendue.bottom(), largeur, largeur),
+             1, self._edge(bas, gauche, "gauche"), -1),
+            (QRectF(etendue.right(), etendue.bottom(), largeur, largeur),
+             0, self._edge(bas, droite, "droite"), -1),
+        ):
+            if bord is None:
+                continue
+            coins = [fond, fond, fond, fond]
+            coins[dedans] = bord[bout]
+            carre = chameleon.crossing(*coins, GRADIENT_STEPS, GRADIENT_STEPS)
+            painter.drawImage(zone, _to_qimage(carre))
 
     def _screen_gap(self) -> tuple[float, float]:
         """L'écart réglé, en pixels d'écran, dans les deux sens.
