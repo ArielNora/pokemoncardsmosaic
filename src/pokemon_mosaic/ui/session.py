@@ -4,6 +4,7 @@ Une seule source de vérité : les écrans lisent et modifient cet objet, et se
 préviennent par signaux. Rien n'est recalculé en double d'un écran à l'autre.
 """
 
+import math
 import os
 import re
 from dataclasses import dataclass
@@ -44,6 +45,58 @@ _SERIE = re.compile(r"^(?:promo-)?([a-z])(?=\d|-|$)", re.IGNORECASE)
 # comparer des essais sans transformer l'export en bibliothèque, et quatre cases
 # se lisent d'un coup d'œil en colonne sans la faire défiler.
 MAX_SAVED = 4
+
+# Les bornes d'un habillage relu, celles des champs qui le règlent : côtés de la
+# feuille de 1 à 200 cm, carte de 1 à 2000 mm et écart de 0 à 100 mm (étape 2),
+# chevauchement de 0 à 50 mm et finesse de 50 à 1200 DPI (export), feuilles
+# jusqu'à 5 de front et 3 lignes (aperçu). Les écrans importent la session, qui
+# ne peut donc pas lire leurs constantes : un test les compare.
+PRESENTATION_BOUNDS = {
+    "paper_side_mm": (10.0, 2000.0),
+    "card_width_mm": (1.0, 2000.0),
+    "card_gap_mm": (0.0, 100.0),
+    "overlap_mm": (0.0, 50.0),
+    "dpi": (50, 1200),
+    "panels": (1, 5),
+    "panel_rows": (1, 3),
+}
+
+
+def _nombre(valeur, bas: float, haut: float) -> float | None:
+    """Un nombre fini dans ses bornes, ou None. Un booléen n'en est pas un."""
+    if isinstance(valeur, bool) or not isinstance(valeur, (int, float)):
+        return None
+    if not math.isfinite(valeur) or not bas <= valeur <= haut:
+        return None
+    return float(valeur)
+
+
+def _entier(valeur, bas: int, haut: int) -> int | None:
+    """Un entier dans ses bornes, ou None. `150.0`, écrit par un autre outil,
+    reste lisible."""
+    if isinstance(valeur, float) and math.isfinite(valeur) and valeur.is_integer():
+        valeur = int(valeur)
+    if isinstance(valeur, bool) or not isinstance(valeur, int):
+        return None
+    return valeur if bas <= valeur <= haut else None
+
+
+def _couleur(valeur) -> tuple[int, int, int] | None:
+    """Trois composantes entières de 0 à 255, ou None."""
+    if not isinstance(valeur, (list, tuple)) or len(valeur) != 3:
+        return None
+    if any(_entier(composante, 0, 255) is None for composante in valeur):
+        return None
+    return tuple(int(composante) for composante in valeur)
+
+
+def _drapeau(valeur) -> bool | None:
+    """Un booléen, ou 0 et 1 qui en tiennent lieu ; None sinon."""
+    if isinstance(valeur, bool):
+        return valeur
+    if isinstance(valeur, int) and valeur in (0, 1):
+        return bool(valeur)
+    return None
 
 
 @dataclass
@@ -332,38 +385,107 @@ class Session(QObject):
             "beyond_useful_dpi": self.beyond_useful_dpi,
         }
 
-    def apply_presentation(self, presentation: dict) -> None:
-        """Repose l'habillage venu d'un agencement.
+    def apply_presentation(self, presentation: dict) -> list[str]:
+        """Repose l'habillage venu d'un agencement. Rend les champs écartés.
+
+        ⚠️ **L'habillage d'un fichier n'est pas digne de foi.** Un agencement se
+        partage et se modifie à la main, et `Arrangement.from_json` ne vérifie
+        que sa grille. Reproduit : une couleur entière ou un chevauchement en
+        texte levaient une exception une fois la case remplie ; une finesse
+        « haute » ou -2 feuilles s'installaient dans la session, et faisaient
+        tomber le calcul suivant loin de leur cause. Chaque champ est donc
+        vérifié (type, bornes des champs qui le règlent, valeur finie) : ce qui
+        passe est repris, le reste est écarté et nommé.
 
         Les couleurs passent par `set_algorithm`, qui est le groupe où elles
         voyagent ; le reste par `set_layout`. ⚠️ Les déplacements de feuilles
         **après** : tout autre réglage de mise en page les défait.
         """
-        couleurs = {nom: tuple(presentation[nom]) for nom in
-                    ("empty_colour", "gap_colour", "background_colour")
-                    if presentation.get(nom) is not None}
-        couleurs.update({nom: bool(presentation[nom]) for nom in
-                         ("chameleon_gaps", "chameleon_border", "crop_marks",
-                          "full_resolution", "beyond_useful_dpi")
-                         if nom in presentation})
+        bornes = PRESENTATION_BOUNDS
+        ecartes: list[str] = []
+
+        def retenir(nom, valeur, cible):
+            if valeur is None:
+                ecartes.append(nom)
+            else:
+                cible[nom] = valeur
+
+        reglages: dict = {}
+        for nom in ("empty_colour", "gap_colour", "background_colour"):
+            if presentation.get(nom) is not None:
+                retenir(nom, _couleur(presentation[nom]), reglages)
+        for nom in ("chameleon_gaps", "chameleon_border", "crop_marks",
+                    "full_resolution", "beyond_useful_dpi"):
+            if nom in presentation:
+                retenir(nom, _drapeau(presentation[nom]), reglages)
         if "overlap_mm" in presentation:
-            couleurs["overlap_mm"] = float(presentation["overlap_mm"])
-        mise_en_page = {nom: presentation[nom] for nom in
-                        ("paper", "landscape", "dpi", "panels", "panel_rows",
-                         "card_width_mm", "card_gap_mm")
-                        if nom in presentation}
+            retenir("overlap_mm",
+                    _nombre(presentation["overlap_mm"], *bornes["overlap_mm"]),
+                    reglages)
+
+        mise_en_page: dict = {}
+        if "paper" in presentation:
+            papier = presentation["paper"]
+            retenir("paper", papier if isinstance(papier, str) else None,
+                    mise_en_page)
+        if "landscape" in presentation:
+            retenir("landscape", _drapeau(presentation["landscape"]), mise_en_page)
+        if "dpi" in presentation:
+            retenir("dpi", _entier(presentation["dpi"], *bornes["dpi"]),
+                    mise_en_page)
+        for nom in ("panels", "panel_rows"):
+            if nom in presentation:
+                retenir(nom, _entier(presentation[nom], *bornes[nom]), mise_en_page)
+        if "card_width_mm" in presentation:
+            # `None` a un sens : la largeur automatique.
+            largeur = presentation["card_width_mm"]
+            if largeur is None:
+                mise_en_page["card_width_mm"] = None
+            else:
+                retenir("card_width_mm",
+                        _nombre(largeur, *bornes["card_width_mm"]), mise_en_page)
+        if "card_gap_mm" in presentation:
+            retenir("card_gap_mm",
+                    _nombre(presentation["card_gap_mm"], *bornes["card_gap_mm"]),
+                    mise_en_page)
         if presentation.get("paper_size_mm"):
-            mise_en_page["paper_size_mm"] = tuple(presentation["paper_size_mm"])
+            cotes = presentation["paper_size_mm"]
+            lus = ([_nombre(cote, *bornes["paper_side_mm"]) for cote in cotes]
+                   if isinstance(cotes, (list, tuple)) and len(cotes) == 2 else [None])
+            retenir("paper_size_mm",
+                    None if None in lus else tuple(lus), mise_en_page)
+
+        deplacements = []
+        brut = presentation.get("panel_offsets") or ()
+        lisibles = isinstance(brut, (list, tuple))
+        for entree in brut if lisibles else ():
+            if (isinstance(entree, (list, tuple)) and len(entree) == 3
+                    and _entier(entree[0], 0, bornes["panels"][1]
+                                * bornes["panel_rows"][1]) is not None
+                    and None not in [_nombre(v, 0.0, bornes["paper_side_mm"][1])
+                                     for v in entree[1:]]):
+                deplacements.append((int(entree[0]), float(entree[1]),
+                                     float(entree[2])))
+            else:
+                lisibles = False
+        if not lisibles:
+            # Tout ou rien : reprendre les entrées lues avant l'abîmée aurait
+            # déplacé des feuilles que l'avertissement dit non reprises.
+            ecartes.append("panel_offsets")
+            deplacements = []
+
         if mise_en_page:
             # ⚠️ **Le drapeau se lève avant.** La finesse d'un agencement gardé
             # est un choix, pas un défaut ; et `set_layout` prévient l'écran,
             # qui reposerait le maximum avant que le drapeau soit levé.
             self.dpi_chosen = self.dpi_chosen or "dpi" in mise_en_page
             self.set_layout(**mise_en_page)
-        if couleurs:
-            self.set_algorithm(**couleurs)
-        for index, x, y in (presentation.get("panel_offsets") or ()):
-            self.move_panel(int(index), float(x), float(y))
+        if reglages:
+            self.set_algorithm(**reglages)
+        for index, x, y in deplacements:
+            if index < self.panel_count():
+                self.move_panel(index, x, y)
+        return ecartes
 
     # --- Cartes -----------------------------------------------------------
 

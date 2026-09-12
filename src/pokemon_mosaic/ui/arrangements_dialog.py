@@ -402,6 +402,19 @@ class ArrangementsDialog(QDialog):
                 self.tr("Les %n case(s) sont prises : videz-en une pour "
                         "ouvrir celui-ci.", "", MAX_SAVED))
             return
+        # ⚠️ **L'habillage vient avec l'agencement** : un agencement partagé
+        # doit redonner le même poster. Il est commun aux quatre cases, et
+        # remplace donc celui qui était en place. Posé seulement une fois la
+        # case obtenue : un refus ne doit rien changer.
+        ignores = self._session.apply_presentation(arrangement.presentation)
+        if ignores:
+            # Les noms du fichier et non des libellés : c'est dans le fichier
+            # qu'on les corrige.
+            QMessageBox.warning(
+                self, self.tr("Habillage incomplet"),
+                self.tr("%n réglage(s) de l'habillage étaient illisibles et n'ont "
+                        "pas été repris : %1.", "", len(ignores))
+                .replace("%1", ", ".join(ignores)))
         self.accept()
 
     def _export_current(self) -> None:

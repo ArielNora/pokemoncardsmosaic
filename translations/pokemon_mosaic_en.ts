@@ -191,59 +191,72 @@
         </translation>
     </message>
     <message>
-        <location filename="../src/pokemon_mosaic/ui/arrangements_dialog.py" line="412"/>
+        <location filename="../src/pokemon_mosaic/ui/arrangements_dialog.py" line="414"/>
+        <source>Habillage incomplet</source>
+        <translation>Presentation partly restored</translation>
+    </message>
+    <message numerus="yes">
+        <location filename="../src/pokemon_mosaic/ui/arrangements_dialog.py" line="415"/>
+        <source>%n réglage(s) de l&apos;habillage étaient illisibles et n&apos;ont pas été repris : %1.</source>
+        <translation>
+            <numerusform>%n presentation setting was unreadable and was not restored: %1.</numerusform>
+            <numerusform>%n presentation settings were unreadable and were not restored: %1.</numerusform>
+        </translation>
+    </message>
+    <message>
+        <location filename="../src/pokemon_mosaic/ui/arrangements_dialog.py" line="425"/>
         <source>Exporter l&apos;agencement</source>
         <translation>Export the arrangement</translation>
     </message>
     <message>
-        <location filename="../src/pokemon_mosaic/ui/arrangements_dialog.py" line="414"/>
-        <location filename="../src/pokemon_mosaic/ui/arrangements_dialog.py" line="430"/>
+        <location filename="../src/pokemon_mosaic/ui/arrangements_dialog.py" line="427"/>
+        <location filename="../src/pokemon_mosaic/ui/arrangements_dialog.py" line="443"/>
         <source>Agencement (*.json)</source>
         <translation>Arrangement (*.json)</translation>
     </message>
     <message>
-        <location filename="../src/pokemon_mosaic/ui/arrangements_dialog.py" line="420"/>
-        <location filename="../src/pokemon_mosaic/ui/arrangements_dialog.py" line="445"/>
+        <location filename="../src/pokemon_mosaic/ui/arrangements_dialog.py" line="433"/>
+        <location filename="../src/pokemon_mosaic/ui/arrangements_dialog.py" line="458"/>
         <source>Écriture impossible</source>
         <translation>Cannot write</translation>
     </message>
     <message>
-        <location filename="../src/pokemon_mosaic/ui/arrangements_dialog.py" line="429"/>
+        <location filename="../src/pokemon_mosaic/ui/arrangements_dialog.py" line="442"/>
         <source>Importer un agencement</source>
         <translation>Import an arrangement</translation>
     </message>
     <message>
-        <location filename="../src/pokemon_mosaic/ui/arrangements_dialog.py" line="436"/>
+        <location filename="../src/pokemon_mosaic/ui/arrangements_dialog.py" line="449"/>
         <source>Fichier illisible</source>
         <translation>Unreadable file</translation>
     </message>
     <message>
-        <location filename="../src/pokemon_mosaic/ui/arrangements_dialog.py" line="454"/>
+        <location filename="../src/pokemon_mosaic/ui/arrangements_dialog.py" line="467"/>
         <source>Renommer l&apos;agencement</source>
         <translation>Rename the arrangement</translation>
     </message>
     <message>
-        <location filename="../src/pokemon_mosaic/ui/arrangements_dialog.py" line="454"/>
+        <location filename="../src/pokemon_mosaic/ui/arrangements_dialog.py" line="467"/>
         <source>Nom</source>
         <translation>Name</translation>
     </message>
     <message>
-        <location filename="../src/pokemon_mosaic/ui/arrangements_dialog.py" line="466"/>
+        <location filename="../src/pokemon_mosaic/ui/arrangements_dialog.py" line="479"/>
         <source>Renommage impossible</source>
         <translation>Cannot rename</translation>
     </message>
     <message>
-        <location filename="../src/pokemon_mosaic/ui/arrangements_dialog.py" line="475"/>
+        <location filename="../src/pokemon_mosaic/ui/arrangements_dialog.py" line="488"/>
         <source>Supprimer cet agencement ?</source>
         <translation>Delete this arrangement?</translation>
     </message>
     <message>
-        <location filename="../src/pokemon_mosaic/ui/arrangements_dialog.py" line="476"/>
+        <location filename="../src/pokemon_mosaic/ui/arrangements_dialog.py" line="489"/>
         <source>« %1 » sera effacé de la bibliothèque. Le calcul ne redonne pas deux fois le même.</source>
         <translation>“%1” will be erased from the library. No run gives the same one twice.</translation>
     </message>
     <message>
-        <location filename="../src/pokemon_mosaic/ui/arrangements_dialog.py" line="484"/>
+        <location filename="../src/pokemon_mosaic/ui/arrangements_dialog.py" line="497"/>
         <source>Suppression impossible</source>
         <translation>Cannot delete</translation>
     </message>

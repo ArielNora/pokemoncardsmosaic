@@ -469,3 +469,133 @@ def test_a_disk_error_is_reported_not_raised(menu, monkeypatch, geste, fonction)
     getattr(widget, geste)()
 
     assert vus == ["disque plein"]
+
+
+# --- L'habillage revient avec l'agencement ------------------------------------
+
+HABILLAGE = {"paper": "A3", "dpi": 150, "gap_colour": [10, 20, 30],
+             "card_gap_mm": 2.5}
+
+
+def test_opening_brings_back_its_presentation(session, bibliotheque):
+    """Décidé le 2026-09-12 : un agencement partagé redonne le même poster.
+    L'habillage enregistré avec lui n'était jamais reposé, `apply_presentation`
+    n'étant appelée nulle part."""
+    from pokemon_mosaic.ui.arrangements_dialog import ArrangementsDialog
+
+    range_un(bibliotheque, "habillé", presentation=HABILLAGE)
+    widget = ArrangementsDialog(session, bibliotheque)
+    try:
+        widget._open_current()
+
+        assert session.saved[0] is not None
+        assert session.paper == "A3"
+        assert session.dpi == 150 and session.dpi_chosen
+        assert session.gap_colour == (10, 20, 30)
+        assert session.card_gap_mm == 2.5
+    finally:
+        widget.done(0)
+
+
+def test_a_refused_opening_leaves_the_presentation_alone(session, bibliotheque,
+                                                        monkeypatch):
+    """Sans case libre, rien ne s'ouvre : l'habillage en place ne doit pas
+    changer pour autant."""
+    from PySide6.QtWidgets import QMessageBox
+
+    from pokemon_mosaic.ui.arrangements_dialog import ArrangementsDialog
+    from pokemon_mosaic.ui.session import MAX_SAVED
+
+    range_un(bibliotheque, "habillé", presentation=HABILLAGE)
+    for numero in range(MAX_SAVED):
+        session.save_grid(np.array([[0, 1]]), session.card_set, numero, 0.0)
+    monkeypatch.setattr(QMessageBox, "information", lambda *a, **k: None)
+    papier = session.paper
+    widget = ArrangementsDialog(session, bibliotheque)
+    try:
+        widget._open_current()
+
+        assert session.paper == papier and session.dpi != 150
+    finally:
+        widget.done(0)
+
+
+
+def test_a_malformed_presentation_is_sorted_not_trusted(session):
+    """⚠️ Un agencement se partage et se modifie à la main : son habillage n'est
+    pas digne de foi. Reproduit avant correction : une couleur entière ou un
+    chevauchement en texte levaient une exception une fois la case remplie ; une
+    finesse « haute » ou -2 feuilles s'installaient dans la session, et faisaient
+    tomber le calcul suivant loin de leur cause."""
+    ignores = session.apply_presentation({
+        "gap_colour": 5, "overlap_mm": "beaucoup", "dpi": "haute", "panels": -2,
+        "card_gap_mm": float("nan"), "empty_colour": [300, 0, 0],
+        "background_colour": [1, 2, 3], "paper": "A3", "crop_marks": True,
+    })
+
+    assert set(ignores) == {"gap_colour", "overlap_mm", "dpi", "panels",
+                            "card_gap_mm", "empty_colour"}
+    # Ce qui était valide est repris.
+    assert session.background_colour == (1, 2, 3)
+    assert session.paper == "A3" and session.crop_marks is True
+    # Et la session reste calculable.
+    assert isinstance(session.dpi, int) and session.dpi > 0
+    assert session.panels >= 1
+    session.panel_geometry()
+
+
+def test_opening_names_the_presentation_fields_it_ignored(session, bibliotheque,
+                                                         monkeypatch):
+    """La grille est valide : l'agencement s'ouvre. Mais ce qui n'a pas été repris
+    se dit, par le nom qu'il porte dans le fichier, là où on le corrige."""
+    from PySide6.QtWidgets import QMessageBox
+
+    from pokemon_mosaic.ui.arrangements_dialog import ArrangementsDialog
+
+    range_un(bibliotheque, "abîmé", presentation={"gap_colour": 5, "paper": "A3"})
+    vus = []
+    monkeypatch.setattr(QMessageBox, "warning", lambda *a, **k: vus.append(a[2]))
+    widget = ArrangementsDialog(session, bibliotheque)
+    try:
+        widget._open_current()
+
+        assert session.saved[0] is not None
+        assert session.paper == "A3"
+        assert len(vus) == 1 and "gap_colour" in vus[0]
+    finally:
+        widget.done(0)
+
+
+def test_the_presentation_bounds_follow_the_interface():
+    """Les écrans importent la session, qui ne peut pas lire leurs constantes :
+    ses bornes sont recopiées, et ce test empêche qu'elles divergent."""
+    from pokemon_mosaic.ui.export_step import DPI_CEILING
+    from pokemon_mosaic.ui.page_preview import MAX_PANEL_ROWS, MAX_PANELS
+    from pokemon_mosaic.ui.session import PRESENTATION_BOUNDS
+
+    assert PRESENTATION_BOUNDS["dpi"][1] == DPI_CEILING
+    assert PRESENTATION_BOUNDS["panels"] == (1, MAX_PANELS)
+    assert PRESENTATION_BOUNDS["panel_rows"] == (1, MAX_PANEL_ROWS)
+
+
+def test_the_presentation_the_app_writes_is_always_read_back(session):
+    """La vérification ne doit jamais être plus stricte que l'application :
+    un habillage qu'elle a écrit elle-même se relit sans rien écarter."""
+    session.set_layout(paper="A3", landscape=True, dpi=1200, panels=5,
+                       panel_rows=3, card_gap_mm=100.0, card_width_mm=40.0)
+    session.set_algorithm(overlap_mm=50.0, crop_marks=True,
+                          gap_colour=(0, 128, 255), chameleon_border=True)
+    session.move_panel(0, 3.0, 4.0)
+    habillage = session.presentation()
+
+    assert session.apply_presentation(habillage) == []
+    assert session.presentation() == habillage
+
+
+def test_sheet_moves_are_restored_all_or_nothing(session):
+    """Un déplacement abîmé fait écarter le champ : reprendre ceux lus avant lui
+    aurait bougé des feuilles que l'avertissement dit non reprises."""
+    ecartes = session.apply_presentation({"panel_offsets": [[0, 3.0, 4.0], "abîmé"]})
+
+    assert ecartes == ["panel_offsets"]
+    assert session.panel_offsets == {}
