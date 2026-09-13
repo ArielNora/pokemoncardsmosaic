@@ -2091,48 +2091,48 @@
     </message>
     <message>
         <location filename="../src/pokemon_mosaic/ui/tutorial_texts.py" line="43"/>
-        <source>Sélectionnez les extensions pour filtrer les cartes, utilisez les boutons pour les inclure ou les exclure.</source>
-        <translation>Select expansions to filter the cards, use the buttons to include or exclude them.</translation>
+        <source>Vous pouvez filtrer, inclure ou exclure par extension.</source>
+        <translation>You can filter, include or exclude by expansion.</translation>
     </message>
     <message>
-        <location filename="../src/pokemon_mosaic/ui/tutorial_texts.py" line="47"/>
+        <location filename="../src/pokemon_mosaic/ui/tutorial_texts.py" line="46"/>
         <source>Tapez un nom pour filtrer les cartes.</source>
         <translation>Type a name to filter the cards.</translation>
     </message>
     <message>
-        <location filename="../src/pokemon_mosaic/ui/tutorial_texts.py" line="50"/>
+        <location filename="../src/pokemon_mosaic/ui/tutorial_texts.py" line="49"/>
         <source>Incluez, excluez ou inversez d&apos;un coup les cartes affichées.</source>
         <translation>Include, exclude or invert the cards shown in one go.</translation>
     </message>
     <message>
-        <location filename="../src/pokemon_mosaic/ui/tutorial_texts.py" line="54"/>
+        <location filename="../src/pokemon_mosaic/ui/tutorial_texts.py" line="53"/>
         <source>Créez des liens pour garder des cartes côte à côte dans le poster.</source>
         <translation>Create links to keep cards side by side in the poster.</translation>
     </message>
     <message>
-        <location filename="../src/pokemon_mosaic/ui/tutorial_texts.py" line="58"/>
+        <location filename="../src/pokemon_mosaic/ui/tutorial_texts.py" line="57"/>
         <source>Le nombre de cartes retenues pour le poster.</source>
         <translation>The number of cards kept for the poster.</translation>
     </message>
     <message>
-        <location filename="../src/pokemon_mosaic/ui/tutorial_texts.py" line="61"/>
+        <location filename="../src/pokemon_mosaic/ui/tutorial_texts.py" line="60"/>
         <source>Récupérez les nouvelles cartes publiées.</source>
         <translation>Get the newly published cards.</translation>
     </message>
     <message>
-        <location filename="../src/pokemon_mosaic/ui/tutorial_texts.py" line="64"/>
+        <location filename="../src/pokemon_mosaic/ui/tutorial_texts.py" line="63"/>
         <source>Les cartes à vérifier : format inattendu ou fichier illisible.</source>
         <translation>Cards to check: unexpected size or unreadable file.</translation>
     </message>
     <message>
-        <location filename="../src/pokemon_mosaic/ui/tutorial_texts.py" line="70"/>
+        <location filename="../src/pokemon_mosaic/ui/tutorial_texts.py" line="69"/>
         <source>Enregistrez vos réglages sous un nom, ou repartez d&apos;un agencement enregistré.</source>
         <translation>Save your settings under a name, or start again from a saved arrangement.</translation>
     </message>
     <message>
-        <location filename="../src/pokemon_mosaic/ui/tutorial_texts.py" line="74"/>
-        <source>Passez à l&apos;étape suivante quand l&apos;aura est verte.</source>
-        <translation>Move to the next step when the glow is green.</translation>
+        <location filename="../src/pokemon_mosaic/ui/tutorial_texts.py" line="73"/>
+        <source>Vous pouvez passer à l&apos;étape suivante quand l&apos;aura est verte.</source>
+        <translation>You can move to the next step when the glow is green.</translation>
     </message>
     <message>
         <location filename="../src/pokemon_mosaic/ui/tutorial_texts.py" line="77"/>

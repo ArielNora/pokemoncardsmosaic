@@ -40,8 +40,7 @@ class TutorialTexts(QObject):
                        "poster.")
 
     def cards_folders(self) -> str:
-        return self.tr("Sélectionnez les extensions pour filtrer les cartes, "
-                       "utilisez les boutons pour les inclure ou les exclure.")
+        return self.tr("Vous pouvez filtrer, inclure ou exclure par extension.")
 
     def cards_search(self) -> str:
         return self.tr("Tapez un nom pour filtrer les cartes.")
@@ -71,7 +70,8 @@ class TutorialTexts(QObject):
                        "agencement enregistré.")
 
     def window_next(self) -> str:
-        return self.tr("Passez à l'étape suivante quand l'aura est verte.")
+        return self.tr("Vous pouvez passer à l'étape suivante quand l'aura "
+                       "est verte.")
 
     def window_help(self) -> str:
         return self.tr("Cliquez pour afficher l'aide de la page. Clic droit "
