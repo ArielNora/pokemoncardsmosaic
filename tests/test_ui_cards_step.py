@@ -253,6 +253,53 @@ def fenetre(qt_app, tmp_path, monkeypatch):
                       presets_directory=str(tmp_path / "presets")), session
 
 
+def test_the_top_library_button_is_offered_on_the_first_two_steps(fenetre):
+    """Comme un préréglage, un agencement se choisit dès le début."""
+    w, _ = fenetre
+    for etape in (0, 1):
+        w._go(etape)
+        assert w._presets._arrangements.isEnabled(), etape
+
+
+def test_the_top_library_button_is_greyed_later_and_says_where_to_go(fenetre):
+    """Aux étapes 3 et 4, choisir un agencement ne doit rien remplacer :
+    grisé et non masqué, il renvoie au bouton sous les cases."""
+    w, _ = fenetre
+    for etape in (2, 3):
+        w._go(etape)
+        bouton = w._presets._arrangements
+        assert not bouton.isEnabled(), etape
+        assert not bouton.isHidden()
+        assert "sous les cases" in bouton.toolTip()
+    w._go(1)
+    assert w._presets._arrangements.isEnabled(), "rendu en revenant"
+
+
+def test_the_top_library_button_opens_the_library(fenetre, tmp_path,
+                                                  monkeypatch):
+    from pokemon_mosaic.ui import main_window as module
+
+    w, _ = fenetre
+    ouvertes = []
+
+    class Bibliotheque:
+        def __init__(self, session, dossier, parent=None):
+            ouvertes.append(dossier)
+
+        def exec(self):
+            return 0
+
+        def deleteLater(self):
+            pass
+
+    monkeypatch.setattr(module, "ArrangementsDialog", Bibliotheque)
+    w._arrangements_directory = str(tmp_path / "agencements")
+
+    w._presets._arrangements.click()
+
+    assert ouvertes == [str(tmp_path / "agencements")]
+
+
 def test_next_is_locked_while_no_card_is_loaded(fenetre):
     """Les trois écrans suivants n'ont rien à afficher : la grille se dimensionne
     sur le nombre de cartes, les réglages en projettent des chiffres, et

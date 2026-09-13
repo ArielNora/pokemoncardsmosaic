@@ -78,6 +78,38 @@ def test_a_missing_card_is_counted_named_and_crossed(menu, bibliotheque):
     assert not widget._open.isEnabled(), "il ne doit pas passer à l'export"
 
 
+def test_without_cards_the_list_asks_to_load_them_first(qt_app, bibliotheque):
+    """Premier démarrage ou chargement en cours : toutes les cartes seraient
+    « manquantes », et le message laissait croire à un catalogue incomplet."""
+    from pokemon_mosaic.ui.arrangements_dialog import ArrangementsDialog
+    from pokemon_mosaic.ui.session import Session
+
+    range_un(bibliotheque)
+    widget = ArrangementsDialog(Session(), bibliotheque)
+
+    assert widget._list.count() == 1, "la liste reste parcourable"
+    assert "manquante" not in widget._list.item(0).text()
+    assert "Chargez d'abord les cartes" in widget._missing.text()
+    assert not widget._open.isEnabled()
+
+
+def test_the_missing_card_names_are_red(menu, bibliotheque):
+    """Demandé par l'utilisateur : les noms des cartes manquantes en rouge, le
+    rouge du thème, lisible en clair comme en sombre."""
+    from PySide6.QtGui import QColor
+
+    from pokemon_mosaic.ui import theme
+
+    widget, _, _ = menu
+    range_un(bibliotheque, "troué", cards=("a/un.webp", "a/jamais-vue.webp"),
+             saved_at="2026-09-07T09:00:00")
+    widget.reload(select="troué")
+    rouge = QColor(theme.colours(widget.palette())["error"])
+
+    assert widget._cards.item(0).foreground().color() == rouge
+    assert widget._cards.item(1).foreground().color() != rouge, "présente"
+
+
 def test_a_complete_arrangement_can_be_opened_into_a_slot(menu):
     widget, session, _ = menu
 

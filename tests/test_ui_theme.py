@@ -71,6 +71,17 @@ def test_a_tinted_tab_keeps_its_text_readable():
                 assert fond != table[role], "la teinte pure ferait un aplat"
 
 
+def test_the_error_red_is_legible_in_a_list():
+    """Les noms des cartes manquantes s'écrivent en rouge dans la liste d'un
+    agencement, sur le fond des listes et non sur celui de la fenêtre."""
+    from pokemon_mosaic.ui import theme
+
+    for table, palette in ((theme.LIGHT, theme.PALETTE_LIGHT),
+                           (theme.DARK, theme.PALETTE_DARK)):
+        assert contraste(table["error"], palette["base"]) >= 4.5
+        assert contraste(table["error"], palette["alt_base"]) >= 4.5
+
+
 def test_the_state_badge_stands_out_on_its_tinted_tab():
     """La pastille est le seul signe non textuel de l'état : elle se pose sur le
     fond teinté du même état, celui-là même qui la tire vers lui. Seuil des

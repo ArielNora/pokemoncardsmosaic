@@ -260,7 +260,9 @@ class ArrangementsDialog(QDialog):
         for arrangement in self._arrangements:
             manquantes = len(self._session.missing_cards(arrangement))
             texte = arrangement.name
-            if manquantes:
+            # Sans catalogue, le compte vaudrait toutes les cartes de chaque
+            # agencement : il ne dirait rien, le message du panneau le remplace.
+            if manquantes and self._catalogue_loaded():
                 texte += "\n" + self.tr("%n carte(s) manquante(s)", "", manquantes)
             self._list.addItem(QListWidgetItem(texte))
         if self._arrangements:
@@ -273,6 +275,12 @@ class ArrangementsDialog(QDialog):
             # lançait un second aperçu, le premier partant pour rien. Seule une
             # liste restée vide ne change pas de ligne, et doit se dire à la main.
             self._show_current()
+
+    def _catalogue_loaded(self) -> bool:
+        """Des cartes sont-elles chargées ? Premier démarrage ou chargement en
+        cours, un agencement ne peut pas encore s'ouvrir."""
+        cartes = self._session.card_set
+        return cartes is not None and len(cartes) > 0
 
     def current(self) -> Arrangement | None:
         rang = self._list.currentRow()
@@ -303,11 +311,20 @@ class ArrangementsDialog(QDialog):
         # ⚠️ **Amputé, ce n'est plus l'agencement qu'on a partagé.** On le
         # montre, on dit ce qui manque, et on ne le laisse pas passer.
         self._open.setEnabled(not manquantes)
-        self._missing.setText(
-            "" if not manquantes else
-            self.tr("%n carte(s) de cet agencement manquent au catalogue : "
-                    "il ne peut pas être ouvert.", "", len(manquantes))
-        )
+        if not self._catalogue_loaded():
+            # ⚠️ **Sans cartes chargées, rien n'est « manquant ».** Toutes le
+            # seraient, et le message laissait croire à un catalogue incomplet
+            # alors qu'il suffit de charger les cartes. La liste reste
+            # parcourable ; seule l'ouverture attend.
+            self._missing.setText(
+                self.tr("Chargez d'abord les cartes : un agencement ne s'ouvre "
+                        "qu'avec elles."))
+        else:
+            self._missing.setText(
+                "" if not manquantes else
+                self.tr("%n carte(s) de cet agencement manquent au catalogue : "
+                        "il ne peut pas être ouvert.", "", len(manquantes))
+            )
         self._cards.clear()
         absentes = set(manquantes)
         for chemin in sorted(arrangement.cards, key=lambda c: (c not in absentes, c)):

@@ -28,9 +28,15 @@ from .session import Session
 
 
 class PresetsBar(QWidget):
-    """Liste des préréglages enregistrés, et les trois gestes qui vont avec."""
+    """Liste des préréglages enregistrés, et les trois gestes qui vont avec.
+
+    Elle porte aussi l'accès à la bibliothèque des agencements : comme un
+    préréglage, un agencement se choisit dès le début du parcours.
+    """
 
     status_message = Signal(str)
+    # La fenêtre ouvre la bibliothèque : c'est elle qui sait où elle est rangée.
+    arrangements_requested = Signal()
 
     def __init__(self, session: Session, directory: str, parent=None):
         super().__init__(parent)
@@ -57,6 +63,10 @@ class PresetsBar(QWidget):
         self._save.clicked.connect(lambda: self.save_current())
         self._delete.clicked.connect(lambda: self.delete_selected())
         self._names.currentIndexChanged.connect(self._update_buttons)
+        self._arrangements = QPushButton()
+        self._arrangements.clicked.connect(self.arrangements_requested.emit)
+        # Vrai aux deux premières étapes seulement, voir `set_arrangements_enabled`.
+        self._arrangements_allowed = True
 
         layout = QHBoxLayout(self)
         layout.setContentsMargins(0, 0, 0, 0)
@@ -65,8 +75,20 @@ class PresetsBar(QWidget):
         layout.addWidget(self._load)
         layout.addWidget(self._delete)
         layout.addStretch(1)
+        layout.addWidget(self._arrangements)
         layout.addWidget(self._save)
         self.retranslate_ui()
+
+    def set_arrangements_enabled(self, allowed: bool) -> None:
+        """Autorise la bibliothèque aux deux premières étapes, pas au-delà.
+
+        ⚠️ **Grisé, et non masqué.** Aux étapes 3 et 4, choisir un agencement ne
+        doit rien remplacer : l'infobulle renvoie au bouton sous les cases, qui
+        ajoute seulement un agencement aux cases. Masqué, le bouton aurait
+        disparu sans dire où le retrouver.
+        """
+        self._arrangements_allowed = bool(allowed)
+        self._update_arrangements_button()
 
     def retranslate_ui(self) -> None:
         self._label.setText(self.tr("Préréglage"))
@@ -77,7 +99,17 @@ class PresetsBar(QWidget):
             self.tr("Enregistre la sélection, les liens actifs, la grille "
                     "et les réglages sous un nom.")
         )
+        self._arrangements.setText(self.tr("Tous les agencements…"))
         self._update_buttons()
+        self._update_arrangements_button()
+
+    def _update_arrangements_button(self) -> None:
+        self._arrangements.setEnabled(self._arrangements_allowed)
+        self._arrangements.setToolTip(
+            self.tr("Parcourir les agencements enregistrés.")
+            if self._arrangements_allowed else
+            self.tr("À cette étape, ajoutez un agencement aux cases avec le "
+                    "bouton « Tous les agencements… » placé sous les cases."))
 
     # --- Liste ------------------------------------------------------------
 

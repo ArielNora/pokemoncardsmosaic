@@ -19,6 +19,7 @@ from PySide6.QtWidgets import (
 
 from ..paths import APP_NAME
 from . import theme
+from .arrangements_dialog import ArrangementsDialog
 from .cards_step import CardsStep
 from .export_step import ExportStep
 from .i18n import LANGUAGES, LanguageManager
@@ -176,6 +177,7 @@ class MainWindow(QMainWindow):
     def _build(self) -> None:
         self._presets = PresetsBar(self._session, self._presets_directory)
         self._presets.status_message.connect(self._show_status)
+        self._presets.arrangements_requested.connect(self._open_arrangements)
 
         self._steps_bar = QHBoxLayout()
         self._step_labels = []
@@ -272,6 +274,21 @@ class MainWindow(QMainWindow):
         """
         self._cards_step.load(directory)
 
+    def _open_arrangements(self) -> None:
+        """Ouvre la bibliothèque des agencements depuis la barre du haut.
+
+        À part pour que les tests le remplacent : un `exec()` modal n'a pas de
+        fin dans une suite qui ne clique sur rien.
+        """
+        if not self._arrangements_directory:
+            return
+        dialogue = ArrangementsDialog(self._session,
+                                      self._arrangements_directory, parent=self)
+        try:
+            dialogue.exec()
+        finally:
+            dialogue.deleteLater()
+
     def _go(self, index: int) -> None:
         if 0 <= index < self._stack.count():
             # L'export ouvre une case gardée en arrivant : un écran d'habillage
@@ -319,6 +336,10 @@ class MainWindow(QMainWindow):
             avancable = peut()
         self._next.setEnabled(avancable)
         self._update_glow(avancable, current < self._stack.count() - 1)
+        # La bibliothèque du haut sert à partir d'un agencement : aux deux
+        # premières étapes seulement, voir `PresetsBar.set_arrangements_enabled`.
+        self._presets.set_arrangements_enabled(
+            self._stack.currentWidget() in (self._cards_step, self._layout_step))
         for position, label in enumerate(self._step_labels):
             font = label.font()
             font.setBold(position == current)
