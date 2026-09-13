@@ -187,6 +187,10 @@ class Session(QObject):
         # Vrai du premier lot de cartes à la fin du chargement : le jeu est
         # alors partiel, et d'autres cartes arrivent encore, retenues.
         self.loading = False
+        # L'agencement dont on est parti, voir `apply_arrangement` : l'exécution
+        # le montre comme son premier cliché. Sa grille numérote les cartes
+        # retenues comme le fait un calcul.
+        self.started_from: SavedGrid | None = None
         # Le rang de chaque carte par son chemin relatif, refait quand le jeu
         # change : voir `index_of_path`.
         self._path_table: dict[str, int] | None = None
@@ -411,6 +415,7 @@ class Session(QObject):
         desactives = self._disable_links_broken_in(garde.grid)
         rang = self.save_grid(garde.grid, garde.cards, garde.iteration,
                               garde.score)
+        self.started_from = self.saved[rang]
         self.arrangement_applied.emit()
         return ArrangementStart(slot=rang, ignored=ignores,
                                 disabled_links=desactives)
@@ -603,6 +608,9 @@ class Session(QObject):
         """Vide la session et prépare l'arrivée des cartes, dossier par dossier."""
         self.data_dir = data_dir
         self.loading = True
+        # Un autre jeu de cartes : les indices de l'agencement repris ne
+        # désigneraient plus les mêmes cartes.
+        self.started_from = None
         self.card_set = CardSet(cards=[], full_size=(0, 0), thumb_size=(0, 0))
         self._path_table = None
         self._excluded.clear()

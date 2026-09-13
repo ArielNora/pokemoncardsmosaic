@@ -19,6 +19,8 @@ from PySide6.QtWidgets import (
 
 from ..control import RunControl
 from ..optimize import StopReason
+from ..scoring import EdgeDistances, grid_score
+from ..timeline import Timeline
 from .arrangements_dialog import ArrangementsDialog
 from .library import store_in_library
 from .multi_run_tab import MultiRunTab
@@ -109,6 +111,9 @@ class RunStep(QWidget):
         # l'image entière, haut et bas compris. C'est un attribut de l'écran et
         # non du cliché, donc parcourir la timeline conserve le zoom.
         self._zoom = 1.0
+        # Vrai tant que la timeline affichée est celle d'un agencement repris,
+        # son unique cliché, et qu'aucun calcul n'en est encore parti.
+        self._from_arrangement = False
         self._build()
         # Changer la sélection, les liens ou la grille rend les clichés
         # inexploitables : les commandes de reprise doivent s'éteindre aussitôt,
@@ -121,6 +126,13 @@ class RunStep(QWidget):
         # de réglage, et cliquer dessus ne ferait rien, `_extend_run` sort
         # aussitôt sur `can_resume()`.
         session.algorithm_changed.connect(self._update_resume_buttons)
+        # Un agencement repris aux premières étapes devient le cliché de départ.
+        # S'il ne décrit plus la mise en page, il s'efface, voir
+        # `_drop_stale_arrangement`.
+        session.arrangement_applied.connect(self._show_started_arrangement)
+        for signal in (session.selection_changed, session.links_changed,
+                       session.layout_changed, session.algorithm_changed):
+            signal.connect(self._drop_stale_arrangement)
 
     # --- Construction -----------------------------------------------------
 
@@ -154,7 +166,7 @@ class RunStep(QWidget):
         gros.setPointSize(gros.pointSize() + WELCOME_BOOST)
         self._welcome_start.setFont(gros)
         self._welcome_start.setMinimumSize(WELCOME_BUTTON)
-        self._welcome_start.clicked.connect(lambda: self.start_run())
+        self._welcome_start.clicked.connect(lambda: self._launch())
 
         accueil = QVBoxLayout()
         accueil.addStretch(1)
@@ -211,7 +223,7 @@ class RunStep(QWidget):
         # `clicked` transmet l'état coché du bouton en premier argument : le
         # brancher directement sur start_run ferait recevoir False à
         # `previous_grid`, qui n'accepte qu'une grille ou None.
-        self._start.clicked.connect(lambda: self.start_run())
+        self._start.clicked.connect(lambda: self._launch())
         self._pause.clicked.connect(self._toggle_pause)
         self._stop.clicked.connect(self._request_stop)
 
@@ -311,11 +323,74 @@ class RunStep(QWidget):
 
     # --- Commandes --------------------------------------------------------
 
+    def _launch(self) -> None:
+        """« Lancer » : depuis l'agencement repris s'il est affiché, sinon d'une
+        grille neuve.
+
+        Décidé par l'utilisateur : le calcul **continue après** l'agencement,
+        dans la même timeline, qu'on peut remonter jusqu'au point de départ.
+        C'est ce que fait « Prolonger ».
+        """
+        if self._from_arrangement and self.can_resume():
+            self._extend_run()
+            return
+        self.start_run()
+
+    def _show_started_arrangement(self) -> None:
+        """Montre l'agencement repris comme l'unique cliché de la timeline.
+
+        ⚠️ **Son score est recalculé** sur les cartes et la bande en place : le
+        fichier garde celui de son calcul, sur une épaisseur de bande qui a pu
+        changer depuis, et la même grille y valait autre chose. Mêlé aux
+        clichés suivants, il aurait fait lire une chute qui n'existe pas.
+
+        ⚠️ **Pas pendant un calcul** : sa timeline est celle qu'on regarde se
+        remplir, et la remplacer sous lui mêlerait deux calculs.
+        """
+        depart = self._session.started_from
+        if depart is None or self._thread is not None or self._multi.is_busy():
+            return
+        distances = EdgeDistances(depart.cards.cards)
+        timeline = Timeline(every=self._session.snapshot_every)
+        timeline.record(depart.grid, 0, 0, grid_score(depart.grid, distances), 0.0)
+        self._run_signature = self._signature()
+        self._following = True
+        self._from_arrangement = True
+        self._on_started(depart.cards, timeline)
+        self._on_snapshot(timeline[-1])
+        self._summary.setText(
+            self.tr("Agencement repris : « Lancer » part de lui."))
+        self._update_buttons(running=False)
+
+    def _drop_stale_arrangement(self) -> None:
+        """Efface l'agencement repris s'il ne décrit plus la mise en page.
+
+        Décidé avec l'utilisateur : d'autres cartes, d'autres liens ou une autre
+        grille, et son cliché ne se prolonge plus. Il disparaît de l'écran, qui
+        revient à l'accueil ; sa case, elle, reste. L'habillage ne compte pas :
+        il n'entre pas dans la signature, et le cliché tient toujours.
+        """
+        if (not self._from_arrangement or self._thread is not None
+                or self._run_signature == self._signature()):
+            return
+        self._from_arrangement = False
+        self._timeline = self._cards = None
+        self._slider.setEnabled(False)
+        self._slider.setMaximum(0)
+        self._image.clear()
+        self._summary.setText("")
+        self._update_view()
+        self._update_keep()
+        self._update_position()
+        self._update_resume_buttons()
+
     def start_run(self, previous_grid=None, timeline=None) -> None:
         # ⚠️ **Un seul calcul à la fois**, d'un onglet à l'autre : deux fils
         # d'optimisation côte à côte surchargeraient la machine.
         if self._thread is not None or self._multi.is_busy():
             return
+        # Un calcul part : la timeline n'est plus seulement l'agencement repris.
+        self._from_arrangement = False
         self._control = RunControl()
         self._following = True
         self._run_signature = self._signature()

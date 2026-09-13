@@ -1283,3 +1283,117 @@ def test_a_growing_timeline_does_not_re_render_for_nothing(step):
     timeline.record(grille, 10, 10, 1.0, 0.0)
     widget._on_snapshot(timeline.snapshots[-1])
     assert widget._pending_index is None
+
+
+# --- Partir d'un agencement repris --------------------------------------------
+
+def reprendre(session, grille=None):
+    """Reprend un agencement des vingt cartes de la session, en 5×4."""
+    from pokemon_mosaic.arrangements import Arrangement
+
+    grille = (np.arange(20)[::-1].reshape(4, 5) if grille is None else grille)
+    arrangement = Arrangement(
+        name="départ", cards=tuple(f"{i}.png" for i in range(20)),
+        grid=tuple(tuple(int(v) for v in ligne) for ligne in grille),
+        saved_at="2026-09-13T10:00:00")
+    session.apply_arrangement(arrangement)
+    return grille
+
+
+def test_a_started_arrangement_is_the_only_snapshot(step):
+    """Décidé par l'utilisateur : l'exécution montre l'agencement repris, et
+    non son accueil."""
+    widget, session = step
+
+    grille = reprendre(session)
+
+    assert widget._view.currentWidget() is widget._scroll
+    assert len(widget._timeline) == 1
+    assert np.array_equal(widget._timeline[0].grid, grille)
+    assert widget._position.text() == "cliché 1 / 1"
+    assert widget.can_advance(), "il est déjà dans une case"
+
+
+def test_the_started_arrangement_score_is_recomputed(step):
+    """Le fichier garde le score de son calcul, sur une bande qui a pu
+    changer : mêlé aux clichés suivants, il ferait lire une chute fausse."""
+    from pokemon_mosaic.scoring import EdgeDistances, grid_score
+
+    widget, session = step
+    grille = reprendre(session)
+
+    attendu = grid_score(grille, EdgeDistances(session.started_from.cards.cards))
+    assert widget._timeline[0].score == pytest.approx(attendu)
+
+
+def test_launching_continues_after_the_started_arrangement(step, capture_runs):
+    """« Lancer » part de lui et garde sa timeline, comme « Prolonger »."""
+    widget, session = step
+    grille = reprendre(session)
+    timeline = widget._timeline
+
+    widget._start.click()
+
+    assert np.array_equal(capture_runs[0]["previous_grid"], grille)
+    assert capture_runs[0]["timeline"] is timeline
+
+
+def test_a_run_from_the_started_arrangement_keeps_it_first(step):
+    from pokemon_mosaic.ui.runner import RunWorker
+
+    widget, session = step
+    grille = reprendre(session)
+    timeline = widget._timeline
+
+    RunWorker(session, RunControl(), timeline[-1].grid, timeline).run()
+
+    assert len(timeline) > 1
+    assert timeline[0].iteration == 0 and np.array_equal(timeline[0].grid, grille)
+
+
+def test_changing_the_cards_drops_the_started_arrangement(step):
+    """Il ne décrit plus la mise en page : il s'efface, sa case reste."""
+    widget, session = step
+    reprendre(session)
+
+    session.set_excluded([0], True)
+
+    assert widget._timeline is None
+    assert widget._view.currentWidget() is widget._welcome
+    assert session.saved_count() == 1
+
+
+def test_a_presentation_change_keeps_the_started_arrangement(step):
+    """L'habillage n'entre pas dans la signature : le cliché tient toujours."""
+    widget, session = step
+    reprendre(session)
+
+    session.set_layout(card_gap_mm=3.0)
+
+    assert widget._timeline is not None and len(widget._timeline) == 1
+
+
+def test_a_running_calculation_keeps_its_timeline(step):
+    """Remplacer la timeline sous un calcul mêlerait deux calculs."""
+    widget, session = step
+    widget._thread = object()
+
+    reprendre(session)
+
+    assert widget._timeline is None
+    widget._thread = None
+
+
+def test_launching_after_a_normal_run_starts_afresh(step, capture_runs):
+    """Une fois un calcul parti, « Lancer » repart d'une grille neuve, comme
+    avant."""
+    widget, session = step
+    reprendre(session)
+    widget._start.click()
+    # La fin du calcul, comme `_on_finished` : le fil lâché, les boutons rendus.
+    widget._thread = widget._worker = None
+    widget._update_buttons(running=False)
+
+    widget._start.click()
+
+    assert capture_runs[1]["previous_grid"] is None
