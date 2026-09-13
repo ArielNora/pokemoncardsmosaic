@@ -1035,6 +1035,19 @@
     </message>
 </context>
 <context>
+    <name>HelpButton</name>
+    <message>
+        <location filename="../src/pokemon_mosaic/ui/tutorial.py" line="465"/>
+        <source>Afficher ou masquer l&apos;aide de cette page. Clic droit : revoir les visites guidées.</source>
+        <translation>Show or hide this page’s help. Right-click: replay the guided tours.</translation>
+    </message>
+    <message>
+        <location filename="../src/pokemon_mosaic/ui/tutorial.py" line="467"/>
+        <source>Revoir les visites guidées</source>
+        <translation>Replay the guided tours</translation>
+    </message>
+</context>
+<context>
     <name>LayoutStep</name>
     <message>
         <location filename="../src/pokemon_mosaic/ui/layout_step.py" line="407"/>
@@ -1180,52 +1193,57 @@
 <context>
     <name>MainWindow</name>
     <message>
-        <location filename="../src/pokemon_mosaic/ui/main_window.py" line="107"/>
+        <location filename="../src/pokemon_mosaic/ui/main_window.py" line="108"/>
         <source>Cartes</source>
         <translation>Cards</translation>
     </message>
     <message>
-        <location filename="../src/pokemon_mosaic/ui/main_window.py" line="108"/>
+        <location filename="../src/pokemon_mosaic/ui/main_window.py" line="109"/>
         <source>Paramètres</source>
         <translation>Parameters</translation>
     </message>
     <message>
-        <location filename="../src/pokemon_mosaic/ui/main_window.py" line="109"/>
+        <location filename="../src/pokemon_mosaic/ui/main_window.py" line="110"/>
         <source>Exécution</source>
         <translation>Run</translation>
     </message>
     <message>
-        <location filename="../src/pokemon_mosaic/ui/main_window.py" line="110"/>
+        <location filename="../src/pokemon_mosaic/ui/main_window.py" line="111"/>
         <source>Export</source>
         <translation>Export</translation>
     </message>
     <message>
-        <location filename="../src/pokemon_mosaic/ui/main_window.py" line="294"/>
+        <location filename="../src/pokemon_mosaic/ui/main_window.py" line="297"/>
+        <source>Les visites guidées reviendront à la prochaine ouverture de chaque page.</source>
+        <translation>The guided tours will come back the next time each page opens.</translation>
+    </message>
+    <message>
+        <location filename="../src/pokemon_mosaic/ui/main_window.py" line="332"/>
         <source>Agencement « %1 » repris : cartes, grille et habillage.</source>
         <translation>Arrangement “%1” taken up: cards, grid and presentation.</translation>
     </message>
     <message>
-        <location filename="../src/pokemon_mosaic/ui/main_window.py" line="411"/>
+        <location filename="../src/pokemon_mosaic/ui/main_window.py" line="449"/>
         <source>Fermeture forcée : un traitement de fond n&apos;a pas répondu.</source>
         <translation>Closing anyway: a background task did not respond.</translation>
     </message>
     <message>
-        <location filename="../src/pokemon_mosaic/ui/main_window.py" line="418"/>
+        <location filename="../src/pokemon_mosaic/ui/main_window.py" line="456"/>
         <source>Pokémon Mosaic</source>
         <translation>Pokémon Mosaic</translation>
     </message>
     <message>
-        <location filename="../src/pokemon_mosaic/ui/main_window.py" line="421"/>
+        <location filename="../src/pokemon_mosaic/ui/main_window.py" line="459"/>
         <source>Précédent</source>
         <translation>Back</translation>
     </message>
     <message>
-        <location filename="../src/pokemon_mosaic/ui/main_window.py" line="422"/>
+        <location filename="../src/pokemon_mosaic/ui/main_window.py" line="460"/>
         <source>Suivant</source>
         <translation>Next</translation>
     </message>
     <message>
-        <location filename="../src/pokemon_mosaic/ui/main_window.py" line="423"/>
+        <location filename="../src/pokemon_mosaic/ui/main_window.py" line="461"/>
         <source>Langue</source>
         <translation>Language</translation>
     </message>
@@ -2027,6 +2045,30 @@
         <location filename="../src/pokemon_mosaic/ui/strip_preview.py" line="171"/>
         <source>Aucune carte retenue</source>
         <translation>No cards kept</translation>
+    </message>
+</context>
+<context>
+    <name>TutorialOverlay</name>
+    <message>
+        <location filename="../src/pokemon_mosaic/ui/tutorial.py" line="192"/>
+        <location filename="../src/pokemon_mosaic/ui/tutorial.py" line="286"/>
+        <source>Passer le tutoriel</source>
+        <translation>Skip the tutorial</translation>
+    </message>
+    <message>
+        <location filename="../src/pokemon_mosaic/ui/tutorial.py" line="287"/>
+        <source>Passer le tutoriel de cette page ?</source>
+        <translation>Skip this page’s tutorial?</translation>
+    </message>
+    <message>
+        <location filename="../src/pokemon_mosaic/ui/tutorial.py" line="288"/>
+        <source>Passer aussi tous les tutoriels suivants</source>
+        <translation>Also skip all the following tutorials</translation>
+    </message>
+    <message>
+        <location filename="../src/pokemon_mosaic/ui/tutorial.py" line="354"/>
+        <source>Cliquez pour continuer (%1 sur %2)</source>
+        <translation>Click to continue (%1 of %2)</translation>
     </message>
 </context>
 </TS>

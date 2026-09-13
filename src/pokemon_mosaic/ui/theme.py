@@ -277,6 +277,17 @@ def set_glow(effect, palette: QPalette, ready: bool) -> None:
     effect.setBlurRadius(GLOW_RADIUS if ready else GLOW_RADIUS_WAITING)
 
 
+HELP_GLOW_RADIUS, HELP_GLOW_ALPHA = 18, 190
+
+
+def set_help_glow(effect, palette: QPalette) -> None:
+    """L'aura bleue du bouton « ? », dans le bleu de la sélection du mode."""
+    couleur = QColor(palette.highlight().color())
+    couleur.setAlpha(HELP_GLOW_ALPHA)
+    effect.setColor(couleur)
+    effect.setBlurRadius(HELP_GLOW_RADIUS)
+
+
 def stylesheet(palette: QPalette) -> str:
     """La feuille globale, écrite pour les propriétés `role` des widgets."""
     c = colours(palette)
@@ -384,6 +395,27 @@ QPushButton[role="mini"] {{
     padding: 0px;
     font-weight: bold;
 }}
+
+/* Le bouton rond de l'aide, et la bulle de ses explications. */
+QPushButton[role="help"] {{
+    min-width: 26px; max-width: 26px;
+    min-height: 26px; max-height: 26px;
+    border-radius: 13px;
+    padding: 0px;
+    font-weight: bold;
+}}
+QPushButton[role="help"]:checked {{
+    background: palette(highlight);
+    color: palette(highlighted-text);
+    border: 1px solid palette(highlight);
+}}
+QFrame[role="tutorial-bubble"] {{
+    background: palette(base);
+    color: palette(text);
+    border: 1px solid palette(highlight);
+    border-radius: 6px;
+}}
+QFrame[role="tutorial-bubble"] QLabel {{ background: transparent; border: none; }}
 
 /* Les parties d'une étape, à gauche. Des lignes de liste ordinaires ne se
    lisaient pas comme des onglets : hautes de dix-huit pixels et collées les

@@ -27,6 +27,7 @@ from .layout_step import LayoutStep
 from .presets_bar import PresetsBar
 from .run_step import RunStep
 from .session import Session
+from .tutorial import HelpButton, Tutorial, TutorialController, TutorialStore
 
 # L'aura du bouton « Suivant » : son rayon, son opacité, et la place à lui
 # laisser autour. ⚠️ **Le rouge est plus discret que le vert** : il accompagne le
@@ -241,6 +242,20 @@ class MainWindow(QMainWindow):
         bottom.setSpacing(GLOW_ROOM)
         bottom.addWidget(self._language_label)
         bottom.addWidget(self._language_box)
+        # L'aide de la page : un « ? » rond, à côté de la langue, voir `tutorial`.
+        self._help = HelpButton()
+        bottom.addWidget(self._help)
+        self._tutorials = TutorialStore(lambda: self.settings())
+        self._tutorial = TutorialController(self, self._tutorials,
+                                            self.current_tutorial)
+        self._help.toggled.connect(self._tutorial.set_help)
+        self._tutorial.help_changed.connect(self._show_help_state)
+        # « ? » est grisé pendant une visite guidée : les deux modes ne se
+        # mêlent pas.
+        self._tutorial.guide_running.connect(
+            lambda en_cours: self._help.setEnabled(not en_cours))
+        self._help.rearm_requested.connect(self._rearm_tutorials)
+        self._stack.currentChanged.connect(lambda _: self._tutorial.page_shown())
         # ⚠️ **Pas de `QStatusBar`.** Elle réservait une bande vide sous les
         # boutons pendant tout le temps où rien n'avait à se dire, et éloignait
         # la navigation du bas de la fenêtre. Les messages tiennent dans la
@@ -265,6 +280,29 @@ class MainWindow(QMainWindow):
         self.resize(1100, 760)
         self._update_navigation()
         self.retranslate_ui()
+
+    def current_tutorial(self) -> Tutorial | None:
+        """Le tutoriel de la page affichée. Aucun pour l'instant : chaque étape
+        inscrira le sien."""
+        return None
+
+    def _show_help_state(self, active: bool) -> None:
+        """Recopie l'état de l'aide dans le bouton, sans qu'il le réémette."""
+        self._help.blockSignals(True)
+        self._help.setChecked(active)
+        self._help.blockSignals(False)
+
+    def _rearm_tutorials(self) -> None:
+        self._tutorial.rearm()
+        self._show_status(self.tr("Les visites guidées reviendront à la "
+                                  "prochaine ouverture de chaque page."))
+
+    def showEvent(self, event) -> None:
+        """La première page affichée a sa visite guidée, comme les suivantes."""
+        super().showEvent(event)
+        if not getattr(self, "_premiere_page_montree", False):
+            self._premiere_page_montree = True
+            self._tutorial.page_shown()
 
     def load_cards(self, directory: str) -> None:
         """Charge un dossier de cartes. Point d'entrée du lancement.
@@ -422,6 +460,8 @@ class MainWindow(QMainWindow):
         self._next.setText(self.tr("Suivant"))
         self._language_label.setText(self.tr("Langue"))
         self._presets.retranslate_ui()
+        self._help.retranslate_ui()
+        self._tutorial.overlay.retranslate_ui()
         for widget in (self._stack.widget(i) for i in range(self._stack.count())):
             if hasattr(widget, "retranslate_ui"):
                 widget.retranslate_ui()
