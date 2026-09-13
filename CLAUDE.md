@@ -32,6 +32,21 @@ découpages qui ont du sens ici :
   `grid.py`, `export.py`
 - l'interface : `src/pokemon_mosaic/ui/`
 
+⚠️ **Toujours annoncer un audit avant de le lancer**, une fois terminée et
+signalée la demande en cours. En une ou deux lignes :
+
+- **qu'un audit commence**, et pourquoi maintenant (cadence en retard, gros
+  volume de changements) ;
+- **sur quels fichiers**, lot par lot, et combien au total ;
+- **sa durée probable**, en ordre de grandeur : quelques fichiers, une dizaine
+  de minutes ; les quatre lots, plus d'une heure, davantage si les constats
+  sont nombreux, chaque correction passant par un test, une revue et un commit.
+
+Le 2026-09-12, une demande de 20 minutes a été suivie, sans prévenir, d'un audit
+des quatre lots qui en a pris 2 h 10 : l'utilisateur a vu une demande simple
+durer 2 h 30 sans savoir pourquoi. L'annonce n'est **pas une demande
+d'autorisation** : on enchaîne ensuite.
+
 **L'enchaînement se fait d'un bout à l'autre, sans rien demander** :
 
 1. `/verif-code` sur chaque lot ;
