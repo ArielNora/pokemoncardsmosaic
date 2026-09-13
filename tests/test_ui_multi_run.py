@@ -298,7 +298,7 @@ def test_a_stopped_multi_run_keeps_the_interrupted_run(tab):
     assert widget.groups[1].snapshots
     assert widget.groups[1].result.stopped_by == StopReason.REQUESTED
     # L'interrompu ne compte pas parmi les lancements menés à leur terme.
-    assert widget._progress_label.text() == "1 lancement(s) terminé(s)."
+    assert widget._progress_label.text().startswith("1 lancement(s) terminé(s).")
 
 
 def test_a_failure_keeps_the_groups_already_done(tab):
@@ -555,6 +555,106 @@ def test_the_title_gives_the_best_score_of_the_group(tab):
     assert "meilleur score 30" in widget._group_title(groupe)
 
 
+def test_the_end_says_that_a_lower_score_is_better(tab):
+    """Demandé par l'utilisateur : « meilleur score 2592 » passait pour moins
+    bon que 2970."""
+    widget, session = tab
+    feed_tab(widget, session, 2)
+
+    assert widget._progress_label.text() == (
+        "2 lancement(s) terminé(s). "
+        "Plus le score est bas, plus l'agencement est optimisé.")
+
+
+def press(widget, key):
+    from PySide6.QtTest import QTest
+
+    QTest.keyClick(widget, key)
+
+
+@pytest.fixture
+def three_groups(tab):
+    """Trois groupes, le dernier réduit à deux clichés, le premier cliché
+    choisi."""
+    widget, session = tab
+    widget.show()
+    feed_tab(widget, session, 3)
+    widget.groups[2].snapshots = widget.groups[2].snapshots[:2]
+    widget._show_results()
+    widget.select(0, 0)
+    widget.setFocus()
+    return widget
+
+
+def test_left_and_right_move_within_the_group(qt_app, three_groups):
+    from PySide6.QtCore import Qt
+
+    widget = three_groups
+    press(widget, Qt.Key_Right)
+    press(widget, Qt.Key_Right)
+    assert widget._selected == (0, 2)
+
+    press(widget, Qt.Key_Left)
+    assert widget._selected == (0, 1)
+    assert widget._thumbs[(0, 1)].property("role") == "slot-current"
+
+
+def test_up_and_down_move_between_groups(qt_app, three_groups):
+    from PySide6.QtCore import Qt
+
+    widget = three_groups
+    widget.select(0, 3)
+    press(widget, Qt.Key_Down)
+    assert widget._selected == (1, 3)
+
+    press(widget, Qt.Key_Up)
+    assert widget._selected == (0, 3)
+
+
+def test_moving_stops_at_the_edges(qt_app, three_groups):
+    from PySide6.QtCore import Qt
+
+    widget = three_groups
+    press(widget, Qt.Key_Left)
+    press(widget, Qt.Key_Up)
+    assert widget._selected == (0, 0)
+
+    widget.select(1, 4)
+    press(widget, Qt.Key_Right)
+    assert widget._selected == (1, 4)
+
+
+def test_going_down_to_a_shorter_group_lands_on_its_last(qt_app, three_groups):
+    """Un lancement interrompu peut n'avoir que deux clichés : descendre depuis
+    le cinquième tombe sur son dernier au lieu de ne rien faire."""
+    from PySide6.QtCore import Qt
+
+    widget = three_groups
+    widget.select(1, 4)
+
+    press(widget, Qt.Key_Down)
+
+    assert widget._selected == (2, 1)
+
+
+def test_clicking_a_thumbnail_gives_the_arrows_to_the_tab(qt_app, three_groups):
+    from PySide6.QtCore import Qt
+    from PySide6.QtTest import QTest
+
+    widget = three_groups
+    widget.activateWindow()
+    widget._count_field.setFocus()
+    qt_app.processEvents()
+    assert not widget.hasFocus()
+
+    QTest.mouseClick(widget._thumbs[(1, 1)], Qt.LeftButton)
+    qt_app.processEvents()
+
+    assert widget.hasFocus(), "les flèches iraient au champ du nombre"
+    press(widget, Qt.Key_Right)
+    assert widget._selected == (1, 2)
+
+
 def test_a_new_multi_run_forgets_the_choice(tab, capture_multi_runs):
     widget, session = tab
     feed_tab(widget, session, 2)
@@ -672,6 +772,32 @@ def test_a_slot_that_no_tab_holds_still_opens_its_window(step, monkeypatch):
     widget._show_saved(0)
 
     assert len(ouvertes) == 1
+
+
+@pytest.mark.parametrize("touche", ["Key_Left", "Key_Right", "Key_Home",
+                                    "Key_End", "Key_Plus", "Key_Minus"])
+def test_the_multi_run_keys_never_reach_the_hidden_timeline(qt_app, step,
+                                                             touche):
+    """Ignorées par l'onglet, elles remontaient à l'écran d'exécution, qui
+    déplaçait le curseur caché du lancement simple ou son zoom."""
+    from PySide6.QtCore import Qt
+    from PySide6.QtTest import QTest
+
+    from pokemon_mosaic.ui.runner import RunWorker
+
+    widget, session = step
+    worker = RunWorker(session, RunControl())
+    worker.started_run.connect(widget._on_started)
+    worker.snapshot.connect(widget._on_snapshot)
+    worker.run()
+    widget._slider.setValue(len(widget._timeline) // 2)
+    position, zoom = widget._slider.value(), widget._zoom
+    widget._tabs.setCurrentWidget(widget._multi)
+
+    QTest.keyClick(widget._multi, getattr(Qt, touche))
+
+    assert widget._slider.value() == position
+    assert widget._zoom == zoom
 
 
 def test_the_single_run_comes_back_after_the_multi_run(step, capture_multi_runs):

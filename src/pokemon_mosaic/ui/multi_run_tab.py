@@ -48,6 +48,10 @@ THUMB = QSize(72, 72)
 RESULTS_WIDTH = 5 * (THUMB.width() + 14) + 36
 # Le zoom de l'image en grand, et ses bornes, comme la fenêtre d'une case.
 ZOOM_MIN, ZOOM_MAX, ZOOM_STEP = 1.0, 6.0, 1.25
+# Les autres touches que l'écran d'exécution interprète pour le lancement
+# simple : l'onglet les garde pour lui, voir `MultiRunTab.keyPressEvent`.
+NAVIGATION_KEYS = (Qt.Key_Home, Qt.Key_End, Qt.Key_Plus, Qt.Key_Equal,
+                   Qt.Key_Minus, Qt.Key_PageUp, Qt.Key_PageDown)
 
 
 def thumb_step(grid, cards) -> int:
@@ -149,6 +153,11 @@ class MultiRunTab(QWidget):
         self._render_timer.timeout.connect(self._flush_render)
         self._render_timer.start()
         self._build()
+        # Les flèches parcourent les groupes : l'onglet doit pouvoir prendre le
+        # clavier, et ses cadres défilants ne pas le lui voler.
+        self.setFocusPolicy(Qt.StrongFocus)
+        self._view.setFocusPolicy(Qt.NoFocus)
+        self._results_scroll.setFocusPolicy(Qt.NoFocus)
         session.algorithm_changed.connect(self._update_estimate)
         session.saved_changed.connect(self._update_actions)
 
@@ -420,9 +429,50 @@ class MultiRunTab(QWidget):
             self._selected = None
         for cle, vignette in self._thumbs.items():
             vignette.set_current(cle == self._selected)
+        if self._selected in self._thumbs:
+            # Choisie au clavier, la vignette peut être hors de la vue.
+            self._results_scroll.ensureWidgetVisible(self._thumbs[self._selected])
         self._pending = True
         self._flush_render()
         self._update_actions()
+
+    def move_selection(self, d_group: int, d_index: int) -> None:
+        """Passe au cliché voisin : même groupe à gauche et à droite, groupe
+        voisin en haut et en bas.
+
+        ⚠️ **Le rang est ramené au groupe d'arrivée.** Un lancement interrompu
+        peut n'avoir qu'un cliché : descendre depuis le cinquième d'un groupe
+        complet tombe sur son dernier, au lieu de ne rien faire.
+        """
+        if self._selected is None or not self.groups:
+            return
+        rang, index = self._selected
+        rang = max(0, min(len(self.groups) - 1, rang + d_group))
+        dernier = len(self.groups[rang].snapshots) - 1
+        if dernier < 0:
+            return
+        index = max(0, min(dernier, index + d_index))
+        if (rang, index) != self._selected:
+            self.select(rang, index)
+
+    def keyPressEvent(self, event) -> None:
+        """Les flèches parcourent les groupes.
+
+        ⚠️ **Les touches de navigation s'arrêtent ici**, même inutilisées.
+        Ignorées, elles remontaient à l'écran d'exécution, qui déplaçait la
+        timeline cachée du lancement simple et son zoom : « Repartir de ce
+        cliché » serait ensuite parti d'un autre cliché que celui laissé.
+        """
+        deplacements = {Qt.Key_Left: (0, -1), Qt.Key_Right: (0, 1),
+                        Qt.Key_Up: (-1, 0), Qt.Key_Down: (1, 0)}
+        if event.key() in deplacements:
+            self.move_selection(*deplacements[event.key()])
+            event.accept()
+            return
+        if event.key() in NAVIGATION_KEYS:
+            event.accept()
+            return
+        super().keyPressEvent(event)
 
     def _show_results(self) -> None:
         """Pose un groupe par lancement : son titre, puis ses clichés."""
@@ -446,6 +496,8 @@ class MultiRunTab(QWidget):
                                      step=thumb_step(cliche.grid, groupe.cards))
                 vignette = ResultThumb(rang, index, image)
                 vignette.set_current((rang, index) == self._selected)
+                    # Le clic donne aussi le clavier à l'onglet, sans rien faire de
+                # plus : Qt le passe à l'ancêtre qui prend le focus au clic.
                 vignette.picked.connect(self.select)
                 self._results_grid.addWidget(vignette, ligne, index)
                 self._thumbs[(rang, index)] = vignette
@@ -604,8 +656,11 @@ class MultiRunTab(QWidget):
             # son terme : « 4 lancements terminés » se lisait après en avoir
             # interrompu un.
             menes = sum(1 for groupe in self.groups if not groupe.interrupted)
+            # Le score se lit à l'envers de ce qu'on attend d'une note : sans
+            # le dire, « meilleur score 2592 » passait pour moins bon que 2970.
             self._progress_label.setText(
-                self.tr("%n lancement(s) terminé(s).", "", menes))
+                self.tr("%n lancement(s) terminé(s).", "", menes) + " "
+                + self.tr("Plus le score est bas, plus l'agencement est optimisé."))
         else:
             self._progress_label.setText(
                 self.tr("Chaque lancement garde ses cinq derniers clichés."))
