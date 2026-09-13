@@ -41,6 +41,7 @@ from .estimates import (
 from .layout_tabs import STATUS_BOOST, LayoutTab
 from .session import Session
 from .strip_preview import StripPreview
+from .tutorial import Zone
 
 # En deçà, la timeline offrira trop peu d'états pour être navigable.
 USEFUL_SNAPSHOTS = 10
@@ -83,8 +84,23 @@ class AdvancedTab(LayoutTab):
         session.algorithm_changed.connect(self.refresh)
         session.cards_loaded.connect(self.refresh)
 
+    tutorial_key = "avances"
+
     def title(self) -> str:
         return self.tr("Paramètres avancés")
+
+    def tutorial_zones(self, textes) -> list[Zone]:
+        # Les sections n'ont pas d'attribut à elles : chacune est le cadre qui
+        # porte son titre. Dans la zone défilante, seule leur partie visible
+        # est entourée.
+        return [
+            Zone(lambda: self._notice, textes.advanced_notice),
+            Zone(lambda: self._metric_title.parentWidget(), textes.advanced_metric),
+            Zone(lambda: self._saving_title.parentWidget(), textes.advanced_saving),
+            Zone(lambda: self._settings_title.parentWidget(),
+                 textes.advanced_settings),
+            Zone(lambda: self._projection, textes.advanced_projection),
+        ]
 
     # --- Construction -----------------------------------------------------
 

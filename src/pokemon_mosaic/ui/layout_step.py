@@ -39,6 +39,8 @@ from .layout_tabs import (
     PlacementTab,
 )
 from .session import Session
+from .tutorial import Tutorial, Zone
+from .tutorial_texts import TutorialTexts
 
 # Taille de la pastille d'état posée devant chaque onglet.
 BADGE = 22
@@ -204,9 +206,13 @@ class LayoutStep(QWidget):
     # Émis quand « Suivant » doit être réévalué par la fenêtre.
     advance_state_changed = Signal()
 
+    # Émis quand l'onglet affiché change : chaque onglet a sa visite.
+    tutorial_changed = Signal()
+
     def __init__(self, session: Session, parent=None):
         super().__init__(parent)
         self._session = session
+        self._texts = TutorialTexts(self)
         # Parties que l'utilisateur a validées en cliquant « Suivant » dessus.
         # ⚠️ Cet ensemble **survit** à un aller-retour vers l'étape 1 : revalider
         # trois écrans pour avoir changé une carte serait une punition.
@@ -505,8 +511,11 @@ class LayoutStep(QWidget):
 
     def _on_tab_picked(self, row: int) -> None:
         if 0 <= row < len(self._rows) and self._rows[row] != FAMILY_ROW:
+            change = self._rows[row] != self._position
             self._position = self._rows[row]
             self._pages.setCurrentIndex(self._position)
+            if change:
+                self.tutorial_changed.emit()
         elif not self._navigating:
             # Le rang courant s'est posé sur l'intitulé de famille, qui n'est
             # pas une destination : on le remet là où l'écran est resté.
@@ -561,6 +570,26 @@ class LayoutStep(QWidget):
             self._show(position + 1)
             return True
         return False
+
+    def tutorial(self) -> Tutorial | None:
+        """La visite de l'onglet affiché.
+
+        La colonne des parties s'explique avec le premier onglet : c'est en
+        arrivant sur l'étape qu'on découvre comment elle se parcourt.
+        """
+        position = self._position
+        onglet = self._tabs[position]
+        if not onglet.tutorial_key:
+            return None
+        textes = self._texts
+
+        def zones() -> list[Zone]:
+            propres = onglet.tutorial_zones(textes)
+            if position == 0:
+                return [Zone(lambda: self._list, textes.layout_parts), *propres]
+            return propres
+
+        return Tutorial(onglet.tutorial_key, zones)
 
     def all_ready(self) -> bool:
         return all(self._ready(position) for position in range(len(self._tabs)))

@@ -63,6 +63,114 @@ class TutorialTexts(QObject):
         return self.tr("Les cartes à vérifier : format inattendu ou fichier "
                        "illisible.")
 
+    # --- Étape 2 : la colonne des parties ----------------------------------
+
+    def layout_parts(self) -> str:
+        return self.tr("Réglez les parties dans l'ordre, puis validez chacune "
+                       "avec « Suivant ».")
+
+    # --- Étape 2 : Pages ---------------------------------------------------
+
+    def paper_format(self) -> str:
+        return self.tr("Choisissez le format de la feuille, ou tapez ses "
+                       "dimensions.")
+
+    def paper_landscape(self) -> str:
+        return self.tr("Cochez pour mettre la feuille en paysage.")
+
+    def paper_preview(self) -> str:
+        return self.tr("Vous pouvez ajouter ou enlever des feuilles avec les "
+                       "boutons ＋ et −.")
+
+    def paper_summary(self) -> str:
+        return self.tr("La surface totale de vos feuilles.")
+
+    def paper_warnings(self) -> str:
+        return self.tr("Les liens qui ne tiennent pas dans la grille.")
+
+    # --- Étape 2 : Taille et cases vides -----------------------------------
+
+    def grid_cols(self) -> str:
+        return self.tr("Le nombre de colonnes de la grille.")
+
+    def grid_rows(self) -> str:
+        return self.tr("Le nombre de lignes de la grille.")
+
+    def grid_suggestions(self) -> str:
+        return self.tr("Double-cliquez une grille recommandée pour "
+                       "l'appliquer.")
+
+    def grid_preview(self) -> str:
+        return self.tr("Cliquez ou glissez dans la grille pour poser les cases "
+                       "vides.")
+
+    def grid_auto_place(self) -> str:
+        return self.tr("Placez automatiquement les cases vides qui manquent.")
+
+    def grid_clear(self) -> str:
+        return self.tr("Retirez toutes les cases vides.")
+
+    def grid_status(self) -> str:
+        return self.tr("Ce qui reste à régler sur la grille.")
+
+    # --- Étape 2 : Taille des cartes et écarts -----------------------------
+
+    def card_width(self) -> str:
+        return self.tr("Réglez la largeur des cartes, ou laissez-la en "
+                       "automatique.")
+
+    def card_real(self) -> str:
+        return self.tr("Vous pouvez donner aux cartes la taille d'une vraie "
+                       "carte.")
+
+    def card_gap(self) -> str:
+        return self.tr("Réglez l'écart entre les cartes.")
+
+    def card_shapes(self) -> str:
+        return self.tr("Affichez les grilles qui tiendraient à cette taille.")
+
+    def card_preview(self) -> str:
+        return self.tr("L'aperçu des cartes sur les feuilles.")
+
+    def card_status(self) -> str:
+        return self.tr("Vous pouvez continuer quand la grille tient sur les "
+                       "feuilles.")
+
+    # --- Étape 2 : Emplacement de la grille --------------------------------
+
+    def placement_preview(self) -> str:
+        return self.tr("Cliquez et tirez dans la mosaïque pour la déplacer sur "
+                       "sa feuille.")
+
+    def placement_center(self) -> str:
+        return self.tr("Centrez chaque morceau sur sa feuille.")
+
+    def placement_reset(self) -> str:
+        return self.tr("Remettez les morceaux à leur place par défaut.")
+
+    def placement_status(self) -> str:
+        return self.tr("Combien de feuilles ont été déplacées.")
+
+    # --- Étape 2 : Paramètres avancés --------------------------------------
+
+    def advanced_notice(self) -> str:
+        return self.tr("Vous pouvez garder les valeurs par défaut et passer à "
+                       "la suite.")
+
+    def advanced_metric(self) -> str:
+        return self.tr("Réglez l'épaisseur des bandes comparées entre deux "
+                       "cartes voisines.")
+
+    def advanced_saving(self) -> str:
+        return self.tr("Choisissez tous les combien d'échanges un agencement "
+                       "est enregistré.")
+
+    def advanced_settings(self) -> str:
+        return self.tr("Choisissez l'algorithme et quand il s'arrête.")
+
+    def advanced_projection(self) -> str:
+        return self.tr("La durée estimée du calcul et le gain attendu.")
+
     # --- La fenêtre, présentée avec la première étape ----------------------
 
     def window_presets(self) -> str:

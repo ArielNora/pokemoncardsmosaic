@@ -33,6 +33,7 @@ from . import theme
 from .big_spin import BigChoice, BigFloatSpin, BigSpin
 from .page_preview import MAX_PANEL_ROWS, MAX_PANELS, PagePreview
 from .session import Session
+from .tutorial import Zone
 
 # Assez de propositions pour avoir le choix, assez peu pour être lues d'un coup.
 SUGGESTION_COUNT = 5
@@ -67,8 +68,15 @@ class LayoutTab(QWidget):
     def _on_panel_rows_requested(self, rows: int) -> None:
         self._session.set_layout(panel_rows=max(1, min(MAX_PANEL_ROWS, rows)))
 
+    # La clé de la visite guidée de l'onglet, retenue une fois vue.
+    tutorial_key = ""
+
     def title(self) -> str:
         raise NotImplementedError
+
+    def tutorial_zones(self, textes) -> list[Zone]:
+        """Les zones de l'onglet dans l'ordre de la visite, voir `tutorial`."""
+        return []
 
     def is_valid(self) -> bool:
         """Vrai si l'on peut passer à la suite. Sans contrainte, toujours vrai."""
@@ -120,8 +128,21 @@ class GridSizeTab(LayoutTab):
         # les précédentes n'a plus de raison de convenir.
         session.cards_loaded.connect(self._arm_auto_fit)
 
+    tutorial_key = "grille-taille"
+
     def title(self) -> str:
         return self.tr("Taille et cases vides")
+
+    def tutorial_zones(self, textes) -> list[Zone]:
+        return [
+            Zone(lambda: self._cols, textes.grid_cols),
+            Zone(lambda: self._rows, textes.grid_rows),
+            Zone(lambda: self._suggestions_box, textes.grid_suggestions),
+            Zone(lambda: self._preview, textes.grid_preview),
+            Zone(lambda: self._auto_place, textes.grid_auto_place),
+            Zone(lambda: self._clear_place, textes.grid_clear),
+            Zone(lambda: self._status, textes.grid_status),
+        ]
 
     # --- La grille proposée au premier passage ---------------------------
 
@@ -408,8 +429,22 @@ class PaperTab(LayoutTab):
         session.selection_changed.connect(self._preview.refresh)
         session.cards_loaded.connect(self._preview.refresh)
 
+    tutorial_key = "pages"
+
     def title(self) -> str:
         return self.tr("Pages")
+
+    def tutorial_zones(self, textes) -> list[Zone]:
+        return [
+            Zone(lambda: self._paper, textes.paper_format),
+            Zone(lambda: self._landscape, textes.paper_landscape),
+            Zone(lambda: self._preview, textes.paper_preview),
+            Zone(lambda: self._summary, textes.paper_summary),
+            # Le libellé reste affiché, vide, quand tout va bien : pas de zone
+            # sans avertissement à expliquer.
+            Zone(lambda: self._warnings if self._warnings.text() else None,
+                 textes.paper_warnings),
+        ]
 
     def _build(self) -> None:
         # ⚠️ **Trois champs pour une seule feuille.** Le format nommé est une
@@ -598,8 +633,20 @@ class CardSizeTab(LayoutTab):
         session.selection_changed.connect(self.refresh)
         session.cards_loaded.connect(self.refresh)
 
+    tutorial_key = "grille-cartes"
+
     def title(self) -> str:
         return self.tr("Taille des cartes et écarts")
+
+    def tutorial_zones(self, textes) -> list[Zone]:
+        return [
+            Zone(lambda: self._width, textes.card_width),
+            Zone(lambda: self._real_card, textes.card_real),
+            Zone(lambda: self._gap, textes.card_gap),
+            Zone(lambda: self._show_shapes, textes.card_shapes),
+            Zone(lambda: self._preview, textes.card_preview),
+            Zone(lambda: self._status, textes.card_status),
+        ]
 
     # --- Construction -----------------------------------------------------
 
@@ -878,8 +925,18 @@ class PlacementTab(LayoutTab):
         session.selection_changed.connect(self.refresh)
         session.cards_loaded.connect(self.refresh)
 
+    tutorial_key = "grille-emplacement"
+
     def title(self) -> str:
         return self.tr("Emplacement de la grille")
+
+    def tutorial_zones(self, textes) -> list[Zone]:
+        return [
+            Zone(lambda: self._preview, textes.placement_preview),
+            Zone(lambda: self._center, textes.placement_center),
+            Zone(lambda: self._reset, textes.placement_reset),
+            Zone(lambda: self._status, textes.placement_status),
+        ]
 
     def _build(self) -> None:
         self._hint = QLabel()
