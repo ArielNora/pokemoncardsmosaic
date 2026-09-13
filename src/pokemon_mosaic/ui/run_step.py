@@ -27,6 +27,12 @@ from .multi_run_tab import MultiRunTab
 from .runner import start_run
 from .saved_column import SavedColumn, SavedDialog, mosaic_image
 from .session import MAX_SAVED, Session
+from .tutorial import Tutorial, Zone
+from .tutorial_texts import TutorialTexts
+
+# La visite de l'onglet « Lancement ». Celles du multi-lancement sont dans
+# `multi_run_tab`.
+TUTORIAL_RUN = "execution"
 
 # Un cran de zoom. 1,25 laisse une progression douce sans multiplier les clics.
 ZOOM_STEP = 1.25
@@ -76,6 +82,10 @@ class RunStep(QWidget):
     # fois un agencement gardé.
     advance_state_changed = Signal()
 
+    # Émis quand la visite de l'écran change : autre onglet, ou groupes du
+    # multi-lancement qui viennent d'apparaître.
+    tutorial_changed = Signal()
+
     def __init__(self, session: Session, arrangements_directory: str = "",
                  parent=None):
         super().__init__(parent)
@@ -83,6 +93,7 @@ class RunStep(QWidget):
         # Où la bibliothèque range les agencements. Vide : rien n'est écrit,
         # ce qui laisse les tests travailler sans toucher au disque.
         self._arrangements_directory = arrangements_directory
+        self._texts = TutorialTexts(self)
         self._control: RunControl | None = None
         self._thread = None
         self._worker = None
@@ -275,6 +286,9 @@ class RunStep(QWidget):
         self._tabs = QTabWidget()
         self._tabs.addTab(simple, "")
         self._tabs.addTab(self._multi, "")
+        # Chaque onglet a sa visite : la fenêtre doit savoir qu'on a changé.
+        self._tabs.currentChanged.connect(lambda _: self.tutorial_changed.emit())
+        self._multi.tutorial_changed.connect(self._multi_tutorial_changed)
 
         layout = QHBoxLayout(self)
         layout.addWidget(self._tabs, 1)
@@ -322,6 +336,38 @@ class RunStep(QWidget):
         self._update_view()
 
     # --- Commandes --------------------------------------------------------
+
+    # --- Tutoriel ---------------------------------------------------------
+
+    def tutorial(self) -> Tutorial:
+        """La visite de l'onglet affiché.
+
+        Les onglets et la colonne des cases s'expliquent avec « Lancement »,
+        le premier qu'on voit. L'accueil et l'image partagent leur place : seul
+        celui qui est affiché a sa zone.
+        """
+        if self._tabs.currentWidget() is self._multi:
+            return self._multi.tutorial()
+        textes = self._texts
+        return Tutorial(TUTORIAL_RUN, lambda: [
+            Zone(lambda: self._tabs.tabBar(), textes.run_tabs),
+            Zone(lambda: self._welcome_start, textes.run_welcome),
+            Zone(lambda: self._scroll, textes.run_image),
+            Zone(lambda: self._slider, textes.run_slider),
+            Zone(lambda: self._zoom_fit, textes.run_zoom),
+            Zone(lambda: self._start, textes.run_start),
+            Zone(lambda: self._pause, textes.run_pause),
+            Zone(lambda: self._stop, textes.run_stop),
+            Zone(lambda: self._extend, textes.run_extend),
+            Zone(lambda: self._resume, textes.run_resume),
+            Zone(lambda: self._keep, textes.run_keep),
+            Zone(lambda: self._saved, textes.run_saved),
+        ])
+
+    def _multi_tutorial_changed(self) -> None:
+        """Les groupes du multi-lancement ne comptent que sur leur onglet."""
+        if self._tabs.currentWidget() is self._multi:
+            self.tutorial_changed.emit()
 
     def _launch(self) -> None:
         """« Lancer » : depuis l'agencement repris s'il est affiché, sinon d'une

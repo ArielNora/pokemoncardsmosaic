@@ -407,6 +407,59 @@ def test_a_glowing_element_has_a_zone_of_its_own_size(qt_app, page):
     assert zone_rect(boutons[1], hote) == attendu
 
 
+def test_a_scroll_area_filled_by_its_content_has_a_zone(qt_app):
+    """Qt ôte de la région visible ce que les enfants recouvrent : une liste
+    défilante remplie par son contenu n'y gardait rien."""
+    from PySide6.QtWidgets import QLabel, QScrollArea, QVBoxLayout, QWidget
+
+    from pokemon_mosaic.ui.tutorial import zone_rect
+
+    hote = QWidget()
+    defile = QScrollArea()
+    # Opaque, comme les groupes : un contenu transparent ne recouvre rien.
+    contenu = QLabel("contenu")
+    contenu.setAutoFillBackground(True)
+    defile.setWidget(contenu)
+    defile.setWidgetResizable(True)
+    # Sans cadre, comme les groupes : un cadre laisserait son anneau visible.
+    defile.setFrameShape(QScrollArea.NoFrame)
+    QVBoxLayout(hote).addWidget(defile)
+    hote.resize(300, 200)
+    hote.show()
+    qt_app.processEvents()
+
+    assert not zone_rect(defile, hote).isEmpty()
+    hote.close()
+
+
+def test_an_element_scrolled_out_of_its_frame_has_no_zone(qt_app):
+    from PySide6.QtWidgets import QPushButton, QScrollArea, QVBoxLayout, QWidget
+
+    from pokemon_mosaic.ui.tutorial import zone_rect
+
+    hote = QWidget()
+    contenu = QWidget()
+    contenu.setFixedSize(260, 1000)
+    # Juste sous le cadre, mais encore dans la fenêtre : seul le cadre le cache.
+    bouton = QPushButton("sous le cadre", contenu)
+    bouton.setGeometry(10, 150, 120, 30)
+    defile = QScrollArea()
+    defile.setFixedHeight(100)
+    defile.setWidget(contenu)
+    pile = QVBoxLayout(hote)
+    pile.addWidget(defile)
+    pile.addStretch(1)
+    hote.resize(300, 400)
+    hote.show()
+    qt_app.processEvents()
+
+    assert zone_rect(bouton, hote).isEmpty()
+    defile.ensureWidgetVisible(bouton)
+    qt_app.processEvents()
+    assert not zone_rect(bouton, hote).isEmpty()
+    hote.close()
+
+
 def test_the_skip_button_never_covers_the_zone_it_explains(qt_app):
     from PySide6.QtWidgets import QPushButton, QWidget
 

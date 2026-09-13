@@ -84,11 +84,11 @@ def test_every_zone_has_a_text_without_em_dash(qt_app, fenetre, tmp_path):
 
 
 def test_a_step_without_tutorial_has_none(fenetre, tmp_path):
-    """L'exécution n'a pas encore sa visite : pas de voile vide pour autant."""
+    """L'export n'a pas encore sa visite : pas de voile vide pour autant."""
     ecran, session = fenetre
     garnir(ecran, session, tmp_path)
 
-    ecran._stack.setCurrentIndex(2)
+    ecran._stack.setCurrentIndex(3)
 
     assert ecran.current_tutorial() is None
 

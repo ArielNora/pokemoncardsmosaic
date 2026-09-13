@@ -257,6 +257,8 @@ class MainWindow(QMainWindow):
         # L'étape 2 aussi : chaque onglet a sa visite.
         self._layout_step.tutorial_changed.connect(
             lambda: self._page_tutorial_changed(self._layout_step))
+        self._run_step.tutorial_changed.connect(
+            lambda: self._page_tutorial_changed(self._run_step))
         self._help.toggled.connect(self._tutorial.set_help)
         self._tutorial.help_changed.connect(self._show_help_state)
         # « ? » est grisé pendant une visite guidée : les deux modes ne se

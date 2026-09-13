@@ -171,6 +171,88 @@ class TutorialTexts(QObject):
     def advanced_projection(self) -> str:
         return self.tr("La durée estimée du calcul et le gain attendu.")
 
+    # --- Étape 3 : Lancement ----------------------------------------------
+
+    def run_tabs(self) -> str:
+        return self.tr("Lancez un calcul ici, ou plusieurs d'un coup dans "
+                       "Multi-lancement.")
+
+    def run_welcome(self) -> str:
+        return self.tr("Lancez le calcul pour voir la mosaïque se construire.")
+
+    def run_image(self) -> str:
+        return self.tr("La mosaïque du cliché affiché.")
+
+    def run_slider(self) -> str:
+        return self.tr("Parcourez les clichés avec le curseur ou les flèches "
+                       "du clavier.")
+
+    def run_zoom(self) -> str:
+        return self.tr("Zoomez avec + et −, ou revenez à l'image entière.")
+
+    def run_start(self) -> str:
+        return self.tr("Lancez un nouveau calcul.")
+
+    def run_pause(self) -> str:
+        return self.tr("Mettez le calcul en pause, puis reprenez-le.")
+
+    def run_stop(self) -> str:
+        return self.tr("Arrêtez le calcul.")
+
+    def run_extend(self) -> str:
+        return self.tr("Poursuivez le calcul depuis le dernier cliché.")
+
+    def run_resume(self) -> str:
+        return self.tr("Repartez du cliché affiché : les suivants sont "
+                       "abandonnés.")
+
+    def run_keep(self) -> str:
+        return self.tr("Enregistrez le cliché affiché dans une case, pour "
+                       "l'export.")
+
+    def run_saved(self) -> str:
+        return self.tr("Les agencements gardés, d'où part l'export. Cliquez-en "
+                       "un pour le revoir.")
+
+    # --- Étape 3 : Multi-lancement -----------------------------------------
+
+    def multi_count(self) -> str:
+        return self.tr("Choisissez combien de lancements enchaîner, vingt au "
+                       "plus.")
+
+    def multi_estimate(self) -> str:
+        return self.tr("La durée estimée de tous les lancements.")
+
+    def multi_start(self) -> str:
+        return self.tr("Lancez les calculs, l'un après l'autre.")
+
+    def multi_pause(self) -> str:
+        return self.tr("Mettez les lancements en pause, puis reprenez-les.")
+
+    def multi_stop(self) -> str:
+        return self.tr("Arrêtez les lancements : ce qui est calculé est gardé.")
+
+    def multi_progress(self) -> str:
+        return self.tr("Où en sont les lancements.")
+
+    def multi_view(self) -> str:
+        return self.tr("La mosaïque en cours de calcul, puis le cliché choisi.")
+
+    def multi_groups(self) -> str:
+        return self.tr("Les derniers clichés de chaque lancement. Cliquez-en un, "
+                       "ou utilisez les flèches.")
+
+    def multi_choice(self) -> str:
+        return self.tr("Le cliché choisi et son score : plus il est bas, mieux "
+                       "c'est.")
+
+    def multi_keep(self) -> str:
+        return self.tr("Gardez le cliché choisi dans une case, pour l'export.")
+
+    def multi_save(self) -> str:
+        return self.tr("Enregistrez-le aussi dans la bibliothèque, sans prendre "
+                       "de case.")
+
     # --- La fenêtre, présentée avec la première étape ----------------------
 
     def window_presets(self) -> str:

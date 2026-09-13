@@ -34,6 +34,13 @@ from .library import store_in_library
 from .runner import KEPT_PER_RUN, MULTI_RUN_MAX, last_snapshots, start_multi_run
 from .saved_column import mosaic_image
 from .session import MAX_SAVED, SavedGrid, Session
+from .tutorial import Tutorial, Zone
+from .tutorial_texts import TutorialTexts
+
+# La visite de l'onglet, puis celle des groupes à leur première apparition :
+# ils n'existent qu'après un multi-lancement.
+TUTORIAL_MULTI = "multi-lancement"
+TUTORIAL_GROUPS = "multi-lancement-groupes"
 
 # Le nombre proposé à l'ouverture : assez pour comparer, assez peu pour ne pas
 # occuper la machine une heure sans l'avoir demandé.
@@ -123,11 +130,14 @@ class MultiRunTab(QWidget):
     status_message = Signal(str)
     # Vrai pendant le calcul : l'écran d'exécution n'en lance jamais deux.
     busy_changed = Signal(bool)
+    # Émis quand les groupes apparaissent : leur visite peut commencer.
+    tutorial_changed = Signal()
 
     def __init__(self, session: Session, arrangements_directory: str = "",
                  parent=None):
         super().__init__(parent)
         self._session = session
+        self._texts = TutorialTexts(self)
         # Où la bibliothèque range les agencements. Vide : rien n'est écrit.
         self._arrangements_directory = arrangements_directory
         self._control: RunControl | None = None
@@ -382,6 +392,36 @@ class MultiRunTab(QWidget):
         meilleur = self.best()
         if meilleur is not None:
             self.select(*meilleur)
+        if self.groups:
+            self.tutorial_changed.emit()
+
+    # --- Tutoriel ---------------------------------------------------------
+
+    def tutorial(self) -> Tutorial:
+        """La visite de l'onglet, ou celle des groupes une fois qu'il y en a.
+
+        ⚠️ **Aucune visite pendant le calcul** : l'image change sous la bulle,
+        et les groupes n'apparaissent qu'à la fin.
+        """
+        textes = self._texts
+        pret = lambda: not self.is_busy()
+        if self.groups and not self.is_busy():
+            return Tutorial(TUTORIAL_GROUPS, lambda: [
+                Zone(lambda: self._results_scroll, textes.multi_groups),
+                Zone(lambda: self._choice if self._choice.text() else None,
+                     textes.multi_choice),
+                Zone(lambda: self._keep, textes.multi_keep),
+                Zone(lambda: self._save, textes.multi_save),
+            ], pret)
+        return Tutorial(TUTORIAL_MULTI, lambda: [
+            Zone(lambda: self._count_field, textes.multi_count),
+            Zone(lambda: self._estimate, textes.multi_estimate),
+            Zone(lambda: self._start, textes.multi_start),
+            Zone(lambda: self._pause, textes.multi_pause),
+            Zone(lambda: self._stop, textes.multi_stop),
+            Zone(lambda: self._progress, textes.multi_progress),
+            Zone(lambda: self._view, textes.multi_view),
+        ], pret)
 
     # --- Les groupes ------------------------------------------------------
 

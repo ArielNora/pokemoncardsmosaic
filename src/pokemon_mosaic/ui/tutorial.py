@@ -87,15 +87,21 @@ def zone_rect(widget: QWidget | None, host: QWidget) -> QRect:
     """
     if widget is None or not widget.isVisible() or widget.window() is not host.window():
         return QRect()
-    # ⚠️ **Bornée au widget.** Un élément qui porte une aura (« Suivant »,
-    # « ? ») a une région visible grossie du débord de son flou : la zone
-    # entourait un grand pavé vide autour d'un petit bouton rond.
-    visible = widget.visibleRegion().boundingRect().intersected(widget.rect())
+    # ⚠️ **Le rectangle du widget rogné par ses parents, et non sa région
+    # visible.** Qt retire de celle-ci ce que ses enfants recouvrent : une liste
+    # défilante remplie par son contenu, les groupes du multi-lancement, n'avait
+    # plus de zone du tout. Et un élément à aura (« Suivant », « ? ») y
+    # comptait le débord de son flou. Rogner par chaque parent garde ce qu'il
+    # fallait : un élément sorti de son cadre en défilant n'a pas de zone.
+    visible = QRect(widget.mapTo(host, QPoint(0, 0)), widget.size())
+    parent = widget.parentWidget()
+    while parent is not None and parent is not host and not visible.isEmpty():
+        visible = visible.intersected(
+            QRect(parent.mapTo(host, QPoint(0, 0)), parent.size()))
+        parent = parent.parentWidget()
     if visible.isEmpty():
         return QRect()
-    haut_gauche = widget.mapTo(host, visible.topLeft())
-    rect = QRect(haut_gauche, visible.size()).adjusted(
-        -ZONE_MARGIN, -ZONE_MARGIN, ZONE_MARGIN, ZONE_MARGIN)
+    rect = visible.adjusted(-ZONE_MARGIN, -ZONE_MARGIN, ZONE_MARGIN, ZONE_MARGIN)
     return rect.intersected(host.rect())
 
 

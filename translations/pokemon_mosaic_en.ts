@@ -1037,12 +1037,12 @@
 <context>
     <name>HelpButton</name>
     <message>
-        <location filename="../src/pokemon_mosaic/ui/tutorial.py" line="518"/>
+        <location filename="../src/pokemon_mosaic/ui/tutorial.py" line="524"/>
         <source>Afficher ou masquer l&apos;aide de cette page. Clic droit : revoir les visites guidées.</source>
         <translation>Show or hide this page’s help. Right-click: replay the guided tours.</translation>
     </message>
     <message>
-        <location filename="../src/pokemon_mosaic/ui/tutorial.py" line="520"/>
+        <location filename="../src/pokemon_mosaic/ui/tutorial.py" line="526"/>
         <source>Revoir les visites guidées</source>
         <translation>Replay the guided tours</translation>
     </message>
@@ -1213,37 +1213,37 @@
         <translation>Export</translation>
     </message>
     <message>
-        <location filename="../src/pokemon_mosaic/ui/main_window.py" line="334"/>
+        <location filename="../src/pokemon_mosaic/ui/main_window.py" line="336"/>
         <source>Les visites guidées reviendront à la prochaine ouverture de chaque page.</source>
         <translation>The guided tours will come back the next time each page opens.</translation>
     </message>
     <message>
-        <location filename="../src/pokemon_mosaic/ui/main_window.py" line="369"/>
+        <location filename="../src/pokemon_mosaic/ui/main_window.py" line="371"/>
         <source>Agencement « %1 » repris : cartes, grille et habillage.</source>
         <translation>Arrangement “%1” taken up: cards, grid and presentation.</translation>
     </message>
     <message>
-        <location filename="../src/pokemon_mosaic/ui/main_window.py" line="486"/>
+        <location filename="../src/pokemon_mosaic/ui/main_window.py" line="488"/>
         <source>Fermeture forcée : un traitement de fond n&apos;a pas répondu.</source>
         <translation>Closing anyway: a background task did not respond.</translation>
     </message>
     <message>
-        <location filename="../src/pokemon_mosaic/ui/main_window.py" line="493"/>
+        <location filename="../src/pokemon_mosaic/ui/main_window.py" line="495"/>
         <source>Pokémon Mosaic</source>
         <translation>Pokémon Mosaic</translation>
     </message>
     <message>
-        <location filename="../src/pokemon_mosaic/ui/main_window.py" line="496"/>
+        <location filename="../src/pokemon_mosaic/ui/main_window.py" line="498"/>
         <source>Précédent</source>
         <translation>Back</translation>
     </message>
     <message>
-        <location filename="../src/pokemon_mosaic/ui/main_window.py" line="497"/>
+        <location filename="../src/pokemon_mosaic/ui/main_window.py" line="499"/>
         <source>Suivant</source>
         <translation>Next</translation>
     </message>
     <message>
-        <location filename="../src/pokemon_mosaic/ui/main_window.py" line="498"/>
+        <location filename="../src/pokemon_mosaic/ui/main_window.py" line="500"/>
         <source>Langue</source>
         <translation>Language</translation>
     </message>
@@ -1251,77 +1251,77 @@
 <context>
     <name>MultiRunTab</name>
     <message>
-        <location filename="../src/pokemon_mosaic/ui/multi_run_tab.py" line="258"/>
+        <location filename="../src/pokemon_mosaic/ui/multi_run_tab.py" line="268"/>
         <source>Nombre de lancements</source>
         <translation>Number of runs</translation>
     </message>
     <message>
-        <location filename="../src/pokemon_mosaic/ui/multi_run_tab.py" line="260"/>
+        <location filename="../src/pokemon_mosaic/ui/multi_run_tab.py" line="270"/>
         <source>Vingt au plus. Ils tournent l&apos;un après l&apos;autre, avec les mêmes réglages.</source>
         <translation>Twenty at most. They run one after the other, with the same settings.</translation>
     </message>
     <message>
-        <location filename="../src/pokemon_mosaic/ui/multi_run_tab.py" line="262"/>
+        <location filename="../src/pokemon_mosaic/ui/multi_run_tab.py" line="272"/>
         <source>Lancer</source>
         <translation>Start</translation>
     </message>
     <message>
-        <location filename="../src/pokemon_mosaic/ui/multi_run_tab.py" line="263"/>
+        <location filename="../src/pokemon_mosaic/ui/multi_run_tab.py" line="273"/>
         <source>Arrêter</source>
         <translation>Stop</translation>
     </message>
     <message>
-        <location filename="../src/pokemon_mosaic/ui/multi_run_tab.py" line="264"/>
+        <location filename="../src/pokemon_mosaic/ui/multi_run_tab.py" line="274"/>
         <source>Garder</source>
         <translation>Keep</translation>
     </message>
     <message>
-        <location filename="../src/pokemon_mosaic/ui/multi_run_tab.py" line="266"/>
+        <location filename="../src/pokemon_mosaic/ui/multi_run_tab.py" line="276"/>
         <source>Le met dans une des quatre cases, pour l&apos;export, et dans la bibliothèque.</source>
         <translation>Puts it in one of the four slots, for export, and in the library.</translation>
     </message>
     <message>
-        <location filename="../src/pokemon_mosaic/ui/multi_run_tab.py" line="268"/>
+        <location filename="../src/pokemon_mosaic/ui/multi_run_tab.py" line="278"/>
         <source>Enregistrer dans la bibliothèque</source>
         <translation>Save to the library</translation>
     </message>
     <message>
-        <location filename="../src/pokemon_mosaic/ui/multi_run_tab.py" line="270"/>
+        <location filename="../src/pokemon_mosaic/ui/multi_run_tab.py" line="280"/>
         <source>L&apos;écrit dans la bibliothèque des agencements, sans prendre de case.</source>
         <translation>Writes it to the arrangement library, without taking a slot.</translation>
     </message>
     <message>
-        <location filename="../src/pokemon_mosaic/ui/multi_run_tab.py" line="272"/>
+        <location filename="../src/pokemon_mosaic/ui/multi_run_tab.py" line="282"/>
         <source>Dézoomer</source>
         <translation>Zoom out</translation>
     </message>
     <message>
-        <location filename="../src/pokemon_mosaic/ui/multi_run_tab.py" line="273"/>
+        <location filename="../src/pokemon_mosaic/ui/multi_run_tab.py" line="283"/>
         <source>Zoomer</source>
         <translation>Zoom in</translation>
     </message>
     <message>
-        <location filename="../src/pokemon_mosaic/ui/multi_run_tab.py" line="309"/>
+        <location filename="../src/pokemon_mosaic/ui/multi_run_tab.py" line="319"/>
         <source>Calcul en cours…</source>
         <translation>Running…</translation>
     </message>
     <message>
-        <location filename="../src/pokemon_mosaic/ui/multi_run_tab.py" line="312"/>
+        <location filename="../src/pokemon_mosaic/ui/multi_run_tab.py" line="322"/>
         <source>Multi-lancement en cours…</source>
         <translation>Multi-run in progress…</translation>
     </message>
     <message>
-        <location filename="../src/pokemon_mosaic/ui/multi_run_tab.py" line="335"/>
+        <location filename="../src/pokemon_mosaic/ui/multi_run_tab.py" line="345"/>
         <source>Arrêt en cours : %1 ne répond pas encore.</source>
         <translation>Stopping: %1 is not responding yet.</translation>
     </message>
     <message>
-        <location filename="../src/pokemon_mosaic/ui/multi_run_tab.py" line="336"/>
+        <location filename="../src/pokemon_mosaic/ui/multi_run_tab.py" line="346"/>
         <source>le multi-lancement</source>
         <translation>the multi-run</translation>
     </message>
     <message numerus="yes">
-        <location filename="../src/pokemon_mosaic/ui/multi_run_tab.py" line="366"/>
+        <location filename="../src/pokemon_mosaic/ui/multi_run_tab.py" line="376"/>
         <source>Multi-lancement terminé : %n lancement(s).</source>
         <translation>
             <numerusform>Multi-run finished: %n run.</numerusform>
@@ -1329,72 +1329,72 @@
         </translation>
     </message>
     <message>
-        <location filename="../src/pokemon_mosaic/ui/multi_run_tab.py" line="371"/>
+        <location filename="../src/pokemon_mosaic/ui/multi_run_tab.py" line="381"/>
         <source>Échec du multi-lancement : %1</source>
         <translation>Multi-run failed: %1</translation>
     </message>
     <message>
-        <location filename="../src/pokemon_mosaic/ui/multi_run_tab.py" line="509"/>
+        <location filename="../src/pokemon_mosaic/ui/multi_run_tab.py" line="549"/>
         <source>Lancement %1</source>
         <translation>Run %1</translation>
     </message>
     <message>
-        <location filename="../src/pokemon_mosaic/ui/multi_run_tab.py" line="514"/>
+        <location filename="../src/pokemon_mosaic/ui/multi_run_tab.py" line="554"/>
         <source>meilleur score %1</source>
         <translation>best score %1</translation>
     </message>
     <message>
-        <location filename="../src/pokemon_mosaic/ui/multi_run_tab.py" line="517"/>
+        <location filename="../src/pokemon_mosaic/ui/multi_run_tab.py" line="557"/>
         <source>interrompu</source>
         <translation>interrupted</translation>
     </message>
     <message>
-        <location filename="../src/pokemon_mosaic/ui/multi_run_tab.py" line="530"/>
+        <location filename="../src/pokemon_mosaic/ui/multi_run_tab.py" line="570"/>
         <source>Les quatre cases sont prises : retirez-en une.</source>
         <translation>All four slots are taken: remove one.</translation>
     </message>
     <message>
-        <location filename="../src/pokemon_mosaic/ui/multi_run_tab.py" line="537"/>
+        <location filename="../src/pokemon_mosaic/ui/multi_run_tab.py" line="577"/>
         <source>Agencement gardé, mais non enregistré : %1</source>
         <translation>Arrangement kept, but not written: %1</translation>
     </message>
     <message>
-        <location filename="../src/pokemon_mosaic/ui/multi_run_tab.py" line="541"/>
+        <location filename="../src/pokemon_mosaic/ui/multi_run_tab.py" line="581"/>
         <source>Agencement gardé : %1</source>
         <translation>Arrangement kept: %1</translation>
     </message>
     <message>
-        <location filename="../src/pokemon_mosaic/ui/multi_run_tab.py" line="542"/>
+        <location filename="../src/pokemon_mosaic/ui/multi_run_tab.py" line="582"/>
         <source>Agencement gardé.</source>
         <translation>Arrangement kept.</translation>
     </message>
     <message>
-        <location filename="../src/pokemon_mosaic/ui/multi_run_tab.py" line="557"/>
+        <location filename="../src/pokemon_mosaic/ui/multi_run_tab.py" line="597"/>
         <source>Échec de l&apos;enregistrement : %1</source>
         <translation>Saving failed: %1</translation>
     </message>
     <message>
-        <location filename="../src/pokemon_mosaic/ui/multi_run_tab.py" line="561"/>
+        <location filename="../src/pokemon_mosaic/ui/multi_run_tab.py" line="601"/>
         <source>Agencement enregistré : %1</source>
         <translation>Arrangement saved: %1</translation>
     </message>
     <message>
-        <location filename="../src/pokemon_mosaic/ui/multi_run_tab.py" line="574"/>
+        <location filename="../src/pokemon_mosaic/ui/multi_run_tab.py" line="614"/>
         <source>Lancement %1, cliché %2, score %3</source>
         <translation>Run %1, snapshot %2, score %3</translation>
     </message>
     <message>
-        <location filename="../src/pokemon_mosaic/ui/multi_run_tab.py" line="645"/>
+        <location filename="../src/pokemon_mosaic/ui/multi_run_tab.py" line="685"/>
         <source>Durée estimée : %1</source>
         <translation>Estimated duration: %1</translation>
     </message>
     <message>
-        <location filename="../src/pokemon_mosaic/ui/multi_run_tab.py" line="651"/>
+        <location filename="../src/pokemon_mosaic/ui/multi_run_tab.py" line="691"/>
         <source>Lancement %1 sur %2</source>
         <translation>Run %1 of %2</translation>
     </message>
     <message numerus="yes">
-        <location filename="../src/pokemon_mosaic/ui/multi_run_tab.py" line="662"/>
+        <location filename="../src/pokemon_mosaic/ui/multi_run_tab.py" line="702"/>
         <source>%n lancement(s) terminé(s).</source>
         <translation>
             <numerusform>%n run finished.</numerusform>
@@ -1402,22 +1402,22 @@
         </translation>
     </message>
     <message>
-        <location filename="../src/pokemon_mosaic/ui/multi_run_tab.py" line="663"/>
+        <location filename="../src/pokemon_mosaic/ui/multi_run_tab.py" line="703"/>
         <source>Plus le score est bas, plus l&apos;agencement est optimisé.</source>
         <translation>The lower the score, the better optimised the arrangement.</translation>
     </message>
     <message>
-        <location filename="../src/pokemon_mosaic/ui/multi_run_tab.py" line="666"/>
+        <location filename="../src/pokemon_mosaic/ui/multi_run_tab.py" line="706"/>
         <source>Chaque lancement garde ses cinq derniers clichés.</source>
         <translation>Each run keeps its last five snapshots.</translation>
     </message>
     <message>
-        <location filename="../src/pokemon_mosaic/ui/multi_run_tab.py" line="681"/>
+        <location filename="../src/pokemon_mosaic/ui/multi_run_tab.py" line="721"/>
         <source>Reprendre</source>
         <translation>Resume</translation>
     </message>
     <message>
-        <location filename="../src/pokemon_mosaic/ui/multi_run_tab.py" line="681"/>
+        <location filename="../src/pokemon_mosaic/ui/multi_run_tab.py" line="721"/>
         <source>Pause</source>
         <translation>Pause</translation>
     </message>
@@ -1785,188 +1785,188 @@
 <context>
     <name>RunStep</name>
     <message>
-        <location filename="../src/pokemon_mosaic/ui/run_step.py" line="292"/>
+        <location filename="../src/pokemon_mosaic/ui/run_step.py" line="306"/>
         <source>Lancer</source>
         <translation>Start</translation>
     </message>
     <message>
-        <location filename="../src/pokemon_mosaic/ui/run_step.py" line="293"/>
+        <location filename="../src/pokemon_mosaic/ui/run_step.py" line="307"/>
         <source>Arrêter</source>
         <translation>Stop</translation>
     </message>
     <message>
-        <location filename="../src/pokemon_mosaic/ui/run_step.py" line="294"/>
+        <location filename="../src/pokemon_mosaic/ui/run_step.py" line="308"/>
         <source>Dernier</source>
         <translation>Latest</translation>
     </message>
     <message>
-        <location filename="../src/pokemon_mosaic/ui/run_step.py" line="295"/>
+        <location filename="../src/pokemon_mosaic/ui/run_step.py" line="309"/>
         <source>Prolonger</source>
         <translation>Extend</translation>
     </message>
     <message>
-        <location filename="../src/pokemon_mosaic/ui/run_step.py" line="296"/>
+        <location filename="../src/pokemon_mosaic/ui/run_step.py" line="310"/>
         <source>Repartir de ce cliché</source>
         <translation>Restart from this snapshot</translation>
     </message>
     <message>
-        <location filename="../src/pokemon_mosaic/ui/run_step.py" line="298"/>
+        <location filename="../src/pokemon_mosaic/ui/run_step.py" line="312"/>
         <source>Poursuit le calcul depuis le dernier cliché, en conservant toute la timeline.</source>
         <translation>Continues from the latest snapshot, keeping the whole timeline.</translation>
     </message>
     <message>
-        <location filename="../src/pokemon_mosaic/ui/run_step.py" line="302"/>
+        <location filename="../src/pokemon_mosaic/ui/run_step.py" line="316"/>
         <source>Relance le calcul depuis le cliché affiché. Les clichés suivants sont abandonnés.</source>
         <translation>Restarts from the displayed snapshot. Later snapshots are discarded.</translation>
     </message>
     <message>
-        <location filename="../src/pokemon_mosaic/ui/run_step.py" line="305"/>
+        <location filename="../src/pokemon_mosaic/ui/run_step.py" line="319"/>
         <source>Ajuster</source>
         <translation>Fit</translation>
     </message>
     <message>
-        <location filename="../src/pokemon_mosaic/ui/run_step.py" line="306"/>
+        <location filename="../src/pokemon_mosaic/ui/run_step.py" line="320"/>
         <source>Dézoomer (touche −)</source>
         <translation>Zoom out (− key)</translation>
     </message>
     <message>
-        <location filename="../src/pokemon_mosaic/ui/run_step.py" line="307"/>
+        <location filename="../src/pokemon_mosaic/ui/run_step.py" line="321"/>
         <source>Zoomer (touche +)</source>
         <translation>Zoom in (+ key)</translation>
     </message>
     <message>
-        <location filename="../src/pokemon_mosaic/ui/run_step.py" line="308"/>
+        <location filename="../src/pokemon_mosaic/ui/run_step.py" line="322"/>
         <source>Revenir à l&apos;image entière</source>
         <translation>Back to the whole image</translation>
     </message>
     <message>
-        <location filename="../src/pokemon_mosaic/ui/run_step.py" line="310"/>
+        <location filename="../src/pokemon_mosaic/ui/run_step.py" line="324"/>
         <source>Flèches gauche et droite pour parcourir les clichés.</source>
         <translation>Left and right arrows step through the snapshots.</translation>
     </message>
     <message>
-        <location filename="../src/pokemon_mosaic/ui/run_step.py" line="312"/>
+        <location filename="../src/pokemon_mosaic/ui/run_step.py" line="326"/>
         <source>Lancer le calcul</source>
         <translation>Start the run</translation>
     </message>
     <message>
-        <location filename="../src/pokemon_mosaic/ui/run_step.py" line="313"/>
+        <location filename="../src/pokemon_mosaic/ui/run_step.py" line="327"/>
         <source>Enregistrer</source>
         <translation>Keep</translation>
     </message>
     <message>
-        <location filename="../src/pokemon_mosaic/ui/run_step.py" line="316"/>
+        <location filename="../src/pokemon_mosaic/ui/run_step.py" line="330"/>
         <source>Tout est réglé. Lancez le calcul pour voir la mosaïque se construire, cliché après cliché.</source>
         <translation>Everything is set. Start the run to watch the mosaic take shape, snapshot after snapshot.</translation>
     </message>
     <message>
-        <location filename="../src/pokemon_mosaic/ui/run_step.py" line="362"/>
+        <location filename="../src/pokemon_mosaic/ui/run_step.py" line="408"/>
         <source>Agencement repris : « Lancer » part de lui.</source>
         <translation>Arrangement taken up: “Start” continues from it.</translation>
     </message>
     <message>
-        <location filename="../src/pokemon_mosaic/ui/run_step.py" line="405"/>
-        <location filename="../src/pokemon_mosaic/ui/run_step.py" line="407"/>
+        <location filename="../src/pokemon_mosaic/ui/run_step.py" line="451"/>
+        <location filename="../src/pokemon_mosaic/ui/run_step.py" line="453"/>
         <source>Calcul en cours…</source>
         <translation>Running…</translation>
     </message>
     <message>
-        <location filename="../src/pokemon_mosaic/ui/run_step.py" line="529"/>
+        <location filename="../src/pokemon_mosaic/ui/run_step.py" line="575"/>
         <source>Agencement gardé : %1</source>
         <translation>Arrangement kept: %1</translation>
     </message>
     <message>
-        <location filename="../src/pokemon_mosaic/ui/run_step.py" line="530"/>
+        <location filename="../src/pokemon_mosaic/ui/run_step.py" line="576"/>
         <source>Agencement gardé.</source>
         <translation>Arrangement kept.</translation>
     </message>
     <message>
-        <location filename="../src/pokemon_mosaic/ui/run_step.py" line="541"/>
+        <location filename="../src/pokemon_mosaic/ui/run_step.py" line="587"/>
         <source>Agencement gardé, mais non enregistré : %1</source>
         <translation>Arrangement kept, but not written: %1</translation>
     </message>
     <message>
-        <location filename="../src/pokemon_mosaic/ui/run_step.py" line="645"/>
+        <location filename="../src/pokemon_mosaic/ui/run_step.py" line="691"/>
         <source>le calcul</source>
         <translation>the run</translation>
     </message>
     <message>
-        <location filename="../src/pokemon_mosaic/ui/run_step.py" line="644"/>
+        <location filename="../src/pokemon_mosaic/ui/run_step.py" line="690"/>
         <source>Arrêt en cours : %1 ne répond pas encore.</source>
         <translation>Stopping: %1 is not responding yet.</translation>
     </message>
     <message>
-        <location filename="../src/pokemon_mosaic/ui/run_step.py" line="289"/>
+        <location filename="../src/pokemon_mosaic/ui/run_step.py" line="303"/>
         <source>Lancement</source>
         <translation>Run</translation>
     </message>
     <message>
-        <location filename="../src/pokemon_mosaic/ui/run_step.py" line="290"/>
+        <location filename="../src/pokemon_mosaic/ui/run_step.py" line="304"/>
         <source>Multi-lancement</source>
         <translation>Multi-run</translation>
     </message>
     <message>
-        <location filename="../src/pokemon_mosaic/ui/run_step.py" line="518"/>
+        <location filename="../src/pokemon_mosaic/ui/run_step.py" line="564"/>
         <source>Les quatre cases sont prises : retirez-en une.</source>
         <translation>All four slots are taken: remove one.</translation>
     </message>
     <message>
-        <location filename="../src/pokemon_mosaic/ui/run_step.py" line="709"/>
+        <location filename="../src/pokemon_mosaic/ui/run_step.py" line="755"/>
         <source>itérations épuisées</source>
         <translation>iterations exhausted</translation>
     </message>
     <message>
-        <location filename="../src/pokemon_mosaic/ui/run_step.py" line="710"/>
+        <location filename="../src/pokemon_mosaic/ui/run_step.py" line="756"/>
         <source>score atteint</source>
         <translation>target score reached</translation>
     </message>
     <message>
-        <location filename="../src/pokemon_mosaic/ui/run_step.py" line="711"/>
+        <location filename="../src/pokemon_mosaic/ui/run_step.py" line="757"/>
         <source>stagnation</source>
         <translation>stagnation</translation>
     </message>
     <message>
-        <location filename="../src/pokemon_mosaic/ui/run_step.py" line="712"/>
+        <location filename="../src/pokemon_mosaic/ui/run_step.py" line="758"/>
         <source>budget de temps</source>
         <translation>time budget</translation>
     </message>
     <message>
-        <location filename="../src/pokemon_mosaic/ui/run_step.py" line="713"/>
+        <location filename="../src/pokemon_mosaic/ui/run_step.py" line="759"/>
         <source>arrêt demandé</source>
         <translation>stopped by user</translation>
     </message>
     <message>
-        <location filename="../src/pokemon_mosaic/ui/run_step.py" line="720"/>
+        <location filename="../src/pokemon_mosaic/ui/run_step.py" line="766"/>
         <source>Score %1 → %2 (%3 % de gain), arrêt : %4</source>
         <translation>Score %1 → %2 (%3% gain), stopped: %4</translation>
     </message>
     <message>
-        <location filename="../src/pokemon_mosaic/ui/run_step.py" line="726"/>
+        <location filename="../src/pokemon_mosaic/ui/run_step.py" line="772"/>
         <source>Calcul terminé.</source>
         <translation>Run finished.</translation>
     </message>
     <message>
-        <location filename="../src/pokemon_mosaic/ui/run_step.py" line="732"/>
+        <location filename="../src/pokemon_mosaic/ui/run_step.py" line="778"/>
         <source>Échec du calcul : %1</source>
         <translation>Run failed: %1</translation>
     </message>
     <message>
-        <location filename="../src/pokemon_mosaic/ui/run_step.py" line="967"/>
+        <location filename="../src/pokemon_mosaic/ui/run_step.py" line="1013"/>
         <source>Reprendre</source>
         <translation>Resume</translation>
     </message>
     <message>
-        <location filename="../src/pokemon_mosaic/ui/run_step.py" line="967"/>
+        <location filename="../src/pokemon_mosaic/ui/run_step.py" line="1013"/>
         <source>Pause</source>
         <translation>Pause</translation>
     </message>
     <message>
-        <location filename="../src/pokemon_mosaic/ui/run_step.py" line="973"/>
+        <location filename="../src/pokemon_mosaic/ui/run_step.py" line="1019"/>
         <source>aucun cliché</source>
         <translation>no snapshot</translation>
     </message>
     <message>
-        <location filename="../src/pokemon_mosaic/ui/run_step.py" line="976"/>
+        <location filename="../src/pokemon_mosaic/ui/run_step.py" line="1022"/>
         <source>cliché %1 / %2</source>
         <translation>snapshot %1 of %2</translation>
     </message>
@@ -2046,23 +2046,23 @@
 <context>
     <name>TutorialOverlay</name>
     <message>
-        <location filename="../src/pokemon_mosaic/ui/tutorial.py" line="202"/>
-        <location filename="../src/pokemon_mosaic/ui/tutorial.py" line="291"/>
+        <location filename="../src/pokemon_mosaic/ui/tutorial.py" line="208"/>
+        <location filename="../src/pokemon_mosaic/ui/tutorial.py" line="297"/>
         <source>Passer le tutoriel</source>
         <translation>Skip the tutorial</translation>
     </message>
     <message>
-        <location filename="../src/pokemon_mosaic/ui/tutorial.py" line="292"/>
+        <location filename="../src/pokemon_mosaic/ui/tutorial.py" line="298"/>
         <source>Passer le tutoriel de cette page ?</source>
         <translation>Skip this page’s tutorial?</translation>
     </message>
     <message>
-        <location filename="../src/pokemon_mosaic/ui/tutorial.py" line="293"/>
+        <location filename="../src/pokemon_mosaic/ui/tutorial.py" line="299"/>
         <source>Passer aussi tous les tutoriels suivants</source>
         <translation>Also skip all the following tutorials</translation>
     </message>
     <message>
-        <location filename="../src/pokemon_mosaic/ui/tutorial.py" line="376"/>
+        <location filename="../src/pokemon_mosaic/ui/tutorial.py" line="382"/>
         <source>Cliquez pour continuer (%1 sur %2)</source>
         <translation>Click to continue (%1 of %2)</translation>
     </message>
@@ -2266,16 +2266,131 @@
     </message>
     <message>
         <location filename="../src/pokemon_mosaic/ui/tutorial_texts.py" line="177"/>
+        <source>Lancez un calcul ici, ou plusieurs d&apos;un coup dans Multi-lancement.</source>
+        <translation>Start one calculation here, or several at once in Multi-run.</translation>
+    </message>
+    <message>
+        <location filename="../src/pokemon_mosaic/ui/tutorial_texts.py" line="181"/>
+        <source>Lancez le calcul pour voir la mosaïque se construire.</source>
+        <translation>Start the calculation to watch the mosaic take shape.</translation>
+    </message>
+    <message>
+        <location filename="../src/pokemon_mosaic/ui/tutorial_texts.py" line="184"/>
+        <source>La mosaïque du cliché affiché.</source>
+        <translation>The mosaic of the snapshot shown.</translation>
+    </message>
+    <message>
+        <location filename="../src/pokemon_mosaic/ui/tutorial_texts.py" line="187"/>
+        <source>Parcourez les clichés avec le curseur ou les flèches du clavier.</source>
+        <translation>Browse the snapshots with the slider or the arrow keys.</translation>
+    </message>
+    <message>
+        <location filename="../src/pokemon_mosaic/ui/tutorial_texts.py" line="191"/>
+        <source>Zoomez avec + et −, ou revenez à l&apos;image entière.</source>
+        <translation>Zoom with + and −, or go back to the whole image.</translation>
+    </message>
+    <message>
+        <location filename="../src/pokemon_mosaic/ui/tutorial_texts.py" line="194"/>
+        <source>Lancez un nouveau calcul.</source>
+        <translation>Start a new calculation.</translation>
+    </message>
+    <message>
+        <location filename="../src/pokemon_mosaic/ui/tutorial_texts.py" line="197"/>
+        <source>Mettez le calcul en pause, puis reprenez-le.</source>
+        <translation>Pause the calculation, then resume it.</translation>
+    </message>
+    <message>
+        <location filename="../src/pokemon_mosaic/ui/tutorial_texts.py" line="200"/>
+        <source>Arrêtez le calcul.</source>
+        <translation>Stop the calculation.</translation>
+    </message>
+    <message>
+        <location filename="../src/pokemon_mosaic/ui/tutorial_texts.py" line="203"/>
+        <source>Poursuivez le calcul depuis le dernier cliché.</source>
+        <translation>Continue the calculation from the last snapshot.</translation>
+    </message>
+    <message>
+        <location filename="../src/pokemon_mosaic/ui/tutorial_texts.py" line="206"/>
+        <source>Repartez du cliché affiché : les suivants sont abandonnés.</source>
+        <translation>Start again from the snapshot shown: the later ones are dropped.</translation>
+    </message>
+    <message>
+        <location filename="../src/pokemon_mosaic/ui/tutorial_texts.py" line="210"/>
+        <source>Enregistrez le cliché affiché dans une case, pour l&apos;export.</source>
+        <translation>Save the snapshot shown in a slot, for the export.</translation>
+    </message>
+    <message>
+        <location filename="../src/pokemon_mosaic/ui/tutorial_texts.py" line="214"/>
+        <source>Les agencements gardés, d&apos;où part l&apos;export. Cliquez-en un pour le revoir.</source>
+        <translation>The kept arrangements, which the export starts from. Click one to see it again.</translation>
+    </message>
+    <message>
+        <location filename="../src/pokemon_mosaic/ui/tutorial_texts.py" line="220"/>
+        <source>Choisissez combien de lancements enchaîner, vingt au plus.</source>
+        <translation>Choose how many runs to chain, twenty at most.</translation>
+    </message>
+    <message>
+        <location filename="../src/pokemon_mosaic/ui/tutorial_texts.py" line="224"/>
+        <source>La durée estimée de tous les lancements.</source>
+        <translation>The estimated duration of all the runs.</translation>
+    </message>
+    <message>
+        <location filename="../src/pokemon_mosaic/ui/tutorial_texts.py" line="227"/>
+        <source>Lancez les calculs, l&apos;un après l&apos;autre.</source>
+        <translation>Start the calculations, one after the other.</translation>
+    </message>
+    <message>
+        <location filename="../src/pokemon_mosaic/ui/tutorial_texts.py" line="230"/>
+        <source>Mettez les lancements en pause, puis reprenez-les.</source>
+        <translation>Pause the runs, then resume them.</translation>
+    </message>
+    <message>
+        <location filename="../src/pokemon_mosaic/ui/tutorial_texts.py" line="233"/>
+        <source>Arrêtez les lancements : ce qui est calculé est gardé.</source>
+        <translation>Stop the runs: what has been calculated is kept.</translation>
+    </message>
+    <message>
+        <location filename="../src/pokemon_mosaic/ui/tutorial_texts.py" line="236"/>
+        <source>Où en sont les lancements.</source>
+        <translation>How far the runs have got.</translation>
+    </message>
+    <message>
+        <location filename="../src/pokemon_mosaic/ui/tutorial_texts.py" line="239"/>
+        <source>La mosaïque en cours de calcul, puis le cliché choisi.</source>
+        <translation>The mosaic being calculated, then the chosen snapshot.</translation>
+    </message>
+    <message>
+        <location filename="../src/pokemon_mosaic/ui/tutorial_texts.py" line="242"/>
+        <source>Les derniers clichés de chaque lancement. Cliquez-en un, ou utilisez les flèches.</source>
+        <translation>The last snapshots of each run. Click one, or use the arrow keys.</translation>
+    </message>
+    <message>
+        <location filename="../src/pokemon_mosaic/ui/tutorial_texts.py" line="246"/>
+        <source>Le cliché choisi et son score : plus il est bas, mieux c&apos;est.</source>
+        <translation>The chosen snapshot and its score: the lower, the better.</translation>
+    </message>
+    <message>
+        <location filename="../src/pokemon_mosaic/ui/tutorial_texts.py" line="250"/>
+        <source>Gardez le cliché choisi dans une case, pour l&apos;export.</source>
+        <translation>Keep the chosen snapshot in a slot, for the export.</translation>
+    </message>
+    <message>
+        <location filename="../src/pokemon_mosaic/ui/tutorial_texts.py" line="253"/>
+        <source>Enregistrez-le aussi dans la bibliothèque, sans prendre de case.</source>
+        <translation>Also save it in the library, without taking a slot.</translation>
+    </message>
+    <message>
+        <location filename="../src/pokemon_mosaic/ui/tutorial_texts.py" line="259"/>
         <source>Enregistrez vos réglages sous un nom, ou repartez d&apos;un agencement enregistré.</source>
         <translation>Save your settings under a name, or start again from a saved arrangement.</translation>
     </message>
     <message>
-        <location filename="../src/pokemon_mosaic/ui/tutorial_texts.py" line="181"/>
+        <location filename="../src/pokemon_mosaic/ui/tutorial_texts.py" line="263"/>
         <source>Vous pouvez passer à l&apos;étape suivante quand l&apos;aura est verte.</source>
         <translation>You can move to the next step when the glow is green.</translation>
     </message>
     <message>
-        <location filename="../src/pokemon_mosaic/ui/tutorial_texts.py" line="185"/>
+        <location filename="../src/pokemon_mosaic/ui/tutorial_texts.py" line="267"/>
         <source>Cliquez pour afficher l&apos;aide de la page. Clic droit pour revoir les visites guidées.</source>
         <translation>Click to show this page&apos;s help. Right-click to replay the guided tours.</translation>
     </message>
