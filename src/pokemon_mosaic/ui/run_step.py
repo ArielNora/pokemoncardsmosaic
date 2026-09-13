@@ -17,10 +17,10 @@ from PySide6.QtWidgets import (
     QWidget,
 )
 
-from ..arrangements import default_name, save_arrangement, unique_name
 from ..control import RunControl
 from ..optimize import StopReason
 from .arrangements_dialog import ArrangementsDialog
+from .library import store_in_library
 from .multi_run_tab import MultiRunTab
 from .runner import start_run
 from .saved_column import SavedColumn, SavedDialog, mosaic_image
@@ -256,7 +256,7 @@ class RunStep(QWidget):
         # multi-lancement va dans les mêmes quatre cases que le lancement
         # simple : l'export part d'elles, quel que soit l'onglet d'où elles
         # viennent.
-        self._multi = MultiRunTab(self._session)
+        self._multi = MultiRunTab(self._session, self._arrangements_directory)
         self._multi.status_message.connect(self.status_message.emit)
         self._multi.busy_changed.connect(
             lambda _occupe: self._update_buttons(running=self._thread is not None))
@@ -456,14 +456,9 @@ class RunStep(QWidget):
 
     def _store(self, saved) -> str:
         """Écrit l'agencement dans la bibliothèque, et rend le nom retenu."""
-        if not self._arrangements_directory or saved is None:
-            return ""
-        colonnes, lignes = saved.grid.shape[1], saved.grid.shape[0]
-        nom = unique_name(self._arrangements_directory,
-                          default_name((colonnes, lignes), saved.score))
         try:
-            save_arrangement(self._arrangements_directory,
-                             self._session.arrangement_of(saved, nom))
+            return store_in_library(self._session,
+                                    self._arrangements_directory, saved)
         except OSError as erreur:
             # Écrire peut échouer, disque plein ou dossier devenu non
             # inscriptible : la case reste, et le message le dit.
@@ -471,7 +466,6 @@ class RunStep(QWidget):
                 self.tr("Agencement gardé, mais non enregistré : %1")
                 .replace("%1", str(erreur)))
             return ""
-        return nom
 
     def _open_library(self) -> None:
         """Ouvre le menu de la bibliothèque, à part pour que les tests le
@@ -509,6 +503,14 @@ class RunStep(QWidget):
         if rang is not None:
             self._following = False
             self._slider.setValue(rang)
+            return
+        # ⚠️ **Il peut venir du multi-lancement.** Il n'a jamais été dans cette
+        # timeline, et la fenêtre l'aurait dit « plus dans la timeline », comme
+        # s'il était perdu : on le montre dans son groupe.
+        place = self._multi.locate(saved)
+        if place is not None and not self._multi.is_busy():
+            self._tabs.setCurrentWidget(self._multi)
+            self._multi.select(*place)
             return
         # La timeline ne l'a plus : une fenêtre le montre pour lui-même.
         self._open_saved_dialog(saved)

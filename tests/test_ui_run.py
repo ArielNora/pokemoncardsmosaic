@@ -180,7 +180,7 @@ def test_two_arrangements_kept_in_the_same_minute_do_not_overwrite(
 def test_a_library_that_cannot_be_written_keeps_the_slot_and_says_so(
         qt_app, session, tmp_path, monkeypatch):
     """Disque plein ou dossier devenu non inscriptible : la case reste."""
-    from pokemon_mosaic.ui import run_step as module
+    from pokemon_mosaic.ui import library as module
     from pokemon_mosaic.ui.run_step import RunStep
 
     widget = RunStep(session, str(tmp_path / "agencements"))

@@ -42,16 +42,22 @@ COLUMN_ROOM = 34
 DIALOG_SIZE = QSize(720, 640)
 
 
-def mosaic_image(grid: np.ndarray, cards, empty_colour) -> QImage | None:
+def mosaic_image(grid: np.ndarray, cards, empty_colour,
+                 step: int = 1) -> QImage | None:
     """Assemble une mosaïque à partir des vignettes déjà en mémoire.
 
     Le seul endroit qui sache le faire : l'exécution, les cases mises de côté et
     l'export en ont tous besoin, et trois assemblages auraient fini par montrer
     trois choses différentes.
+
+    `step` ne garde qu'un pixel sur `step` de chaque vignette : une image
+    destinée à une vignette de quelques dizaines de pixels n'a pas à passer
+    par les dizaines de mégapixels de la pleine taille.
     """
     if cards is None or not len(cards):
         return None
-    tile_h, tile_w = cards[0].thumbnail.shape[:2]
+    step = max(1, int(step))
+    tile_h, tile_w = cards[0].thumbnail[::step, ::step].shape[:2]
     rows, cols = grid.shape
     canvas = np.full((rows * tile_h, cols * tile_w, 3), empty_colour, dtype=np.uint8)
     for row in range(rows):
@@ -60,7 +66,8 @@ def mosaic_image(grid: np.ndarray, cards, empty_colour) -> QImage | None:
             if index == EMPTY:
                 continue
             canvas[row * tile_h:(row + 1) * tile_h,
-                   col * tile_w:(col + 1) * tile_w] = cards[index].thumbnail
+                   col * tile_w:(col + 1) * tile_w] = \
+                cards[index].thumbnail[::step, ::step]
 
     canvas = np.ascontiguousarray(canvas)
     height, width, _ = canvas.shape

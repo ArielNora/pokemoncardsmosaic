@@ -1,5 +1,7 @@
 """Tests du multi-lancement : plusieurs calculs enchaînés, cinq clichés gardés."""
 
+from types import SimpleNamespace
+
 import numpy as np
 import pytest
 
@@ -295,13 +297,16 @@ def test_a_stopped_multi_run_keeps_the_interrupted_run(tab):
     assert [groupe.rank for groupe in widget.groups] == [0, 1]
     assert widget.groups[1].snapshots
     assert widget.groups[1].result.stopped_by == StopReason.REQUESTED
+    # L'interrompu ne compte pas parmi les lancements menés à leur terme.
+    assert widget._progress_label.text() == "1 lancement(s) terminé(s)."
 
 
 def test_a_failure_keeps_the_groups_already_done(tab):
     widget, session = tab
     widget._thread = object()
     widget._on_run_started(0, session.card_set, Timeline())
-    widget._on_run_finished(0, object())
+    # Un résultat réduit à ce que l'onglet en lit : sa raison d'arrêt.
+    widget._on_run_finished(0, SimpleNamespace(stopped_by=StopReason.EXHAUSTED))
 
     widget._on_failed("disque plein")
 
@@ -323,6 +328,242 @@ def test_shutdown_is_safe_without_a_multi_run(tab):
     widget, _ = tab
 
     assert widget.shutdown()
+
+
+# --- Les groupes à la fin ---------------------------------------------------
+
+def test_the_groups_appear_only_once_the_multi_run_ends(tab):
+    """Montrés à la fin, et non au fil de l'eau : décidé par l'utilisateur."""
+    widget, session = tab
+    pendant = []
+
+    feed_tab(widget, session, 3,
+             snapshot=lambda _r, _s: pendant.append(len(widget._thumbs)))
+
+    assert set(pendant) == {0}
+    assert not widget._results_scroll.isHidden()
+    assert sorted(widget._thumbs) == [(g, i) for g in range(3) for i in range(5)]
+
+
+def test_each_group_is_titled_by_its_run(tab):
+    widget, session = tab
+    feed_tab(widget, session, 2)
+    titres = [widget._results_grid.itemAtPosition(ligne, 0).widget().text()
+              for ligne in (0, 2)]
+
+    assert titres[0].startswith("Lancement 1") and titres[1].startswith("Lancement 2")
+    assert "interrompu" not in titres[0]
+
+
+def test_an_interrupted_run_says_so_in_its_title(tab):
+    widget, session = tab
+
+    def arrete(rang, _cliche):
+        if rang == 1:
+            widget._request_stop()
+
+    widget._control = RunControl()
+    feed_tab_with_control(widget, session, 3, widget._control, snapshot=arrete)
+
+    assert "interrompu" in widget._group_title(widget.groups[1])
+    assert "interrompu" not in widget._group_title(widget.groups[0])
+
+
+def feed_tab_with_control(widget, session, count, control, **reactions):
+    widget._count = count
+    widget._thread = object()
+    widget._update_buttons(running=True)
+    handlers = {"run_started": [widget._on_run_started],
+                "snapshot": [widget._on_snapshot],
+                "run_finished": [widget._on_run_finished],
+                "finished_all": [widget._on_finished_all],
+                "failed": [widget._on_failed]}
+    for nom, reaction in reactions.items():
+        handlers[nom].append(reaction)
+    return multi_run(session, count, control=control, **handlers)
+
+
+def test_the_best_snapshot_is_chosen_at_the_end(tab):
+    widget, session = tab
+    feed_tab(widget, session, 3)
+    _groupe, cliche = widget.selected()
+
+    tous = [c.score for g in widget.groups for c in g.snapshots]
+    assert cliche.score == min(tous)
+    assert widget._thumbs[widget._selected].property("role") == "slot-current"
+
+
+def test_clicking_a_thumbnail_chooses_that_snapshot(qt_app, tab):
+    from PySide6.QtCore import Qt
+    from PySide6.QtTest import QTest
+
+    widget, session = tab
+    widget.show()
+    feed_tab(widget, session, 3)
+
+    QTest.mouseClick(widget._thumbs[(1, 0)], Qt.LeftButton)
+
+    groupe, cliche = widget.selected()
+    assert groupe is widget.groups[1] and cliche is widget.groups[1].snapshots[0]
+    roles = {cle: v.property("role") for cle, v in widget._thumbs.items()}
+    assert roles[(1, 0)] == "slot-current"
+    assert list(roles.values()).count("slot-current") == 1
+    assert "Lancement 2, cliché 1" in widget._choice.text()
+
+
+def test_keeping_puts_the_snapshot_in_a_slot_and_the_library(qt_app, session,
+                                                             tmp_path):
+    from pokemon_mosaic.arrangements import list_arrangements
+    from pokemon_mosaic.ui.multi_run_tab import MultiRunTab
+
+    bibliotheque = str(tmp_path / "agencements")
+    widget = MultiRunTab(session, bibliotheque)
+    feed_tab(widget, session, 3)
+    widget.select(2, 4)
+    groupe, cliche = widget.selected()
+
+    widget._keep.click()
+
+    garde = session.saved[0]
+    assert np.array_equal(garde.grid, cliche.grid)
+    assert garde.cards is groupe.cards and garde.iteration == cliche.iteration
+    assert len(list_arrangements(bibliotheque)) == 1
+
+
+def test_saving_writes_in_the_library_without_taking_a_slot(qt_app, session,
+                                                            tmp_path):
+    from pokemon_mosaic.arrangements import list_arrangements
+    from pokemon_mosaic.ui.multi_run_tab import MultiRunTab
+
+    bibliotheque = str(tmp_path / "agencements")
+    widget = MultiRunTab(session, bibliotheque)
+    feed_tab(widget, session, 2)
+    widget.select(0, 1)
+    widget._save.click()
+    widget.select(1, 3)
+    widget._save.click()
+
+    assert session.saved_count() == 0
+    assert len(list_arrangements(bibliotheque)) == 2
+
+
+def test_keeping_stops_once_the_four_slots_are_taken(tab):
+    widget, session = tab
+    feed_tab(widget, session, 1)
+    groupe, cliche = widget.selected()
+    for _ in range(4):
+        session.save_grid(cliche.grid, groupe.cards, 1, 1.0)
+    messages = []
+    widget.status_message.connect(messages.append)
+
+    assert not widget._keep.isEnabled()
+    widget._keep_selected()
+    assert session.saved_count() == 4
+    assert any("quatre cases" in message for message in messages)
+
+
+def test_a_library_that_cannot_be_written_says_so(qt_app, session, tmp_path,
+                                                   monkeypatch):
+    from pokemon_mosaic.ui import library
+    from pokemon_mosaic.ui.multi_run_tab import MultiRunTab
+
+    widget = MultiRunTab(session, str(tmp_path / "agencements"))
+    feed_tab(widget, session, 1)
+    messages = []
+    widget.status_message.connect(messages.append)
+    monkeypatch.setattr(library, "save_arrangement",
+                        lambda *a: (_ for _ in ()).throw(OSError("disque plein")))
+
+    widget._save_selected()
+    widget._keep_selected()
+
+    assert sum("disque plein" in message for message in messages) == 2
+    assert session.saved_count() == 1, "la case reste"
+
+
+def test_without_a_library_saving_is_off(tab):
+    widget, session = tab
+    feed_tab(widget, session, 1)
+
+    assert widget.selected() is not None
+    assert not widget._save.isEnabled() and widget._keep.isEnabled()
+
+
+def test_the_zoom_enlarges_the_chosen_snapshot(tab):
+    widget, session = tab
+    widget.show()
+    feed_tab(widget, session, 1)
+    avant = widget._image.pixmap().width()
+
+    widget._zoom_in.click()
+
+    assert widget._image.pixmap().width() > avant
+
+
+def test_a_sampled_mosaic_keeps_one_pixel_out_of_step(qt_app):
+    from pokemon_mosaic.ui.saved_column import mosaic_image
+
+    jeu = card_set(4, size=(12, 16))
+    grille = np.arange(4).reshape(2, 2)
+
+    pleine = mosaic_image(grille, jeu, (0, 0, 0))
+    petite = mosaic_image(grille, jeu, (0, 0, 0), step=4)
+
+    assert (pleine.width(), pleine.height()) == (24, 32)
+    assert (petite.width(), petite.height()) == (6, 8)
+    assert petite.pixelColor(1, 1) == pleine.pixelColor(4, 4)
+
+
+def test_the_group_thumbnails_are_not_composed_at_full_size(tab, monkeypatch):
+    """Cent mosaïques à pleine taille, réduites à 72 px, figeaient l'interface
+    à la fin d'un multi-lancement."""
+    from pokemon_mosaic.ui import multi_run_tab as module
+
+    widget, session = tab
+    feed_tab(widget, session, 1)
+    session.set_cards(card_set(20, size=(180, 250)), "/fake")
+    widget.groups[0].cards = session.card_set
+    tailles = []
+    reel = module.mosaic_image
+
+    def mesure(*args, **kwargs):
+        image = reel(*args, **kwargs)
+        tailles.append((image.width(), image.height()))
+        return image
+
+    monkeypatch.setattr(module, "mosaic_image", mesure)
+
+    widget._show_results()
+
+    assert len(tailles) == 5
+    for largeur, hauteur in tailles:
+        assert largeur <= 4 * module.THUMB.width()
+        assert hauteur <= 4 * module.THUMB.height()
+
+
+def test_the_title_gives_the_best_score_of_the_group(tab):
+    """En recuit, le dernier cliché n'est pas toujours le meilleur."""
+    from pokemon_mosaic.timeline import Snapshot
+    from pokemon_mosaic.ui.multi_run_tab import RunGroup
+
+    widget, _ = tab
+    grille = np.zeros((2, 2), int)
+    groupe = RunGroup(0, None, [Snapshot(grille, i, i, score, 0.0)
+                                for i, score in enumerate([50.0, 30.0, 40.0])])
+    groupe.result = SimpleNamespace(stopped_by=StopReason.EXHAUSTED)
+
+    assert "meilleur score 30" in widget._group_title(groupe)
+
+
+def test_a_new_multi_run_forgets_the_choice(tab, capture_multi_runs):
+    widget, session = tab
+    feed_tab(widget, session, 2)
+    widget._thread = None
+
+    widget._start.click()
+
+    assert widget.selected() is None and widget._thumbs == {}
+    assert not widget._keep.isEnabled()
 
 
 # --- Dans l'écran d'exécution -----------------------------------------------
@@ -399,6 +640,38 @@ def test_resuming_is_refused_while_a_multi_run_turns(step, capture_multi_runs):
     assert not widget._resume.isEnabled() and not widget._extend.isEnabled()
     widget._resume_from_snapshot()
     assert len(widget._timeline) == longueur
+
+
+def test_a_slot_kept_from_the_multi_run_opens_in_its_group(step, monkeypatch):
+    """La fenêtre l'aurait dit « plus dans la timeline », comme perdu, alors
+    qu'il n'y a jamais été."""
+    widget, session = step
+    ouvertes = []
+    monkeypatch.setattr(widget, "_open_saved_dialog", ouvertes.append)
+    feed_tab(widget._multi, session, 2)
+    widget._multi.select(1, 2)
+    widget._multi._keep.click()
+    widget._multi.select(0, 0)
+    widget._tabs.setCurrentIndex(0)
+
+    widget._show_saved(0)
+
+    assert ouvertes == []
+    assert widget._tabs.currentWidget() is widget._multi
+    assert widget._multi._selected == (1, 2)
+
+
+def test_a_slot_that_no_tab_holds_still_opens_its_window(step, monkeypatch):
+    widget, session = step
+    ouvertes = []
+    monkeypatch.setattr(widget, "_open_saved_dialog", ouvertes.append)
+    feed_tab(widget._multi, session, 1)
+    groupe, cliche = widget._multi.selected()
+    session.save_grid(cliche.grid[::-1].copy(), groupe.cards, 99999, 1.0)
+
+    widget._show_saved(0)
+
+    assert len(ouvertes) == 1
 
 
 def test_the_single_run_comes_back_after_the_multi_run(step, capture_multi_runs):
