@@ -41,7 +41,7 @@ from ..arrangements import (
 )
 from ..scoring import EMPTY
 from . import theme
-from .session import MAX_SAVED, Session
+from .session import MAX_SAVED, NoFreeSlot, Session
 from .spinner import Spinner
 
 DIALOG_SIZE = QSize(1000, 660)
@@ -153,10 +153,19 @@ class _PreviewState:
 class ArrangementsDialog(QDialog):
     """La bibliothèque : la liste à gauche, l'agencement choisi à droite."""
 
-    def __init__(self, session: Session, directory: str, parent=None):
+    def __init__(self, session: Session, directory: str, parent=None,
+                 start: bool = False):
         super().__init__(parent)
         self._session = session
         self._directory = directory
+        # ⚠️ **Deux usages de la même fenêtre.** Ouverte sous les cases, elle
+        # range un agencement dans une case sans rien toucher d'autre. Ouverte
+        # depuis la barre du haut, aux deux premières étapes, elle en **part** :
+        # cartes, grille, habillage et case, voir `Session.apply_arrangement`.
+        self._start = start
+        # Le nom de l'agencement dont on est parti, vide sinon : la fenêtre
+        # principale le dit une fois celle-ci refermée.
+        self.applied = ""
         self._arrangements: list[Arrangement] = []
         # ⚠️ **Un seul aperçu à la fois, et le dernier demandé.** Parcourir la
         # liste au clavier lance une demande par ligne : en parallèle, autant de
@@ -170,6 +179,7 @@ class ArrangementsDialog(QDialog):
         self._courier.ready.connect(self._on_preview)
         self._build()
         self.reload()
+        session.cards_loaded.connect(self._on_cards_loaded)
 
     # --- Construction -----------------------------------------------------
 
@@ -243,7 +253,8 @@ class ArrangementsDialog(QDialog):
 
     def retranslate_ui(self) -> None:
         self.setWindowTitle(self.tr("Agencements enregistrés"))
-        self._open.setText(self.tr("Mettre dans une case"))
+        self._open.setText(self.tr("Partir de cet agencement") if self._start
+                           else self.tr("Mettre dans une case"))
         self._export.setText(self.tr("Exporter en JSON…"))
         self._import.setText(self.tr("Importer un JSON…"))
         self._rename.setText(self.tr("Renommer…"))
@@ -278,9 +289,21 @@ class ArrangementsDialog(QDialog):
 
     def _catalogue_loaded(self) -> bool:
         """Des cartes sont-elles chargées ? Premier démarrage ou chargement en
-        cours, un agencement ne peut pas encore s'ouvrir."""
+        cours, un agencement ne peut pas encore s'ouvrir.
+
+        ⚠️ **Tout le chargement, pas son premier lot.** Le jeu n'est pas vide
+        dès le premier dossier arrivé, mais la suite arrive encore : partir
+        d'un agencement à ce moment-là était défait par les lots suivants.
+        """
         cartes = self._session.card_set
-        return cartes is not None and len(cartes) > 0
+        return (cartes is not None and len(cartes) > 0
+                and not self._session.loading)
+
+    def _on_cards_loaded(self) -> None:
+        """La fenêtre restée ouverte pendant le chargement se met à jour : les
+        compteurs de cartes manquantes et l'ouverture en dépendent."""
+        courant = self.current()
+        self.reload(select=courant.name if courant is not None else None)
 
     def current(self) -> Arrangement | None:
         rang = self._list.currentRow()
@@ -310,7 +333,7 @@ class ArrangementsDialog(QDialog):
         )
         # ⚠️ **Amputé, ce n'est plus l'agencement qu'on a partagé.** On le
         # montre, on dit ce qui manque, et on ne le laisse pas passer.
-        self._open.setEnabled(not manquantes)
+        self._open.setEnabled(not manquantes and self._catalogue_loaded())
         if not self._catalogue_loaded():
             # ⚠️ **Sans cartes chargées, rien n'est « manquant ».** Toutes le
             # seraient, et le message laissait croire à un catalogue incomplet
@@ -405,6 +428,9 @@ class ArrangementsDialog(QDialog):
         arrangement = self.current()
         if arrangement is None:
             return
+        if self._start:
+            self._start_from(arrangement)
+            return
         try:
             garde = self._session.saved_from_arrangement(arrangement)
         except ValueError as erreur:
@@ -432,6 +458,43 @@ class ArrangementsDialog(QDialog):
                 self.tr("%n réglage(s) de l'habillage étaient illisibles et n'ont "
                         "pas été repris : %1.", "", len(ignores))
                 .replace("%1", ", ".join(ignores)))
+        self.accept()
+
+    def _start_from(self, arrangement: Arrangement) -> None:
+        """Part de l'agencement : cartes, grille, habillage et case.
+
+        Refusé sans rien toucher quand les quatre cases sont prises, décidé par
+        l'utilisateur. Ce que la reprise a dû écarter, liens qui ne tiennent
+        pas dans la grille ou réglages illisibles, est dit dans un seul avis.
+        """
+        try:
+            depart = self._session.apply_arrangement(arrangement)
+        except NoFreeSlot:
+            QMessageBox.information(
+                self, self.tr("Aucune case libre"),
+                self.tr("Les %n case(s) sont prises : videz-en une pour partir "
+                        "de celui-ci.", "", MAX_SAVED))
+            return
+        except ValueError as erreur:
+            QMessageBox.warning(self, self.tr("Agencement incomplet"),
+                                str(erreur))
+            return
+        avis = []
+        if depart.disabled_links:
+            noms = ", ".join(lien.name for lien in depart.disabled_links
+                             if lien.name)
+            texte = self.tr("%n lien(s) ne tenaient pas dans cet agencement et "
+                            "ont été désactivés.", "", len(depart.disabled_links))
+            avis.append(texte + (f" ({noms})" if noms else ""))
+        if depart.ignored:
+            avis.append(
+                self.tr("%n réglage(s) de l'habillage étaient illisibles et "
+                        "n'ont pas été repris : %1.", "", len(depart.ignored))
+                .replace("%1", ", ".join(depart.ignored)))
+        if avis:
+            QMessageBox.warning(self, self.tr("Agencement repris"),
+                                "\n\n".join(avis))
+        self.applied = arrangement.name
         self.accept()
 
     def _export_current(self) -> None:

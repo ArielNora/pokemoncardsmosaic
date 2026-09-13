@@ -631,6 +631,9 @@ class CardsStep(QWidget):
         remplacee = not self._awaiting_first_batch
         self._awaiting_first_batch = False
         if remplacee:
+            # Il n'arrivera plus rien : ce qui attend la fin du chargement,
+            # partir d'un agencement par exemple, ne doit pas attendre toujours.
+            self._session.abandon_loading()
             self._restore_kept_selection()
         else:
             self._keep_after_reload = None

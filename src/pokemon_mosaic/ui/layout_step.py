@@ -221,6 +221,19 @@ class LayoutStep(QWidget):
         # Vrai le temps d'un retour de sélection que nous provoquons.
         self._navigating = False
         self._build()
+        session.arrangement_applied.connect(self.validate_all)
+
+    def validate_all(self) -> None:
+        """Valide toutes les parties d'office, pour un agencement repris.
+
+        Décidé par l'utilisateur : tout vient d'un agencement qui tient déjà, et
+        « Suivant » doit traverser l'étape d'un clic. Une partie que la reprise
+        aurait cassée reste rouge : c'est `is_valid` qui le dit, pas la
+        validation.
+        """
+        self._validated = set(range(len(self._tabs)))
+        self._refresh_badges()
+        self.advance_state_changed.emit()
 
     # --- Construction -----------------------------------------------------
 

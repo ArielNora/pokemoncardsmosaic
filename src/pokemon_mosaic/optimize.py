@@ -122,6 +122,20 @@ def _locate_block(
     return None
 
 
+def link_is_intact(grid: np.ndarray, link: Link) -> bool:
+    """Le lien forme-t-il déjà son rectangle dans cette grille ?
+
+    La règle même de `_validate_links`, sans lever : ce qui permet de trier les
+    liens d'une grille reprise plutôt que de refuser la grille entière.
+    """
+    found = np.argwhere(np.isin(grid, link.cards))
+    if len(found) != len(link.cards):
+        return False
+    row, col = found[0]
+    return _locate_block(grid, int(row), int(col), int(grid[row, col]),
+                         link) is not None
+
+
 def _validate_links(grid: np.ndarray, links: dict[int, Link]) -> None:
     """Vérifie que chaque lien est déjà intact dans la grille de départ.
 

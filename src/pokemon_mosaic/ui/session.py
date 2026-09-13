@@ -30,7 +30,7 @@ from ..layout import (
     grid_geometry,
 )
 from ..links import DEFAULT_LINKS, Link, LinkLibrary, resolve_links
-from ..optimize import StopConditions, select_cards
+from ..optimize import StopConditions, link_is_intact, select_cards
 from ..presets import LinkRef, Preset
 from ..scoring import EMPTY
 
@@ -107,6 +107,19 @@ def _drapeau(valeur) -> bool | None:
     return None
 
 
+class NoFreeSlot(ValueError):
+    """Les quatre cases sont prises : rien n'a été touché."""
+
+
+@dataclass
+class ArrangementStart:
+    """Ce que reprendre un agencement a fait, pour le dire à l'utilisateur."""
+
+    slot: int
+    ignored: list          # champs de l'habillage écartés, par leur nom
+    disabled_links: list   # liens désactivés, faute de tenir dans la grille
+
+
 @dataclass
 class SavedGrid:
     """Un agencement mis de côté, avec de quoi le montrer et l'exporter.
@@ -164,10 +177,16 @@ class Session(QObject):
     links_changed = Signal()
     algorithm_changed = Signal()
     saved_changed = Signal()        # un agencement mis de côté, ou retiré
+    # Un agencement enregistré vient de régler cartes, grille et habillage :
+    # l'étape 2 valide alors ses parties d'office.
+    arrangement_applied = Signal()
 
     def __init__(self):
         super().__init__()
         self.card_set: CardSet | None = None
+        # Vrai du premier lot de cartes à la fin du chargement : le jeu est
+        # alors partiel, et d'autres cartes arrivent encore, retenues.
+        self.loading = False
         # Le rang de chaque carte par son chemin relatif, refait quand le jeu
         # change : voir `index_of_path`.
         self._path_table: dict[str, int] | None = None
@@ -343,6 +362,79 @@ class Session(QObject):
              for ligne in arrangement.grid], dtype=int)
         return SavedGrid(grille, subset, iteration=0, score=arrangement.score)
 
+    def apply_arrangement(self, arrangement: Arrangement) -> "ArrangementStart":
+        """Part d'un agencement enregistré : cartes, grille, habillage, case.
+
+        Décidé par l'utilisateur le 2026-09-13. Seules ses cartes restent
+        retenues ; la forme de la grille et ses cases vides sont reprises,
+        l'habillage aussi, et l'agencement est rangé dans une case. Les réglages
+        de l'algorithme ne bougent pas : le fichier ne les enregistre pas.
+
+        ⚠️ **Tout est vérifié avant de toucher à quoi que ce soit.** Une carte
+        absente lève `ValueError`, aucune case libre `NoFreeSlot` : un refus ne
+        doit pas laisser une sélection à moitié remplacée.
+
+        ⚠️ **Les liens qui ne tiennent pas dans la grille sont désactivés**,
+        sans être supprimés, et rendus pour être nommés : un calcul qui part
+        d'une grille exige que chaque lien actif y soit déjà intact, et
+        « Lancer » échouerait sinon.
+        """
+        # ⚠️ **Pas pendant un chargement.** Les lots suivants arriveraient
+        # retenus, la sélection ne serait plus celle de l'agencement, et la fin
+        # du chargement réarmerait la grille proposée d'office, qui écraserait
+        # la forme reprise au premier passage à l'étape 2.
+        if self.loading:
+            raise ValueError("Chargement des cartes en cours.")
+        manquantes = self.missing_cards(arrangement)
+        if manquantes:
+            raise ValueError(f"{len(manquantes)} carte(s) absente(s) du "
+                             f"catalogue.")
+        if self.saved_count() >= MAX_SAVED:
+            raise NoFreeSlot("Aucune case libre.")
+        garde = self.saved_from_arrangement(arrangement)
+
+        voulues = {self.index_of_path(chemin) for chemin in arrangement.cards}
+        self.set_excluded(set(range(self.total_cards)) - voulues, True)
+        self.set_excluded(voulues, False)
+
+        colonnes, lignes = arrangement.shape
+        self.set_layout(cols=colonnes, rows=lignes)
+        # Après `set_layout` : changer la grille efface les cases posées.
+        self._empty_cells = [(int(ligne), int(colonne)) for ligne, colonne
+                             in np.argwhere(garde.grid == EMPTY)]
+        # ⚠️ **Toujours prévenir**, comme un préréglage : c'est ce signal qui
+        # dit à l'étape 2 que la grille est choisie, et qu'elle n'a plus à la
+        # proposer. Sans lui, la grille reprise était écrasée au premier passage.
+        self.layout_changed.emit()
+
+        ignores = self.apply_presentation(arrangement.presentation)
+        desactives = self._disable_links_broken_in(garde.grid)
+        rang = self.save_grid(garde.grid, garde.cards, garde.iteration,
+                              garde.score)
+        self.arrangement_applied.emit()
+        return ArrangementStart(slot=rang, ignored=ignores,
+                                disabled_links=desactives)
+
+    def _disable_links_broken_in(self, grid) -> list[Link]:
+        """Désactive les liens actifs qui ne forment pas leur bloc dans `grid`.
+
+        `grid` numérote les cartes retenues de 0 à n-1, dans l'ordre du
+        catalogue : c'est la numérotation d'un calcul, et celle dans laquelle
+        chaque lien se traduit pour être vérifié.
+        """
+        rang = {index: position
+                for position, index in enumerate(self.selected_indices())}
+        desactives = []
+        for link in list(self.usable_links().active):
+            traduit = dataclass_replace(
+                link, cards=tuple(rang[index] for index in link.cards))
+            if not link_is_intact(grid, traduit):
+                self.links.replace(link, dataclass_replace(link, enabled=False))
+                desactives.append(link)
+        if desactives:
+            self.links_changed.emit()
+        return desactives
+
     def choose_dpi(self, value: int) -> None:
         """La finesse posée par l'utilisateur : elle cesse de suivre le maximum.
 
@@ -510,6 +602,7 @@ class Session(QObject):
     def start_loading(self, data_dir: str) -> None:
         """Vide la session et prépare l'arrivée des cartes, dossier par dossier."""
         self.data_dir = data_dir
+        self.loading = True
         self.card_set = CardSet(cards=[], full_size=(0, 0), thumb_size=(0, 0))
         self._path_table = None
         self._excluded.clear()
@@ -557,7 +650,14 @@ class Session(QObject):
         self.card_set.thumb_size = card_set.thumb_size
         self.card_set.odd_sizes = list(card_set.odd_sizes)
         self.card_set.unreadable = list(card_set.unreadable)
+        self.loading = False
         self.cards_loaded.emit()
+
+    def abandon_loading(self) -> None:
+        """Un chargement a échoué après ses premiers lots : il n'arrivera plus
+        rien. Sans cela, ce qui attend la fin d'un chargement attendrait pour
+        toujours."""
+        self.loading = False
 
     def set_cards(self, card_set: CardSet, data_dir: str) -> None:
         """Chargement en un bloc, sans progression, utile aux tests."""

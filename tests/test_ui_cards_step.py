@@ -283,8 +283,9 @@ def test_the_top_library_button_opens_the_library(fenetre, tmp_path,
     ouvertes = []
 
     class Bibliotheque:
-        def __init__(self, session, dossier, parent=None):
-            ouvertes.append(dossier)
+        def __init__(self, session, dossier, parent=None, start=False):
+            ouvertes.append((dossier, start))
+            self.applied = "essai"
 
         def exec(self):
             return 0
@@ -297,7 +298,29 @@ def test_the_top_library_button_opens_the_library(fenetre, tmp_path,
 
     w._presets._arrangements.click()
 
-    assert ouvertes == [str(tmp_path / "agencements")]
+    # Ouverte en mode départ : choisir un agencement règle tout le parcours.
+    assert ouvertes == [(str(tmp_path / "agencements"), True)]
+    assert "essai" in w._status.message()
+
+
+def test_a_load_that_fails_after_its_first_batch_ends_the_loading(qt_app,
+                                                                   tmp_path):
+    """Sans cela, la session resterait « en chargement » pour toujours, et
+    partir d'un agencement ne serait plus jamais possible."""
+    from pokemon_mosaic.ui.cards_step import CardsStep
+    from pokemon_mosaic.ui.session import Session
+
+    session = Session()
+    ecran = CardsStep(session)
+    ecran._loading = True
+    ecran._awaiting_first_batch = False          # le premier lot est arrivé
+    session.start_loading(str(tmp_path))
+    session.append_cards(list(card_set_in(tmp_path, {"s": ["a"]})))
+    assert session.loading
+
+    ecran._on_failed("disque débranché")
+
+    assert not session.loading
 
 
 def test_next_is_locked_while_no_card_is_loaded(fenetre):

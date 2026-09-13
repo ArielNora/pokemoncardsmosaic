@@ -282,10 +282,17 @@ class MainWindow(QMainWindow):
         """
         if not self._arrangements_directory:
             return
+        # En mode départ : aux deux premières étapes, choisir un agencement
+        # règle tout le parcours, voir `Session.apply_arrangement`.
         dialogue = ArrangementsDialog(self._session,
-                                      self._arrangements_directory, parent=self)
+                                      self._arrangements_directory, parent=self,
+                                      start=True)
         try:
             dialogue.exec()
+            if dialogue.applied:
+                self._show_status(
+                    self.tr("Agencement « %1 » repris : cartes, grille et "
+                            "habillage.").replace("%1", dialogue.applied))
         finally:
             dialogue.deleteLater()
 

@@ -110,6 +110,232 @@ def test_the_missing_card_names_are_red(menu, bibliotheque):
     assert widget._cards.item(1).foreground().color() != rouge, "présente"
 
 
+# --- Partir d'un agencement dès le début ------------------------------------
+
+def carre(bibliotheque, name="départ", **reste):
+    """Trois cartes et un trou, en 2×2 : de quoi vérifier cartes, forme et
+    cases vides."""
+    return range_un(bibliotheque, name, cards=("a/un.webp", "a/deux.webp",
+                                               "a/trois.webp"),
+                    grid=((0, 1), (2, -1)), **reste)
+
+
+def test_starting_from_an_arrangement_keeps_only_its_cards(session, bibliotheque):
+    arrangement = carre(bibliotheque)
+
+    session.apply_arrangement(arrangement)
+
+    chemins = {session.card_set[i].path.split("cartes/")[1]
+               for i in session.selected_indices()}
+    assert chemins == {"a/un.webp", "a/deux.webp", "a/trois.webp"}
+
+
+def test_starting_takes_the_shape_and_the_empty_cells(session, bibliotheque):
+    arrangement = carre(bibliotheque)
+    session.set_layout(cols=5, rows=4)
+
+    session.apply_arrangement(arrangement)
+
+    assert (session.cols, session.rows) == (2, 2)
+    assert session.empty_cells() == [(1, 1)]
+    assert session.missing_empty_cells() == 0
+
+
+def test_starting_takes_the_presentation_and_fills_a_slot(session, bibliotheque):
+    arrangement = carre(bibliotheque, presentation={"card_gap_mm": 4.0})
+
+    depart = session.apply_arrangement(arrangement)
+
+    assert session.card_gap_mm == 4.0
+    assert depart.slot == 0 and session.saved_count() == 1
+    assert np.array_equal(session.saved[0].grid, [[0, 1], [2, -1]])
+
+
+def test_starting_announces_itself_once(session, bibliotheque):
+    arrangement = carre(bibliotheque)
+    vus = []
+    session.arrangement_applied.connect(lambda: vus.append(1))
+
+    session.apply_arrangement(arrangement)
+
+    assert vus == [1]
+
+
+def test_starting_is_refused_when_every_slot_is_taken(session, bibliotheque):
+    """Décidé par l'utilisateur : refusé, et rien n'est touché."""
+    from pokemon_mosaic.ui.session import NoFreeSlot
+
+    arrangement = carre(bibliotheque)
+    session.set_layout(cols=5, rows=4)
+    for _ in range(4):
+        session.save_grid(np.zeros((1, 1), int), session.card_set, 0, 1.0)
+
+    with pytest.raises(NoFreeSlot):
+        session.apply_arrangement(arrangement)
+
+    assert session.selected_count == 4
+    assert (session.cols, session.rows) == (5, 4)
+
+
+def test_starting_is_refused_when_a_card_is_missing(session, bibliotheque):
+    arrangement = range_un(bibliotheque, "troué",
+                           cards=("a/un.webp", "a/jamais-vue.webp"),
+                           grid=((0, 1),))
+
+    with pytest.raises(ValueError):
+        session.apply_arrangement(arrangement)
+
+    assert session.selected_count == 4 and session.saved_count() == 0
+
+
+def test_links_broken_in_the_arrangement_are_disabled(session, bibliotheque):
+    """Un calcul qui part d'une grille exige chaque lien actif intact :
+    « Lancer » échouerait sinon. Désactivés, pas supprimés."""
+    from pokemon_mosaic.links import Link
+
+    arrangement = range_un(bibliotheque, "quatre",
+                           cards=("a/un.webp", "a/deux.webp", "a/trois.webp",
+                                  "a/quatre.webp"),
+                           grid=((0, 1), (2, 3)))
+    intact = Link(cards=(0, 1), shape=(2, 1))
+    # Imposé dans l'ordre 4, 3 : la grille les pose 3, 4.
+    rompu = Link(cards=(3, 2), shape=(2, 1), ordered=True)
+    session.add_link(intact)
+    session.add_link(rompu)
+
+    depart = session.apply_arrangement(arrangement)
+
+    actifs = {link.cards for link in session.links.active}
+    assert actifs == {(0, 1)}
+    assert [link.cards for link in depart.disabled_links] == [(3, 2)]
+    assert len(session.links.links) == 2, "désactivé, pas supprimé"
+
+
+def test_starting_disarms_the_grid_proposed_on_the_first_visit(session,
+                                                               bibliotheque):
+    """La grille proposée d'office au premier passage écraserait celle de
+    l'agencement."""
+    from pokemon_mosaic.ui.layout_tabs import GridSizeTab
+
+    # ⚠️ **La même forme déjà en place** : `set_layout` ne dit alors rien, et
+    # seul le signal émis par la reprise désarme la proposition.
+    session.set_layout(cols=2, rows=2)
+    onglet = GridSizeTab(session)
+    assert onglet._auto_fit_pending
+
+    session.apply_arrangement(carre(bibliotheque))
+
+    assert not onglet._auto_fit_pending
+    onglet._auto_fit()
+    assert (session.cols, session.rows) == (2, 2)
+
+
+def test_starting_validates_every_part_of_step_two(session, bibliotheque):
+    """Décidé par l'utilisateur : « Suivant » traverse l'étape d'un clic."""
+    from pokemon_mosaic.ui.layout_step import LayoutStep
+
+    etape = LayoutStep(session)
+    assert not etape._validated
+
+    session.apply_arrangement(carre(bibliotheque))
+
+    assert etape._validated == set(range(len(etape._tabs)))
+
+
+def test_starting_is_refused_while_the_cards_are_still_loading(session,
+                                                              bibliotheque):
+    """Trouvé par la revue : les lots suivants arrivaient retenus, et la fin du
+    chargement réarmait la grille proposée, qui écrasait la forme reprise."""
+    arrangement = carre(bibliotheque)
+    cartes = list(session.card_set)
+    session.start_loading(session.data_dir)
+    session.append_cards(cartes[:3])
+    assert session.loading
+
+    with pytest.raises(ValueError, match="Chargement"):
+        session.apply_arrangement(arrangement)
+
+    assert session.saved_count() == 0 and (session.cols, session.rows) != (2, 2)
+
+
+def test_the_start_button_waits_for_the_end_of_the_loading(session,
+                                                           bibliotheque):
+    """Grisé tant que des cartes arrivent, rendu à la fin sans rouvrir la
+    fenêtre."""
+    from pokemon_mosaic.ui.arrangements_dialog import ArrangementsDialog
+
+    carre(bibliotheque)
+    reference = session.card_set
+    cartes = list(reference)
+    session.start_loading(session.data_dir)
+    session.append_cards(cartes[:3])
+    widget = ArrangementsDialog(session, bibliotheque, start=True)
+
+    assert not widget._open.isEnabled()
+    assert "Chargez d'abord les cartes" in widget._missing.text()
+
+    session.append_cards(cartes[3:])
+    session.finish_loading(reference)
+
+    assert widget._open.isEnabled()
+    assert widget._missing.text() == ""
+
+
+def test_the_start_mode_offers_to_start_from_the_arrangement(session,
+                                                             bibliotheque):
+    from pokemon_mosaic.ui.arrangements_dialog import ArrangementsDialog
+
+    carre(bibliotheque)
+    widget = ArrangementsDialog(session, bibliotheque, start=True)
+
+    assert widget._open.text() == "Partir de cet agencement"
+    widget._open.click()
+
+    assert (session.cols, session.rows) == (2, 2)
+    assert widget.applied == "départ"
+
+
+def test_the_start_mode_refuses_when_every_slot_is_taken(session, bibliotheque,
+                                                         monkeypatch):
+    from pokemon_mosaic.ui import arrangements_dialog as module
+    from pokemon_mosaic.ui.arrangements_dialog import ArrangementsDialog
+
+    carre(bibliotheque)
+    for _ in range(4):
+        session.save_grid(np.zeros((1, 1), int), session.card_set, 0, 1.0)
+    avis = []
+    monkeypatch.setattr(module.QMessageBox, "information",
+                        lambda *a, **k: avis.append(a[1]))
+    widget = ArrangementsDialog(session, bibliotheque, start=True)
+
+    widget._open.click()
+
+    assert avis and widget.applied == ""
+    assert session.selected_count == 4
+
+
+def test_the_start_mode_names_the_disabled_links(session, bibliotheque,
+                                                 monkeypatch):
+    from pokemon_mosaic.links import Link
+    from pokemon_mosaic.ui import arrangements_dialog as module
+    from pokemon_mosaic.ui.arrangements_dialog import ArrangementsDialog
+
+    range_un(bibliotheque, "quatre",
+             cards=("a/un.webp", "a/deux.webp", "a/trois.webp", "a/quatre.webp"),
+             grid=((0, 1), (2, 3)))
+    session.add_link(Link(cards=(3, 2), shape=(2, 1), ordered=True,
+                          name="Arcko et Massko"))
+    avis = []
+    monkeypatch.setattr(module.QMessageBox, "warning",
+                        lambda *a, **k: avis.append(a[2]))
+    widget = ArrangementsDialog(session, bibliotheque, start=True)
+
+    widget._open.click()
+
+    assert len(avis) == 1 and "Arcko et Massko" in avis[0]
+    assert widget.applied == "quatre"
+
+
 def test_a_complete_arrangement_can_be_opened_into_a_slot(menu):
     widget, session, _ = menu
 
