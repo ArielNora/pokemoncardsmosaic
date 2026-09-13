@@ -48,7 +48,10 @@ def multi_run(session, count, control=None, **reactions):
     worker.finished_all.connect(seen["all"].append)
     worker.failed.connect(seen["failed"].append)
     for nom, reaction in reactions.items():
-        getattr(worker, nom).connect(reaction)
+        # Une réaction ou une liste : l'onglet et le test écoutent parfois le
+        # même signal.
+        for une in reaction if isinstance(reaction, list) else [reaction]:
+            getattr(worker, nom).connect(une)
     worker.run()
     return seen
 
@@ -148,3 +151,260 @@ def test_a_multi_run_without_cards_fails_cleanly(qt_app):
     seen = multi_run(Session(), 3)
 
     assert seen["failed"] and seen["started"] == [] and seen["all"] == []
+
+
+# --- L'onglet ----------------------------------------------------------------
+
+@pytest.fixture
+def tab(qt_app, session):
+    from pokemon_mosaic.ui.multi_run_tab import MultiRunTab
+
+    widget = MultiRunTab(session)
+    widget.resize(700, 500)
+    return widget, session
+
+
+def feed_tab(widget, session, count, **reactions):
+    """Rejoue un multi-lancement dans l'onglet, sans fil de fond."""
+    widget._count = count
+    widget._update_buttons(running=True)
+    widget._thread = object()
+    # L'onglet d'abord : une réaction du test lit ce qu'il vient d'afficher.
+    handlers = {"run_started": [widget._on_run_started],
+                "snapshot": [widget._on_snapshot],
+                "run_finished": [widget._on_run_finished],
+                "finished_all": [widget._on_finished_all],
+                "failed": [widget._on_failed]}
+    for nom, reaction in reactions.items():
+        handlers[nom].append(reaction)
+    return multi_run(session, count, **handlers)
+
+
+@pytest.fixture
+def capture_multi_runs(monkeypatch):
+    from pokemon_mosaic.ui import multi_run_tab as module
+
+    calls = []
+
+    def fake(parent, session, control, count, **handlers):
+        calls.append(count)
+        return object(), object()
+
+    monkeypatch.setattr(module, "start_multi_run", fake)
+    return calls
+
+
+def test_the_count_field_stops_at_twenty(tab):
+    widget, _ = tab
+    widget._count_field.setValue(35)
+
+    assert widget._count_field.value() == 20
+
+
+def test_launching_passes_the_chosen_count(tab, capture_multi_runs):
+    widget, _ = tab
+    widget._count_field.setValue(7)
+
+    widget._start.click()
+
+    assert capture_multi_runs == [7]
+    assert widget.is_busy()
+    assert not widget._start.isEnabled() and widget._stop.isEnabled()
+
+
+def test_the_estimate_multiplies_one_run_by_the_count(tab):
+    from pokemon_mosaic.ui.estimates import format_duration
+
+    widget, session = tab
+    session.set_algorithm(iterations=1_270_000, use_annealing=False)
+    widget._count_field.setValue(4)
+
+    assert format_duration(40) in widget._estimate.text()
+
+
+def test_the_estimate_is_capped_by_the_time_budget(tab):
+    from pokemon_mosaic.ui.estimates import format_duration
+
+    widget, session = tab
+    session.set_algorithm(iterations=1_270_000, use_annealing=False,
+                          stop_on_time=True, time_budget=3.0)
+    widget._count_field.setValue(4)
+
+    assert format_duration(12) in widget._estimate.text()
+
+
+def test_each_run_leaves_a_group_of_its_last_five_snapshots(tab):
+    widget, session = tab
+    seen = feed_tab(widget, session, 3)
+
+    assert [groupe.rank for groupe in widget.groups] == [0, 1, 2]
+    for groupe, (_, _, timeline) in zip(widget.groups, seen["started"], strict=True):
+        assert len(groupe.snapshots) == 5
+        assert groupe.snapshots == timeline.snapshots[-5:]
+        assert groupe.result is not None and groupe.cards is not None
+    assert not widget.is_busy() and widget._start.isEnabled()
+
+
+def test_the_progress_names_the_run_in_progress(tab):
+    widget, session = tab
+    vus = []
+
+    feed_tab(widget, session, 3,
+             snapshot=lambda rang, _s: vus.append(widget._progress_label.text()))
+
+    # Compté depuis un : le premier lancement n'est pas « 0 sur 3 ».
+    assert set(vus) == {"Lancement 1 sur 3", "Lancement 2 sur 3",
+                        "Lancement 3 sur 3"}
+    assert widget._progress.value() == 3
+
+
+def test_the_live_image_follows_a_resize(tab):
+    """Refaite au seul cliché suivant, elle gardait l'ancienne échelle, et pour
+    toujours une fois le calcul fini."""
+    widget, session = tab
+    widget.show()
+    feed_tab(widget, session, 1)
+    widget._flush_render()
+    avant = widget._image.pixmap().width()
+
+    widget.resize(1400, 1000)
+    widget._flush_render()
+
+    assert widget._image.pixmap().width() > avant
+
+
+def test_a_stopped_multi_run_keeps_the_interrupted_run(tab):
+    widget, session = tab
+
+    def arrete(rang, _cliche):
+        if rang == 1:
+            widget._request_stop()
+
+    widget._control = RunControl()
+    from pokemon_mosaic.ui.runner import MultiRunWorker
+
+    worker = MultiRunWorker(session, widget._control, 4)
+    widget._count = 4
+    worker.run_started.connect(widget._on_run_started)
+    worker.snapshot.connect(widget._on_snapshot)
+    worker.snapshot.connect(arrete)
+    worker.run_finished.connect(widget._on_run_finished)
+    worker.finished_all.connect(widget._on_finished_all)
+    worker.run()
+
+    assert [groupe.rank for groupe in widget.groups] == [0, 1]
+    assert widget.groups[1].snapshots
+    assert widget.groups[1].result.stopped_by == StopReason.REQUESTED
+
+
+def test_a_failure_keeps_the_groups_already_done(tab):
+    widget, session = tab
+    widget._thread = object()
+    widget._on_run_started(0, session.card_set, Timeline())
+    widget._on_run_finished(0, object())
+
+    widget._on_failed("disque plein")
+
+    assert len(widget.groups) == 1
+    assert not widget.is_busy()
+
+
+def test_a_new_multi_run_replaces_the_previous_results(tab, capture_multi_runs):
+    widget, session = tab
+    feed_tab(widget, session, 2)
+    widget._thread = None
+
+    widget._start.click()
+
+    assert widget.groups == []
+
+
+def test_shutdown_is_safe_without_a_multi_run(tab):
+    widget, _ = tab
+
+    assert widget.shutdown()
+
+
+# --- Dans l'écran d'exécution -----------------------------------------------
+
+@pytest.fixture
+def step(qt_app, session):
+    from pokemon_mosaic.ui.run_step import RunStep
+
+    widget = RunStep(session)
+    widget.resize(900, 600)
+    return widget, session
+
+
+def test_the_run_step_has_two_tabs(step):
+    widget, _ = step
+
+    assert [widget._tabs.tabText(i) for i in range(widget._tabs.count())] == [
+        "Lancement", "Multi-lancement"]
+    assert widget._tabs.widget(1) is widget._multi
+
+
+def test_a_multi_run_blocks_the_single_run(step, capture_multi_runs, monkeypatch):
+    """Un seul calcul à la fois : deux fils côte à côte surchargeraient la
+    machine."""
+    from pokemon_mosaic.ui import run_step as module
+
+    widget, _ = step
+    lances = []
+    monkeypatch.setattr(module, "start_run",
+                        lambda *a, **k: lances.append(1) or (object(), object()))
+
+    widget._multi._start.click()
+
+    assert not widget._start.isEnabled()
+    assert not widget._welcome_start.isEnabled()
+    widget.start_run()
+    assert lances == []
+
+
+def test_a_single_run_blocks_the_multi_run(step, capture_multi_runs, monkeypatch):
+    from pokemon_mosaic.ui import run_step as module
+
+    widget, _ = step
+    monkeypatch.setattr(module, "start_run",
+                        lambda *a, **k: (object(), object()))
+
+    widget.start_run()
+
+    assert not widget._multi._start.isEnabled()
+    widget._multi.start()
+    assert capture_multi_runs == []
+
+
+def test_resuming_is_refused_while_a_multi_run_turns(step, capture_multi_runs):
+    """« Repartir de ce cliché » tronquait la timeline puis se voyait refuser
+    le lancement : les clichés suivants étaient perdus pour rien."""
+    from pokemon_mosaic.ui.runner import RunWorker
+
+    widget, session = step
+    # Ce que `start_run` pose avant de lancer : la reprise en dépend.
+    widget._run_signature = widget._signature()
+    worker = RunWorker(session, RunControl())
+    worker.started_run.connect(widget._on_started)
+    worker.snapshot.connect(widget._on_snapshot)
+    worker.finished_run.connect(widget._on_finished)
+    worker.run()
+    longueur = len(widget._timeline)
+    widget._slider.setValue(0)
+    assert widget.can_resume()
+
+    widget._multi._start.click()
+
+    assert not widget.can_resume()
+    assert not widget._resume.isEnabled() and not widget._extend.isEnabled()
+    widget._resume_from_snapshot()
+    assert len(widget._timeline) == longueur
+
+
+def test_the_single_run_comes_back_after_the_multi_run(step, capture_multi_runs):
+    widget, _ = step
+    widget._multi._start.click()
+
+    widget._multi._on_finished_all(0)
+
+    assert widget._start.isEnabled() and widget._multi._start.isEnabled()

@@ -12,6 +12,7 @@ from PySide6.QtWidgets import (
     QScrollArea,
     QSlider,
     QStackedWidget,
+    QTabWidget,
     QVBoxLayout,
     QWidget,
 )
@@ -20,6 +21,7 @@ from ..arrangements import default_name, save_arrangement, unique_name
 from ..control import RunControl
 from ..optimize import StopReason
 from .arrangements_dialog import ArrangementsDialog
+from .multi_run_tab import MultiRunTab
 from .runner import start_run
 from .saved_column import SavedColumn, SavedDialog, mosaic_image
 from .session import MAX_SAVED, Session
@@ -243,16 +245,28 @@ class RunStep(QWidget):
         self._summary = QLabel()
         controls.addWidget(self._summary)
 
-        # La colonne longe l'image et la timeline : elle appartient à ce qu'on
-        # regarde, pas à la barre de commandes.
-        milieu = QHBoxLayout()
-        milieu.addWidget(self._view, 1)
-        milieu.addWidget(self._saved)
+        simple = QWidget()
+        pile_simple = QVBoxLayout(simple)
+        pile_simple.setContentsMargins(0, 0, 0, 0)
+        pile_simple.addWidget(self._view, 1)
+        pile_simple.addLayout(timeline_row)
+        pile_simple.addLayout(controls)
 
-        layout = QVBoxLayout(self)
-        layout.addLayout(milieu, 1)
-        layout.addLayout(timeline_row)
-        layout.addLayout(controls)
+        # ⚠️ **Deux onglets, une seule colonne de cases.** Ce qu'on garde d'un
+        # multi-lancement va dans les mêmes quatre cases que le lancement
+        # simple : l'export part d'elles, quel que soit l'onglet d'où elles
+        # viennent.
+        self._multi = MultiRunTab(self._session)
+        self._multi.status_message.connect(self.status_message.emit)
+        self._multi.busy_changed.connect(
+            lambda _occupe: self._update_buttons(running=self._thread is not None))
+        self._tabs = QTabWidget()
+        self._tabs.addTab(simple, "")
+        self._tabs.addTab(self._multi, "")
+
+        layout = QHBoxLayout(self)
+        layout.addWidget(self._tabs, 1)
+        layout.addWidget(self._saved)
         # « Pause » et « Arrêter » naissaient actifs : cliquables sans effet tant
         # qu'aucun calcul ne tourne, et deux boutons de plus à ignorer sur un
         # écran qui n'en propose qu'un.
@@ -260,6 +274,9 @@ class RunStep(QWidget):
         self.retranslate_ui()
 
     def retranslate_ui(self) -> None:
+        self._tabs.setTabText(0, self.tr("Lancement"))
+        self._tabs.setTabText(1, self.tr("Multi-lancement"))
+        self._multi.retranslate_ui()
         self._start.setText(self.tr("Lancer"))
         self._stop.setText(self.tr("Arrêter"))
         self._latest.setText(self.tr("Dernier"))
@@ -295,7 +312,9 @@ class RunStep(QWidget):
     # --- Commandes --------------------------------------------------------
 
     def start_run(self, previous_grid=None, timeline=None) -> None:
-        if self._thread is not None:
+        # ⚠️ **Un seul calcul à la fois**, d'un onglet à l'autre : deux fils
+        # d'optimisation côte à côte surchargeraient la machine.
+        if self._thread is not None or self._multi.is_busy():
             return
         self._control = RunControl()
         self._following = True
@@ -357,8 +376,12 @@ class RunStep(QWidget):
         seule, qui décide de l'état des boutons, les griser à part la ferait
         diverger de ce qu'ils montrent.
         """
+        # ⚠️ **Pas pendant un multi-lancement.** « Repartir de ce cliché »
+        # tronque la timeline avant de lancer : refusé ensuite parce qu'un
+        # autre calcul tourne, il perdait les clichés suivants pour rien.
         return (bool(self._timeline)
                 and self._thread is None
+                and not self._multi.is_busy()
                 and self._run_signature == self._signature())
 
     def _extend_run(self) -> None:
@@ -532,6 +555,7 @@ class RunStep(QWidget):
         L'export a quitté cet écran pour l'étape 4, qui arrête le sien de la
         même façon : deux fils ne se croisent plus ici.
         """
+        multi_arrete = self._multi.shutdown()
         if self._control is not None:
             self._control.stop()
         if self._thread is not None and self._thread.isRunning():
@@ -544,6 +568,8 @@ class RunStep(QWidget):
                     .replace("%1", self.tr("le calcul"))
                 )
                 return False
+        if not multi_arrete:
+            return False
         # Une référence n'est lâchée que si son fil est réellement terminé :
         # lâcher celle d'un fil encore actif rouvrirait le même crash.
         self._thread = self._worker = None
@@ -841,7 +867,10 @@ class RunStep(QWidget):
         self._image.resize(self._scroll.viewport().size())
 
     def _update_buttons(self, running: bool) -> None:
-        self._start.setEnabled(not running)
+        multi = self._multi.is_busy()
+        self._start.setEnabled(not running and not multi)
+        self._welcome_start.setEnabled(not running and not multi)
+        self._multi.set_blocked(running)
         self._pause.setEnabled(running)
         self._stop.setEnabled(running)
         self._update_resume_buttons()
