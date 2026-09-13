@@ -20,14 +20,15 @@ from PySide6.QtWidgets import (
 from ..paths import APP_NAME
 from . import theme
 from .arrangements_dialog import ArrangementsDialog
-from .cards_step import CardsStep
+from .cards_step import TUTORIAL_EMPTY, TUTORIAL_GALLERY, CardsStep
 from .export_step import ExportStep
 from .i18n import LANGUAGES, LanguageManager
 from .layout_step import LayoutStep
 from .presets_bar import PresetsBar
 from .run_step import RunStep
 from .session import Session
-from .tutorial import HelpButton, Tutorial, TutorialController, TutorialStore
+from .tutorial import HelpButton, Tutorial, TutorialController, TutorialStore, Zone
+from .tutorial_texts import TutorialTexts
 
 # L'aura du bouton « Suivant » : son rayon, son opacité, et la place à lui
 # laisser autour. ⚠️ **Le rouge est plus discret que le vert** : il accompagne le
@@ -246,8 +247,13 @@ class MainWindow(QMainWindow):
         self._help = HelpButton()
         bottom.addWidget(self._help)
         self._tutorials = TutorialStore(lambda: self.settings())
+        self._texts = TutorialTexts(self)
         self._tutorial = TutorialController(self, self._tutorials,
                                             self.current_tutorial)
+        # L'écran des cartes change de tutoriel sans changer de page : la
+        # galerie apparaît, et sa visite complémentaire démarre.
+        self._cards_step.tutorial_changed.connect(
+            lambda: self._page_tutorial_changed(self._cards_step))
         self._help.toggled.connect(self._tutorial.set_help)
         self._tutorial.help_changed.connect(self._show_help_state)
         # « ? » est grisé pendant une visite guidée : les deux modes ne se
@@ -282,9 +288,37 @@ class MainWindow(QMainWindow):
         self.retranslate_ui()
 
     def current_tutorial(self) -> Tutorial | None:
-        """Le tutoriel de la page affichée. Aucun pour l'instant : chaque étape
-        inscrira le sien."""
-        return None
+        """Le tutoriel de la page affichée, que la page décrit elle-même.
+
+        Les zones de la fenêtre (barre du haut, « Suivant », « ? ») s'ajoutent
+        à la première étape : c'est là qu'on les découvre.
+        """
+        fabrique = getattr(self._stack.currentWidget(), "tutorial", None)
+        tutoriel = fabrique() if fabrique is not None else None
+        if tutoriel is None:
+            return None
+        fenetre = self._window_zones(tutoriel.key)
+        if not fenetre:
+            return tutoriel
+        return Tutorial(tutoriel.key, lambda: tutoriel.zones() + fenetre,
+                        tutoriel.ready)
+
+    def _window_zones(self, key: str) -> list[Zone]:
+        """⚠️ **« ? » dans les deux visites de l'étape 1** : avec un dossier
+        retenu, la galerie s'ouvre directement et l'écran vide n'est jamais vu.
+        La barre du haut et « Suivant » n'ont de sens qu'avec des cartes."""
+        aide = Zone(lambda: self._help, self._texts.window_help)
+        if key == TUTORIAL_EMPTY:
+            return [aide]
+        if key == TUTORIAL_GALLERY:
+            return [Zone(lambda: self._presets, self._texts.window_presets),
+                    Zone(lambda: self._next, self._texts.window_next),
+                    aide]
+        return []
+
+    def _page_tutorial_changed(self, page: QWidget) -> None:
+        if self._stack.currentWidget() is page:
+            self._tutorial.page_shown()
 
     def _show_help_state(self, active: bool) -> None:
         """Recopie l'état de l'aide dans le bouton, sans qu'il le réémette."""

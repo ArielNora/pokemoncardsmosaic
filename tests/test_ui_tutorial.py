@@ -389,6 +389,83 @@ def test_the_help_button_is_round_checkable_and_glows_blue(qt_app):
         bleu.red(), bleu.green(), bleu.blue())
 
 
+def test_a_glowing_element_has_a_zone_of_its_own_size(qt_app, page):
+    """L'aura déborde du widget : la zone, elle, suit le widget."""
+    from PySide6.QtCore import QPoint, QRect
+    from PySide6.QtWidgets import QGraphicsDropShadowEffect
+
+    from pokemon_mosaic.ui.tutorial import ZONE_MARGIN, zone_rect
+
+    hote, boutons = page
+    aura = QGraphicsDropShadowEffect(boutons[1])
+    aura.setBlurRadius(40)
+    boutons[1].setGraphicsEffect(aura)
+    qt_app.processEvents()
+
+    attendu = QRect(boutons[1].mapTo(hote, QPoint(0, 0)), boutons[1].size()).adjusted(
+        -ZONE_MARGIN, -ZONE_MARGIN, ZONE_MARGIN, ZONE_MARGIN)
+    assert zone_rect(boutons[1], hote) == attendu
+
+
+def test_the_skip_button_never_covers_the_zone_it_explains(qt_app):
+    from PySide6.QtWidgets import QPushButton, QWidget
+
+    from pokemon_mosaic.ui.tutorial import Tutorial, TutorialOverlay, Zone
+
+    hote = QWidget()
+    hote.resize(500, 400)
+    coin = QPushButton("Suivant", hote)
+    coin.setGeometry(370, 350, 120, 40)
+    hote.show()
+    qt_app.processEvents()
+    voile = TutorialOverlay(hote)
+
+    voile.start_guide(Tutorial("coin", lambda: [Zone(lambda: coin, lambda: "ici")]))
+
+    zone = voile.zones()[0][1]
+    assert voile._skip.isVisible()
+    assert not voile._skip.geometry().intersects(zone)
+    assert not voile._skip.geometry().intersects(voile._bubble.geometry())
+    voile.stop()
+    hote.close()
+
+
+def test_the_skip_button_avoids_the_bubble_too(voile):
+    """Zone en bas à droite, bulle en bas à gauche : il reste le haut."""
+    from PySide6.QtCore import QRect
+
+    from pokemon_mosaic.ui.tutorial import SKIP_MARGIN
+
+    overlay, _hote, boutons = voile
+    overlay.start_guide(tutoriel(boutons))
+    zone = QRect(overlay.width() - 150, overlay.height() - 60, 150, 60)
+    overlay._bubble.setGeometry(0, overlay.height() - 80, 300, 80)
+
+    overlay._place_skip(zone)
+
+    assert overlay._skip.y() == SKIP_MARGIN
+    assert overlay._skip.geometry().right() > overlay.width() // 2
+    overlay.stop()
+
+
+def test_the_help_button_builds_under_the_application_stylesheet(qt_app):
+    """Le démarrage réel pose le thème avant la fenêtre : le rôle du bouton
+    repolissait alors un bouton sans aura, et l'application plantait."""
+    from PySide6.QtGui import QColor
+
+    from pokemon_mosaic.ui import theme
+    from pokemon_mosaic.ui.tutorial import HelpButton
+
+    theme.apply(qt_app)
+
+    bouton = HelpButton()
+
+    couleur = bouton.graphicsEffect().color()
+    bleu = QColor(bouton.palette().highlight().color())
+    assert (couleur.red(), couleur.green(), couleur.blue()) == (
+        bleu.red(), bleu.green(), bleu.blue())
+
+
 def test_the_help_button_menu_offers_to_replay_the_guides(qt_app):
     from pokemon_mosaic.ui.tutorial import HelpButton
 

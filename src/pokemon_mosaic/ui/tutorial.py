@@ -74,6 +74,9 @@ class Tutorial:
 
     key: str
     zones: Callable[[], list[Zone]]
+    # La visite guidée attend que la page soit prête : des cartes encore en
+    # chargement changeraient l'écran sous la bulle. L'aide, elle, n'attend pas.
+    ready: Callable[[], bool] = lambda: True
 
 
 def zone_rect(widget: QWidget | None, host: QWidget) -> QRect:
@@ -84,7 +87,10 @@ def zone_rect(widget: QWidget | None, host: QWidget) -> QRect:
     """
     if widget is None or not widget.isVisible() or widget.window() is not host.window():
         return QRect()
-    visible = widget.visibleRegion().boundingRect()
+    # ⚠️ **Bornée au widget.** Un élément qui porte une aura (« Suivant »,
+    # « ? ») a une région visible grossie du débord de son flou : la zone
+    # entourait un grand pavé vide autour d'un petit bouton rond.
+    visible = widget.visibleRegion().boundingRect().intersected(widget.rect())
     if visible.isEmpty():
         return QRect()
     haut_gauche = widget.mapTo(host, visible.topLeft())
@@ -371,10 +377,7 @@ class TutorialOverlay(QWidget):
                     .replace("%1", str(self._index + 1))
                     .replace("%2", str(len(self._zones))))
                 self._place_bubble(rect)
-            self._skip.adjustSize()
-            self._skip.move(self.width() - self._skip.width() - SKIP_MARGIN,
-                            self.height() - self._skip.height() - SKIP_MARGIN)
-            self._skip.raise_()
+            self._place_skip(self._zones[self._index][1] if self._zones else QRect())
         else:
             if self._hovered is not None and self._hovered < len(self._zones):
                 zone, rect = self._zones[self._hovered]
@@ -385,6 +388,27 @@ class TutorialOverlay(QWidget):
                 self._bubble.hide()
                 self._arrow = None
         self.update()
+
+    def _place_skip(self, zone: QRect) -> None:
+        """« Passer le tutoriel » en bas à droite, sauf là où il gênerait.
+
+        ⚠️ **Jamais sur la zone expliquée ni sur sa bulle.** En bas à droite,
+        il couvrait « Suivant » au moment précis où la visite le montrait. Il
+        passe alors en bas à gauche, puis en haut à droite.
+        """
+        self._skip.adjustSize()
+        largeur, hauteur = self._skip.width(), self._skip.height()
+        droite = self.width() - largeur - SKIP_MARGIN
+        bas = self.height() - hauteur - SKIP_MARGIN
+        coins = [QPoint(droite, bas), QPoint(SKIP_MARGIN, bas),
+                 QPoint(droite, SKIP_MARGIN)]
+        bulle = self._bubble.geometry() if self._bubble.isVisible() else QRect()
+        coin = next((c for c in coins
+                     if not QRect(c, self._skip.size()).intersects(zone)
+                     and not QRect(c, self._skip.size()).intersects(bulle)),
+                    coins[0])
+        self._skip.move(coin)
+        self._skip.raise_()
 
     def _place_bubble(self, rect: QRect) -> None:
         """Pose la bulle du côté de la zone où elle tient : dessous, dessus, à
@@ -474,13 +498,17 @@ class HelpButton(QPushButton):
 
     def __init__(self, parent=None):
         super().__init__("?", parent)
-        theme.mark(self, "help")
-        self.setCheckable(True)
         # ⚠️ **Une aura bleue**, demandée par l'utilisateur : le bouton est petit
         # et rond, et c'est la porte d'entrée de toute l'aide.
+        # ⚠️ **Créée avant le rôle.** Sous la feuille de style de l'application,
+        # `theme.mark` repolit le bouton, ce qui envoie un changement de palette
+        # à `changeEvent` : sans aura encore, l'application plantait au
+        # démarrage. Aucun test ne posait le thème, aucun ne l'a vu.
         self._glow = QGraphicsDropShadowEffect(self)
         self._glow.setOffset(0, 0)
         self.setGraphicsEffect(self._glow)
+        theme.mark(self, "help")
+        self.setCheckable(True)
         self._menu = QMenu(self)
         self._rearm = self._menu.addAction("")
         self._rearm.triggered.connect(self.rearm_requested.emit)
@@ -543,7 +571,8 @@ class TutorialController(QObject):
         if self._help:
             self.overlay.start_help(tutoriel)
             return
-        if (tutoriel is not None and self._store.should_guide(tutoriel.key)
+        if (tutoriel is not None and tutoriel.ready()
+                and self._store.should_guide(tutoriel.key)
                 and self.overlay.start_guide(tutoriel)):
             self.guide_running.emit(True)
 

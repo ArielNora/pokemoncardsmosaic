@@ -27,7 +27,13 @@ from .gallery import CardGallery
 from .links_panel import LinksPanel
 from .loader import start_loading
 from .session import Session
+from .tutorial import Tutorial, Zone
+from .tutorial_texts import TutorialTexts
 
+# Les deux visites de l'étape : l'écran vide au premier démarrage, puis la
+# galerie la première fois qu'elle a des cartes, qui n'existait pas avant.
+TUTORIAL_EMPTY = "cartes"
+TUTORIAL_GALLERY = "cartes-galerie"
 # L'annulation étant vérifiée à chaque fichier, l'arrêt prend quelques
 # millisecondes ; ce délai n'est qu'un filet.
 SHUTDOWN_TIMEOUT_MS = 5000
@@ -59,9 +65,17 @@ class CardsStep(QWidget):
     # Émis quand « Suivant » doit être réévalué par la fenêtre.
     advance_state_changed = Signal()
 
+    # Émis quand le tutoriel de l'écran change : la galerie vient d'apparaître,
+    # ou le chargement qui la remplissait vient de finir.
+    tutorial_changed = Signal()
+
     def __init__(self, session: Session, parent=None):
         super().__init__(parent)
         self._session = session
+        self._texts = TutorialTexts(self)
+        # (cartes présentes, occupé) au dernier passage : le tutoriel ne change
+        # qu'avec l'un des deux.
+        self._tutorial_state = None
         self._thread = None
         self._worker = None
         # Exclusions et liens figés par chemin avant de recharger le dossier
@@ -360,6 +374,37 @@ class CardsStep(QWidget):
         # La fenêtre décide de « Suivant », ce qui vient de changer peut
         # l'autoriser comme le lui retirer.
         self.advance_state_changed.emit()
+        etat = (garni, self._busy())
+        if etat != self._tutorial_state:
+            self._tutorial_state = etat
+            self.tutorial_changed.emit()
+
+    def tutorial(self) -> Tutorial:
+        """Le tutoriel de l'écran tel qu'il est : vide, ou la galerie.
+
+        ⚠️ **Pas de visite pendant un chargement.** Les cartes arrivent par lots
+        et l'écran vide cède la place à la galerie en cours de route : la bulle
+        aurait expliqué un bouton disparu. La visite attend la fin, que
+        `tutorial_changed` annonce.
+        """
+        textes = self._texts
+        pret = lambda: not self._busy()
+        if not self._session.total_cards:
+            return Tutorial(TUTORIAL_EMPTY, lambda: [
+                Zone(lambda: self._empty_title, textes.cards_welcome),
+                Zone(lambda: self._download, textes.cards_download),
+                Zone(lambda: self._locate, textes.cards_locate),
+            ], pret)
+        return Tutorial(TUTORIAL_GALLERY, lambda: [
+            Zone(lambda: self._gallery, textes.cards_gallery),
+            Zone(lambda: self._folders, textes.cards_folders),
+            Zone(lambda: self._search, textes.cards_search),
+            Zone(lambda: self._bulk, textes.cards_bulk),
+            Zone(lambda: self._links, textes.cards_links),
+            Zone(lambda: self._count, textes.cards_count),
+            Zone(lambda: self._update_catalogue, textes.cards_update),
+            Zone(lambda: self._warnings, textes.cards_warnings),
+        ], pret)
 
     def _show_warnings(self, card_set) -> None:
         """Dit ce que le chargement a trouvé d'anormal, et pourquoi ça compte."""
@@ -432,6 +477,10 @@ class CardsStep(QWidget):
         if self._loading:
             return
         self._loading = True
+        # ⚠️ **Le tutoriel sera réannoncé à la fin, quoi qu'il arrive.** Un
+        # chargement qui échoue avant son premier lot rend l'écran tel qu'il
+        # était : sans cela, rien ne relançait la visite qu'il avait retenue.
+        self._tutorial_state = None
         self._progress.show()
         self._progress.setRange(0, 0)  # indéterminé le temps de lire les en-têtes
         self._set_sources_enabled(False)
@@ -484,6 +533,9 @@ class CardsStep(QWidget):
         if self._download_thread is not None:
             return
         self._download_dir = directory
+        # Même raison qu'au chargement : un téléchargement raté rend l'écran
+        # tel quel, et sa visite doit pouvoir repartir.
+        self._tutorial_state = None
         self._progress.show()
         self._progress.setRange(0, 0)  # indéterminé le temps de lire le catalogue
         self._cancel.show()
