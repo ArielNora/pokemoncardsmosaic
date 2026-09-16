@@ -43,6 +43,11 @@ from .layout_step import TAB_WIDTH
 from .page_preview import PagePreview
 from .saved_column import SavedColumn
 from .session import Session
+from .tutorial import Tutorial, Zone
+from .tutorial_texts import TutorialTexts
+
+# La visite de l'étape d'export, qui ouvre chaque section qu'elle explique.
+TUTORIAL_EXPORT = "export"
 
 # Le zoom de l'aperçu, ses bornes et son pas multiplicatif. À 1, la feuille
 # entière tient dans le cadre.
@@ -720,6 +725,7 @@ class ExportStep(QWidget):
         super().__init__(parent)
         self._session = session
         self._arrangements_directory = arrangements_directory
+        self._texts = TutorialTexts(self)
         self._export_thread = None
         self._export_worker = None
         self._slot: int | None = None
@@ -899,6 +905,33 @@ class ExportStep(QWidget):
         """Ouvre la section demandée et referme les autres."""
         for section in self._sections:
             section.set_open(section.key() == key and not section.is_open())
+
+    def _open_section(self, ouverte: Section) -> None:
+        """Ouvre cette section, referme les autres : **jamais ne la replie**,
+        au contraire de `_toggle_section`, qu'un second passage refermerait."""
+        for section in self._sections:
+            section.set_open(section is ouverte)
+
+    def tutorial(self) -> Tutorial:
+        """La visite de l'export.
+
+        ⚠️ **Chaque section s'ouvre quand la visite l'atteint.** Repliée, elle
+        ne montre que son intitulé, et la bulle aurait expliqué des réglages
+        invisibles. La zone est la section entière, qui grandit en s'ouvrant.
+        """
+        textes = self._texts
+        explications = (textes.export_presentation, textes.export_colours,
+                        textes.export_cut, textes.export_resolution)
+        zones = [Zone(lambda: self._scroll, textes.export_preview),
+                 Zone(lambda: self._loupe, textes.export_loupe)]
+        for section, texte in zip(self._sections, explications, strict=True):
+            zones.append(Zone(lambda s=section: s, texte,
+                              lambda s=section: self._open_section(s)))
+        zones += [Zone(lambda: self._saved, textes.export_saved),
+                  Zone(lambda: self._warning, textes.export_warning),
+                  Zone(lambda: self._summary, textes.export_summary),
+                  Zone(lambda: self._export, textes.export_button)]
+        return Tutorial(TUTORIAL_EXPORT, lambda: zones)
 
     # --- Le zoom et le déplacement ----------------------------------------
 

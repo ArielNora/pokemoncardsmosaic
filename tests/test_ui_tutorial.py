@@ -407,6 +407,59 @@ def test_a_glowing_element_has_a_zone_of_its_own_size(qt_app, page):
     assert zone_rect(boutons[1], hote) == attendu
 
 
+def test_arriving_on_a_zone_plays_its_entry_once(voile):
+    """Une section repliée s'ouvre quand la visite l'atteint, une seule fois :
+    rejouée à chaque rafraîchissement, elle écraserait ce qu'on y fait."""
+    from pokemon_mosaic.ui.tutorial import Tutorial, Zone
+
+    overlay, _hote, boutons = voile
+    arrivees = []
+    overlay.start_guide(Tutorial("entree", lambda: [
+        Zone(lambda: boutons[0], lambda: "un"),
+        Zone(lambda: boutons[1], lambda: "deux", lambda: arrivees.append("deux")),
+    ]))
+    assert arrivees == []
+
+    overlay.next_zone()
+    overlay.refresh()
+    overlay.refresh()
+
+    assert arrivees == ["deux"]
+    overlay.stop()
+
+
+def test_a_new_guide_plays_the_entries_again(voile):
+    from pokemon_mosaic.ui.tutorial import Tutorial, Zone
+
+    overlay, _hote, boutons = voile
+    arrivees = []
+    tutoriel = Tutorial("entree", lambda: [
+        Zone(lambda: boutons[0], lambda: "un", lambda: arrivees.append("un"))])
+    overlay.start_guide(tutoriel)
+    overlay.stop()
+
+    overlay.start_guide(tutoriel)
+
+    assert arrivees == ["un", "un"]
+    overlay.stop()
+
+
+def test_help_never_plays_an_entry(voile):
+    """L'aide explique sans rien changer à l'écran."""
+    from pokemon_mosaic.ui.tutorial import Tutorial, Zone
+
+    overlay, hote, boutons = voile
+    arrivees = []
+    overlay.start_help(Tutorial("entree", lambda: [
+        Zone(lambda: boutons[0], lambda: "un", lambda: arrivees.append("un"))]))
+
+    overlay.hover_at(boutons[0].mapTo(hote, boutons[0].rect().center()))
+    overlay.refresh()
+
+    assert overlay._bubble.isVisible() and arrivees == []
+    overlay.stop()
+
+
 def test_a_scroll_area_filled_by_its_content_has_a_zone(qt_app):
     """Qt ôte de la région visible ce que les enfants recouvrent : une liste
     défilante remplie par son contenu n'y gardait rien."""

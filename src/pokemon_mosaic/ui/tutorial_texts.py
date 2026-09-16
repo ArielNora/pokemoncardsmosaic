@@ -253,6 +253,43 @@ class TutorialTexts(QObject):
         return self.tr("Enregistrez-le aussi dans la bibliothèque, sans prendre "
                        "de case.")
 
+    # --- Étape 4 : Export -------------------------------------------------
+
+    def export_preview(self) -> str:
+        return self.tr("L'aperçu du poster tel qu'il sera imprimé.")
+
+    def export_loupe(self) -> str:
+        return self.tr("Zoomez, ou cliquez « Ajuster » pour déplacer la mosaïque "
+                       "sur sa feuille.")
+
+    def export_presentation(self) -> str:
+        return self.tr("Retouchez la taille des cartes et l'écart, ou centrez "
+                       "la mosaïque.")
+
+    def export_colours(self) -> str:
+        return self.tr("Choisissez les couleurs des vides, ou activez le "
+                       "caméléon.")
+
+    def export_cut(self) -> str:
+        return self.tr("Réglez le chevauchement et les repères pour assembler "
+                       "les feuilles.")
+
+    def export_resolution(self) -> str:
+        return self.tr("Réglez la finesse d'impression du fichier.")
+
+    def export_saved(self) -> str:
+        return self.tr("Choisissez l'agencement à exporter.")
+
+    def export_warning(self) -> str:
+        return self.tr("Des cartes sortent des pages : corrigez avant "
+                       "d'exporter.")
+
+    def export_summary(self) -> str:
+        return self.tr("L'agencement affiché et son score.")
+
+    def export_button(self) -> str:
+        return self.tr("Exportez l'agencement affiché en fichiers à imprimer.")
+
     # --- La fenêtre, présentée avec la première étape ----------------------
 
     def window_presets(self) -> str:

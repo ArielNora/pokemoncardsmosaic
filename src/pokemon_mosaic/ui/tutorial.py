@@ -65,6 +65,10 @@ class Zone:
 
     widget: Callable[[], QWidget | None]
     text: Callable[[], str]
+    # Ce que la visite guidée fait en arrivant sur la zone, une seule fois :
+    # ouvrir la section repliée qu'elle explique, par exemple. L'aide au
+    # survol ne l'appelle pas, elle ne doit rien changer à l'écran.
+    enter: Callable[[], None] | None = None
 
 
 @dataclass
@@ -184,6 +188,8 @@ class TutorialOverlay(QWidget):
         self._mode: str | None = None
         self._tutorial: Tutorial | None = None
         self._index = 0
+        # La zone dont l'arrivée a déjà été jouée, voir `Zone.enter`.
+        self._entered: int | None = None
         self._zones: list[tuple[Zone, QRect]] = []
         self._hovered: int | None = None
         # Où la flèche de la bulle part, et vers quel point elle pointe.
@@ -226,6 +232,7 @@ class TutorialOverlay(QWidget):
     def start_guide(self, tutorial: Tutorial) -> bool:
         """Lance la visite guidée. Rend faux s'il n'y a aucune zone à montrer."""
         self._mode, self._tutorial, self._index = GUIDE, tutorial, 0
+        self._entered = None
         self.setAttribute(Qt.WA_TransparentForMouseEvents, False)
         self._show_over_host()
         if not self._zones:
@@ -377,6 +384,13 @@ class TutorialOverlay(QWidget):
             else:
                 self._index = min(self._index, len(self._zones) - 1)
                 zone, rect = self._zones[self._index]
+                if self._entered != self._index:
+                    self._entered = self._index
+                    if zone.enter is not None:
+                        zone.enter()
+                        # La zone vient de changer de taille : son contour se
+                        # relit au tour suivant, une fois la disposition faite.
+                        QTimer.singleShot(0, self, self.refresh)
                 self._bubble.show_text(
                     zone.text(),
                     self.tr("Cliquez pour continuer (%1 sur %2)")

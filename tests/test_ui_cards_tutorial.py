@@ -83,12 +83,15 @@ def test_every_zone_has_a_text_without_em_dash(qt_app, fenetre, tmp_path):
             assert "—" not in texte and "–" not in texte
 
 
-def test_a_step_without_tutorial_has_none(fenetre, tmp_path):
-    """L'export n'a pas encore sa visite : pas de voile vide pour autant."""
-    ecran, session = fenetre
-    garnir(ecran, session, tmp_path)
+def test_a_page_without_tutorial_has_none(fenetre):
+    """Une page qui ne décrit pas sa visite n'en a pas : pas de voile vide."""
+    from PySide6.QtWidgets import QWidget
 
-    ecran._stack.setCurrentIndex(3)
+    ecran, _ = fenetre
+    vide = QWidget()
+    ecran._stack.addWidget(vide)
+
+    ecran._stack.setCurrentWidget(vide)
 
     assert ecran.current_tutorial() is None
 
