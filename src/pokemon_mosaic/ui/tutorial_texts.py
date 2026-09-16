@@ -203,16 +203,16 @@ class TutorialTexts(QObject):
         return self.tr("Poursuivez le calcul depuis le dernier cliché.")
 
     def run_resume(self) -> str:
-        return self.tr("Repartez du cliché affiché : les suivants sont "
-                       "abandonnés.")
+        return self.tr("Reprenez du cliché affiché (attention, supprime les "
+                       "clichés d'après).")
 
     def run_keep(self) -> str:
         return self.tr("Enregistrez le cliché affiché dans une case, pour "
                        "l'export.")
 
     def run_saved(self) -> str:
-        return self.tr("Les agencements gardés, d'où part l'export. Cliquez-en "
-                       "un pour le revoir.")
+        return self.tr("Les agencements gardés pour l'export. Cliquez pour "
+                       "revoir.")
 
     # --- Étape 3 : Multi-lancement -----------------------------------------
 

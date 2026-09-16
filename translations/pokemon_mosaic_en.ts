@@ -2311,18 +2311,18 @@
     </message>
     <message>
         <location filename="../src/pokemon_mosaic/ui/tutorial_texts.py" line="206"/>
-        <source>Repartez du cliché affiché : les suivants sont abandonnés.</source>
-        <translation>Start again from the snapshot shown: the later ones are dropped.</translation>
+        <source>Reprenez du cliché affiché (attention, supprime les clichés d&apos;après).</source>
+        <translation>Resume from the snapshot shown (careful, deletes the later snapshots).</translation>
+    </message>
+    <message>
+        <location filename="../src/pokemon_mosaic/ui/tutorial_texts.py" line="214"/>
+        <source>Les agencements gardés pour l&apos;export. Cliquez pour revoir.</source>
+        <translation>The arrangements kept for the export. Click to see again.</translation>
     </message>
     <message>
         <location filename="../src/pokemon_mosaic/ui/tutorial_texts.py" line="210"/>
         <source>Enregistrez le cliché affiché dans une case, pour l&apos;export.</source>
         <translation>Save the snapshot shown in a slot, for the export.</translation>
-    </message>
-    <message>
-        <location filename="../src/pokemon_mosaic/ui/tutorial_texts.py" line="214"/>
-        <source>Les agencements gardés, d&apos;où part l&apos;export. Cliquez-en un pour le revoir.</source>
-        <translation>The kept arrangements, which the export starts from. Click one to see it again.</translation>
     </message>
     <message>
         <location filename="../src/pokemon_mosaic/ui/tutorial_texts.py" line="220"/>
