@@ -31,6 +31,8 @@ from .gallery import numpy_to_pixmap
 from .link_grid import CELL_WIDTH, CardPalette, GridPanel
 from .rotation_help import RotationHelp
 from .session import Session
+from .tutorial import Tutorial, WindowTutorial, Zone
+from .tutorial_texts import TutorialTexts
 
 # Toutes les extensions, dans le filtre. Une chaîne vide comme donnée, pour la
 # distinguer d'un dossier réellement nommé.
@@ -60,6 +62,8 @@ class LinkDialog(QDialog):
     # --- Construction -----------------------------------------------------
 
     def _build(self) -> None:
+        self._texts = TutorialTexts(self)
+        self._tutorial = WindowTutorial(self, self.tutorial)
         self._panel = GridPanel()
         self._grid = self._panel.grid
         self._grid.changed.connect(self._on_grid_changed)
@@ -126,7 +130,10 @@ class LinkDialog(QDialog):
         layout.addLayout(ordered_row, 0)
         layout.addLayout(name_row, 0)
         layout.addWidget(self._error, 0)
-        layout.addWidget(self._buttons, 0)
+        bas = QHBoxLayout()
+        bas.addWidget(self._tutorial.help_button)
+        bas.addWidget(self._buttons, 1)
+        layout.addLayout(bas, 0)
         self.resize(1040, 700)
         self.retranslate_ui()
 
@@ -142,8 +149,27 @@ class LinkDialog(QDialog):
                     "demi-tour)")
         )
         self._explain.setToolTip(self.tr("Montrer ce qu'est ce demi-tour"))
+        self._tutorial.retranslate_ui()
         self._fill_folders()
         self._update_buttons()
+
+    # --- Tutoriel ---------------------------------------------------------
+
+    def tutorial(self) -> Tutorial:
+        textes = self._texts
+        return Tutorial("fenetre-lien", lambda: [
+            Zone(lambda: self._panel, textes.link_grid),
+            Zone(lambda: self._palette, textes.link_palette),
+            Zone(lambda: self._search, textes.link_search),
+            Zone(lambda: self._folder, textes.link_folder),
+            Zone(lambda: self._ordered, textes.link_ordered),
+            Zone(lambda: self._name, textes.link_name),
+            Zone(lambda: self._buttons, textes.link_buttons),
+        ])
+
+    def showEvent(self, event) -> None:
+        super().showEvent(event)
+        self._tutorial.window_shown()
 
     # --- Cartes disponibles ----------------------------------------------
 

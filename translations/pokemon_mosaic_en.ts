@@ -112,47 +112,47 @@
 <context>
     <name>ArrangementsDialog</name>
     <message>
-        <location filename="../src/pokemon_mosaic/ui/arrangements_dialog.py" line="255"/>
+        <location filename="../src/pokemon_mosaic/ui/arrangements_dialog.py" line="260"/>
         <source>Agencements enregistrés</source>
         <translation>Kept arrangements</translation>
     </message>
     <message>
-        <location filename="../src/pokemon_mosaic/ui/arrangements_dialog.py" line="256"/>
+        <location filename="../src/pokemon_mosaic/ui/arrangements_dialog.py" line="261"/>
         <source>Partir de cet agencement</source>
         <translation>Start from this arrangement</translation>
     </message>
     <message>
-        <location filename="../src/pokemon_mosaic/ui/arrangements_dialog.py" line="257"/>
+        <location filename="../src/pokemon_mosaic/ui/arrangements_dialog.py" line="262"/>
         <source>Mettre dans une case</source>
         <translation>Put in a slot</translation>
     </message>
     <message>
-        <location filename="../src/pokemon_mosaic/ui/arrangements_dialog.py" line="258"/>
+        <location filename="../src/pokemon_mosaic/ui/arrangements_dialog.py" line="263"/>
         <source>Exporter en JSON…</source>
         <translation>Export as JSON…</translation>
     </message>
     <message>
-        <location filename="../src/pokemon_mosaic/ui/arrangements_dialog.py" line="259"/>
+        <location filename="../src/pokemon_mosaic/ui/arrangements_dialog.py" line="264"/>
         <source>Importer un JSON…</source>
         <translation>Import a JSON…</translation>
     </message>
     <message>
-        <location filename="../src/pokemon_mosaic/ui/arrangements_dialog.py" line="260"/>
+        <location filename="../src/pokemon_mosaic/ui/arrangements_dialog.py" line="265"/>
         <source>Renommer…</source>
         <translation>Rename…</translation>
     </message>
     <message>
-        <location filename="../src/pokemon_mosaic/ui/arrangements_dialog.py" line="261"/>
+        <location filename="../src/pokemon_mosaic/ui/arrangements_dialog.py" line="266"/>
         <source>Supprimer…</source>
         <translation>Delete…</translation>
     </message>
     <message>
-        <location filename="../src/pokemon_mosaic/ui/arrangements_dialog.py" line="262"/>
+        <location filename="../src/pokemon_mosaic/ui/arrangements_dialog.py" line="267"/>
         <source>Fermer</source>
         <translation>Close</translation>
     </message>
     <message numerus="yes">
-        <location filename="../src/pokemon_mosaic/ui/arrangements_dialog.py" line="277"/>
+        <location filename="../src/pokemon_mosaic/ui/arrangements_dialog.py" line="305"/>
         <source>%n carte(s) manquante(s)</source>
         <translation>
             <numerusform>%n missing card</numerusform>
@@ -160,22 +160,22 @@
         </translation>
     </message>
     <message>
-        <location filename="../src/pokemon_mosaic/ui/arrangements_dialog.py" line="319"/>
+        <location filename="../src/pokemon_mosaic/ui/arrangements_dialog.py" line="347"/>
         <source>Aucun agencement enregistré.</source>
         <translation>No arrangement kept yet.</translation>
     </message>
     <message>
-        <location filename="../src/pokemon_mosaic/ui/arrangements_dialog.py" line="329"/>
+        <location filename="../src/pokemon_mosaic/ui/arrangements_dialog.py" line="357"/>
         <source>%1 : %2 × %3 cartes, score %4</source>
         <translation>%1: %2 × %3 cards, score %4</translation>
     </message>
     <message>
-        <location filename="../src/pokemon_mosaic/ui/arrangements_dialog.py" line="343"/>
+        <location filename="../src/pokemon_mosaic/ui/arrangements_dialog.py" line="371"/>
         <source>Chargez d&apos;abord les cartes : un agencement ne s&apos;ouvre qu&apos;avec elles.</source>
         <translation>Load the cards first: an arrangement only opens with them.</translation>
     </message>
     <message numerus="yes">
-        <location filename="../src/pokemon_mosaic/ui/arrangements_dialog.py" line="348"/>
+        <location filename="../src/pokemon_mosaic/ui/arrangements_dialog.py" line="376"/>
         <source>%n carte(s) de cet agencement manquent au catalogue : il ne peut pas être ouvert.</source>
         <translation>
             <numerusform>%n card of this arrangement is missing from the catalogue: it cannot be opened.</numerusform>
@@ -183,19 +183,19 @@
         </translation>
     </message>
     <message>
-        <location filename="../src/pokemon_mosaic/ui/arrangements_dialog.py" line="437"/>
-        <location filename="../src/pokemon_mosaic/ui/arrangements_dialog.py" line="479"/>
+        <location filename="../src/pokemon_mosaic/ui/arrangements_dialog.py" line="465"/>
+        <location filename="../src/pokemon_mosaic/ui/arrangements_dialog.py" line="507"/>
         <source>Agencement incomplet</source>
         <translation>Incomplete arrangement</translation>
     </message>
     <message>
-        <location filename="../src/pokemon_mosaic/ui/arrangements_dialog.py" line="444"/>
-        <location filename="../src/pokemon_mosaic/ui/arrangements_dialog.py" line="474"/>
+        <location filename="../src/pokemon_mosaic/ui/arrangements_dialog.py" line="472"/>
+        <location filename="../src/pokemon_mosaic/ui/arrangements_dialog.py" line="502"/>
         <source>Aucune case libre</source>
         <translation>No free slot</translation>
     </message>
     <message numerus="yes">
-        <location filename="../src/pokemon_mosaic/ui/arrangements_dialog.py" line="445"/>
+        <location filename="../src/pokemon_mosaic/ui/arrangements_dialog.py" line="473"/>
         <source>Les %n case(s) sont prises : videz-en une pour ouvrir celui-ci.</source>
         <translation>
             <numerusform>The %n slot is taken: empty one to open this arrangement.</numerusform>
@@ -203,13 +203,13 @@
         </translation>
     </message>
     <message>
-        <location filename="../src/pokemon_mosaic/ui/arrangements_dialog.py" line="457"/>
+        <location filename="../src/pokemon_mosaic/ui/arrangements_dialog.py" line="485"/>
         <source>Habillage incomplet</source>
         <translation>Presentation partly restored</translation>
     </message>
     <message numerus="yes">
-        <location filename="../src/pokemon_mosaic/ui/arrangements_dialog.py" line="458"/>
-        <location filename="../src/pokemon_mosaic/ui/arrangements_dialog.py" line="491"/>
+        <location filename="../src/pokemon_mosaic/ui/arrangements_dialog.py" line="486"/>
+        <location filename="../src/pokemon_mosaic/ui/arrangements_dialog.py" line="519"/>
         <source>%n réglage(s) de l&apos;habillage étaient illisibles et n&apos;ont pas été repris : %1.</source>
         <translation>
             <numerusform>%n presentation setting was unreadable and was not restored: %1.</numerusform>
@@ -217,7 +217,7 @@
         </translation>
     </message>
     <message numerus="yes">
-        <location filename="../src/pokemon_mosaic/ui/arrangements_dialog.py" line="475"/>
+        <location filename="../src/pokemon_mosaic/ui/arrangements_dialog.py" line="503"/>
         <source>Les %n case(s) sont prises : videz-en une pour partir de celui-ci.</source>
         <translation>
             <numerusform>The %n slot is taken: empty it to start from this one.</numerusform>
@@ -225,7 +225,7 @@
         </translation>
     </message>
     <message numerus="yes">
-        <location filename="../src/pokemon_mosaic/ui/arrangements_dialog.py" line="486"/>
+        <location filename="../src/pokemon_mosaic/ui/arrangements_dialog.py" line="514"/>
         <source>%n lien(s) ne tenaient pas dans cet agencement et ont été désactivés.</source>
         <translation>
             <numerusform>%n link did not fit in this arrangement and was disabled.</numerusform>
@@ -233,64 +233,64 @@
         </translation>
     </message>
     <message>
-        <location filename="../src/pokemon_mosaic/ui/arrangements_dialog.py" line="495"/>
+        <location filename="../src/pokemon_mosaic/ui/arrangements_dialog.py" line="523"/>
         <source>Agencement repris</source>
         <translation>Arrangement taken up</translation>
     </message>
     <message>
-        <location filename="../src/pokemon_mosaic/ui/arrangements_dialog.py" line="505"/>
+        <location filename="../src/pokemon_mosaic/ui/arrangements_dialog.py" line="533"/>
         <source>Exporter l&apos;agencement</source>
         <translation>Export the arrangement</translation>
     </message>
     <message>
-        <location filename="../src/pokemon_mosaic/ui/arrangements_dialog.py" line="507"/>
-        <location filename="../src/pokemon_mosaic/ui/arrangements_dialog.py" line="523"/>
+        <location filename="../src/pokemon_mosaic/ui/arrangements_dialog.py" line="535"/>
+        <location filename="../src/pokemon_mosaic/ui/arrangements_dialog.py" line="551"/>
         <source>Agencement (*.json)</source>
         <translation>Arrangement (*.json)</translation>
     </message>
     <message>
-        <location filename="../src/pokemon_mosaic/ui/arrangements_dialog.py" line="513"/>
-        <location filename="../src/pokemon_mosaic/ui/arrangements_dialog.py" line="538"/>
+        <location filename="../src/pokemon_mosaic/ui/arrangements_dialog.py" line="541"/>
+        <location filename="../src/pokemon_mosaic/ui/arrangements_dialog.py" line="566"/>
         <source>Écriture impossible</source>
         <translation>Cannot write</translation>
     </message>
     <message>
-        <location filename="../src/pokemon_mosaic/ui/arrangements_dialog.py" line="522"/>
+        <location filename="../src/pokemon_mosaic/ui/arrangements_dialog.py" line="550"/>
         <source>Importer un agencement</source>
         <translation>Import an arrangement</translation>
     </message>
     <message>
-        <location filename="../src/pokemon_mosaic/ui/arrangements_dialog.py" line="529"/>
+        <location filename="../src/pokemon_mosaic/ui/arrangements_dialog.py" line="557"/>
         <source>Fichier illisible</source>
         <translation>Unreadable file</translation>
     </message>
     <message>
-        <location filename="../src/pokemon_mosaic/ui/arrangements_dialog.py" line="547"/>
+        <location filename="../src/pokemon_mosaic/ui/arrangements_dialog.py" line="575"/>
         <source>Renommer l&apos;agencement</source>
         <translation>Rename the arrangement</translation>
     </message>
     <message>
-        <location filename="../src/pokemon_mosaic/ui/arrangements_dialog.py" line="547"/>
+        <location filename="../src/pokemon_mosaic/ui/arrangements_dialog.py" line="575"/>
         <source>Nom</source>
         <translation>Name</translation>
     </message>
     <message>
-        <location filename="../src/pokemon_mosaic/ui/arrangements_dialog.py" line="559"/>
+        <location filename="../src/pokemon_mosaic/ui/arrangements_dialog.py" line="587"/>
         <source>Renommage impossible</source>
         <translation>Cannot rename</translation>
     </message>
     <message>
-        <location filename="../src/pokemon_mosaic/ui/arrangements_dialog.py" line="568"/>
+        <location filename="../src/pokemon_mosaic/ui/arrangements_dialog.py" line="596"/>
         <source>Supprimer cet agencement ?</source>
         <translation>Delete this arrangement?</translation>
     </message>
     <message>
-        <location filename="../src/pokemon_mosaic/ui/arrangements_dialog.py" line="569"/>
+        <location filename="../src/pokemon_mosaic/ui/arrangements_dialog.py" line="597"/>
         <source>« %1 » sera effacé de la bibliothèque. Le calcul ne redonne pas deux fois le même.</source>
         <translation>“%1” will be erased from the library. No run gives the same one twice.</translation>
     </message>
     <message>
-        <location filename="../src/pokemon_mosaic/ui/arrangements_dialog.py" line="577"/>
+        <location filename="../src/pokemon_mosaic/ui/arrangements_dialog.py" line="605"/>
         <source>Suppression impossible</source>
         <translation>Cannot delete</translation>
     </message>
@@ -749,62 +749,62 @@
 <context>
     <name>ExportDialog</name>
     <message>
-        <location filename="../src/pokemon_mosaic/ui/export_dialog.py" line="126"/>
+        <location filename="../src/pokemon_mosaic/ui/export_dialog.py" line="133"/>
         <source>Exporter le poster</source>
         <translation>Export the poster</translation>
     </message>
     <message>
-        <location filename="../src/pokemon_mosaic/ui/export_dialog.py" line="127"/>
+        <location filename="../src/pokemon_mosaic/ui/export_dialog.py" line="134"/>
         <source>Mise en page</source>
         <translation>Layout</translation>
     </message>
     <message>
-        <location filename="../src/pokemon_mosaic/ui/export_dialog.py" line="128"/>
+        <location filename="../src/pokemon_mosaic/ui/export_dialog.py" line="135"/>
         <source>Format</source>
         <translation>Format</translation>
     </message>
     <message>
-        <location filename="../src/pokemon_mosaic/ui/export_dialog.py" line="129"/>
+        <location filename="../src/pokemon_mosaic/ui/export_dialog.py" line="136"/>
         <source>Qualité JPEG</source>
         <translation>JPEG quality</translation>
     </message>
     <message>
-        <location filename="../src/pokemon_mosaic/ui/export_dialog.py" line="135"/>
+        <location filename="../src/pokemon_mosaic/ui/export_dialog.py" line="142"/>
         <source>Parcourir…</source>
         <translation>Browse…</translation>
     </message>
     <message>
-        <location filename="../src/pokemon_mosaic/ui/export_dialog.py" line="130"/>
+        <location filename="../src/pokemon_mosaic/ui/export_dialog.py" line="137"/>
         <source>Dossier</source>
         <translation>Folder</translation>
     </message>
     <message>
-        <location filename="../src/pokemon_mosaic/ui/export_dialog.py" line="131"/>
+        <location filename="../src/pokemon_mosaic/ui/export_dialog.py" line="138"/>
         <source>Nom des fichiers</source>
         <translation>File name</translation>
     </message>
     <message>
-        <location filename="../src/pokemon_mosaic/ui/export_dialog.py" line="133"/>
+        <location filename="../src/pokemon_mosaic/ui/export_dialog.py" line="140"/>
         <source>Le nom de base. Une feuille seule le porte tel quel ; plusieurs y ajoutent « page1 », « page2 ».</source>
         <translation>The base name. A single sheet carries it as is; several add “page1”, “page2”.</translation>
     </message>
     <message>
-        <location filename="../src/pokemon_mosaic/ui/export_dialog.py" line="152"/>
+        <location filename="../src/pokemon_mosaic/ui/export_dialog.py" line="179"/>
         <source>Où écrire le poster</source>
         <translation>Where to write the poster</translation>
     </message>
     <message>
-        <location filename="../src/pokemon_mosaic/ui/export_dialog.py" line="209"/>
+        <location filename="../src/pokemon_mosaic/ui/export_dialog.py" line="236"/>
         <source>paysage</source>
         <translation>landscape</translation>
     </message>
     <message>
-        <location filename="../src/pokemon_mosaic/ui/export_dialog.py" line="210"/>
+        <location filename="../src/pokemon_mosaic/ui/export_dialog.py" line="237"/>
         <source>portrait</source>
         <translation>portrait</translation>
     </message>
     <message numerus="yes">
-        <location filename="../src/pokemon_mosaic/ui/export_dialog.py" line="211"/>
+        <location filename="../src/pokemon_mosaic/ui/export_dialog.py" line="238"/>
         <source>%n panneau(x)</source>
         <translation>
             <numerusform>%n panel</numerusform>
@@ -812,27 +812,27 @@
         </translation>
     </message>
     <message>
-        <location filename="../src/pokemon_mosaic/ui/export_dialog.py" line="229"/>
+        <location filename="../src/pokemon_mosaic/ui/export_dialog.py" line="256"/>
         <source>images d&apos;origine</source>
         <translation>original images</translation>
     </message>
     <message>
-        <location filename="../src/pokemon_mosaic/ui/export_dialog.py" line="230"/>
+        <location filename="../src/pokemon_mosaic/ui/export_dialog.py" line="257"/>
         <source>vignettes, rendu rapide et flou à l&apos;impression</source>
         <translation>thumbnails, fast to render and blurry in print</translation>
     </message>
     <message>
-        <location filename="../src/pokemon_mosaic/ui/export_dialog.py" line="232"/>
+        <location filename="../src/pokemon_mosaic/ui/export_dialog.py" line="259"/>
         <source>%1 × %2 cartes de %3 × %4 px : %5 × %6 px par panneau, %7 Mpx au total (%8)</source>
         <translation>%1 × %2 cards of %3 × %4 px, %5 × %6 px per panel, %7 Mpx in total (%8)</translation>
     </message>
     <message>
-        <location filename="../src/pokemon_mosaic/ui/export_dialog.py" line="258"/>
+        <location filename="../src/pokemon_mosaic/ui/export_dialog.py" line="285"/>
         <source>Fichier(s) : %1</source>
         <translation>File(s): %1</translation>
     </message>
     <message numerus="yes">
-        <location filename="../src/pokemon_mosaic/ui/export_dialog.py" line="260"/>
+        <location filename="../src/pokemon_mosaic/ui/export_dialog.py" line="287"/>
         <source>%n fichier(s) seront écrasés</source>
         <translation>
             <numerusform>%n file will be overwritten</numerusform>
@@ -840,7 +840,7 @@
         </translation>
     </message>
     <message>
-        <location filename="../src/pokemon_mosaic/ui/export_dialog.py" line="268"/>
+        <location filename="../src/pokemon_mosaic/ui/export_dialog.py" line="295"/>
         <source>Choisissez un dossier de destination.</source>
         <translation>Choose a destination folder.</translation>
     </message>
@@ -1037,12 +1037,12 @@
 <context>
     <name>HelpButton</name>
     <message>
-        <location filename="../src/pokemon_mosaic/ui/tutorial.py" line="538"/>
+        <location filename="../src/pokemon_mosaic/ui/tutorial.py" line="550"/>
         <source>Afficher ou masquer l&apos;aide de cette page. Clic droit : revoir les visites guidées.</source>
         <translation>Show or hide this page’s help. Right-click: replay the guided tours.</translation>
     </message>
     <message>
-        <location filename="../src/pokemon_mosaic/ui/tutorial.py" line="540"/>
+        <location filename="../src/pokemon_mosaic/ui/tutorial.py" line="552"/>
         <source>Revoir les visites guidées</source>
         <translation>Replay the guided tours</translation>
     </message>
@@ -1063,47 +1063,47 @@
 <context>
     <name>LinkDialog</name>
     <message>
-        <location filename="../src/pokemon_mosaic/ui/link_dialog.py" line="134"/>
+        <location filename="../src/pokemon_mosaic/ui/link_dialog.py" line="141"/>
         <source>Modifier le lien</source>
         <translation>Edit link</translation>
     </message>
     <message>
-        <location filename="../src/pokemon_mosaic/ui/link_dialog.py" line="135"/>
+        <location filename="../src/pokemon_mosaic/ui/link_dialog.py" line="142"/>
         <source>Nouveau lien</source>
         <translation>New link</translation>
     </message>
     <message>
-        <location filename="../src/pokemon_mosaic/ui/link_dialog.py" line="136"/>
+        <location filename="../src/pokemon_mosaic/ui/link_dialog.py" line="143"/>
         <source>Le lien</source>
         <translation>The link</translation>
     </message>
     <message>
-        <location filename="../src/pokemon_mosaic/ui/link_dialog.py" line="137"/>
+        <location filename="../src/pokemon_mosaic/ui/link_dialog.py" line="144"/>
         <source>Cartes disponibles</source>
         <translation>Available cards</translation>
     </message>
     <message>
-        <location filename="../src/pokemon_mosaic/ui/link_dialog.py" line="138"/>
+        <location filename="../src/pokemon_mosaic/ui/link_dialog.py" line="145"/>
         <source>Filtrer par nom…</source>
         <translation>Filter by name…</translation>
     </message>
     <message>
-        <location filename="../src/pokemon_mosaic/ui/link_dialog.py" line="141"/>
+        <location filename="../src/pokemon_mosaic/ui/link_dialog.py" line="148"/>
         <source>Ordre imposé (sinon l&apos;optimiseur peut le pivoter d&apos;un demi-tour)</source>
         <translation>Fixed order (otherwise the optimiser may turn it half way round)</translation>
     </message>
     <message>
-        <location filename="../src/pokemon_mosaic/ui/link_dialog.py" line="144"/>
+        <location filename="../src/pokemon_mosaic/ui/link_dialog.py" line="151"/>
         <source>Montrer ce qu&apos;est ce demi-tour</source>
         <translation>Show what that half turn does</translation>
     </message>
     <message>
-        <location filename="../src/pokemon_mosaic/ui/link_dialog.py" line="172"/>
+        <location filename="../src/pokemon_mosaic/ui/link_dialog.py" line="198"/>
         <source>Toutes les extensions</source>
         <translation>All sets</translation>
     </message>
     <message numerus="yes">
-        <location filename="../src/pokemon_mosaic/ui/link_dialog.py" line="223"/>
+        <location filename="../src/pokemon_mosaic/ui/link_dialog.py" line="249"/>
         <source>Toutes les cases doivent être remplies : il en reste %n vide(s). Faites glisser une carte depuis la droite.</source>
         <translation>
             <numerusform>Every cell must be filled: %n is still empty. Drag a card in from the right.</numerusform>
@@ -1111,22 +1111,22 @@
         </translation>
     </message>
     <message>
-        <location filename="../src/pokemon_mosaic/ui/link_dialog.py" line="227"/>
+        <location filename="../src/pokemon_mosaic/ui/link_dialog.py" line="253"/>
         <source>Un lien groupe au moins deux cartes : ajoutez une ligne ou une colonne.</source>
         <translation>A link groups at least two cards: add a row or a column.</translation>
     </message>
     <message>
-        <location filename="../src/pokemon_mosaic/ui/link_dialog.py" line="229"/>
+        <location filename="../src/pokemon_mosaic/ui/link_dialog.py" line="255"/>
         <source>Rectangle %1 × %2, complet.</source>
         <translation>Rectangle %1 × %2, complete.</translation>
     </message>
     <message>
-        <location filename="../src/pokemon_mosaic/ui/link_dialog.py" line="139"/>
+        <location filename="../src/pokemon_mosaic/ui/link_dialog.py" line="146"/>
         <source>Nom (facultatif)</source>
         <translation>Name (optional)</translation>
     </message>
     <message>
-        <location filename="../src/pokemon_mosaic/ui/link_dialog.py" line="164"/>
+        <location filename="../src/pokemon_mosaic/ui/link_dialog.py" line="190"/>
         <source>(carte exclue)</source>
         <translation>(card excluded)</translation>
     </message>
@@ -1974,22 +1974,22 @@
 <context>
     <name>SavedColumn</name>
     <message>
-        <location filename="../src/pokemon_mosaic/ui/saved_column.py" line="208"/>
+        <location filename="../src/pokemon_mosaic/ui/saved_column.py" line="210"/>
         <source>Agencements gardés</source>
         <translation>Kept arrangements</translation>
     </message>
     <message>
-        <location filename="../src/pokemon_mosaic/ui/saved_column.py" line="209"/>
+        <location filename="../src/pokemon_mosaic/ui/saved_column.py" line="211"/>
         <source>Tous les agencements…</source>
         <translation>All arrangements…</translation>
     </message>
     <message>
-        <location filename="../src/pokemon_mosaic/ui/saved_column.py" line="242"/>
+        <location filename="../src/pokemon_mosaic/ui/saved_column.py" line="244"/>
         <source>Retirer cet agencement ?</source>
         <translation>Remove this arrangement?</translation>
     </message>
     <message>
-        <location filename="../src/pokemon_mosaic/ui/saved_column.py" line="243"/>
+        <location filename="../src/pokemon_mosaic/ui/saved_column.py" line="245"/>
         <source>La case %1 sera vidée. L&apos;agencement ne se retrouve pas : le calcul ne redonne pas deux fois le même.</source>
         <translation>Slot %1 will be emptied. The arrangement cannot be found again: no run gives the same one twice.</translation>
     </message>
@@ -1997,22 +1997,22 @@
 <context>
     <name>SavedDialog</name>
     <message>
-        <location filename="../src/pokemon_mosaic/ui/saved_column.py" line="314"/>
+        <location filename="../src/pokemon_mosaic/ui/saved_column.py" line="319"/>
         <source>Agencement gardé</source>
         <translation>Kept arrangement</translation>
     </message>
     <message>
-        <location filename="../src/pokemon_mosaic/ui/saved_column.py" line="315"/>
+        <location filename="../src/pokemon_mosaic/ui/saved_column.py" line="320"/>
         <source>L&apos;agencement n&apos;est plus dans la timeline.</source>
         <translation>This arrangement is no longer in the timeline.</translation>
     </message>
     <message>
-        <location filename="../src/pokemon_mosaic/ui/saved_column.py" line="316"/>
+        <location filename="../src/pokemon_mosaic/ui/saved_column.py" line="321"/>
         <source>Fermer</source>
         <translation>Close</translation>
     </message>
     <message>
-        <location filename="../src/pokemon_mosaic/ui/saved_column.py" line="332"/>
+        <location filename="../src/pokemon_mosaic/ui/saved_column.py" line="350"/>
         <source>Aucune image à montrer.</source>
         <translation>No image to show.</translation>
     </message>
@@ -2020,7 +2020,7 @@
 <context>
     <name>SavedSlot</name>
     <message>
-        <location filename="../src/pokemon_mosaic/ui/saved_column.py" line="116"/>
+        <location filename="../src/pokemon_mosaic/ui/saved_column.py" line="118"/>
         <source>vide</source>
         <translation>empty</translation>
     </message>
@@ -2046,23 +2046,23 @@
 <context>
     <name>TutorialOverlay</name>
     <message>
-        <location filename="../src/pokemon_mosaic/ui/tutorial.py" line="214"/>
-        <location filename="../src/pokemon_mosaic/ui/tutorial.py" line="304"/>
+        <location filename="../src/pokemon_mosaic/ui/tutorial.py" line="226"/>
+        <location filename="../src/pokemon_mosaic/ui/tutorial.py" line="316"/>
         <source>Passer le tutoriel</source>
         <translation>Skip the tutorial</translation>
     </message>
     <message>
-        <location filename="../src/pokemon_mosaic/ui/tutorial.py" line="305"/>
+        <location filename="../src/pokemon_mosaic/ui/tutorial.py" line="317"/>
         <source>Passer le tutoriel de cette page ?</source>
         <translation>Skip this page’s tutorial?</translation>
     </message>
     <message>
-        <location filename="../src/pokemon_mosaic/ui/tutorial.py" line="306"/>
+        <location filename="../src/pokemon_mosaic/ui/tutorial.py" line="318"/>
         <source>Passer aussi tous les tutoriels suivants</source>
         <translation>Also skip all the following tutorials</translation>
     </message>
     <message>
-        <location filename="../src/pokemon_mosaic/ui/tutorial.py" line="396"/>
+        <location filename="../src/pokemon_mosaic/ui/tutorial.py" line="408"/>
         <source>Cliquez pour continuer (%1 sur %2)</source>
         <translation>Click to continue (%1 of %2)</translation>
     </message>
@@ -2431,16 +2431,151 @@
     </message>
     <message>
         <location filename="../src/pokemon_mosaic/ui/tutorial_texts.py" line="296"/>
+        <source>Les agencements enregistrés. Cliquez-en un pour le voir.</source>
+        <translation>The saved arrangements. Click one to see it.</translation>
+    </message>
+    <message>
+        <location filename="../src/pokemon_mosaic/ui/tutorial_texts.py" line="300"/>
+        <source>L&apos;aperçu de l&apos;agencement choisi.</source>
+        <translation>The preview of the chosen arrangement.</translation>
+    </message>
+    <message>
+        <location filename="../src/pokemon_mosaic/ui/tutorial_texts.py" line="303"/>
+        <source>Ses cartes : celles qui manquent sont en rouge.</source>
+        <translation>Its cards: the missing ones are in red.</translation>
+    </message>
+    <message>
+        <location filename="../src/pokemon_mosaic/ui/tutorial_texts.py" line="306"/>
+        <source>Repartez de cet agencement : cartes, grille et habillage.</source>
+        <translation>Start again from this arrangement: cards, grid and finish.</translation>
+    </message>
+    <message>
+        <location filename="../src/pokemon_mosaic/ui/tutorial_texts.py" line="310"/>
+        <source>Mettez cet agencement dans une case, pour l&apos;export.</source>
+        <translation>Put this arrangement in a slot, for the export.</translation>
+    </message>
+    <message>
+        <location filename="../src/pokemon_mosaic/ui/tutorial_texts.py" line="313"/>
+        <source>Exportez-le en JSON pour le partager.</source>
+        <translation>Export it as JSON to share it.</translation>
+    </message>
+    <message>
+        <location filename="../src/pokemon_mosaic/ui/tutorial_texts.py" line="316"/>
+        <source>Importez un agencement reçu en JSON.</source>
+        <translation>Import an arrangement received as JSON.</translation>
+    </message>
+    <message>
+        <location filename="../src/pokemon_mosaic/ui/tutorial_texts.py" line="319"/>
+        <source>Renommez l&apos;agencement choisi.</source>
+        <translation>Rename the chosen arrangement.</translation>
+    </message>
+    <message>
+        <location filename="../src/pokemon_mosaic/ui/tutorial_texts.py" line="322"/>
+        <source>Supprimez l&apos;agencement choisi de la bibliothèque.</source>
+        <translation>Delete the chosen arrangement from the library.</translation>
+    </message>
+    <message>
+        <location filename="../src/pokemon_mosaic/ui/tutorial_texts.py" line="327"/>
+        <source>Glissez des cartes ici. Agrandissez le rectangle avec les boutons +.</source>
+        <translation>Drag cards here. Enlarge the rectangle with the + buttons.</translation>
+    </message>
+    <message>
+        <location filename="../src/pokemon_mosaic/ui/tutorial_texts.py" line="331"/>
+        <source>Les cartes disponibles, à glisser dans le lien.</source>
+        <translation>The available cards, to drag into the link.</translation>
+    </message>
+    <message>
+        <location filename="../src/pokemon_mosaic/ui/tutorial_texts.py" line="334"/>
+        <source>Filtrez les cartes par nom.</source>
+        <translation>Filter the cards by name.</translation>
+    </message>
+    <message>
+        <location filename="../src/pokemon_mosaic/ui/tutorial_texts.py" line="337"/>
+        <source>Filtrez les cartes par extension.</source>
+        <translation>Filter the cards by expansion.</translation>
+    </message>
+    <message>
+        <location filename="../src/pokemon_mosaic/ui/tutorial_texts.py" line="340"/>
+        <source>Cochez pour interdire de pivoter le lien d&apos;un demi-tour.</source>
+        <translation>Tick to forbid turning the link half a turn.</translation>
+    </message>
+    <message>
+        <location filename="../src/pokemon_mosaic/ui/tutorial_texts.py" line="344"/>
+        <source>Vous pouvez donner un nom au lien.</source>
+        <translation>You can give the link a name.</translation>
+    </message>
+    <message>
+        <location filename="../src/pokemon_mosaic/ui/tutorial_texts.py" line="347"/>
+        <source>Validez quand le rectangle est complet.</source>
+        <translation>Confirm when the rectangle is complete.</translation>
+    </message>
+    <message>
+        <location filename="../src/pokemon_mosaic/ui/tutorial_texts.py" line="352"/>
+        <source>Le rappel de la mise en page.</source>
+        <translation>A reminder of the layout.</translation>
+    </message>
+    <message>
+        <location filename="../src/pokemon_mosaic/ui/tutorial_texts.py" line="355"/>
+        <source>Choisissez le format des fichiers.</source>
+        <translation>Choose the file format.</translation>
+    </message>
+    <message>
+        <location filename="../src/pokemon_mosaic/ui/tutorial_texts.py" line="358"/>
+        <source>Réglez la qualité, pour le JPEG seulement.</source>
+        <translation>Set the quality, for JPEG only.</translation>
+    </message>
+    <message>
+        <location filename="../src/pokemon_mosaic/ui/tutorial_texts.py" line="361"/>
+        <source>Choisissez où écrire les fichiers.</source>
+        <translation>Choose where to write the files.</translation>
+    </message>
+    <message>
+        <location filename="../src/pokemon_mosaic/ui/tutorial_texts.py" line="364"/>
+        <source>Le nom des fichiers : plusieurs feuilles ajoutent « page1 », « page2 ».</source>
+        <translation>The file name: several sheets add “page1”, “page2”.</translation>
+    </message>
+    <message>
+        <location filename="../src/pokemon_mosaic/ui/tutorial_texts.py" line="368"/>
+        <source>La taille des fichiers en pixels.</source>
+        <translation>The size of the files in pixels.</translation>
+    </message>
+    <message>
+        <location filename="../src/pokemon_mosaic/ui/tutorial_texts.py" line="371"/>
+        <source>Les fichiers qui seront écrits.</source>
+        <translation>The files that will be written.</translation>
+    </message>
+    <message>
+        <location filename="../src/pokemon_mosaic/ui/tutorial_texts.py" line="374"/>
+        <source>Lancez l&apos;export.</source>
+        <translation>Start the export.</translation>
+    </message>
+    <message>
+        <location filename="../src/pokemon_mosaic/ui/tutorial_texts.py" line="379"/>
+        <source>Cet agencement gardé n&apos;est plus dans la timeline du calcul.</source>
+        <translation>This kept arrangement is no longer in the calculation timeline.</translation>
+    </message>
+    <message>
+        <location filename="../src/pokemon_mosaic/ui/tutorial_texts.py" line="383"/>
+        <source>L&apos;agencement tel qu&apos;il a été gardé.</source>
+        <translation>The arrangement as it was kept.</translation>
+    </message>
+    <message>
+        <location filename="../src/pokemon_mosaic/ui/tutorial_texts.py" line="386"/>
+        <source>Zoomez avec + et −.</source>
+        <translation>Zoom with + and −.</translation>
+    </message>
+    <message>
+        <location filename="../src/pokemon_mosaic/ui/tutorial_texts.py" line="391"/>
         <source>Enregistrez vos réglages sous un nom, ou repartez d&apos;un agencement enregistré.</source>
         <translation>Save your settings under a name, or start again from a saved arrangement.</translation>
     </message>
     <message>
-        <location filename="../src/pokemon_mosaic/ui/tutorial_texts.py" line="300"/>
+        <location filename="../src/pokemon_mosaic/ui/tutorial_texts.py" line="395"/>
         <source>Vous pouvez passer à l&apos;étape suivante quand l&apos;aura est verte.</source>
         <translation>You can move to the next step when the glow is green.</translation>
     </message>
     <message>
-        <location filename="../src/pokemon_mosaic/ui/tutorial_texts.py" line="304"/>
+        <location filename="../src/pokemon_mosaic/ui/tutorial_texts.py" line="399"/>
         <source>Cliquez pour afficher l&apos;aide de la page. Clic droit pour revoir les visites guidées.</source>
         <translation>Click to show this page&apos;s help. Right-click to replay the guided tours.</translation>
     </message>

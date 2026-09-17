@@ -33,6 +33,8 @@ from PySide6.QtWidgets import (
 from ..export import PosterSettings, panel_paths, plan_poster
 from . import theme
 from .session import Session
+from .tutorial import Tutorial, WindowTutorial, Zone
+from .tutorial_texts import TutorialTexts
 
 # Extension par format, dans l'ordre d'affichage.
 FORMATS = (("PNG", ".png"), ("JPEG", ".jpg"), ("PDF", ".pdf"))
@@ -61,6 +63,8 @@ class ExportDialog(QDialog):
         self._build()
 
     def _build(self) -> None:
+        self._texts = TutorialTexts(self)
+        self._tutorial = WindowTutorial(self, self.tutorial)
         self._format = QComboBox()
         for name, extension in FORMATS:
             self._format.addItem(name, extension)
@@ -117,7 +121,10 @@ class ExportDialog(QDialog):
         layout.addWidget(self._plan_label)
         layout.addWidget(self._files)
         layout.addWidget(self._warnings)
-        layout.addWidget(self._buttons)
+        bas = QHBoxLayout()
+        bas.addWidget(self._tutorial.help_button)
+        bas.addWidget(self._buttons, 1)
+        layout.addLayout(bas)
         self.resize(560, 360)
         self.retranslate_ui()
         self._on_format_changed()
@@ -133,7 +140,27 @@ class ExportDialog(QDialog):
             self.tr("Le nom de base. Une feuille seule le porte tel quel ; "
                     "plusieurs y ajoutent « page1 », « page2 »."))
         self._browse.setText(self.tr("Parcourir…"))
+        self._tutorial.retranslate_ui()
         self._update_plan()
+
+    # --- Tutoriel ---------------------------------------------------------
+
+    def tutorial(self) -> Tutorial:
+        textes = self._texts
+        return Tutorial("fenetre-export", lambda: [
+            Zone(lambda: self._layout_recap, textes.export_dialog_layout),
+            Zone(lambda: self._format, textes.export_dialog_format),
+            Zone(lambda: self._quality, textes.export_dialog_quality),
+            Zone(lambda: self._folder, textes.export_dialog_folder),
+            Zone(lambda: self._basename, textes.export_dialog_name),
+            Zone(lambda: self._plan_label, textes.export_dialog_plan),
+            Zone(lambda: self._files, textes.export_dialog_files),
+            Zone(lambda: self._buttons, textes.export_dialog_buttons),
+        ])
+
+    def showEvent(self, event) -> None:
+        super().showEvent(event)
+        self._tutorial.window_shown()
 
     # --- Réglages ---------------------------------------------------------
 

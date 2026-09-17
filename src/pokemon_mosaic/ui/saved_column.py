@@ -27,6 +27,8 @@ from PySide6.QtWidgets import (
 from ..scoring import EMPTY
 from . import theme
 from .session import MAX_SAVED
+from .tutorial import Tutorial, WindowTutorial, Zone
+from .tutorial_texts import TutorialTexts
 
 # La vignette d'une case. Assez grande pour reconnaître un agencement d'un coup
 # d'œil, assez petite pour que quatre tiennent en colonne sans faire défiler.
@@ -271,6 +273,8 @@ class SavedDialog(QDialog):
         super().__init__(parent)
         self._image = mosaic_image(saved.grid, saved.cards, empty_colour)
         self._zoom = DIALOG_ZOOM_MIN
+        self._texts = TutorialTexts(self)
+        self._tutorial = WindowTutorial(self, self.tutorial)
 
         self._notice = QLabel()
         self._notice.setWordWrap(True)
@@ -297,6 +301,7 @@ class SavedDialog(QDialog):
         self._close.clicked.connect(self.accept)
 
         barre = QHBoxLayout()
+        barre.addWidget(self._tutorial.help_button)
         barre.addWidget(self._zoom_out)
         barre.addWidget(self._zoom_label)
         barre.addWidget(self._zoom_in)
@@ -314,7 +319,20 @@ class SavedDialog(QDialog):
         self.setWindowTitle(self.tr("Agencement gardé"))
         self._notice.setText(self.tr("L'agencement n'est plus dans la timeline."))
         self._close.setText(self.tr("Fermer"))
+        self._tutorial.retranslate_ui()
         self._redraw()
+
+    def tutorial(self) -> Tutorial:
+        textes = self._texts
+        return Tutorial("fenetre-agencement-garde", lambda: [
+            Zone(lambda: self._notice, textes.saved_notice),
+            Zone(lambda: self._scroll, textes.saved_view),
+            Zone(lambda: self._zoom_in, textes.saved_zoom),
+        ])
+
+    def showEvent(self, event) -> None:
+        super().showEvent(event)
+        self._tutorial.window_shown()
 
     def zoom(self) -> float:
         return self._zoom

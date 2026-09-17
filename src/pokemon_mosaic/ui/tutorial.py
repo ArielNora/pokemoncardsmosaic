@@ -18,7 +18,18 @@ l'élément à chaque rafraîchissement, et un élément caché n'a pas de zone.
 from collections.abc import Callable
 from dataclasses import dataclass
 
-from PySide6.QtCore import QEvent, QObject, QPoint, QPointF, QRect, QRectF, Qt, QTimer, Signal
+from PySide6.QtCore import (
+    QEvent,
+    QObject,
+    QPoint,
+    QPointF,
+    QRect,
+    QRectF,
+    QSettings,
+    Qt,
+    QTimer,
+    Signal,
+)
 from PySide6.QtGui import QColor, QCursor, QPainter, QPainterPath, QPen, QPolygonF
 from PySide6.QtWidgets import (
     QCheckBox,
@@ -32,6 +43,7 @@ from PySide6.QtWidgets import (
     QWidget,
 )
 
+from ..paths import APP_NAME
 from . import theme
 
 # Le voile de la visite guidée : assez sombre pour isoler la zone, assez clair
@@ -614,3 +626,51 @@ class TutorialController(QObject):
 
     def rearm(self) -> None:
         self._store.rearm()
+
+
+def application_settings() -> QSettings:
+    """Les réglages de l'application, les mêmes que ceux de la fenêtre
+    principale : revoir les visites depuis un « ? » les réarme toutes.
+
+    Lue au moment de s'en servir, et non retenue : les tests la remplacent pour
+    ne jamais écrire dans les réglages de la machine.
+    """
+    return QSettings(APP_NAME, APP_NAME)
+
+
+class WindowTutorial(QObject):
+    """Le tutoriel d'une fenêtre ouverte par-dessus : son « ? » et sa visite.
+
+    Décidé le 2026-09-13 : chaque fenêtre a sa visite guidée à sa première
+    ouverture, et son propre « ? », puisque celui de la fenêtre principale est
+    hors d'atteinte tant qu'elle est ouverte. La fenêtre pose `help_button`
+    dans sa ligne de boutons, et appelle `window_shown` en s'affichant.
+    """
+
+    def __init__(self, window: QWidget, current: Callable[[], Tutorial | None]):
+        super().__init__(window)
+        self.help_button = HelpButton()
+        # ⚠️ **Le nom du module, relu à chaque accès** : `application_settings`
+        # remplacée par un test doit l'être ici aussi.
+        store = TutorialStore(lambda: application_settings())
+        self.controller = TutorialController(window, store, current)
+        self.help_button.toggled.connect(self.controller.set_help)
+        self.controller.help_changed.connect(self._show_help_state)
+        self.controller.guide_running.connect(
+            lambda en_cours: self.help_button.setEnabled(not en_cours))
+        self.help_button.rearm_requested.connect(self.controller.rearm)
+
+    def window_shown(self) -> None:
+        """La fenêtre s'affiche : sa visite démarre si elle n'a jamais été vue,
+        et l'aide allumée relit ses zones. Une visite vue ne revient pas, les
+        réglages en gardent la trace."""
+        self.controller.page_shown()
+
+    def _show_help_state(self, active: bool) -> None:
+        self.help_button.blockSignals(True)
+        self.help_button.setChecked(active)
+        self.help_button.blockSignals(False)
+
+    def retranslate_ui(self) -> None:
+        self.help_button.retranslate_ui()
+        self.controller.overlay.retranslate_ui()

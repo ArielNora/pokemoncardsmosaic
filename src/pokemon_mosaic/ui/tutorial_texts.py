@@ -290,6 +290,101 @@ class TutorialTexts(QObject):
     def export_button(self) -> str:
         return self.tr("Exportez l'agencement affiché en fichiers à imprimer.")
 
+    # --- Fenêtre : bibliothèque des agencements ----------------------------
+
+    def library_list(self) -> str:
+        return self.tr("Les agencements enregistrés. Cliquez-en un pour le "
+                       "voir.")
+
+    def library_image(self) -> str:
+        return self.tr("L'aperçu de l'agencement choisi.")
+
+    def library_cards(self) -> str:
+        return self.tr("Ses cartes : celles qui manquent sont en rouge.")
+
+    def library_start(self) -> str:
+        return self.tr("Repartez de cet agencement : cartes, grille et "
+                       "habillage.")
+
+    def library_slot(self) -> str:
+        return self.tr("Mettez cet agencement dans une case, pour l'export.")
+
+    def library_export(self) -> str:
+        return self.tr("Exportez-le en JSON pour le partager.")
+
+    def library_import(self) -> str:
+        return self.tr("Importez un agencement reçu en JSON.")
+
+    def library_rename(self) -> str:
+        return self.tr("Renommez l'agencement choisi.")
+
+    def library_delete(self) -> str:
+        return self.tr("Supprimez l'agencement choisi de la bibliothèque.")
+
+    # --- Fenêtre : éditeur de liens ----------------------------------------
+
+    def link_grid(self) -> str:
+        return self.tr("Glissez des cartes ici. Agrandissez le rectangle avec "
+                       "les boutons +.")
+
+    def link_palette(self) -> str:
+        return self.tr("Les cartes disponibles, à glisser dans le lien.")
+
+    def link_search(self) -> str:
+        return self.tr("Filtrez les cartes par nom.")
+
+    def link_folder(self) -> str:
+        return self.tr("Filtrez les cartes par extension.")
+
+    def link_ordered(self) -> str:
+        return self.tr("Cochez pour interdire de pivoter le lien d'un "
+                       "demi-tour.")
+
+    def link_name(self) -> str:
+        return self.tr("Vous pouvez donner un nom au lien.")
+
+    def link_buttons(self) -> str:
+        return self.tr("Validez quand le rectangle est complet.")
+
+    # --- Fenêtre : export du poster ----------------------------------------
+
+    def export_dialog_layout(self) -> str:
+        return self.tr("Le rappel de la mise en page.")
+
+    def export_dialog_format(self) -> str:
+        return self.tr("Choisissez le format des fichiers.")
+
+    def export_dialog_quality(self) -> str:
+        return self.tr("Réglez la qualité, pour le JPEG seulement.")
+
+    def export_dialog_folder(self) -> str:
+        return self.tr("Choisissez où écrire les fichiers.")
+
+    def export_dialog_name(self) -> str:
+        return self.tr("Le nom des fichiers : plusieurs feuilles ajoutent "
+                       "« page1 », « page2 ».")
+
+    def export_dialog_plan(self) -> str:
+        return self.tr("La taille des fichiers en pixels.")
+
+    def export_dialog_files(self) -> str:
+        return self.tr("Les fichiers qui seront écrits.")
+
+    def export_dialog_buttons(self) -> str:
+        return self.tr("Lancez l'export.")
+
+    # --- Fenêtre : agencement gardé ----------------------------------------
+
+    def saved_notice(self) -> str:
+        return self.tr("Cet agencement gardé n'est plus dans la timeline du "
+                       "calcul.")
+
+    def saved_view(self) -> str:
+        return self.tr("L'agencement tel qu'il a été gardé.")
+
+    def saved_zoom(self) -> str:
+        return self.tr("Zoomez avec + et −.")
+
     # --- La fenêtre, présentée avec la première étape ----------------------
 
     def window_presets(self) -> str:

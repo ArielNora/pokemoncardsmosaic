@@ -43,6 +43,8 @@ from ..scoring import EMPTY
 from . import theme
 from .session import MAX_SAVED, NoFreeSlot, Session
 from .spinner import Spinner
+from .tutorial import Tutorial, WindowTutorial, Zone
+from .tutorial_texts import TutorialTexts
 
 DIALOG_SIZE = QSize(1000, 660)
 # L'aperçu d'un agencement dans la fenêtre. Assez grand pour reconnaître une
@@ -184,6 +186,8 @@ class ArrangementsDialog(QDialog):
     # --- Construction -----------------------------------------------------
 
     def _build(self) -> None:
+        self._texts = TutorialTexts(self)
+        self._tutorial = WindowTutorial(self, self.tutorial)
         self._list = QListWidget()
         self._list.currentRowChanged.connect(lambda _: self._show_current())
         self._list.setMinimumWidth(280)
@@ -233,6 +237,7 @@ class ArrangementsDialog(QDialog):
         self._close.clicked.connect(self.accept)
 
         boutons = QHBoxLayout()
+        boutons.addWidget(self._tutorial.help_button)
         for bouton in (self._open, self._export, self._import, self._rename,
                        self._delete):
             boutons.addWidget(bouton)
@@ -260,7 +265,30 @@ class ArrangementsDialog(QDialog):
         self._rename.setText(self.tr("Renommer…"))
         self._delete.setText(self.tr("Supprimer…"))
         self._close.setText(self.tr("Fermer"))
+        self._tutorial.retranslate_ui()
         self._show_current()
+
+    # --- Tutoriel ---------------------------------------------------------
+
+    def tutorial(self) -> Tutorial:
+        """La visite de la bibliothèque. « Ouvrir » ne dit pas la même chose
+        selon qu'on part de l'agencement ou qu'on le range dans une case."""
+        textes = self._texts
+        ouvrir = textes.library_start if self._start else textes.library_slot
+        return Tutorial("fenetre-agencements", lambda: [
+            Zone(lambda: self._list, textes.library_list),
+            Zone(lambda: self._image, textes.library_image),
+            Zone(lambda: self._cards, textes.library_cards),
+            Zone(lambda: self._open, ouvrir),
+            Zone(lambda: self._export, textes.library_export),
+            Zone(lambda: self._import, textes.library_import),
+            Zone(lambda: self._rename, textes.library_rename),
+            Zone(lambda: self._delete, textes.library_delete),
+        ])
+
+    def showEvent(self, event) -> None:
+        super().showEvent(event)
+        self._tutorial.window_shown()
 
     # --- La liste ---------------------------------------------------------
 
