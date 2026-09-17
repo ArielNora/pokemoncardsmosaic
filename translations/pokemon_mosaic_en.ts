@@ -2555,27 +2555,17 @@
         <translation>This kept arrangement is no longer in the calculation timeline.</translation>
     </message>
     <message>
-        <location filename="../src/pokemon_mosaic/ui/tutorial_texts.py" line="383"/>
-        <source>L&apos;agencement tel qu&apos;il a été gardé.</source>
-        <translation>The arrangement as it was kept.</translation>
-    </message>
-    <message>
-        <location filename="../src/pokemon_mosaic/ui/tutorial_texts.py" line="386"/>
-        <source>Zoomez avec + et −.</source>
-        <translation>Zoom with + and −.</translation>
-    </message>
-    <message>
-        <location filename="../src/pokemon_mosaic/ui/tutorial_texts.py" line="391"/>
+        <location filename="../src/pokemon_mosaic/ui/tutorial_texts.py" line="385"/>
         <source>Enregistrez vos réglages sous un nom, ou repartez d&apos;un agencement enregistré.</source>
         <translation>Save your settings under a name, or start again from a saved arrangement.</translation>
     </message>
     <message>
-        <location filename="../src/pokemon_mosaic/ui/tutorial_texts.py" line="395"/>
+        <location filename="../src/pokemon_mosaic/ui/tutorial_texts.py" line="389"/>
         <source>Vous pouvez passer à l&apos;étape suivante quand l&apos;aura est verte.</source>
         <translation>You can move to the next step when the glow is green.</translation>
     </message>
     <message>
-        <location filename="../src/pokemon_mosaic/ui/tutorial_texts.py" line="399"/>
+        <location filename="../src/pokemon_mosaic/ui/tutorial_texts.py" line="393"/>
         <source>Cliquez pour afficher l&apos;aide de la page. Clic droit pour revoir les visites guidées.</source>
         <translation>Click to show this page&apos;s help. Right-click to replay the guided tours.</translation>
     </message>

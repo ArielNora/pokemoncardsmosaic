@@ -379,12 +379,6 @@ class TutorialTexts(QObject):
         return self.tr("Cet agencement gardé n'est plus dans la timeline du "
                        "calcul.")
 
-    def saved_view(self) -> str:
-        return self.tr("L'agencement tel qu'il a été gardé.")
-
-    def saved_zoom(self) -> str:
-        return self.tr("Zoomez avec + et −.")
-
     # --- La fenêtre, présentée avec la première étape ----------------------
 
     def window_presets(self) -> str:

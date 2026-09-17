@@ -324,10 +324,10 @@ class SavedDialog(QDialog):
 
     def tutorial(self) -> Tutorial:
         textes = self._texts
+        # L'avertissement seul, décidé par l'utilisateur : l'image et le zoom
+        # se comprennent sans bulle.
         return Tutorial("fenetre-agencement-garde", lambda: [
             Zone(lambda: self._notice, textes.saved_notice),
-            Zone(lambda: self._scroll, textes.saved_view),
-            Zone(lambda: self._zoom_in, textes.saved_zoom),
         ])
 
     def showEvent(self, event) -> None:

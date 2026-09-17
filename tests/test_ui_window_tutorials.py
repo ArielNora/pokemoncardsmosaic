@@ -202,7 +202,6 @@ def test_the_kept_arrangement_window(qt_app, session, visites):
     assert tutoriel.help_button.window() is fenetre
     visite = tutoriel.controller.overlay.tutorial()
     assert visite.key == "fenetre-agencement-garde"
-    assert zones_visibles(visite, fenetre) == [
-        fenetre._notice, fenetre._scroll, fenetre._zoom_in]
+    assert zones_visibles(visite, fenetre) == [fenetre._notice]
     verifier_textes(visite)
     fermer(fenetre)
