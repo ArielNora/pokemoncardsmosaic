@@ -946,11 +946,11 @@ class Session(QObject):
         # que de garder des positions calculées pour une autre mise en page.
         moved = "panel_offsets" in changes
 
-        touched = False
+        touched = set()
         for name, value in changes.items():
             if getattr(self, name) != value:
                 setattr(self, name, value)
-                touched = True
+                touched.add(name)
         if not touched:
             return
 
@@ -959,7 +959,13 @@ class Session(QObject):
             # grille : elles tomberaient à des endroits qui ne veulent plus rien
             # dire, quand elles ne sortiraient pas carrément du cadre.
             self._empty_cells = []
-        if not moved and self.panel_offsets:
+        # ⚠️ **Sauf la finesse seule.** Les déplacements sont en millimètres, et
+        # la finesse ne change la place libre que par arrondi, quelques
+        # centièmes de millimètre. Trouvé par l'audit du 2026-09-18 : taper une
+        # finesse, ou basculer « Images d'origine », remettait sans un mot
+        # chaque feuille placée à la main à sa place par défaut. L'export borne
+        # de toute façon chaque déplacement à sa feuille en écrivant.
+        if not moved and self.panel_offsets and touched != {"dpi"}:
             self.panel_offsets = {}
         self.layout_changed.emit()
 
