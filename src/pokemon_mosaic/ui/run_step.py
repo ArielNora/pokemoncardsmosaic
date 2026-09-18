@@ -101,6 +101,10 @@ class RunStep(QWidget):
         # cliché n'a de sens que si la numérotation des cartes n'a pas bougé.
         self._run_signature: tuple | None = None
         self._cards = None
+        # Le dossier de ces cartes, lu au lancement : la timeline survit au
+        # chargement d'un autre dossier, voir `SavedGrid.data_dir`.
+        self._cards_dir: str | None = None
+        self._launch_dir: str | None = None
         self._timeline = None
         self._following = True      # suit le dernier cliché tant qu'on ne touche pas
         # Vrai le temps d'un réglage de curseur que nous provoquons : ce n'est
@@ -402,6 +406,7 @@ class RunStep(QWidget):
         self._run_signature = self._signature()
         self._following = True
         self._from_arrangement = True
+        self._launch_dir = depart.data_dir
         self._on_started(depart.cards, timeline)
         self._on_snapshot(timeline[-1])
         self._summary.setText(
@@ -440,6 +445,7 @@ class RunStep(QWidget):
         self._control = RunControl()
         self._following = True
         self._run_signature = self._signature()
+        self._launch_dir = self._session.data_dir
         self._thread, self._worker = start_run(
             self, self._session, self._control, previous_grid, timeline,
             started_run=self._on_started, snapshot=self._on_snapshot,
@@ -558,7 +564,8 @@ class RunStep(QWidget):
         index = max(0, min(len(self._timeline) - 1, self._slider.value()))
         cliche = self._timeline[index]
         rang = self._session.save_grid(grid, self._cards,
-                                       cliche.iteration, cliche.score)
+                                       cliche.iteration, cliche.score,
+                                       self._cards_dir)
         if rang is None:
             self.status_message.emit(
                 self.tr("Les quatre cases sont prises : retirez-en une."))
@@ -702,6 +709,7 @@ class RunStep(QWidget):
 
     def _on_started(self, cards, timeline) -> None:
         self._cards = cards
+        self._cards_dir = self._launch_dir
         self._timeline = timeline
         # L'accueil a fait son office : il y a désormais quelque chose à voir.
         self._update_view()

@@ -135,6 +135,12 @@ class SavedGrid:
     cards: CardSet
     iteration: int
     score: float
+    # ⚠️ **Le dossier d'où viennent ses cartes**, lu au lancement du calcul.
+    # Un calcul et ses clichés survivent au chargement d'un autre dossier : lus
+    # par rapport au dossier chargé ensuite, les chemins écrits dans la
+    # bibliothèque devenaient « ../A/… », et l'agencement ne retrouvait plus
+    # ses cartes. `None` : le dossier chargé.
+    data_dir: str | None = None
 
 
 def series_of(folder: str) -> str:
@@ -285,18 +291,19 @@ class Session(QObject):
     # --- Agencements mis de côté ------------------------------------------
 
     def save_grid(self, grid, cards: CardSet, iteration: int,
-                  score: float) -> int | None:
+                  score: float, data_dir: str | None = None) -> int | None:
         """Range un agencement dans la première case libre, et rend son rang.
 
         Rend `None` quand les quatre cases sont prises : rien n'est écrasé sans
         que l'utilisateur l'ait demandé, il retire lui-même celle dont il ne
-        veut plus.
+        veut plus. `data_dir` est le dossier de ses cartes, le chargé à défaut.
         """
         for rang, place in enumerate(self.saved):
             if place is None:
                 # La grille est copiée : celle de la timeline continue de vivre,
                 # et une reprise de calcul la réécrirait sous nos yeux.
-                self.saved[rang] = SavedGrid(grid.copy(), cards, iteration, score)
+                self.saved[rang] = SavedGrid(grid.copy(), cards, iteration, score,
+                                             data_dir or self.data_dir)
                 self.saved_changed.emit()
                 return rang
         return None
@@ -326,7 +333,8 @@ class Session(QObject):
         les cartes une fois, par chemin, et la grille désigne des rangs de cette
         liste.
         """
-        chemins = [os.path.relpath(card.path, self.data_dir)
+        racine = saved.data_dir or self.data_dir
+        chemins = [os.path.relpath(card.path, racine)
                    for card in saved.cards.cards]
         grille = tuple(tuple(int(case) for case in ligne)
                        for ligne in saved.grid)

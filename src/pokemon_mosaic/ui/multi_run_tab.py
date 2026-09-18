@@ -89,6 +89,9 @@ class RunGroup:
     cards: object
     snapshots: list[Snapshot]
     result: OptimizationResult | None = None
+    # Le dossier des cartes au lancement : les groupes survivent au chargement
+    # d'un autre dossier, voir `SavedGrid.data_dir`.
+    data_dir: str | None = None
 
     @property
     def interrupted(self) -> bool:
@@ -151,6 +154,8 @@ class MultiRunTab(QWidget):
         self._timeline = None
         self._cards = None
         self._count = 0
+        # Le dossier des cartes au départ du multi-lancement, voir `RunGroup`.
+        self._data_dir: str | None = None
         self._pending = False
         # Vrai pendant un lancement simple : un seul calcul à la fois.
         self._blocked = False
@@ -308,6 +313,7 @@ class MultiRunTab(QWidget):
         self._selected = None
         self._show_results()
         self._count = self._count_field.value()
+        self._data_dir = self._session.data_dir
         self._thread, self._worker = start_multi_run(
             self, self._session, self._control, self._count,
             run_started=self._on_run_started, snapshot=self._on_snapshot,
@@ -354,7 +360,7 @@ class MultiRunTab(QWidget):
         self._current, self._cards, self._timeline = rank, cards, timeline
         # ⚠️ **Le groupe naît au départ du lancement**, et non à sa fin : un
         # arrêt ou un échec en plein calcul doit laisser ses clichés.
-        self.groups.append(RunGroup(rank, cards, []))
+        self.groups.append(RunGroup(rank, cards, [], data_dir=self._data_dir))
         self._update_progress()
 
     def _on_snapshot(self, rank: int, _snapshot) -> None:
@@ -564,7 +570,8 @@ class MultiRunTab(QWidget):
             return
         groupe, cliche = choix
         rang = self._session.save_grid(cliche.grid, groupe.cards,
-                                       cliche.iteration, cliche.score)
+                                       cliche.iteration, cliche.score,
+                                       groupe.data_dir)
         if rang is None:
             self.status_message.emit(
                 self.tr("Les quatre cases sont prises : retirez-en une."))
@@ -588,7 +595,7 @@ class MultiRunTab(QWidget):
             return
         groupe, cliche = choix
         agencement = SavedGrid(cliche.grid.copy(), groupe.cards,
-                               cliche.iteration, cliche.score)
+                               cliche.iteration, cliche.score, groupe.data_dir)
         try:
             nom = store_in_library(self._session, self._arrangements_directory,
                                    agencement)
