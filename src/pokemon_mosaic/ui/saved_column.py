@@ -234,16 +234,20 @@ class SavedColumn(QWidget):
 
     def _confirm_remove(self, slot: int) -> None:
         """⚠️ **Toujours une confirmation.** La croix est à quelques pixels de
-        la vignette, et ce qu'elle efface ne se retrouve pas : le cliché d'où
-        vient l'agencement a pu disparaître de la timeline, et le calcul ne le
-        redonnera pas à l'identique.
+        la vignette : vider une case par mégarde oblige à aller rechercher
+        l'agencement dans la bibliothèque.
+
+        ⚠️ **Le message ne l'annonce plus perdu.** Garder un agencement l'écrit
+        aussi dans la bibliothèque depuis le 2026-09-12 : dire qu'il « ne se
+        retrouve pas » faisait hésiter à vider une case pour rien (audit du
+        2026-09-18).
         """
         if self._session.saved[slot] is None:
             return
         reponse = QMessageBox.question(
             self, self.tr("Retirer cet agencement ?"),
-            self.tr("La case %1 sera vidée. L'agencement ne se retrouve pas : "
-                    "le calcul ne redonne pas deux fois le même.")
+            self.tr("La case %1 sera vidée. L'agencement reste dans la "
+                    "bibliothèque, « Tous les agencements… ».")
             .replace("%1", str(slot + 1)),
             QMessageBox.Yes | QMessageBox.No, QMessageBox.No)
         if reponse == QMessageBox.Yes:
