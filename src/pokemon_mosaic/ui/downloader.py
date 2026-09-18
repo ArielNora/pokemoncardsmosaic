@@ -49,6 +49,21 @@ class CardDownloader(QObject):
         self._cancelled = True
 
     def run(self) -> None:
+        """Le téléchargement entier, dans un filet qui dit toujours la fin.
+
+        ⚠️ **Volontairement large**, comme `RunWorker` et `ExportWorker`. Une
+        exception qui s'échappe de ce slot n'émet aucun signal : le fil ne
+        s'arrête jamais, et l'étape 1 reste « occupée » jusqu'au redémarrage,
+        chargement et « Suivant » grisés. Trouvé par l'audit du 2026-09-18 :
+        une carte déjà présente mais illisible, droits retirés ou disque
+        débranché, faisait lever `missing_cards`, appelé hors de tout filet.
+        """
+        try:
+            self._run()
+        except Exception as error:  # noqa: BLE001 - voir ci-dessus
+            self.failed.emit(str(error))
+
+    def _run(self) -> None:
         try:
             manifest = fetch_manifest()
         except MirrorError as error:
