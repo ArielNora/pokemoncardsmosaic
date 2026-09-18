@@ -81,6 +81,13 @@ sous-agents qui exécutent du code : tout cela passe **l'un après l'autre**.
 Pour un fichier seul de moins de 50 tests, `uv run pytest tests/test_x.py`
 reste le bon geste.
 
+**Aucun test ne tourne sans fin** (demandé le 2026-09-18, après un test resté
+bloqué deux heures pendant une mutation) : **60 s par test**
+(`tests/delai_des_tests.py`, `TESTS_DELAI` pour changer), qui termine le
+processus en écrivant où chaque fil était arrêté, et **10 min par lot** dans
+`scripts/run_tests.py` (`TESTS_DELAI_LOT`). Un script de mutation lance ses
+`pytest` avec un `timeout` à lui aussi.
+
 ⚠️ **Ne pas gonfler les fixtures.** Des vignettes de 178×246 dans une fenêtre de
 900×600, pour tester le zoom, coûtaient 83 Mo à elles seules ; des vignettes de
 60×166 dans une fenêtre de 420×320 démontrent la même chose. Quand un test exige

@@ -676,3 +676,64 @@ def test_check_and_fetch_agree_on_a_path_leaving_the_folder(tmp_path, capsys):
         code = recupere.main(["--manifest", str(fichier), "--output", str(sortie), *mode])
         assert code == 1, mode
         assert "hors du dossier" in capsys.readouterr().err, mode
+
+
+# --- Les délais : aucun test ni aucun lot ne tourne sans fin -----------------
+
+def test_a_test_past_its_deadline_is_stopped_with_its_trace(tmp_path):
+    """Demandé par l'utilisateur le 2026-09-18, après un test resté bloqué deux
+    heures. Le délai tombe même dans une attente qui ne rend pas la main à
+    Python, là où un signal ne ferait rien."""
+    import subprocess
+
+    fichier = tmp_path / "test_trop_long.py"
+    fichier.write_text(
+        "import time\n\n"
+        "def test_rapide():\n    pass\n\n"
+        "def test_bloque():\n    time.sleep(30)\n")
+    env = dict(os.environ, TESTS_DELAI="1",
+               PYTHONPATH=str(ROOT / "tests") + os.pathsep
+               + os.environ.get("PYTHONPATH", ""))
+
+    resultat = subprocess.run(
+        [sys.executable, "-m", "pytest", "-q", "-p", "delai_des_tests",
+         "-p", "no:cacheprovider", str(fichier)],
+        cwd=tmp_path, env=env, capture_output=True, text=True, timeout=25,
+        check=False)
+
+    assert resultat.returncode != 0
+    assert "Timeout" in resultat.stderr
+    assert "test_bloque" in resultat.stderr
+
+
+def test_a_batch_past_its_deadline_fails_the_run(monkeypatch, capsys):
+    import subprocess
+
+    def faux_run(commande, **options):
+        if "--collect-only" in commande:
+            return FauxResultat(0, "tests/test_a.py::test_un\n\n1 test collected\n")
+        assert options["timeout"] == lanceur.DELAI_PAR_LOT
+        raise subprocess.TimeoutExpired(commande, options["timeout"])
+
+    monkeypatch.setattr(lanceur.subprocess, "run", faux_run)
+    monkeypatch.delenv("TESTS_DELAI_LOT", raising=False)
+
+    assert lanceur.main([]) == 1
+    sortie = capsys.readouterr().out
+    assert "DÉLAI DÉPASSÉ" in sortie and "test_a.py" in sortie
+
+
+def test_a_failed_batch_shows_its_error_output(monkeypatch, capsys):
+    """La trace d'un test arrêté par son délai part sur la sortie d'erreur :
+    le lanceur ne montrait que la sortie standard."""
+    def faux_run(commande, **_):
+        if "--collect-only" in commande:
+            return FauxResultat(0, "tests/test_a.py::test_un\n\n1 test collected\n")
+        resultat = FauxResultat(1, "")
+        resultat.stderr = "Timeout (0:01:00)!\n  File test_a.py, in test_un\n"
+        return resultat
+
+    monkeypatch.setattr(lanceur.subprocess, "run", faux_run)
+
+    assert lanceur.main([]) == 1
+    assert "Timeout (0:01:00)!" in capsys.readouterr().out

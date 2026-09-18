@@ -29,6 +29,13 @@ import sys
 LOT_PAR_DEFAUT = 50
 # Ce qu'on garde de la sortie d'un lot en échec : la fin, où pytest résume.
 LIGNES_D_ECHEC = 30
+# ⚠️ **Un lot ne tourne jamais sans fin.** Demandé par l'utilisateur le
+# 2026-09-18, après un test resté bloqué deux heures. Chaque test a déjà son
+# délai (`tests/delai_des_tests.py`) ; celui du lot rattrape ce qui y
+# échapperait, la collecte ou un processus figé avant le premier test. Dix
+# minutes pour cinquante tests, quand le plus lent en prend deux et demie.
+DELAI_PAR_LOT = 600
+DELAI_DE_COLLECTE = 300
 # ⚠️ **La verbosité appartient au lanceur.** Un `-q` de plus fait écrire à la
 # collecte un compte par fichier au lieu des identifiants, un `-v` un arbre de
 # modules : l'un comme l'autre faisait répondre « Aucun test retenu » sans en
@@ -84,8 +91,14 @@ def main(argv: list[str]) -> int:
     pytest = _pytest()
     argv = options(argv)
 
-    collecte = subprocess.run([*pytest, "tests", "--collect-only", "-q", *argv],
-                              capture_output=True, text=True, check=False)
+    try:
+        collecte = subprocess.run(
+            [*pytest, "tests", "--collect-only", "-q", *argv],
+            capture_output=True, text=True, check=False,
+            timeout=int(os.environ.get("TESTS_DELAI_COLLECTE", DELAI_DE_COLLECTE)))
+    except subprocess.TimeoutExpired:
+        print("Collecte arrêtée : délai dépassé.")
+        return 1
     if collecte.returncode not in (0, 5):
         print("Collecte impossible :")
         print("\n".join(collecte.stdout.splitlines()[-LIGNES_D_ECHEC:]))
@@ -103,17 +116,29 @@ def main(argv: list[str]) -> int:
         print("\n".join(collecte.stdout.splitlines()[-LIGNES_D_ECHEC:]))
         return 1
 
+    delai_lot = int(os.environ.get("TESTS_DELAI_LOT", DELAI_PAR_LOT))
     total, en_echec = 0, []
     for fichier, identifiants in par_fichier.items():
         print(f"{fichier:36s}", end="", flush=True)
         passes, decoupe = 0, lots(identifiants, taille)
         for rang, lot in enumerate(decoupe, start=1):
-            resultat = subprocess.run([*pytest, *lot, "-q", "--no-header", *argv],
-                                      capture_output=True, text=True, check=False)
+            suffixe = f" (lot {rang}/{len(decoupe)})" if len(decoupe) > 1 else ""
+            try:
+                resultat = subprocess.run(
+                    [*pytest, *lot, "-q", "--no-header", *argv],
+                    capture_output=True, text=True, check=False, timeout=delai_lot)
+            except subprocess.TimeoutExpired:
+                print(f"DÉLAI DÉPASSÉ{suffixe} : lot arrêté au bout de {delai_lot} s")
+                en_echec.append(fichier)
+                break
             if resultat.returncode != 0:
-                suffixe = f" (lot {rang}/{len(decoupe)})" if len(decoupe) > 1 else ""
                 print(f"ÉCHEC{suffixe}")
                 print("\n".join(resultat.stdout.splitlines()[-LIGNES_D_ECHEC:]))
+                # ⚠️ **La sortie d'erreur aussi** : c'est là qu'un test arrêté
+                # par son délai écrit où il était bloqué.
+                erreurs = (resultat.stderr or "").splitlines()[-LIGNES_D_ECHEC:]
+                if erreurs:
+                    print("\n".join(erreurs))
                 en_echec.append(fichier)
                 break
             compte = re.search(r"(\d+) passed", resultat.stdout)

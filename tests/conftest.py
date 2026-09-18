@@ -10,6 +10,10 @@ os.environ.setdefault("QT_QPA_PLATFORM", "offscreen")
 
 import pytest
 
+# Le délai maximal de chaque test, voir ce module. Importée ici, la fixture
+# automatique vaut pour toute la suite.
+from delai_des_tests import delai_maximal  # noqa: F401
+
 
 @pytest.fixture(autouse=True)
 def reglages_des_tutoriels(tmp_path, monkeypatch):
