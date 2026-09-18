@@ -997,6 +997,10 @@ class RunStep(QWidget):
         self._image.setText(text)
         self._image.resize(self._scroll.viewport().size())
 
+    def is_busy(self) -> bool:
+        """Un calcul tourne-t-il, lancement simple ou multi-lancement ?"""
+        return self._thread is not None or self._multi.is_busy()
+
     def _update_buttons(self, running: bool) -> None:
         multi = self._multi.is_busy()
         self._start.setEnabled(not running and not multi)
@@ -1006,6 +1010,9 @@ class RunStep(QWidget):
         self._stop.setEnabled(running)
         self._update_resume_buttons()
         self._update_pause_label()
+        # Un calcul commence ou finit : la fenêtre grise ou rend le départ d'un
+        # agencement, voir `PresetsBar.set_arrangements_enabled`.
+        self.advance_state_changed.emit()
 
     def _update_resume_buttons(self) -> None:
         resumable = self.can_resume()

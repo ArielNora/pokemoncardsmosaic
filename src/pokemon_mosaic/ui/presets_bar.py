@@ -67,6 +67,8 @@ class PresetsBar(QWidget):
         self._arrangements.clicked.connect(self.arrangements_requested.emit)
         # Vrai aux deux premières étapes seulement, voir `set_arrangements_enabled`.
         self._arrangements_allowed = True
+        # Vrai pendant un calcul, voir `set_arrangements_enabled`.
+        self._arrangements_busy = False
 
         layout = QHBoxLayout(self)
         layout.setContentsMargins(0, 0, 0, 0)
@@ -79,15 +81,21 @@ class PresetsBar(QWidget):
         layout.addWidget(self._save)
         self.retranslate_ui()
 
-    def set_arrangements_enabled(self, allowed: bool) -> None:
+    def set_arrangements_enabled(self, allowed: bool, busy: bool = False) -> None:
         """Autorise la bibliothèque aux deux premières étapes, pas au-delà.
 
         ⚠️ **Grisé, et non masqué.** Aux étapes 3 et 4, choisir un agencement ne
         doit rien remplacer : l'infobulle renvoie au bouton sous les cases, qui
         ajoute seulement un agencement aux cases. Masqué, le bouton aurait
         disparu sans dire où le retrouver.
+
+        ⚠️ **Ni pendant un calcul** (`busy`). On revient librement à l'étape 1
+        pendant qu'il tourne : un départ accepté alors n'était jamais montré à
+        l'exécution, qui retrouvait le calcul précédent à sa fin, et « Lancer »
+        repartait d'une grille neuve. Trouvé par l'audit du 2026-09-18.
         """
         self._arrangements_allowed = bool(allowed)
+        self._arrangements_busy = bool(busy)
         self._update_arrangements_button()
 
     def retranslate_ui(self) -> None:
@@ -104,12 +112,18 @@ class PresetsBar(QWidget):
         self._update_arrangements_button()
 
     def _update_arrangements_button(self) -> None:
-        self._arrangements.setEnabled(self._arrangements_allowed)
-        self._arrangements.setToolTip(
-            self.tr("Parcourir les agencements enregistrés.")
-            if self._arrangements_allowed else
-            self.tr("À cette étape, ajoutez un agencement aux cases avec le "
-                    "bouton « Tous les agencements… » placé sous les cases."))
+        occupe = self._arrangements_busy
+        self._arrangements.setEnabled(self._arrangements_allowed and not occupe)
+        if not self._arrangements_allowed:
+            aide = self.tr("À cette étape, ajoutez un agencement aux cases avec "
+                           "le bouton « Tous les agencements… » placé sous les "
+                           "cases.")
+        elif occupe:
+            aide = self.tr("Un calcul tourne : attendez sa fin pour partir d'un "
+                           "agencement.")
+        else:
+            aide = self.tr("Parcourir les agencements enregistrés.")
+        self._arrangements.setToolTip(aide)
 
     # --- Liste ------------------------------------------------------------
 

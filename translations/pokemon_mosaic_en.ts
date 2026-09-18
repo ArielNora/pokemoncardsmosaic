@@ -1223,27 +1223,27 @@
         <translation>Arrangement “%1” taken up: cards, grid and presentation.</translation>
     </message>
     <message>
-        <location filename="../src/pokemon_mosaic/ui/main_window.py" line="488"/>
+        <location filename="../src/pokemon_mosaic/ui/main_window.py" line="490"/>
         <source>Fermeture forcée : un traitement de fond n&apos;a pas répondu.</source>
         <translation>Closing anyway: a background task did not respond.</translation>
     </message>
     <message>
-        <location filename="../src/pokemon_mosaic/ui/main_window.py" line="495"/>
+        <location filename="../src/pokemon_mosaic/ui/main_window.py" line="497"/>
         <source>Pokémon Mosaic</source>
         <translation>Pokémon Mosaic</translation>
     </message>
     <message>
-        <location filename="../src/pokemon_mosaic/ui/main_window.py" line="498"/>
+        <location filename="../src/pokemon_mosaic/ui/main_window.py" line="500"/>
         <source>Précédent</source>
         <translation>Back</translation>
     </message>
     <message>
-        <location filename="../src/pokemon_mosaic/ui/main_window.py" line="499"/>
+        <location filename="../src/pokemon_mosaic/ui/main_window.py" line="501"/>
         <source>Suivant</source>
         <translation>Next</translation>
     </message>
     <message>
-        <location filename="../src/pokemon_mosaic/ui/main_window.py" line="500"/>
+        <location filename="../src/pokemon_mosaic/ui/main_window.py" line="502"/>
         <source>Langue</source>
         <translation>Language</translation>
     </message>
@@ -1598,82 +1598,87 @@
 <context>
     <name>PresetsBar</name>
     <message>
-        <location filename="../src/pokemon_mosaic/ui/presets_bar.py" line="94"/>
+        <location filename="../src/pokemon_mosaic/ui/presets_bar.py" line="102"/>
         <source>Préréglage</source>
         <translation>Preset</translation>
     </message>
     <message>
-        <location filename="../src/pokemon_mosaic/ui/presets_bar.py" line="95"/>
+        <location filename="../src/pokemon_mosaic/ui/presets_bar.py" line="103"/>
         <source>Charger</source>
         <translation>Load</translation>
     </message>
     <message>
-        <location filename="../src/pokemon_mosaic/ui/presets_bar.py" line="96"/>
+        <location filename="../src/pokemon_mosaic/ui/presets_bar.py" line="104"/>
         <source>Enregistrer…</source>
         <translation>Save…</translation>
     </message>
     <message>
-        <location filename="../src/pokemon_mosaic/ui/presets_bar.py" line="97"/>
+        <location filename="../src/pokemon_mosaic/ui/presets_bar.py" line="105"/>
         <source>Supprimer</source>
         <translation>Delete</translation>
     </message>
     <message>
-        <location filename="../src/pokemon_mosaic/ui/presets_bar.py" line="99"/>
+        <location filename="../src/pokemon_mosaic/ui/presets_bar.py" line="107"/>
         <source>Enregistre la sélection, les liens actifs, la grille et les réglages sous un nom.</source>
         <translation>Saves the selection, the active links, the grid and the settings under a name.</translation>
     </message>
     <message>
-        <location filename="../src/pokemon_mosaic/ui/presets_bar.py" line="102"/>
+        <location filename="../src/pokemon_mosaic/ui/presets_bar.py" line="110"/>
         <source>Tous les agencements…</source>
         <translation>All arrangements…</translation>
     </message>
     <message>
-        <location filename="../src/pokemon_mosaic/ui/presets_bar.py" line="109"/>
+        <location filename="../src/pokemon_mosaic/ui/presets_bar.py" line="125"/>
         <source>Parcourir les agencements enregistrés.</source>
         <translation>Browse the saved arrangements.</translation>
     </message>
     <message>
-        <location filename="../src/pokemon_mosaic/ui/presets_bar.py" line="111"/>
+        <location filename="../src/pokemon_mosaic/ui/presets_bar.py" line="118"/>
         <source>À cette étape, ajoutez un agencement aux cases avec le bouton « Tous les agencements… » placé sous les cases.</source>
         <translation>At this step, add an arrangement to the slots with the “All arrangements…” button below the slots.</translation>
     </message>
     <message>
-        <location filename="../src/pokemon_mosaic/ui/presets_bar.py" line="140"/>
+        <location filename="../src/pokemon_mosaic/ui/presets_bar.py" line="122"/>
+        <source>Un calcul tourne : attendez sa fin pour partir d&apos;un agencement.</source>
+        <translation>A calculation is running: wait for it to end before starting from an arrangement.</translation>
+    </message>
+    <message>
+        <location filename="../src/pokemon_mosaic/ui/presets_bar.py" line="154"/>
         <source>Enregistrer le préréglage</source>
         <translation>Save the preset</translation>
     </message>
     <message>
-        <location filename="../src/pokemon_mosaic/ui/presets_bar.py" line="140"/>
+        <location filename="../src/pokemon_mosaic/ui/presets_bar.py" line="154"/>
         <source>Nom</source>
         <translation>Name</translation>
     </message>
     <message>
-        <location filename="../src/pokemon_mosaic/ui/presets_bar.py" line="162"/>
+        <location filename="../src/pokemon_mosaic/ui/presets_bar.py" line="176"/>
         <source>Échec de l&apos;enregistrement : %1</source>
         <translation>Saving failed: %1</translation>
     </message>
     <message>
-        <location filename="../src/pokemon_mosaic/ui/presets_bar.py" line="167"/>
+        <location filename="../src/pokemon_mosaic/ui/presets_bar.py" line="181"/>
         <source>Préréglage « %1 » enregistré.</source>
         <translation>Preset “%1” saved.</translation>
     </message>
     <message>
-        <location filename="../src/pokemon_mosaic/ui/presets_bar.py" line="172"/>
+        <location filename="../src/pokemon_mosaic/ui/presets_bar.py" line="186"/>
         <source>Remplacer le préréglage</source>
         <translation>Replace the preset</translation>
     </message>
     <message>
-        <location filename="../src/pokemon_mosaic/ui/presets_bar.py" line="173"/>
+        <location filename="../src/pokemon_mosaic/ui/presets_bar.py" line="187"/>
         <source>« %1 » existe déjà. Le remplacer ?</source>
         <translation>“%1” already exists. Replace it?</translation>
     </message>
     <message>
-        <location filename="../src/pokemon_mosaic/ui/presets_bar.py" line="185"/>
+        <location filename="../src/pokemon_mosaic/ui/presets_bar.py" line="199"/>
         <source>Préréglage illisible : %1</source>
         <translation>Unreadable preset: %1</translation>
     </message>
     <message numerus="yes">
-        <location filename="../src/pokemon_mosaic/ui/presets_bar.py" line="194"/>
+        <location filename="../src/pokemon_mosaic/ui/presets_bar.py" line="208"/>
         <source>Préréglage « %1 » chargé : %n carte(s) introuvable(s).</source>
         <translation>
             <numerusform>Preset “%1” loaded: %n card not found.</numerusform>
@@ -1681,27 +1686,27 @@
         </translation>
     </message>
     <message>
-        <location filename="../src/pokemon_mosaic/ui/presets_bar.py" line="199"/>
+        <location filename="../src/pokemon_mosaic/ui/presets_bar.py" line="213"/>
         <source>Préréglage « %1 » chargé.</source>
         <translation>Preset “%1” loaded.</translation>
     </message>
     <message>
-        <location filename="../src/pokemon_mosaic/ui/presets_bar.py" line="207"/>
+        <location filename="../src/pokemon_mosaic/ui/presets_bar.py" line="221"/>
         <source>Supprimer le préréglage</source>
         <translation>Delete the preset</translation>
     </message>
     <message>
-        <location filename="../src/pokemon_mosaic/ui/presets_bar.py" line="208"/>
+        <location filename="../src/pokemon_mosaic/ui/presets_bar.py" line="222"/>
         <source>Supprimer « %1 » ? La bibliothèque de liens n&apos;est pas touchée.</source>
         <translation>Delete “%1”? The link library is left untouched.</translation>
     </message>
     <message>
-        <location filename="../src/pokemon_mosaic/ui/presets_bar.py" line="217"/>
+        <location filename="../src/pokemon_mosaic/ui/presets_bar.py" line="231"/>
         <source>Échec de la suppression : %1</source>
         <translation>Deletion failed: %1</translation>
     </message>
     <message>
-        <location filename="../src/pokemon_mosaic/ui/presets_bar.py" line="222"/>
+        <location filename="../src/pokemon_mosaic/ui/presets_bar.py" line="236"/>
         <source>Préréglage « %1 » supprimé.</source>
         <translation>Preset “%1” deleted.</translation>
     </message>
@@ -1951,22 +1956,22 @@
         <translation>Run failed: %1</translation>
     </message>
     <message>
-        <location filename="../src/pokemon_mosaic/ui/run_step.py" line="1021"/>
+        <location filename="../src/pokemon_mosaic/ui/run_step.py" line="1028"/>
         <source>Reprendre</source>
         <translation>Resume</translation>
     </message>
     <message>
-        <location filename="../src/pokemon_mosaic/ui/run_step.py" line="1021"/>
+        <location filename="../src/pokemon_mosaic/ui/run_step.py" line="1028"/>
         <source>Pause</source>
         <translation>Pause</translation>
     </message>
     <message>
-        <location filename="../src/pokemon_mosaic/ui/run_step.py" line="1027"/>
+        <location filename="../src/pokemon_mosaic/ui/run_step.py" line="1034"/>
         <source>aucun cliché</source>
         <translation>no snapshot</translation>
     </message>
     <message>
-        <location filename="../src/pokemon_mosaic/ui/run_step.py" line="1030"/>
+        <location filename="../src/pokemon_mosaic/ui/run_step.py" line="1037"/>
         <source>cliché %1 / %2</source>
         <translation>snapshot %1 of %2</translation>
     </message>

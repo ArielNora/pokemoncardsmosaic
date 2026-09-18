@@ -422,8 +422,10 @@ class MainWindow(QMainWindow):
         self._update_glow(avancable, current < self._stack.count() - 1)
         # La bibliothèque du haut sert à partir d'un agencement : aux deux
         # premières étapes seulement, voir `PresetsBar.set_arrangements_enabled`.
+        # Ni pendant un calcul : le départ ne serait jamais montré à l'exécution.
         self._presets.set_arrangements_enabled(
-            self._stack.currentWidget() in (self._cards_step, self._layout_step))
+            self._stack.currentWidget() in (self._cards_step, self._layout_step),
+            busy=self._run_step.is_busy())
         for position, label in enumerate(self._step_labels):
             font = label.font()
             font.setBold(position == current)
