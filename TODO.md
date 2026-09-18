@@ -3,45 +3,36 @@
 Ce qui reste **pour la v1** est dans `SPEC.md` §9. Ce fichier ne contient que ce
 qui vient **après**, et les points encore ouverts.
 
-## Reporté explicitement après la v1 de l'application
+Revu le 2026-09-18 : trois entrées faites depuis leur écriture ont été retirées
+(marges et espacement, liens en rectangles, marge automatique), voir « Fait,
+retiré de cette liste » en bas.
 
-Tous décidés le 2026-08-16. À traiter **une fois toute la v1 terminée**, pas avant.
+## Restes récents, petits
 
-- **Marges et espacement entre cartes.** La v1 colle les cartes bord à bord. Ajouter
-  ensuite des réglages de marge de page et d'espacement entre cartes (c'est ce qui
-  motivait l'idée de rendre la taille des cartes ajustable indépendamment).
-  Voir `SPEC.md` §4.
-- ⭐ **Les liens deviennent des rectangles pleins, 3×3 au maximum**, tranché le
-  2026-08-27, **fait**. Un seul concept **remplace** horizontal, vertical et
-  groupe : une ligne de 3 est un 1×3, une colonne un 3×1. Le cas d'usage demandé
-  le 2026-08-22 : Arcko `B3-156` en bas, Massko `B3-157` au milieu,
-  Méga-Jungko-ex `B3-194` en haut : est **fourni d'office**, comme les deux
-  paires Solgaleo/Lunala et Entei/Raikou.
+- **La fenêtre s'élargit après un multi-lancement.** Quand les groupes de
+  résultats apparaissent, la largeur minimale de la fenêtre passe d'environ
+  1100 à 1313 pixels : sur un vrai écran, elle s'élargit d'un coup. Mesuré le
+  2026-09-13 (`MultiRunTab.minimumSizeHint`), la liste des groupes a une largeur
+  fixe et s'ajoute à côté de l'image. Piste : laisser se couper le libellé du
+  cliché choisi, ou réduire la largeur minimale de l'image.
+- **Les déplacements de feuilles ne sont pas rebornés entre deux formes.** L'étape
+  2 et l'export partagent `panel_offsets`. Quand l'agencement exporté n'a pas la
+  forme de l'étape 2, un déplacement peut dépasser la place libre dans l'aperçu ;
+  l'export, lui, le borne en écrivant (`clamp_offset_mm`).
+- **`WireframeView` n'est plus utilisée par l'application** (audit du
+  2026-09-18). Seules ses trois fonctions de dessin servent à `page_preview.py`.
+  Une dizaine de tests de `tests/test_ui_layout.py` la font encore tourner, et
+  défendent des règles qui valent pour l'aperçu réel : finesse d'impression,
+  colonnes qui repartent à chaque feuille, clic sur la bonne case, morceau
+  déplacé, case vide rouge. **D'abord porter ces tests vers `PagePreview`**, puis
+  retirer la classe et `_paper_mm`.
 
-  Formes admises : 1×2, 1×3, 2×1, 3×1, 2×2, 2×3, 3×2, 3×3. Jamais de forme
-  trouée ni de rectangle incomplet. Le lien porte sa forme et ses cartes, rien
-  de plus : ni coordonnées, ni verrou.
+## Reporté après la v1 de l'application
 
-  **Une carte liée ne peut pas être figée**, et réciproquement.
-
-  Ce qui reste à écrire : `Link` gagne une forme ; `_locate_block` balaie une
-  fenêtre 2D ; `_try_move` vise une zone 2D ; `build_initial_grid` prend le
-  premier ancrage qui tient ; `check_links_fit` doit vérifier **la hauteur**,
-  qu'il ne regarde nulle part aujourd'hui. `local_score` est déjà générique et
-  ne change pas. Le gros du travail est le dialogue de création, qui construit
-  une liste ordonnée et doit devenir un éditeur de grille.
-
-  ⚠️ `distribute_empty_cells` disperse les trous, et un 3×3 veut neuf cases
-  contiguës : dans une grille lâche le placement peut échouer là où une
-  solution existe. La parade est un message clair, pas un algorithme plus malin.
-- **Fixer une carte à des coordonnées précises.** Permettre d'imposer qu'une carte
-  donnée occupe une case donnée de la grille. À rapprocher du mécanisme de cases vides
-  figées de la v1 : c'est le même verrouillage de position. Le verrouillage se fait
-  **carte par carte**, jamais par groupe, et une carte appartenant à un lien ne
-  peut pas être figée.
-- **Traitement de la marge automatique.** La v1 centre l'image et laisse une bordure
-  neutre pour absorber l'écart de 2,47 % entre grille et feuille. Laisser ensuite
-  l'utilisateur décider quoi en faire : couleur au choix, ou autre traitement.
+- **Fixer une carte à des coordonnées précises.** Imposer qu'une carte occupe
+  une case donnée de la grille. À rapprocher des cases vides, qui sont déjà un
+  verrouillage de position. Le verrouillage se fait **carte par carte**, jamais
+  par groupe, et une carte appartenant à un lien ne peut pas être figée.
 
 ## Idées d'origine
 
@@ -112,29 +103,39 @@ seule provenance. Voir `docs/IMAGES.md`.
 ## Limitations connues à corriger
 
 - **Grille dépendante de la factorisation.** `calculate_grid_dims` cherche les deux
-  facteurs les plus proches, donc 281 cartes (nombre premier) donneraient une bande
-  281×1. Ne concerne plus que la **CLI sans `--grid`** : l'interface impose toujours
-  une forme et répartit les cases vides excédentaires.
-- ✅ **Noms de fichiers non normalisés**, réglé le 2026-08-24. Les noms sont
-  désormais produits par `artwork.slug()`, qui retire les accents : plus de
-  `mustébouée` ni de `mew 13.27.50.png`, donc plus de sensibilité à la
-  normalisation Unicode dans les liens décrits par fragment de chemin.
+  facteurs les plus proches, donc un nombre premier de cartes donnerait une bande
+  d'une seule ligne. Ne concerne plus que la **CLI sans `--grid`** : l'interface
+  impose toujours une forme et répartit les cases vides excédentaires.
 
 ## Pistes d'amélioration
 
 - **Vectoriser le recalcul des signatures.** `CardSet.recalculate_features` boucle
-  sur les 280 cartes et coûte 71 à 148 ms selon l'épaisseur, ce qui se sent quand on
-  fait glisser le curseur de l'étape 3. Empiler les vignettes en un seul tableau
-  permettrait de calculer toutes les moyennes d'un coup. Différer le calcul serait
-  au contraire dangereux : les signatures doivent rester cohérentes avec le réglage
-  affiché, sous peine de retrouver le défaut des signatures hétérogènes.
+  sur les cartes une par une : mesuré à 71 à 148 ms sur 280 cartes selon
+  l'épaisseur, davantage sur les 441 d'aujourd'hui, ce qui se sent quand on fait
+  glisser le réglage d'épaisseur des bandes. Empiler les vignettes en un seul
+  tableau permettrait de calculer toutes les moyennes d'un coup. Différer le
+  calcul serait au contraire dangereux : les signatures doivent rester
+  cohérentes avec le réglage affiché, sous peine de retrouver le défaut des
+  signatures hétérogènes.
 
-## Retiré de cette liste : vérifié le 2026-08-20
+## Fait, retiré de cette liste
 
 Gardé en trace pour ne pas rouvrir ces sujets sans raison.
 
-- **Recuit simulé.** Fait : `annealing.py`, exposé en réglage avancé, 67,5 % de gain
-  à 1 M d'itérations contre 61 % pour la descente stricte.
+- **Marges et espacement entre cartes** (reporté le 2026-08-16) : fait. L'écart
+  entre cartes, la largeur de carte imposée ou automatique, le centrage et le
+  déplacement de chaque morceau sur sa feuille se règlent à l'étape 2 et à
+  l'export.
+- **Les liens deviennent des rectangles pleins, 3×3 au maximum** (tranché le
+  2026-08-27) : fait, éditeur de grille compris. La lignée d'Arcko et les paires
+  Solgaleo/Lunala et Entei/Raikou sont fournies d'office.
+- **Traitement de la marge automatique** : fait. Couleur du fond au choix,
+  pourtour caméléon, centrage et déplacement de chaque morceau.
+- **Noms de fichiers non normalisés**, réglé le 2026-08-24 par `artwork.slug()`.
+- **Aucun test ne tourne sans fin** (2026-09-18) : délai de 60 s par test et de
+  10 min par lot, voir `CLAUDE.md`.
+- **Recuit simulé** (vérifié le 2026-08-20) : `annealing.py`, exposé en réglage
+  avancé, 67,5 % de gain à 1 M d'itérations contre 61 % pour la descente stricte.
 - **Désynchronisation d'indices.** `original_index` n'existe plus. L'invariant
   « `card.index` = position dans la liste » est tenu par `select_cards()`, et
   `EdgeDistances` refuse une numérotation discontinue.
