@@ -23,10 +23,6 @@ Aucun : les trois derniers ont été faits le 2026-09-20.
 ## Idées d'origine
 
 - **Forcer un placement directionnel** (imposer un sens droite-à-gauche, par exemple).
-- **Revoir la métrique de bord.** Aujourd'hui une bande entière est réduite à une
-  seule moyenne, soit 3 nombres : deux bords très différents mais de moyennes
-  identiques semblent donc parfaitement compatibles. Piste : découper chaque bord en
-  plusieurs sous-bandes avec recouvrement, et sommer les distances.
 
 ## Stockage des cartes : tranché le 2026-08-22, provenance refondue le 2026-08-27
 
@@ -122,6 +118,9 @@ Gardé en trace pour ne pas rouvrir ces sujets sans raison.
   10 min par lot, voir `CLAUDE.md`.
 - **La fenêtre s'élargissait après un multi-lancement** (2026-09-20) : elle
   s'ouvre à 1440 pixels de large, rognés à l'écran, au lieu de 1100.
+- **Revoir la métrique de bord** (2026-09-20) : faite, et débrayable. La case
+  « Métrique améliorée » des paramètres avancés mesure chaque bande en dix
+  parties recouvertes de moitié, comparées une à une. Décochée par défaut.
 - **Les déplacements de feuilles entre deux formes** (2026-09-20) : tranché,
   ils valent pour la forme courante et une autre forme les borne à sa place
   libre, comme l'export. Pour une autre forme, on redéplace.
