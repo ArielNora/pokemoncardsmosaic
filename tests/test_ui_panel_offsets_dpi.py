@@ -5,6 +5,10 @@ zéro à tout changement, la finesse comprise. Taper une finesse, ou basculer
 « Images d'origine » à l'export, ramenait sans un mot chaque feuille à sa place
 par défaut, alors que la place libre en millimètres n'avait bougé que de
 quelques centièmes.
+
+La fin du fichier garde l'autre règle des déplacements : ils valent pour la
+forme où ils ont été faits, et une autre forme, celle d'un agencement gardé,
+les borne à la place libre de ses feuilles, comme l'export le fait en écrivant.
 """
 
 import numpy as np
@@ -87,3 +91,33 @@ def test_the_export_resolution_section_keeps_the_moved_sheets(session):
     resolution._dpi.setValue(resolution._dpi.value() - 20)
 
     assert s.panel_offsets == avant
+
+
+# --- Une autre forme borne les déplacements --------------------------------
+
+
+def test_another_shape_clamps_the_moved_sheet(session):
+    """L'aperçu d'un agencement d'une autre forme montrait un morceau dehors.
+
+    Les déplacements valent pour la forme courante. Exporté sur une forme plus
+    chargée, le même déplacement dépasse la place libre : l'aperçu le montrait
+    à 340 mm quand l'export, qui borne en écrivant, l'aurait ramené à 180.
+    """
+    s, _ = session
+    s.set_layout(cols=4, rows=3, panels=2, panel_rows=1, card_width_mm=20.0)
+    s.move_panel(0, 9999.0, 9999.0)
+    autre = (5, 12)
+    libre = s.panel_free_mm(0, autre)
+    assert libre[0] < s.panel_free_mm(0)[0], "la forme choisie doit serrer"
+
+    pose = s.panel_position_mm(0, autre)
+
+    assert pose == pytest.approx(libre)
+
+
+def test_the_moved_sheet_is_untouched_on_its_own_shape(session):
+    """Borner ne doit pas déplacer ce qui tient déjà dans sa feuille."""
+    s, _ = session
+    s.move_panel(0, 0.0, 12.0)
+
+    assert s.panel_position_mm(0) == s.panel_offsets[0]

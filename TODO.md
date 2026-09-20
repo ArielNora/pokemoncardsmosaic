@@ -5,14 +5,11 @@ qui vient **après**, et les points encore ouverts.
 
 Revu le 2026-09-18 : trois entrées faites depuis leur écriture ont été retirées
 (marges et espacement, liens en rectangles, marge automatique), voir « Fait,
-retiré de cette liste » en bas. Revu le 2026-09-20 : la fenêtre qui s'élargit est faite.
+retiré de cette liste » en bas. Revu le 2026-09-20 : deux restes récents faits
+(la fenêtre qui s'élargit, les déplacements de feuilles entre deux formes).
 
 ## Restes récents, petits
 
-- **Les déplacements de feuilles ne sont pas rebornés entre deux formes.** L'étape
-  2 et l'export partagent `panel_offsets`. Quand l'agencement exporté n'a pas la
-  forme de l'étape 2, un déplacement peut dépasser la place libre dans l'aperçu ;
-  l'export, lui, le borne en écrivant (`clamp_offset_mm`).
 - **`WireframeView` n'est plus utilisée par l'application** (audit du
   2026-09-18). Seules ses trois fonctions de dessin servent à `page_preview.py`.
   Une dizaine de tests de `tests/test_ui_layout.py` la font encore tourner, et
@@ -130,6 +127,9 @@ Gardé en trace pour ne pas rouvrir ces sujets sans raison.
   10 min par lot, voir `CLAUDE.md`.
 - **La fenêtre s'élargissait après un multi-lancement** (2026-09-20) : elle
   s'ouvre à 1440 pixels de large, rognés à l'écran, au lieu de 1100.
+- **Les déplacements de feuilles entre deux formes** (2026-09-20) : tranché,
+  ils valent pour la forme courante et une autre forme les borne à sa place
+  libre, comme l'export. Pour une autre forme, on redéplace.
 - **Recuit simulé** (vérifié le 2026-08-20) : `annealing.py`, exposé en réglage
   avancé, 67,5 % de gain à 1 M d'itérations contre 61 % pour la descente stricte.
 - **Désynchronisation d'indices.** `original_index` n'existe plus. L'invariant

@@ -920,9 +920,19 @@ class Session(QObject):
 
     def panel_position_mm(self, index: int,
                           shape: tuple[int, int] | None = None) -> tuple[float, float]:
-        """Où ce bout de grille se trouve : déplacé s'il l'a été, défaut sinon."""
+        """Où ce bout de grille se trouve : déplacé s'il l'a été, défaut sinon.
+
+        ⚠️ **Le déplacement est borné à la forme demandée.** Les déplacements
+        valent pour la forme où ils ont été faits ; exporter un agencement
+        d'une autre forme les rejoue sur des feuilles plus ou moins chargées,
+        donc sur une autre place libre. L'aperçu montrait alors un bout de
+        grille poussé à 340 mm que l'export, qui borne en écrivant, ramenait à
+        180 (mesuré le 2026-09-20). Un aperçu qui ne calcule pas comme l'export
+        ment, et c'est lui qu'on regarde avant d'imprimer.
+        """
         if index in self.panel_offsets:
-            return self.panel_offsets[index]
+            return clamp_offset_mm(self.panel_offsets[index],
+                                   self.panel_free_mm(index, shape))
         return self.panel_default_mm(index, shape)
 
     def sheet_mm(self) -> tuple[float, float]:
