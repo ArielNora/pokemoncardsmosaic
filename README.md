@@ -326,7 +326,7 @@ Format d'impression (A0 à A6, portrait ou paysage), résolution, nombre de post
 côte à côte, dimensions de grille. La taille des cartes en pixels **s'en déduit** :
 le format commande.
 
-L'**aperçu fil de fer** montre la géométrie sans les images, feuille, marges,
+L'**aperçu des pages** montre la géométrie à l'échelle, feuille, marges,
 contours des cartes, lignes de coupe entre panneaux. Cliquer une case y place ou
 retire un vide. Le nombre de vides étant fixé par la grille et la sélection, poser un
 vide supplémentaire fait céder sa place au plus ancien.

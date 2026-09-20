@@ -18,7 +18,7 @@ from .. import chameleon
 from ..layout import MM_PER_INCH, REAL_CARD_MM, cards_on_panel
 from ..scoring import EMPTY
 from . import theme
-from .wireframe import (
+from .drawing import (
     CARD_EDGE,
     CARD_FILL,
     EMPTY_EDGE,

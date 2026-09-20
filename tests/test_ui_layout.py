@@ -1278,7 +1278,7 @@ def test_an_empty_cell_is_filled_red_not_merely_outlined(qt_app, session):
     la grille passait la centaine de cases."""
     from PySide6.QtGui import QColor
 
-    from pokemon_mosaic.ui.wireframe import CARD_FILL, EMPTY_FILL
+    from pokemon_mosaic.ui.drawing import CARD_FILL, EMPTY_FILL
 
     vide = QColor(EMPTY_FILL)
     assert vide.red() > vide.green() + 60 and vide.red() > vide.blue() + 60, \
@@ -1301,20 +1301,22 @@ def test_the_cut_stands_out_on_everything_it_crosses(qt_app):
     du texte, il passait en blanc sur une mosaïque bleu très clair. Les deux
     tons sont la convention des repères d'imprimerie, l'un des deux ressort
     quel que soit le fond, cases vides comprises."""
-    from pokemon_mosaic.ui.wireframe import (
+    from pokemon_mosaic.ui.drawing import (
         CARD_FILL,
         CUT_OVER,
         CUT_UNDER,
         EMPTY_FILL,
-        PAPER,
     )
+
+    # Le fond de la feuille, tel que l'aperçu le peint sans agencement.
+    papier = qt_app.palette().base().color()
 
     def ecart(a, b):
         return (abs(a.red() - b.red()) + abs(a.green() - b.green())
                 + abs(a.blue() - b.blue()))
 
     reference = ecart(EMPTY_FILL, CARD_FILL)
-    for fond in (CARD_FILL, EMPTY_FILL, PAPER):
+    for fond in (CARD_FILL, EMPTY_FILL, papier):
         lisible = max(ecart(fond, CUT_UNDER), ecart(fond, CUT_OVER))
         assert lisible > reference, f"la coupe se perd sur {fond.name()}"
 
@@ -1714,7 +1716,7 @@ def test_the_number_steps_aside_when_the_sheet_has_a_margin(session, ecran):
     dans ce qui reste plutôt que de couvrir une carte."""
     from PySide6.QtCore import QRectF
 
-    from pokemon_mosaic.ui.wireframe import badge_rect
+    from pokemon_mosaic.ui.drawing import badge_rect
 
     feuille = QRectF(0, 0, 300, 400)
     au_large = QRectF(0, 0, 300, 300)        # 100 px libres dessous

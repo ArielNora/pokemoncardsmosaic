@@ -5,18 +5,13 @@ qui vient **après**, et les points encore ouverts.
 
 Revu le 2026-09-18 : trois entrées faites depuis leur écriture ont été retirées
 (marges et espacement, liens en rectangles, marge automatique), voir « Fait,
-retiré de cette liste » en bas. Revu le 2026-09-20 : deux restes récents faits
-(la fenêtre qui s'élargit, les déplacements de feuilles entre deux formes).
+retiré de cette liste » en bas. Revu le 2026-09-20 : les trois restes récents
+sont faits (la fenêtre qui s'élargit, les déplacements de feuilles entre deux
+formes, le retrait du fil de fer).
 
 ## Restes récents, petits
 
-- **`WireframeView` n'est plus utilisée par l'application** (audit du
-  2026-09-18). Seules ses trois fonctions de dessin servent à `page_preview.py`.
-  Une dizaine de tests de `tests/test_ui_layout.py` la font encore tourner, et
-  défendent des règles qui valent pour l'aperçu réel : finesse d'impression,
-  colonnes qui repartent à chaque feuille, clic sur la bonne case, morceau
-  déplacé, case vide rouge. **D'abord porter ces tests vers `PagePreview`**, puis
-  retirer la classe et `_paper_mm`.
+Aucun : les trois derniers ont été faits le 2026-09-20.
 
 ## Reporté après la v1 de l'application
 
@@ -130,6 +125,9 @@ Gardé en trace pour ne pas rouvrir ces sujets sans raison.
 - **Les déplacements de feuilles entre deux formes** (2026-09-20) : tranché,
   ils valent pour la forme courante et une autre forme les borne à sa place
   libre, comme l'export. Pour une autre forme, on redéplace.
+- **`WireframeView` retirée** (2026-09-20) : ses tests sont passés sur
+  `PagePreview`, l'aperçu que l'application montre vraiment, et le module ne
+  garde que les pièces de dessin communes, renommé `ui/drawing.py`.
 - **Recuit simulé** (vérifié le 2026-08-20) : `annealing.py`, exposé en réglage
   avancé, 67,5 % de gain à 1 M d'itérations contre 61 % pour la descente stricte.
 - **Désynchronisation d'indices.** `original_index` n'existe plus. L'invariant
