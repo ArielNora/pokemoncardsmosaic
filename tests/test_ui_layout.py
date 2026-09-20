@@ -125,53 +125,49 @@ def test_setting_the_same_values_emits_nothing(session):
     assert seen == []
 
 
-# --- Le fil de fer ----------------------------------------------------------
+# --- L'aperçu des pages -----------------------------------------------------
 
-def test_wireframe_maps_clicks_to_cells(qt_app, session):
-    from pokemon_mosaic.ui.wireframe import WireframeView
+def vue_de_page(session, taille=(700, 460)):
+    """L'aperçu réel, dessiné une fois pour que sa géométrie existe.
 
-    session.set_layout(cols=4, rows=5)
-    vue = WireframeView(session)
-    vue.resize(400, 500)
+    Il a remplacé le fil de fer, qui montrait la même mise en page sans les
+    images : ce sont donc ses cases que l'on mesure et que l'on clique.
+    """
+    from pokemon_mosaic.ui.page_preview import PagePreview
+
+    vue = PagePreview(session)
+    vue.set_show_grid(True)
+    vue.resize(*taille)
     vue.grab()                               # force le calcul de géométrie
-
-    scale, _, _, (card_w, card_h) = vue._geometry
-    gx, gy = vue._grid_origin(vue._geometry)
-    assert vue.cell_at(gx + card_w * scale * 1.5,
-                       gy + card_h * scale * 2.5) == (2, 1)
-    assert vue.cell_at(gx - 10, gy - 10) is None
+    return vue
 
 
-def test_the_wireframe_draws_an_undivisible_grid_all_the_same(qt_app, session):
+def cases_de(vue):
+    """Les cases dessinées, rangées par (ligne, colonne)."""
+    feuille = vue.rects()[0]
+    return {(row, col): rect for row, col, rect in vue.grid_cells(feuille)}
+
+
+def test_the_page_preview_maps_clicks_to_cells(qt_app, session):
+    session.set_layout(cols=4, rows=5)
+    vue = vue_de_page(session)
+
+    cases = cases_de(vue)
+    centre = cases[(2, 1)].center()
+    assert vue.cell_at(centre.x(), centre.y()) == (2, 1)
+    feuille = vue.rects()[0]
+    assert vue.cell_at(feuille.left() - 10, feuille.top() - 10) is None
+
+
+def test_the_page_preview_draws_an_undivisible_grid_all_the_same(qt_app, session):
     """⚠️ Il refusait de dessiner quand les colonnes ne se divisaient pas en
     feuilles. Plusieurs feuilles ne sont qu'une façon d'avoir plus de place :
     la coupe tombe où elle tombe."""
-    from pokemon_mosaic.ui.wireframe import WireframeView
-
     session.set_layout(cols=5, rows=4, panels=2)
-    vue = WireframeView(session)
-    vue.resize(400, 500)
-    vue.grab()
-    assert vue._geometry is not None
+    vue = vue_de_page(session)
 
-
-def test_the_paperless_wireframe_ignores_the_panels(qt_app, session):
-    """Le découpage ne concerne que la feuille : sans elle, une grille non
-    divisible reste parfaitement dessinable."""
-    from pokemon_mosaic.ui.wireframe import WireframeView
-
-    session.set_layout(cols=5, rows=4, panels=2)
-    vue = WireframeView(session, show_paper=False)
-    vue.resize(400, 500)
-    vue.grab()
-    assert vue._geometry is not None
-    assert vue.cell_at(*_centre_de_case(vue, 0, 0)) == (0, 0)
-
-
-def _centre_de_case(vue, row, col):
-    scale, _, _, (card_w, card_h) = vue._geometry
-    gx, gy = vue._grid_origin(vue._geometry)
-    return (gx + card_w * scale * (col + 0.5), gy + card_h * scale * (row + 0.5))
+    assert vue.rects() is not None
+    assert len(cases_de(vue)) == 20
 
 
 # --- Les onglets ------------------------------------------------------------
@@ -1282,7 +1278,7 @@ def test_an_empty_cell_is_filled_red_not_merely_outlined(qt_app, session):
     la grille passait la centaine de cases."""
     from PySide6.QtGui import QColor
 
-    from pokemon_mosaic.ui.wireframe import CARD_FILL, EMPTY_FILL, WireframeView
+    from pokemon_mosaic.ui.wireframe import CARD_FILL, EMPTY_FILL
 
     vide = QColor(EMPTY_FILL)
     assert vide.red() > vide.green() + 60 and vide.red() > vide.blue() + 60, \
@@ -1291,16 +1287,13 @@ def test_an_empty_cell_is_filled_red_not_merely_outlined(qt_app, session):
 
     session.set_layout(cols=4, rows=6)
     session.toggle_empty_cell(0, 0)
-    vue = WireframeView(session, show_paper=False)
-    vue.resize(400, 500)
+    vue = vue_de_page(session)
     image = vue.grab().toImage()
 
-    scale, _, _, (card_w, card_h) = vue._geometry
-    gx, gy = vue._grid_origin(vue._geometry)
-    centre = QColor(image.pixel(int(gx + card_w * scale * 0.5),
-                                int(gy + card_h * scale * 0.5)))
-    assert centre.red() > centre.green() + 40, \
-        f"le centre de la case vide n'est pas rouge : {centre.name()}"
+    centre = cases_de(vue)[(0, 0)].center()
+    peint = QColor(image.pixel(int(centre.x()), int(centre.y())))
+    assert peint.red() > peint.green() + 40, \
+        f"le centre de la case vide n'est pas rouge : {peint.name()}"
 
 
 def test_the_cut_stands_out_on_everything_it_crosses(qt_app):
@@ -1790,138 +1783,187 @@ def test_the_screen_and_the_export_place_each_piece_at_the_same_spot(
                     attendu[1], abs=0.2), cas
 
 
-def test_the_previews_use_the_printing_resolution(qt_app, session):
+def test_the_page_preview_uses_the_printing_resolution(qt_app, session):
     """⚠️ Le dessin tournait à 72 dpi et l'export à celle des réglages : les
     arrondis en pixels ne donnaient pas le même nombre de cartes par feuille,
-    49 161 combinaisons en désaccord sur les sept formats."""
+    49 161 combinaisons en désaccord sur les sept formats. On compare donc la
+    carte **dessinée** à celle que l'export écrirait, en millimètres."""
+    import numpy as np
+
     from pokemon_mosaic.export import PosterSettings, plan_poster
-    from pokemon_mosaic.ui.wireframe import WireframeView
+    from pokemon_mosaic.layout import MM_PER_INCH
 
     session.set_layout(paper="A6", cols=1, rows=14, panels=1, dpi=300)
-    vue = WireframeView(session)
-    vue.resize(400, 500)
-    vue.grab()
-
-    import numpy as np
+    vue = vue_de_page(session)
 
     grille = np.zeros((session.rows, session.cols), np.int16)
     plan = plan_poster(grille, session.card_set,
                        PosterSettings(paper=session.paper, dpi=session.dpi,
                                       panels=session.panels))
-    assert vue._per_panel == plan.cards_per_panel
+    feuille = vue.rects()[0]
+    case = cases_de(vue)[(0, 0)]
+    vers_mm = session.sheet_mm()[0] / feuille.width()
+    assert case.width() * vers_mm == pytest.approx(
+        plan.card_px[0] / session.dpi * MM_PER_INCH, abs=0.2)
+    assert case.height() * vers_mm == pytest.approx(
+        plan.card_px[1] / session.dpi * MM_PER_INCH, abs=0.2)
+    assert session.panel_geometry().per_panel == plan.cards_per_panel
 
 
 def test_the_drawn_columns_restart_on_each_sheet(qt_app, session):
     """⚠️ L'export fait repartir chaque feuille de son bord ; le dessin posait
     les colonnes à la file. Il montrait donc une carte à cheval sur la coupe là
-    où le poster n'en a pas."""
-    from pokemon_mosaic.ui.wireframe import WireframeView
+    où le poster n'en a pas.
 
-    session.set_layout(paper="A4", cols=30, rows=4, panels=2, dpi=300)
-    vue = WireframeView(session)
-    vue.resize(600, 400)
-    vue.grab()
+    ⚠️ **Largeur de carte imposée.** En taille automatique, les cartes
+    remplissent la feuille à un dixième de millimètre près : poser les colonnes
+    à la file ou les faire repartir de chaque bord donne alors le même dessin à
+    moins d'un pixel, et le test ne mord pas. Avec 20 mm de large, il reste
+    10 mm de libre par feuille, et les deux calculs se séparent nettement.
+    """
+    session.set_layout(paper="A4", cols=20, rows=4, panels=2, dpi=300,
+                       card_width_mm=20.0)
+    vue = vue_de_page(session, (600, 400))
 
-    geometrie = vue._geometry
-    _, _, (total_w, _), (card_w, _) = geometrie
-    feuille_w = total_w / 2
-    par_feuille = vue._per_panel
+    feuille = vue.rects()[0]
+    cases = cases_de(vue)
+    coupe = feuille.left() + feuille.width() / 2
+    par_feuille = session.panel_geometry().per_panel
+    assert 1 <= par_feuille < session.cols, "les colonnes se répartissent"
 
     # La première colonne de la seconde feuille tombe pile sur son bord.
-    assert vue.cell_origin(0, par_feuille, geometrie)[0] == pytest.approx(
-        feuille_w)
-    # Et aucune colonne ne chevauche la coupe.
+    assert cases[(0, par_feuille)].left() == pytest.approx(coupe, abs=2.0)
+    # Et aucune colonne ne chevauche la coupe. Un pixel de tolérance de chaque
+    # côté : une carte qui s'arrête juste avant le trait, à un demi-pixel près,
+    # n'est pas à cheval dessus.
     for col in range(session.cols):
-        gauche = vue.cell_origin(0, col, geometrie)[0]
-        assert not (gauche < feuille_w < gauche + card_w), col
+        rect = cases[(0, col)]
+        assert not (rect.left() + 1.0 < coupe < rect.right() - 1.0), col
+
+
+def test_the_drawn_cells_land_where_the_export_writes_them(qt_app, session):
+    """⚠️ **La leçon déjà payée trois fois** : l'aperçu doit poser chaque carte
+    là où l'export l'écrira, feuille par feuille et ligne de feuilles comprise.
+
+    Les tests de clic ne peuvent pas le dire : le clic relit la géométrie du
+    dessin, donc un dessin faux mais cohérent leur échappe. On compare donc
+    chaque case dessinée au plan de l'export, avec une feuille déplacée à la
+    main pour que le déplacement compte aussi.
+    """
+    import numpy as np
+
+    from pokemon_mosaic.export import PosterSettings, plan_poster
+    from pokemon_mosaic.layout import MM_PER_INCH
+
+    # 20 lignes sur deux lignes de feuilles : il en tient dix par feuille, donc
+    # les lignes se coupent vraiment en deux, sans quoi le test ne dirait rien
+    # du redémarrage d'une ligne de feuilles.
+    session.set_layout(paper="A4", cols=20, rows=20, panels=2, panel_rows=2,
+                       dpi=300, card_width_mm=20.0)
+    assert session.panel_geometry().rows_per_panel < session.rows
+    session.move_panel(1, 5.0, 3.0)
+    vue = vue_de_page(session, (600, 500))
+
+    plan = plan_poster(
+        np.zeros((session.rows, session.cols), np.int16), session.card_set,
+        PosterSettings(paper=session.paper, paper_size_mm=session.paper_size_mm,
+                       landscape=session.landscape, dpi=session.dpi,
+                       panels=session.panels, panel_rows=session.panel_rows,
+                       card_width_mm=session.card_width_mm,
+                       card_gap_mm=session.card_gap_mm,
+                       panel_offsets=dict(session.panel_offsets)))
+    feuille = vue.rects()[0]
+    surface = session.sheet_mm()
+    en_mm = MM_PER_INCH / session.dpi
+    vers_x = surface[0] / feuille.width()
+    vers_y = surface[1] / feuille.height()
+
+    for (row, col), rect in cases_de(vue).items():
+        x, y = plan.card_origin(row, col)
+        assert (rect.left() - feuille.left()) * vers_x == pytest.approx(
+            x * en_mm, abs=0.5), (row, col)
+        assert (rect.top() - feuille.top()) * vers_y == pytest.approx(
+            y * en_mm, abs=0.5), (row, col)
 
 
 def test_clicks_still_land_on_the_right_cell_across_sheets(qt_app, session):
     """Les colonnes n'étant plus à pas constant, le clic ne peut plus se déduire
-    d'une division."""
-    from pokemon_mosaic.ui.wireframe import WireframeView
+    d'une division. Largeur de carte imposée pour la même raison que le test
+    précédent : à la file ou par feuille, il faut que ce ne soit pas le même
+    dessin."""
+    session.set_layout(paper="A4", cols=20, rows=4, panels=2, dpi=300,
+                       card_width_mm=20.0)
+    vue = vue_de_page(session, (600, 400))
 
-    session.set_layout(paper="A4", cols=30, rows=4, panels=2, dpi=300)
-    vue = WireframeView(session)
-    vue.resize(600, 400)
-    vue.grab()
-
-    scale, _, _, (card_w, card_h) = vue._geometry
-    gx, gy = vue._grid_origin(vue._geometry)
-    for col in (0, vue._per_panel - 1, vue._per_panel, session.cols - 1):
-        origine = vue.cell_origin(1, col, vue._geometry)
-        x = gx + (origine[0] + card_w / 2) * scale
-        y = gy + (origine[1] + card_h / 2) * scale
-        assert vue.cell_at(x, y) == (1, col), col
+    cases = cases_de(vue)
+    par_feuille = session.panel_geometry().per_panel
+    for col in (0, par_feuille - 1, par_feuille, session.cols - 1):
+        centre = cases[(1, col)].center()
+        assert vue.cell_at(centre.x(), centre.y()) == (1, col), col
 
 
-def test_the_wireframe_follows_a_moved_piece(qt_app, session):
+def test_the_page_preview_follows_a_moved_piece(qt_app, session):
     """⚠️ **Le fil de fer ignorait les déplacements.** Après avoir tiré un
     morceau, la vue d'exécution montrait la mosaïque à sa place d'origine et
     l'imprimante l'écrivait ailleurs : l'aperçu qui ment, une quatrième fois."""
-    from pokemon_mosaic.ui.wireframe import WireframeView
-
     session.set_layout(paper="A4", cols=5, rows=4, panels=2, dpi=300)
-    vue = WireframeView(session)
-    vue.resize(600, 400)
-    vue.grab()
-    par_feuille = vue._per_panel
-    avant = vue.cell_origin(0, par_feuille, vue._geometry)
+    vue = vue_de_page(session, (600, 400))
+    par_feuille = session.panel_geometry().per_panel
+    feuille = vue.rects()[0]
+    vers_mm = session.sheet_mm()[0] / feuille.width()
+    avant = cases_de(vue)[(0, par_feuille)]
 
     session.move_panel(1, 40.0, 0.0)
     vue.grab()
-    apres = vue.cell_origin(0, par_feuille, vue._geometry)
-    assert apres[0] - avant[0] == pytest.approx(40.0, abs=0.5)
+    apres = cases_de(vue)[(0, par_feuille)]
+    assert (apres.left() - avant.left()) * vers_mm == pytest.approx(
+        40.0, abs=0.5)
 
     # Et le clic suit le dessin, sans quoi on creuserait une autre case.
-    scale, _, _, (card_w, card_h) = vue._geometry
-    gx, gy = vue._grid_origin(vue._geometry)
-    x = gx + (apres[0] + card_w / 2) * scale
-    y = gy + (apres[1] + card_h / 2) * scale
-    assert vue.cell_at(x, y) == (0, par_feuille)
+    centre = apres.center()
+    assert vue.cell_at(centre.x(), centre.y()) == (0, par_feuille)
 
 
-def test_the_wireframe_reads_each_piece_once_per_paint(qt_app, session):
+def test_the_page_preview_reads_each_piece_once_per_paint(qt_app, session):
     """⚠️ Le lire case par case coûtait une géométrie de grille **complète par
     case** : mesuré, 1,07 s pour dessiner une grille de 200×200 et autant pour
-    y placer un clic. On relève les places une fois par calcul de géométrie."""
-    from pokemon_mosaic.ui.wireframe import WireframeView
+    y placer un clic. Les places se relèvent **par feuille**, jamais par case.
 
-    session.set_layout(paper="A4", cols=12, rows=12, panels=2, dpi=300)
-    vue = WireframeView(session)
-    vue.resize(600, 400)
+    Trois relevés au plus par feuille : les cases dessinées, le numéro de
+    chaque feuille, et les cases relues pour placer le clic.
+    """
+    session.set_layout(paper="A4", cols=30, rows=40, panels=2, dpi=300)
+    vue = vue_de_page(session, (600, 400))
 
     appels = []
     vrai = session.panel_position_mm
-    session.panel_position_mm = lambda index: appels.append(index) or vrai(index)
+    session.panel_position_mm = (
+        lambda index, forme=None: appels.append(index) or vrai(index, forme))
     vue.grab()
-    vue.cell_at(300, 200)
+    centre = vue.rects()[0].center()
+    vue.cell_at(centre.x(), centre.y())
     session.panel_position_mm = vrai
 
-    assert len(appels) <= session.panel_count(), (
-        f"{len(appels)} lectures pour {session.panel_count()} feuilles")
+    assert len(appels) <= 3 * session.panel_count(), (
+        f"{len(appels)} lectures pour {session.panel_count()} feuilles et "
+        f"{session.cols * session.rows} cases")
 
 
 def test_clicks_land_right_across_sheet_rows_too(qt_app, session):
     """⚠️ Les lignes ne sont pas plus à pas constant que les colonnes depuis
-    qu'une ligne de feuilles repart de son bord haut."""
-    from pokemon_mosaic.ui.wireframe import WireframeView
-
+    qu'une ligne de feuilles repart de son bord haut. Hauteur de carte imposée,
+    par la largeur : en taille automatique les cartes remplissent la feuille et
+    le pas constant se confond avec le redémarrage."""
     session.set_layout(paper="A4", cols=4, rows=20, panels=1, panel_rows=2,
-                       dpi=300)
-    vue = WireframeView(session)
-    vue.resize(600, 500)
-    vue.grab()
+                       dpi=300, card_width_mm=20.0)
+    vue = vue_de_page(session, (600, 500))
 
-    scale, _, _, (card_w, card_h) = vue._geometry
-    gx, gy = vue._grid_origin(vue._geometry)
-    par_feuille = vue._rows_per_panel
+    cases = cases_de(vue)
+    par_feuille = session.panel_geometry().rows_per_panel
     assert 1 <= par_feuille < session.rows, "les lignes se répartissent"
     for row in (0, par_feuille - 1, par_feuille, session.rows - 1):
-        origine = vue.cell_origin(row, 1, vue._geometry)
-        x = gx + (origine[0] + card_w / 2) * scale
-        y = gy + (origine[1] + card_h / 2) * scale
-        assert vue.cell_at(x, y) == (row, 1), row
+        centre = cases[(row, 1)].center()
+        assert vue.cell_at(centre.x(), centre.y()) == (row, 1), row
 
 
 # --- L'onglet de la taille des cartes ---------------------------------------
