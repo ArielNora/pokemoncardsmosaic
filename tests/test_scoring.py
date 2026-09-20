@@ -169,3 +169,140 @@ def test_a_homogeneous_collection_reports_nothing(tmp_path):
     assert cards.full_size == (60, 80)
     assert cards.odd_sizes == []
     assert not cards.has_warnings
+
+
+# --- La métrique améliorée : dix parties recouvrantes par bord --------------
+
+
+def carte_en_deux(index, un, deux, sens="hauteur", taille=(40, 20)):
+    """Une vignette coupée en deux couleurs, dans sa hauteur ou dans sa largeur.
+
+    Coupée en hauteur, ses bords **gauche et droit** varient du haut vers le
+    bas ; coupée en largeur, ce sont ses bords **haut et bas** qui varient de
+    gauche à droite. Les deux sens se testent : ils ne se découpent pas sur le
+    même axe de la vignette.
+    """
+    hauteur, largeur = taille
+    image = np.zeros((hauteur, largeur, 3), np.uint8)
+    if sens == "hauteur":
+        image[: hauteur // 2], image[hauteur // 2 :] = un, deux
+    else:
+        image[:, : largeur // 2], image[:, largeur // 2 :] = un, deux
+    return Card(path=f"/fake/{index}.webp", index=index, thumbnail=image)
+
+
+def test_the_parts_overlap_by_half_and_cover_the_whole_edge():
+    """Chaque partie commence au milieu de la précédente.
+
+    Celles du bout ne sont donc recouvertes que d'un côté, les autres des deux,
+    et les dix parties couvrent le bord entier sans trou.
+    """
+    from pokemon_mosaic.cards import edge_windows
+
+    bornes = edge_windows(100, 10)
+
+    assert len(bornes) == 10
+    assert bornes[0][0] == 0 and bornes[-1][1] == 100
+    pas = 100 / 11
+    for rang, (debut, fin) in enumerate(bornes):
+        assert fin - debut == pytest.approx(2 * pas, abs=1.0), rang
+        if rang:
+            avant_debut, avant_fin = bornes[rang - 1]
+            # Le recouvrement avec la précédente vaut la moitié d'une partie.
+            assert avant_fin - debut == pytest.approx(pas, abs=1.0), rang
+            assert debut - avant_debut == pytest.approx(pas, abs=1.0), rang
+    # Aucun trou : la fin de chaque partie dépasse le début de la suivante.
+    assert all(bornes[i][1] >= bornes[i + 1][0] for i in range(9))
+
+
+def test_two_opposite_edges_stop_passing_for_a_perfect_match():
+    """⚠️ **Le défaut que la métrique améliorée corrige.**
+
+    Un bord rouge en haut et bleu en bas a la même moyenne qu'un bord bleu en
+    haut et rouge en bas : la métrique d'origine les déclare identiques, score
+    nul, alors que la couture saute aux yeux.
+    """
+    from pokemon_mosaic.cards import EDGE_PARTS
+
+    # Les bords gauche et droit se lisent dans la hauteur, les bords haut et
+    # bas dans la largeur : le piège se tend dans les deux sens.
+    debout = [carte_en_deux(0, (200, 0, 0), (0, 0, 200)),
+              carte_en_deux(1, (0, 0, 200), (200, 0, 0))]
+    couche = [carte_en_deux(0, (200, 0, 0), (0, 0, 200), "largeur"),
+              carte_en_deux(1, (0, 0, 200), (200, 0, 0), "largeur")]
+
+    for cartes in (debout, couche):
+        for carte in cartes:
+            carte.calculate_features(0.5)
+    assert EdgeDistances(debout).lr[0, 1] == pytest.approx(0.0)
+    assert EdgeDistances(couche).tb[0, 1] == pytest.approx(0.0)
+
+    for cartes in (debout, couche):
+        for carte in cartes:
+            carte.calculate_features(0.5, EDGE_PARTS)
+    assert EdgeDistances(debout).lr[0, 1] > 200.0
+    assert EdgeDistances(couche).tb[0, 1] > 200.0
+
+
+def test_an_edge_still_matches_itself_part_by_part():
+    """Les parties se comparent dans l'ordre : deux bords identiques valent zéro.
+
+    Rangées à l'envers d'un côté, elles compareraient le haut d'une carte au bas
+    de sa voisine, et deux cartes jumelles ne se raccorderaient plus.
+    """
+    from pokemon_mosaic.cards import EDGE_PARTS
+
+    debout = [carte_en_deux(i, (200, 0, 0), (0, 0, 200)) for i in range(2)]
+    couche = [carte_en_deux(i, (200, 0, 0), (0, 0, 200), "largeur")
+              for i in range(2)]
+    for cartes in (debout, couche):
+        for carte in cartes:
+            carte.calculate_features(0.5, EDGE_PARTS)
+
+    # Deux cartes identiques : le bord droit de l'une vaut le bord gauche de
+    # l'autre, et son bord bas le bord haut de l'autre.
+    assert EdgeDistances(debout).lr[0, 1] == pytest.approx(0.0)
+    assert EdgeDistances(couche).tb[0, 1] == pytest.approx(0.0)
+
+
+def test_a_uniform_edge_keeps_the_score_on_the_same_scale():
+    """⚠️ **Moyenne des parties, pas somme.** Un score reste comparable.
+
+    Sur des bords unis, les dix parties disent toutes la même chose : le score
+    doit alors valoir celui de la métrique d'origine, et non dix fois plus.
+    """
+    from pokemon_mosaic.cards import EDGE_PARTS
+
+    cartes = [carte_en_deux(0, (10, 20, 30), (10, 20, 30)),
+              carte_en_deux(1, (60, 80, 90), (60, 80, 90))]
+
+    for carte in cartes:
+        carte.calculate_features(0.5)
+    simple = EdgeDistances(cartes).lr[0, 1]
+    for carte in cartes:
+        carte.calculate_features(0.5, EDGE_PARTS)
+
+    assert EdgeDistances(cartes).lr[0, 1] == pytest.approx(simple)
+
+
+def test_one_part_measures_exactly_what_it_always_did():
+    """La case décochée ne doit rien changer au calcul d'avant."""
+    cartes = [carte_en_deux(i, (3 * i, 200 - i, 40), (i, 90, 250 - 2 * i))
+              for i in range(6)]
+    for carte in cartes:
+        carte.calculate_features(0.2)
+
+    attendu = np.linalg.norm(cartes[0].right - cartes[1].left)
+    assert EdgeDistances(cartes).lr[0, 1] == attendu
+
+
+def test_mixing_two_cuttings_is_refused():
+    """Des signatures d'une partie et de dix donneraient des distances muettes."""
+    from pokemon_mosaic.cards import EDGE_PARTS
+
+    cartes = [carte_en_deux(i, (10, 10, 10), (90, 90, 90)) for i in range(2)]
+    cartes[0].calculate_features(0.5, EDGE_PARTS)
+    cartes[1].calculate_features(0.5)
+
+    with pytest.raises(ValueError, match="formes différentes"):
+        EdgeDistances(cartes)

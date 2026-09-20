@@ -16,13 +16,50 @@ EMPTY = -1
 
 
 def _pairwise_distances(a: np.ndarray, b: np.ndarray) -> np.ndarray:
-    """Distances euclidiennes entre toutes les lignes de `a` et toutes celles de `b`.
+    """Distances entre toutes les signatures de `a` et toutes celles de `b`.
 
-    Équivalent bit à bit à `scipy.spatial.distance.cdist(a, b, "euclidean")`, vérifié
-    sur les données du projet. Évite d'embarquer scipy (75 Mo) pour cette seule
-    fonction.
+    Une signature est `(3,)`, la moyenne d'une bande, ou `(parties, 3)` avec la
+    métrique améliorée. Dans ce second cas chaque partie est comparée **à celle
+    qui lui correspond** sur l'autre carte, et la distance du bord est la
+    moyenne des distances de ses parties : une seule partie qui jure suffit
+    alors à écarter deux bords que leurs moyennes d'ensemble rapprochaient.
+
+    ⚠️ **La moyenne, et non la somme.** Les deux donnent exactement la même
+    optimisation, à un facteur constant près, mais la moyenne garde les scores
+    à l'échelle de la métrique d'origine : un score de 2 000 reste un score de
+    2 000 quand on coche la case, et non 20 000.
+
+    Sur une seule partie, équivalent bit à bit à
+    `scipy.spatial.distance.cdist(a, b, "euclidean")`, vérifié sur les données
+    du projet. Évite d'embarquer scipy (75 Mo) pour cette seule fonction.
     """
-    return np.sqrt(((a[:, None, :] - b[None, :, :]) ** 2).sum(axis=-1))
+    if a.ndim == 2:                       # (N, 3) : une partie, la métrique d'origine
+        return np.sqrt(((a[:, None, :] - b[None, :, :]) ** 2).sum(axis=-1))
+    # ⚠️ **Partie par partie, et non d'un bloc.** Le tableau des écarts de
+    # toutes les parties pèserait 47 Mo pour 441 cartes ; en dix passes il en
+    # pèse 4,7, et le total qu'on accumule, 1,6.
+    total = np.zeros((a.shape[0], b.shape[0]), dtype=np.float64)
+    for partie in range(a.shape[1]):
+        ecart = a[:, None, partie, :] - b[None, :, partie, :]
+        total += np.sqrt((ecart ** 2).sum(axis=-1))
+    return total / a.shape[1]
+
+
+def _signatures(cards: Sequence[Card], name: str) -> np.ndarray:
+    """Les signatures d'un même bord, empilées, telles que les cartes les portent.
+
+    ⚠️ **Toutes les cartes doivent porter le même découpage.** Mélanger des
+    signatures d'une partie et de dix donnerait un tableau d'objets, et des
+    distances qui ne veulent rien dire : on le refuse ici, avec le nom du bord.
+    """
+    signatures = [getattr(card, name) for card in cards]
+    formes = {np.shape(signature) for signature in signatures}
+    if len(formes) > 1:
+        raise ValueError(
+            f"Signatures de bord « {name} » de formes différentes : "
+            f"{sorted(formes)}. Recalculez tout le jeu avec le même découpage."
+        )
+    return np.array(signatures, dtype=np.float64)
 
 
 class EdgeDistances:
@@ -30,6 +67,10 @@ class EdgeDistances:
 
     - `lr[i, j]` : bord droit de la carte `i` contre bord gauche de la carte `j`
     - `tb[i, j]` : bord bas de la carte `i` contre bord haut de la carte `j`
+
+    Le découpage des bords, d'une partie ou de dix, est celui que les cartes
+    portent : la table se construit après le calcul des signatures, et change
+    donc avec lui.
     """
 
     __slots__ = ("count", "lr", "tb")
@@ -47,10 +88,10 @@ class EdgeDistances:
                     f"CardSet.subset(), qui renumérote."
                 )
 
-        right = np.array([c.right for c in cards], dtype=np.float64)
-        left = np.array([c.left for c in cards], dtype=np.float64)
-        bottom = np.array([c.bottom for c in cards], dtype=np.float64)
-        top = np.array([c.top for c in cards], dtype=np.float64)
+        right = _signatures(cards, "right")
+        left = _signatures(cards, "left")
+        bottom = _signatures(cards, "bottom")
+        top = _signatures(cards, "top")
 
         self.lr = _pairwise_distances(right, left)
         self.tb = _pairwise_distances(bottom, top)
