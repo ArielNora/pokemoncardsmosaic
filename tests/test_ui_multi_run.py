@@ -807,3 +807,47 @@ def test_the_single_run_comes_back_after_the_multi_run(step, capture_multi_runs)
     widget._multi._on_finished_all(0)
 
     assert widget._start.isEnabled() and widget._multi._start.isEnabled()
+
+
+# --- La fenêtre ne s'élargit plus quand les groupes arrivent ----------------
+
+
+def test_the_window_opens_wide_enough_for_the_groups(qt_app, session, tmp_path,
+                                                     monkeypatch):
+    """Les groupes du multi-lancement élargissaient la fenêtre en cours de route.
+
+    Le minimum de la fenêtre passait de 1054 à 1434 pixels dès le premier groupe
+    affiché : elle part maintenant assez large pour l'absorber. Sans écran, les
+    mêmes mesures donnent 1003 et 1309, les polices n'étant pas les mêmes.
+    """
+    from PySide6.QtCore import QSettings
+
+    from pokemon_mosaic.ui.i18n import LanguageManager
+    from pokemon_mosaic.ui.main_window import START_SIZE, MainWindow
+
+    reglages = QSettings(str(tmp_path / "reglages.ini"), QSettings.IniFormat)
+    monkeypatch.setattr(MainWindow, "settings", staticmethod(lambda: reglages))
+    fenetre = MainWindow(LanguageManager(qt_app), session,
+                         presets_directory=str(tmp_path / "presets"))
+    fenetre._go(2)
+    onglet = fenetre._run_step._multi
+    fenetre._run_step._tabs.setCurrentWidget(onglet)
+    # Sans fenêtre affichée, les widgets cachés sortent du calcul de la taille
+    # minimale : elle vaudrait 1003 au lieu de 1309, et le test ne mordrait pas.
+    fenetre.show()
+
+    feed_tab(onglet, session, 2)
+
+    assert onglet.groups
+    qt_app.processEvents()
+    assert fenetre.minimumSizeHint().width() <= START_SIZE[0]
+
+
+def test_a_narrow_screen_keeps_the_window_inside(qt_app):
+    """Plus large que l'écran, la fenêtre s'ouvrirait avec ses bords dehors."""
+    from PySide6.QtCore import QRect
+
+    from pokemon_mosaic.ui.main_window import START_SIZE, start_size
+
+    assert start_size(QRect(0, 0, 3000, 2000)) == START_SIZE
+    assert start_size(QRect(0, 0, 1280, 700)) == (1280, 700)

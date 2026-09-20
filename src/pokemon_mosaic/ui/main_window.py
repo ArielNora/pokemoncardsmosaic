@@ -4,7 +4,7 @@ import os
 from pathlib import Path
 
 from PySide6.QtCore import QEvent, QSettings, QStandardPaths, Qt, QTimer
-from PySide6.QtGui import QFontMetrics
+from PySide6.QtGui import QFontMetrics, QGuiApplication
 from PySide6.QtWidgets import (
     QComboBox,
     QGraphicsDropShadowEffect,
@@ -37,6 +37,24 @@ from .tutorial_texts import TutorialTexts
 # L'aura et sa place viennent du thème : les lignes d'arrêt des paramètres en
 # posent une aussi, et deux réglages du même signal finiraient par diverger.
 GLOW_ROOM = theme.GLOW_ROOM
+
+# La taille de départ de la fenêtre. ⚠️ **La largeur est celle que réclame
+# l'onglet du multi-lancement une fois ses groupes affichés** (1434 mesuré le
+# 2026-09-20) : la liste des groupes vient à côté de l'image, et la fenêtre
+# partie à 1100 s'élargissait d'un coup au milieu du travail. Partir large
+# règle le sursaut sans rien serrer dans l'onglet.
+START_SIZE = (1440, 760)
+
+
+def start_size(place):
+    """La taille de départ, rognée à la place disponible sur l'écran.
+
+    Une fenêtre plus large que l'écran s'ouvre à cheval dehors, ses bords hors
+    d'atteinte : sur un écran étroit, mieux vaut une fenêtre qui tient et un
+    onglet de multi-lancement qui défile.
+    """
+    largeur, hauteur = START_SIZE
+    return min(largeur, place.width()), min(hauteur, place.height())
 
 
 class StatusLine(QLabel):
@@ -288,7 +306,11 @@ class MainWindow(QMainWindow):
         central.setLayout(layout)
         self.setCentralWidget(central)
 
-        self.resize(1100, 760)
+        ecran = self.screen() or QGuiApplication.primaryScreen()
+        if ecran is not None:
+            self.resize(*start_size(ecran.availableGeometry()))
+        else:
+            self.resize(*START_SIZE)
         self._update_navigation()
         self.retranslate_ui()
 
