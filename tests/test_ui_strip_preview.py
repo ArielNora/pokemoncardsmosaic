@@ -245,3 +245,88 @@ def test_the_shortage_message_goes_through_the_catalogue(qt_app):
 
     catalogue = Path("translations/pokemon_mosaic_en.ts").read_text()
     assert "pas assez de cartes" in catalogue
+
+
+# --- La métrique améliorée montrée sur les bandes ---------------------------
+
+
+def test_a_band_stays_whole_with_the_plain_metric(preview):
+    from PySide6.QtCore import QRectF
+
+    widget, _ = preview
+    bande = QRectF(10, 20, 200, 30)
+
+    assert widget.band_parts(bande, horizontale=True) == [bande]
+
+
+def test_the_band_shows_the_ten_parts_the_score_measures(preview):
+    """Le découpage montré est celui qui est mesuré, et son recouvrement se voit.
+
+    Les parties se recouvrent de moitié : posées l'une sur l'autre elles ne se
+    distingueraient pas, donc une sur deux occupe la moitié basse de la bande.
+    """
+    from PySide6.QtCore import QRectF
+
+    from pokemon_mosaic.cards import EDGE_PARTS, edge_windows
+
+    widget, session = preview
+    session.set_algorithm(fine_metric=True)
+    bande = QRectF(10, 20, 220, 30)
+
+    morceaux = widget.band_parts(bande, horizontale=True)
+
+    assert len(morceaux) == EDGE_PARTS
+    attendu = edge_windows(220, EDGE_PARTS)
+    for rang, (morceau, (debut, fin)) in enumerate(
+            zip(morceaux, attendu, strict=True)):
+        assert morceau.left() == pytest.approx(bande.left() + debut), rang
+        assert morceau.width() == pytest.approx(fin - debut), rang
+        # Une partie sur deux dans la moitié basse : c'est ce qui rend le
+        # recouvrement visible.
+        voulu = bande.top() + (rang % 2) * bande.height() / 2
+        assert morceau.top() == pytest.approx(voulu), rang
+        assert morceau.height() == pytest.approx(bande.height() / 2), rang
+    assert morceaux[0].left() == pytest.approx(bande.left())
+    assert morceaux[-1].right() == pytest.approx(bande.right())
+
+
+def test_a_vertical_band_is_cut_along_its_height(preview):
+    """Les bords gauche et droit se mesurent dans la hauteur, pas la largeur."""
+    from PySide6.QtCore import QRectF
+
+    from pokemon_mosaic.cards import EDGE_PARTS, edge_windows
+
+    widget, session = preview
+    session.set_algorithm(fine_metric=True)
+    bande = QRectF(10, 20, 30, 220)
+
+    morceaux = widget.band_parts(bande, horizontale=False)
+
+    attendu = edge_windows(220, EDGE_PARTS)
+    for rang, (morceau, (debut, fin)) in enumerate(
+            zip(morceaux, attendu, strict=True)):
+        assert morceau.top() == pytest.approx(bande.top() + debut), rang
+        assert morceau.height() == pytest.approx(fin - debut), rang
+        assert morceau.left() == pytest.approx(
+            bande.left() + (rang % 2) * bande.width() / 2), rang
+
+
+def test_toggling_the_fine_metric_rebuilds_the_sandbox(preview):
+    """La grille d'essai est réoptimisée : c'est là qu'on voit ce que ça change.
+
+    On vérifie l'invalidation et non l'image : deux optimisations peuvent
+    tomber sur le même agencement, et un test qui ne tient qu'à cette chance
+    vaudrait moins que pas de test.
+    """
+    from pokemon_mosaic.cards import EDGE_PARTS
+
+    widget, session = preview
+    widget.refresh()
+    assert not widget._dirty
+
+    session.set_algorithm(fine_metric=True)
+
+    assert widget._dirty, "la case n'a pas invalidé l'aperçu"
+    widget.refresh()
+    assert widget._sandbox is not None
+    assert EDGE_PARTS in widget._built_key

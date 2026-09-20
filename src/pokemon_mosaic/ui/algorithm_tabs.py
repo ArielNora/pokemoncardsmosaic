@@ -171,6 +171,16 @@ class AdvancedTab(LayoutTab):
         self._strip = BigFloatSpin(0.01, 0.50, step=0.05, decimals=2)
         self._strip.setFixedWidth(150)
         self._strip.value_changed.connect(self._on_form_changed)
+        # ⚠️ **Dans le panneau de la métrique, au-dessus de l'aperçu** : elle
+        # change ce que l'aperçu montre, et l'aperçu la suit aussitôt.
+        self._fine_metric = QCheckBox()
+        self._fine_metric.toggled.connect(self._on_form_changed)
+        # Ce que la case change, sous elle et dans le corps du paragraphe qui
+        # la précède : c'est la suite de son explication, pas un verdict de
+        # l'écran comme la ligne d'état, qui est écrite plus gros.
+        self._fine_note = QLabel()
+        self._fine_note.setWordWrap(True)
+        self._fine_note.setTextFormat(Qt.RichText)
         self._preview = StripPreview(self._session)
         self._preview.setMaximumHeight(PREVIEW_HEIGHT)
 
@@ -200,8 +210,8 @@ class AdvancedTab(LayoutTab):
         colonne.setSpacing(8)
         colonne.addWidget(self._notice)
         colonne.addWidget(self._section(
-            self._metric_title, self._metric_note, self._metric_box,
-            self._metric_status))
+            self._metric_title, self._metric_note, self._fine_metric,
+            self._fine_note, self._metric_box, self._metric_status))
         colonne.addWidget(self._section(
             self._saving_title,
             self._sentence("snapshot_every", self._snapshot_every)))
@@ -351,10 +361,20 @@ class AdvancedTab(LayoutTab):
             "point ces bandes se ressemblent. Tout le travail de l'algorithme "
             "est ensuite de déplacer les cartes pour obtenir le meilleur score "
             "d'ensemble."))
+        self._fine_metric.setText(self.tr(
+            "Métrique améliorée : mesurer chaque bande en dix parties"))
         self._metric_status.setText(self.tr(
             "À gauche, deux cartes voisines : la flèche relie les deux bandes "
             "que le score compare. À droite, une petite grille d'essai "
             "réoptimisée à cette épaisseur."))
+        self._fine_note.setText(self.tr(
+            "Une bande entière réduite à sa couleur moyenne ne dit rien de sa "
+            "répartition : un bord rouge en haut et bleu en bas a la même "
+            "moyenne que son inverse, et le score les déclare identiques. "
+            "Cochée, chaque bande est découpée en <b>dix parties</b> qui se "
+            "recouvrent de moitié, et chaque partie est comparée à celle d'en "
+            "face. ⚠️ Les deux métriques ne rendent pas les mêmes scores : "
+            "ceux d'avant ne se comparent plus à ceux d'après."))
         self._saving_title.setText(self.tr("<b>Fréquence de sauvegarde :</b>"))
         self._settings_title.setText(self.tr("<b>Paramètres de l'algorithme :</b>"))
 
@@ -395,6 +415,7 @@ class AdvancedTab(LayoutTab):
             return
         self._session.set_algorithm(
             strip_size=self._strip.value(),
+            fine_metric=self._fine_metric.isChecked(),
             iterations=self._iterations.value(),
             snapshot_every=self._snapshot_every.value(),
             stop_on_stagnation=self._stop_on_stagnation.isChecked(),
@@ -418,6 +439,7 @@ class AdvancedTab(LayoutTab):
         self._updating = True
         session = self._session
         self._strip.setValue(session.strip_size)
+        self._fine_metric.setChecked(session.fine_metric)
         self._iterations.setValue(session.iterations)
         self._snapshot_every.setValue(session.snapshot_every)
         self._stop_on_stagnation.setChecked(session.stop_on_stagnation)

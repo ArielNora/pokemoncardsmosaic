@@ -158,8 +158,8 @@ class TutorialTexts(QObject):
                        "la suite.")
 
     def advanced_metric(self) -> str:
-        return self.tr("Réglez l'épaisseur des bandes comparées entre deux "
-                       "cartes voisines.")
+        return self.tr("Réglez l'épaisseur des bandes comparées, et si "
+                       "chacune se mesure en dix parties.")
 
     def advanced_saving(self) -> str:
         return self.tr("Choisissez tous les combien d'échanges un agencement "

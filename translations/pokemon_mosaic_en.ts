@@ -9,102 +9,112 @@
         <translation>Advanced settings</translation>
     </message>
     <message>
-        <location filename="../src/pokemon_mosaic/ui/algorithm_tabs.py" line="343"/>
+        <location filename="../src/pokemon_mosaic/ui/algorithm_tabs.py" line="353"/>
         <source>le recuit simulé</source>
         <translation>simulated annealing</translation>
     </message>
     <message>
-        <location filename="../src/pokemon_mosaic/ui/algorithm_tabs.py" line="344"/>
+        <location filename="../src/pokemon_mosaic/ui/algorithm_tabs.py" line="354"/>
         <source>la descente stricte</source>
         <translation>strict descent</translation>
     </message>
     <message>
-        <location filename="../src/pokemon_mosaic/ui/algorithm_tabs.py" line="347"/>
+        <location filename="../src/pokemon_mosaic/ui/algorithm_tabs.py" line="357"/>
         <source>&lt;b&gt;La métrique :&lt;/b&gt;</source>
         <translation>&lt;b&gt;The metric:&lt;/b&gt;</translation>
     </message>
     <message>
-        <location filename="../src/pokemon_mosaic/ui/algorithm_tabs.py" line="346"/>
+        <location filename="../src/pokemon_mosaic/ui/algorithm_tabs.py" line="356"/>
         <source>Épaisseur des bandes</source>
         <translation>Strip thickness</translation>
     </message>
     <message>
-        <location filename="../src/pokemon_mosaic/ui/algorithm_tabs.py" line="349"/>
+        <location filename="../src/pokemon_mosaic/ui/algorithm_tabs.py" line="359"/>
         <source>La partie la plus importante de l&apos;algorithme. Elle prend les bandes voisines de deux cartes et en tire un score, qui dit à quel point ces bandes se ressemblent. Tout le travail de l&apos;algorithme est ensuite de déplacer les cartes pour obtenir le meilleur score d&apos;ensemble.</source>
         <translation>The most important part of the algorithm. It takes the neighbouring strips of two cards and draws a score from them, saying how alike those strips are. All the algorithm then does is move the cards around to reach the best overall score.</translation>
     </message>
     <message>
-        <location filename="../src/pokemon_mosaic/ui/algorithm_tabs.py" line="355"/>
+        <location filename="../src/pokemon_mosaic/ui/algorithm_tabs.py" line="365"/>
+        <source>Métrique améliorée : mesurer chaque bande en dix parties</source>
+        <translation>Improved metric: measure each strip in ten parts</translation>
+    </message>
+    <message>
+        <location filename="../src/pokemon_mosaic/ui/algorithm_tabs.py" line="367"/>
         <source>À gauche, deux cartes voisines : la flèche relie les deux bandes que le score compare. À droite, une petite grille d&apos;essai réoptimisée à cette épaisseur.</source>
         <translation>On the left, two neighbouring cards: the arrow joins the two strips the score compares. On the right, a small test grid re-optimised at that thickness.</translation>
     </message>
     <message>
-        <location filename="../src/pokemon_mosaic/ui/algorithm_tabs.py" line="358"/>
+        <location filename="../src/pokemon_mosaic/ui/algorithm_tabs.py" line="371"/>
+        <source>Une bande entière réduite à sa couleur moyenne ne dit rien de sa répartition : un bord rouge en haut et bleu en bas a la même moyenne que son inverse, et le score les déclare identiques. Cochée, chaque bande est découpée en &lt;b&gt;dix parties&lt;/b&gt; qui se recouvrent de moitié, et chaque partie est comparée à celle d&apos;en face. ⚠️ Les deux métriques ne rendent pas les mêmes scores : ceux d&apos;avant ne se comparent plus à ceux d&apos;après.</source>
+        <translation>A whole strip reduced to its average colour says nothing of how that colour is spread: an edge that is red at the top and blue at the bottom has the same average as its opposite, and the score calls them identical. Ticked, each strip is cut into &lt;b&gt;ten parts&lt;/b&gt; overlapping by half, and each part is compared with the one facing it. ⚠️ The two metrics do not give the same scores: earlier ones can no longer be compared with later ones.</translation>
+    </message>
+    <message>
+        <location filename="../src/pokemon_mosaic/ui/algorithm_tabs.py" line="378"/>
         <source>&lt;b&gt;Fréquence de sauvegarde :&lt;/b&gt;</source>
         <translation>&lt;b&gt;Saving frequency:&lt;/b&gt;</translation>
     </message>
     <message>
-        <location filename="../src/pokemon_mosaic/ui/algorithm_tabs.py" line="359"/>
+        <location filename="../src/pokemon_mosaic/ui/algorithm_tabs.py" line="379"/>
         <source>&lt;b&gt;Paramètres de l&apos;algorithme :&lt;/b&gt;</source>
         <translation>&lt;b&gt;Algorithm settings:&lt;/b&gt;</translation>
     </message>
     <message>
-        <location filename="../src/pokemon_mosaic/ui/algorithm_tabs.py" line="362"/>
+        <location filename="../src/pokemon_mosaic/ui/algorithm_tabs.py" line="382"/>
         <source>Les valeurs par défaut donnent presque toujours un bon résultat. Vous pouvez les changer, ou passer directement à la suite.</source>
         <translation>The default values almost always give a good result. You may change them, or move straight on.</translation>
     </message>
     <message>
-        <location filename="../src/pokemon_mosaic/ui/algorithm_tabs.py" line="367"/>
+        <location filename="../src/pokemon_mosaic/ui/algorithm_tabs.py" line="387"/>
         <source>À chaque &lt;b&gt;itération&lt;/b&gt;, l&apos;algorithme tente un &lt;b&gt;échange&lt;/b&gt; : il permute deux cartes de la grille et regarde ce que devient la &lt;b&gt;métrique&lt;/b&gt;, l&apos;écart de couleur entre les bords qui se touchent. L&apos;échange est &lt;b&gt;retenu&lt;/b&gt; s&apos;il rapproche l&apos;&lt;b&gt;agencement&lt;/b&gt; du but, une mosaïque dont les bords voisins se ressemblent, et le calcul continue jusqu&apos;à ce qu&apos;un &lt;b&gt;arrêt&lt;/b&gt; tombe.</source>
         <translation>At every &lt;b&gt;iteration&lt;/b&gt; the algorithm tries a &lt;b&gt;swap&lt;/b&gt;: it exchanges two cards of the grid and looks at what becomes of the &lt;b&gt;metric&lt;/b&gt;, the colour gap between the edges that touch. The swap is &lt;b&gt;kept&lt;/b&gt; if it brings the &lt;b&gt;arrangement&lt;/b&gt; closer to the goal, a mosaic whose neighbouring edges match, and the run carries on until a &lt;b&gt;stop&lt;/b&gt; falls.</translation>
     </message>
     <message>
-        <location filename="../src/pokemon_mosaic/ui/algorithm_tabs.py" line="375"/>
+        <location filename="../src/pokemon_mosaic/ui/algorithm_tabs.py" line="395"/>
         <source>L&apos;algorithme utilisé est %1</source>
         <translation>The algorithm used is %1</translation>
     </message>
     <message>
-        <location filename="../src/pokemon_mosaic/ui/algorithm_tabs.py" line="377"/>
+        <location filename="../src/pokemon_mosaic/ui/algorithm_tabs.py" line="397"/>
         <source>Le recuit accepte au départ %1 d&apos;échanges qui dégradent la métrique, puis devient de plus en plus exigeant.</source>
         <translation>Annealing accepts %1 of swaps that worsen the metric to begin with, then grows steadily more demanding.</translation>
     </message>
     <message>
-        <location filename="../src/pokemon_mosaic/ui/algorithm_tabs.py" line="380"/>
+        <location filename="../src/pokemon_mosaic/ui/algorithm_tabs.py" line="400"/>
         <source>&lt;b&gt;L&apos;algorithme s&apos;arrête&lt;/b&gt; lorsque :</source>
         <translation>&lt;b&gt;The algorithm stops&lt;/b&gt; when:</translation>
     </message>
     <message>
-        <location filename="../src/pokemon_mosaic/ui/algorithm_tabs.py" line="381"/>
+        <location filename="../src/pokemon_mosaic/ui/algorithm_tabs.py" line="401"/>
         <source>il a fait %1 itérations (toujours actif)</source>
         <translation>it has run %1 iterations (always on)</translation>
     </message>
     <message>
-        <location filename="../src/pokemon_mosaic/ui/algorithm_tabs.py" line="383"/>
+        <location filename="../src/pokemon_mosaic/ui/algorithm_tabs.py" line="403"/>
         <source>la métrique ne s&apos;améliore plus depuis %1 itérations</source>
         <translation>the metric has not improved for %1 iterations</translation>
     </message>
     <message>
-        <location filename="../src/pokemon_mosaic/ui/algorithm_tabs.py" line="384"/>
+        <location filename="../src/pokemon_mosaic/ui/algorithm_tabs.py" line="404"/>
         <source>il a calculé pendant %1</source>
         <translation>it has run for %1</translation>
     </message>
     <message>
-        <location filename="../src/pokemon_mosaic/ui/algorithm_tabs.py" line="385"/>
+        <location filename="../src/pokemon_mosaic/ui/algorithm_tabs.py" line="405"/>
         <source>la métrique descend sous %1</source>
         <translation>the metric falls below %1</translation>
     </message>
     <message>
-        <location filename="../src/pokemon_mosaic/ui/algorithm_tabs.py" line="388"/>
+        <location filename="../src/pokemon_mosaic/ui/algorithm_tabs.py" line="408"/>
         <source>Un agencement sera enregistré tous les %1 échanges retenus.</source>
         <translation>An arrangement is saved every %1 kept swaps.</translation>
     </message>
     <message>
-        <location filename="../src/pokemon_mosaic/ui/algorithm_tabs.py" line="490"/>
+        <location filename="../src/pokemon_mosaic/ui/algorithm_tabs.py" line="512"/>
         <source>Durée estimée : %1, gain attendu : environ %2 %, timeline : entre %3 et %4 clichés</source>
         <translation>Estimated duration: %1, expected gain: about %2%, timeline: between %3 and %4 snapshots</translation>
     </message>
     <message>
-        <location filename="../src/pokemon_mosaic/ui/algorithm_tabs.py" line="496"/>
+        <location filename="../src/pokemon_mosaic/ui/algorithm_tabs.py" line="518"/>
         <source>trop peu pour naviguer, resserrez la cadence</source>
         <translation>too few to navigate, tighten the cadence</translation>
     </message>
@@ -1193,57 +1203,57 @@
 <context>
     <name>MainWindow</name>
     <message>
-        <location filename="../src/pokemon_mosaic/ui/main_window.py" line="109"/>
+        <location filename="../src/pokemon_mosaic/ui/main_window.py" line="127"/>
         <source>Cartes</source>
         <translation>Cards</translation>
     </message>
     <message>
-        <location filename="../src/pokemon_mosaic/ui/main_window.py" line="110"/>
+        <location filename="../src/pokemon_mosaic/ui/main_window.py" line="128"/>
         <source>Paramètres</source>
         <translation>Parameters</translation>
     </message>
     <message>
-        <location filename="../src/pokemon_mosaic/ui/main_window.py" line="111"/>
+        <location filename="../src/pokemon_mosaic/ui/main_window.py" line="129"/>
         <source>Exécution</source>
         <translation>Run</translation>
     </message>
     <message>
-        <location filename="../src/pokemon_mosaic/ui/main_window.py" line="112"/>
+        <location filename="../src/pokemon_mosaic/ui/main_window.py" line="130"/>
         <source>Export</source>
         <translation>Export</translation>
     </message>
     <message>
-        <location filename="../src/pokemon_mosaic/ui/main_window.py" line="336"/>
+        <location filename="../src/pokemon_mosaic/ui/main_window.py" line="358"/>
         <source>Les visites guidées reviendront à la prochaine ouverture de chaque page.</source>
         <translation>The guided tours will come back the next time each page opens.</translation>
     </message>
     <message>
-        <location filename="../src/pokemon_mosaic/ui/main_window.py" line="371"/>
+        <location filename="../src/pokemon_mosaic/ui/main_window.py" line="393"/>
         <source>Agencement « %1 » repris : cartes, grille et habillage.</source>
         <translation>Arrangement “%1” taken up: cards, grid and presentation.</translation>
     </message>
     <message>
-        <location filename="../src/pokemon_mosaic/ui/main_window.py" line="490"/>
+        <location filename="../src/pokemon_mosaic/ui/main_window.py" line="512"/>
         <source>Fermeture forcée : un traitement de fond n&apos;a pas répondu.</source>
         <translation>Closing anyway: a background task did not respond.</translation>
     </message>
     <message>
-        <location filename="../src/pokemon_mosaic/ui/main_window.py" line="497"/>
+        <location filename="../src/pokemon_mosaic/ui/main_window.py" line="519"/>
         <source>Pokémon Mosaic</source>
         <translation>Pokémon Mosaic</translation>
     </message>
     <message>
-        <location filename="../src/pokemon_mosaic/ui/main_window.py" line="500"/>
+        <location filename="../src/pokemon_mosaic/ui/main_window.py" line="522"/>
         <source>Précédent</source>
         <translation>Back</translation>
     </message>
     <message>
-        <location filename="../src/pokemon_mosaic/ui/main_window.py" line="501"/>
+        <location filename="../src/pokemon_mosaic/ui/main_window.py" line="523"/>
         <source>Suivant</source>
         <translation>Next</translation>
     </message>
     <message>
-        <location filename="../src/pokemon_mosaic/ui/main_window.py" line="502"/>
+        <location filename="../src/pokemon_mosaic/ui/main_window.py" line="524"/>
         <source>Langue</source>
         <translation>Language</translation>
     </message>
@@ -2033,17 +2043,17 @@
 <context>
     <name>StripPreview</name>
     <message>
-        <location filename="../src/pokemon_mosaic/ui/strip_preview.py" line="118"/>
+        <location filename="../src/pokemon_mosaic/ui/strip_preview.py" line="120"/>
         <source>pas assez de cartes</source>
         <translation>not enough cards</translation>
     </message>
     <message>
-        <location filename="../src/pokemon_mosaic/ui/strip_preview.py" line="165"/>
+        <location filename="../src/pokemon_mosaic/ui/strip_preview.py" line="167"/>
         <source>Aucune carte chargée</source>
         <translation>No cards loaded</translation>
     </message>
     <message>
-        <location filename="../src/pokemon_mosaic/ui/strip_preview.py" line="171"/>
+        <location filename="../src/pokemon_mosaic/ui/strip_preview.py" line="173"/>
         <source>Aucune carte retenue</source>
         <translation>No cards kept</translation>
     </message>
@@ -2251,8 +2261,8 @@
     </message>
     <message>
         <location filename="../src/pokemon_mosaic/ui/tutorial_texts.py" line="161"/>
-        <source>Réglez l&apos;épaisseur des bandes comparées entre deux cartes voisines.</source>
-        <translation>Set the thickness of the strips compared between two neighbouring cards.</translation>
+        <source>Réglez l&apos;épaisseur des bandes comparées, et si chacune se mesure en dix parties.</source>
+        <translation>Set the thickness of the strips compared, and whether each is measured in ten parts.</translation>
     </message>
     <message>
         <location filename="../src/pokemon_mosaic/ui/tutorial_texts.py" line="165"/>

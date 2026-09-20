@@ -216,16 +216,34 @@ def test_signatures_are_not_recomputed_when_strip_size_is_unchanged(session):
     """L'écran de réglages renvoie tous les champs d'un bloc : recalculer sur la
     seule présence de la clé coûtait 47 ms par cran de molette."""
     calls = []
-    session.card_set.recalculate_features = lambda ss: calls.append(ss)
+    session.card_set.recalculate_features = lambda ss, parts=1: calls.append(
+        (ss, parts))
     session.set_algorithm(strip_size=session.strip_size, iterations=4321)
     assert calls == []
 
 
 def test_signatures_are_recomputed_when_strip_size_changes(session):
     calls = []
-    session.card_set.recalculate_features = lambda ss: calls.append(ss)
+    session.card_set.recalculate_features = lambda ss, parts=1: calls.append(
+        (ss, parts))
     session.set_algorithm(strip_size=0.42, iterations=4321)
-    assert calls == [0.42]
+    assert calls == [(0.42, 1)]
+
+
+def test_signatures_are_recomputed_when_the_fine_metric_is_toggled(session):
+    """Cocher la case change le découpage des bords : sans recalcul, le score
+    resterait celui de la métrique d'avant."""
+    from pokemon_mosaic.cards import EDGE_PARTS
+
+    calls = []
+    session.card_set.recalculate_features = lambda ss, parts=1: calls.append(
+        (ss, parts))
+
+    session.set_algorithm(fine_metric=True)
+    assert calls == [(session.strip_size, EDGE_PARTS)]
+
+    session.set_algorithm(fine_metric=False)
+    assert calls[-1] == (session.strip_size, 1)
 
 
 def test_cards_arriving_late_use_the_current_strip_size(qt_app, tmp_path):
@@ -555,3 +573,52 @@ def test_a_value_within_bounds_is_left_alone(session):
     step = AdvancedTab(session)
     session.set_algorithm(iterations=4242)
     assert step._iterations.value() == session.iterations == 4242
+
+
+# --- La case de la métrique améliorée --------------------------------------
+
+
+def test_the_fine_metric_checkbox_sits_in_the_metric_section(step):
+    """Elle change ce que l'aperçu montre : sa place est à côté de lui."""
+    widget, _ = step
+    section = widget._metric_title.parentWidget()
+
+    assert widget._fine_metric.parentWidget() is section
+    assert widget._fine_metric.text(), "la case ne dit pas ce qu'elle fait"
+    assert widget._fine_note.text(), "rien n'explique ce qu'elle change"
+    assert not widget._fine_metric.isChecked(), "décochée par défaut"
+
+
+def test_ticking_the_box_switches_the_metric(step):
+    from pokemon_mosaic.cards import EDGE_PARTS
+
+    widget, session = step
+
+    widget._fine_metric.setChecked(True)
+    assert session.fine_metric
+    assert session.edge_parts() == EDGE_PARTS
+
+    widget._fine_metric.setChecked(False)
+    assert not session.fine_metric
+    assert session.edge_parts() == 1
+
+
+def test_the_box_follows_the_session(step):
+    """Un préréglage relu repose la case, comme les autres réglages."""
+    widget, session = step
+
+    session.set_algorithm(fine_metric=True)
+
+    assert widget._fine_metric.isChecked()
+
+
+def test_the_fine_metric_travels_in_a_preset(session, tmp_path):
+    """Elle change le score : un préréglage qui l'oublierait ne rejouerait pas
+    le même calcul."""
+    session.set_algorithm(fine_metric=True)
+    preset = session.to_preset("essai")
+    session.set_algorithm(fine_metric=False)
+
+    session.apply_preset(preset)
+
+    assert session.fine_metric

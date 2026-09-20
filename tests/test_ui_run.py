@@ -960,7 +960,9 @@ def test_restarting_from_the_last_snapshot_is_left_to_extend(step, capture_runs)
     assert widget._resume.isEnabled()
 
 
-@pytest.mark.parametrize("change", ["selection", "links", "grid", "strip_size"])
+@pytest.mark.parametrize(
+    "change",
+    ["selection", "links", "grid", "strip_size", "fine_metric"])
 def test_changing_the_inputs_disables_resuming(step, change):
     """Les cartes retenues sont renumérotées de 0 à n-1 : repartir d'un cliché
     après un changement ferait désigner d'autres cartes par les mêmes indices.
@@ -969,6 +971,8 @@ def test_changing_the_inputs_disables_resuming(step, change):
     signatures, donc l'échelle du score. Mesuré : la même grille vaut 621,7
     avec une bande de 0,10 et 552,0 avec 0,30. Prolonger sans en tenir compte
     mêlait deux métriques et la courbe chutait sans qu'aucune carte ne bouge.
+    La métrique améliorée compte pour la même raison, et davantage : 5 033
+    d'un côté, 8 097 de l'autre sur 60 vraies cartes.
     """
     widget, session = step
     widget._run_signature = widget._signature()
@@ -982,6 +986,8 @@ def test_changing_the_inputs_disables_resuming(step, change):
         session.add_link(Link(cards=(0, 1)))
     elif change == "strip_size":
         session.set_algorithm(strip_size=session.strip_size + 0.2)
+    elif change == "fine_metric":
+        session.set_algorithm(fine_metric=True)
     else:
         session.set_layout(cols=4, rows=5)
 

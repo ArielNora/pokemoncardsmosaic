@@ -16,7 +16,7 @@ from PySide6.QtCore import QObject, Signal
 
 from ..annealing import Annealing
 from ..arrangements import Arrangement
-from ..cards import DEFAULT_STRIP_SIZE, CardSet
+from ..cards import DEFAULT_STRIP_SIZE, EDGE_PARTS, CardSet
 from ..layout import (
     DEFAULT_DPI,
     MM_PER_INCH,
@@ -171,7 +171,7 @@ class Session(QObject):
         "overlap_mm", "crop_marks", "full_resolution", "beyond_useful_dpi",
         "stop_on_stagnation", "stagnation_iterations",
         "stop_on_time", "time_budget",
-        "use_annealing", "acceptance", "strip_size",
+        "use_annealing", "acceptance", "strip_size", "fine_metric",
         "stop_on_score", "target_score",
     })
 
@@ -280,6 +280,11 @@ class Session(QObject):
         self.use_annealing = True
         self.acceptance = 0.5
         self.strip_size = DEFAULT_STRIP_SIZE
+        # ⚠️ **Décochée par défaut.** La métrique en dix parties est plus
+        # exigeante : elle ne rend pas les mêmes scores, et les agencements
+        # déjà gardés ont été jugés avec l'autre. C'est un choix, pas un
+        # progrès qu'on impose.
+        self.fine_metric = False
         self.stop_on_score = False
         self.target_score = 0.0
 
@@ -640,8 +645,10 @@ class Session(QObject):
         # arrivés ont été recalculés et pas ceux-ci : le même jeu porterait des
         # signatures calculées sur deux épaisseurs, et les distances entre les deux
         # groupes n'auraient plus aucun sens. On réaligne systématiquement.
+        # ⚠️ Le découpage des bords aussi : le fil de fond mesure toujours
+        # d'un bloc, et la métrique améliorée se coche dans la même session.
         for card in cards:
-            card.calculate_features(self.strip_size)
+            card.calculate_features(self.strip_size, self.edge_parts())
 
         self.card_set.cards.extend(cards)
         self._path_table = None
@@ -1142,6 +1149,11 @@ class Session(QObject):
         # « strip_size » recalculerait les 280 signatures (~47 ms) à chaque cran
         # de molette sur un réglage sans rapport.
         strip_changed = changes.get("strip_size", self.strip_size) != self.strip_size
+        # Le découpage des bords change les signatures tout autant que
+        # l'épaisseur : cocher la case sans recalculer laisserait le score sur
+        # des mesures qui ne sont plus celles qu'on annonce.
+        metric_changed = (changes.get("fine_metric", self.fine_metric)
+                          != self.fine_metric)
 
         touched = False
         for name, value in changes.items():
@@ -1152,10 +1164,21 @@ class Session(QObject):
             return
 
         # L'épaisseur des bandes change les signatures : sans recalcul, le score
-        # reposerait sur des mesures périmées.
-        if strip_changed and self.card_set:
-            self.card_set.recalculate_features(self.strip_size)
+        # reposerait sur des mesures périmées. Le découpage des bords de même.
+        if (strip_changed or metric_changed) and self.card_set:
+            self.card_set.recalculate_features(self.strip_size,
+                                               self.edge_parts())
         self.algorithm_changed.emit()
+
+    def edge_parts(self) -> int:
+        """En combien de parties chaque bord se mesure : une, ou dix.
+
+        Un seul endroit traduit la case en nombre de parties : le calcul des
+        signatures, l'aperçu qui les montre et le chargement doivent découper
+        pareil, sans quoi l'écran désignerait des parties que le score ne
+        mesure pas.
+        """
+        return EDGE_PARTS if self.fine_metric else 1
 
     def annealing(self) -> Annealing | None:
         """Le recuit configuré, ou None pour une descente stricte."""

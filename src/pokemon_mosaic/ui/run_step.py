@@ -473,7 +473,10 @@ class RunStep(QWidget):
         score**. Mesuré : la même grille vaut 621,7 avec une bande de 0,10 et
         552,0 avec 0,30, soit 11 % d'écart. Prolonger sans le prendre en compte
         mêlait deux métriques dans une seule timeline, et la courbe montrait une
-        chute soudaine alors qu'aucune carte n'avait bougé.
+        chute soudaine alors qu'aucune carte n'avait bougé. **La métrique
+        améliorée compte pour la même raison**, et davantage : mesuré sur 60
+        vraies cartes, la même grille optimisée vaut 5 033 d'un côté et 8 097
+        de l'autre.
 
         ⚠️ **Les cartes d'un lien ne suffisent pas : sa forme et son ordre
         comptent aussi.** L'optimiseur exige que chaque bloc soit déjà intact
@@ -494,6 +497,10 @@ class RunStep(QWidget):
             (session.rows, session.cols),
             tuple(sorted(session.empty_cells())),
             session.strip_size,
+            # Le découpage des bords change l'échelle du score pour la même
+            # raison : mesuré sur 60 cartes, la même grille vaut 5 033 d'un
+            # côté et 8 097 de l'autre.
+            session.fine_metric,
         )
 
     def can_resume(self) -> bool:

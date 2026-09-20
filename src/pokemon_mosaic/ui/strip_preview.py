@@ -21,6 +21,7 @@ from PySide6.QtCore import QPointF, QRectF, Qt, QTimer
 from PySide6.QtGui import QColor, QImage, QPainter, QPen
 from PySide6.QtWidgets import QWidget
 
+from ..cards import edge_windows
 from ..optimize import build_initial_grid, optimize_grid, select_cards
 from ..scoring import EdgeDistances
 
@@ -72,7 +73,8 @@ class StripPreview(QWidget):
         `algorithm_changed` part aussi pour le nombre d'itérations ou les seuils
         d'arrêt, qui ne changent rien à ce qui est montré.
         """
-        return (self._session.strip_size, tuple(self._session.selected_indices()))
+        return (self._session.strip_size, self._session.edge_parts(),
+                tuple(self._session.selected_indices()))
 
     def invalidate(self, *_) -> None:
         """Programme une reconstruction, si tant est qu'elle change quelque chose.
@@ -221,14 +223,50 @@ class StripPreview(QWidget):
         band_w = width * strip
         painter.setPen(QPen(BAND_EDGE, 1))
         painter.setBrush(BAND)
-        for rect in (
-            QRectF(x, y, width, band_h),                     # haut
-            QRectF(x, y + height - band_h, width, band_h),   # bas
-            QRectF(x, y, band_w, height),                    # gauche
-            QRectF(x + width - band_w, y, band_w, height),   # droite
+        for rect, horizontale in (
+            (QRectF(x, y, width, band_h), True),                     # haut
+            (QRectF(x, y + height - band_h, width, band_h), True),   # bas
+            (QRectF(x, y, band_w, height), False),                   # gauche
+            (QRectF(x + width - band_w, y, band_w, height), False),  # droite
         ):
-            painter.drawRect(rect)
+            self._draw_band(painter, rect, horizontale)
         return width
+
+    def _draw_band(self, painter, bande: QRectF, horizontale: bool) -> None:
+        """Une bande mesurée : d'un bloc, ou découpée en ses parties."""
+        for morceau in self.band_parts(bande, horizontale):
+            painter.drawRect(morceau)
+
+    def band_parts(self, bande: QRectF, horizontale: bool) -> list[QRectF]:
+        """Les rectangles d'une bande : elle-même, ou une par partie mesurée.
+
+        ⚠️ **Les parties se recouvrent de moitié**, donc deux rectangles posés
+        l'un sur l'autre ne se distingueraient pas. Une partie sur deux se pose
+        dans la moitié haute de la bande, l'autre dans la moitié basse : le
+        recouvrement se lit alors comme un appareillage de briques, chaque
+        partie chevauchant la moitié de ses deux voisines.
+
+        Le découpage vient d'`edge_windows`, celui-là même que le score
+        mesure : l'écran ne désigne pas des parties inventées pour lui.
+        """
+        parts = self._session.edge_parts()
+        if parts <= 1:
+            return [bande]
+        longueur = bande.width() if horizontale else bande.height()
+        epaisseur = (bande.height() if horizontale else bande.width()) / 2
+        morceaux = []
+        for rang, (debut, fin) in enumerate(
+                edge_windows(round(longueur), parts)):
+            decale = epaisseur * (rang % 2)
+            if horizontale:
+                morceaux.append(QRectF(bande.left() + debut,
+                                       bande.top() + decale,
+                                       fin - debut, epaisseur))
+            else:
+                morceaux.append(QRectF(bande.left() + decale,
+                                       bande.top() + debut,
+                                       epaisseur, fin - debut))
+        return morceaux
 
     def _draw_sandbox(self, painter, x, y, height) -> None:
         if self._sandbox is None:
