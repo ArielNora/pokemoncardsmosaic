@@ -21,12 +21,14 @@ Image.MAX_IMAGE_PIXELS = None
 
 DEFAULT_SCALE = 0.25
 DEFAULT_STRIP_SIZE = 0.1
-# Le nombre de parties de la métrique améliorée. Chaque partie recouvre la
-# moitié de la suivante. Dix se lisent encore une à une sur l'aperçu, et le
-# surcoût reste sans effet sensible, mesuré le 2026-09-20 sur 441 cartes :
-# signatures 81 -> 175 ms, table des distances 13 -> 71 ms, pic de mémoire
-# 7,9 -> 14,5 Mo, et les deux tables gardent leur taille, 3,1 Mo.
-EDGE_PARTS = 10
+# Le nombre de parties de la métrique améliorée. Chaque partie prend toute
+# l'épaisseur du bord et recouvre la moitié de la suivante. Cinq, choisi par
+# l'utilisateur le 2026-09-21 : dix se distinguaient mal sur l'aperçu, où
+# chaque partie occupe la bande entière. Le surcoût reste sans effet sensible,
+# mesuré sur 441 cartes : signatures 92 -> 156 ms, table des
+# distances 12 -> 39 ms, pic de mémoire 7,9 -> 14,3 Mo, et les
+# deux tables gardent leur taille, 3,1 Mo.
+EDGE_PARTS = 5
 
 
 def edge_windows(length: int, parts: int) -> list[tuple[int, int]]:

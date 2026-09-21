@@ -34,19 +34,19 @@
         <translation>The most important part of the algorithm. It takes the neighbouring strips of two cards and draws a score from them, saying how alike those strips are. All the algorithm then does is move the cards around to reach the best overall score.</translation>
     </message>
     <message>
-        <location filename="../src/pokemon_mosaic/ui/algorithm_tabs.py" line="365"/>
-        <source>Métrique améliorée : mesurer chaque bande en dix parties</source>
-        <translation>Improved metric: measure each strip in ten parts</translation>
-    </message>
-    <message>
         <location filename="../src/pokemon_mosaic/ui/algorithm_tabs.py" line="367"/>
         <source>À gauche, deux cartes voisines : la flèche relie les deux bandes que le score compare. À droite, une petite grille d&apos;essai réoptimisée à cette épaisseur.</source>
         <translation>On the left, two neighbouring cards: the arrow joins the two strips the score compares. On the right, a small test grid re-optimised at that thickness.</translation>
     </message>
     <message>
+        <location filename="../src/pokemon_mosaic/ui/algorithm_tabs.py" line="365"/>
+        <source>Métrique améliorée : mesurer chaque bande en cinq parties</source>
+        <translation>Improved metric: measure each strip in five parts</translation>
+    </message>
+    <message>
         <location filename="../src/pokemon_mosaic/ui/algorithm_tabs.py" line="371"/>
-        <source>Une bande entière réduite à sa couleur moyenne ne dit rien de sa répartition : un bord rouge en haut et bleu en bas a la même moyenne que son inverse, et le score les déclare identiques. Cochée, chaque bande est découpée en &lt;b&gt;dix parties&lt;/b&gt; qui se recouvrent de moitié, et chaque partie est comparée à celle d&apos;en face. ⚠️ Les deux métriques ne rendent pas les mêmes scores : ceux d&apos;avant ne se comparent plus à ceux d&apos;après.</source>
-        <translation>A whole strip reduced to its average colour says nothing of how that colour is spread: an edge that is red at the top and blue at the bottom has the same average as its opposite, and the score calls them identical. Ticked, each strip is cut into &lt;b&gt;ten parts&lt;/b&gt; overlapping by half, and each part is compared with the one facing it. ⚠️ The two metrics do not give the same scores: earlier ones can no longer be compared with later ones.</translation>
+        <source>Une bande entière réduite à sa couleur moyenne ne dit rien de sa répartition : un bord rouge en haut et bleu en bas a la même moyenne que son inverse, et le score les déclare identiques. Cochée, chaque bande est découpée en &lt;b&gt;cinq parties&lt;/b&gt; qui se recouvrent de moitié, et chaque partie est comparée à celle d&apos;en face. ⚠️ Les deux métriques ne rendent pas les mêmes scores : ceux d&apos;avant ne se comparent plus à ceux d&apos;après.</source>
+        <translation>A whole strip reduced to its average colour says nothing of how that colour is spread: an edge that is red at the top and blue at the bottom has the same average as its opposite, and the score calls them identical. Ticked, each strip is cut into &lt;b&gt;five parts&lt;/b&gt; overlapping by half, and each part is compared with the one facing it. ⚠️ The two metrics do not give the same scores: earlier ones can no longer be compared with later ones.</translation>
     </message>
     <message>
         <location filename="../src/pokemon_mosaic/ui/algorithm_tabs.py" line="378"/>
@@ -1886,27 +1886,27 @@
         <translation>Running…</translation>
     </message>
     <message>
-        <location filename="../src/pokemon_mosaic/ui/run_step.py" line="582"/>
+        <location filename="../src/pokemon_mosaic/ui/run_step.py" line="589"/>
         <source>Agencement gardé : %1</source>
         <translation>Arrangement kept: %1</translation>
     </message>
     <message>
-        <location filename="../src/pokemon_mosaic/ui/run_step.py" line="583"/>
+        <location filename="../src/pokemon_mosaic/ui/run_step.py" line="590"/>
         <source>Agencement gardé.</source>
         <translation>Arrangement kept.</translation>
     </message>
     <message>
-        <location filename="../src/pokemon_mosaic/ui/run_step.py" line="594"/>
+        <location filename="../src/pokemon_mosaic/ui/run_step.py" line="601"/>
         <source>Agencement gardé, mais non enregistré : %1</source>
         <translation>Arrangement kept, but not written: %1</translation>
     </message>
     <message>
-        <location filename="../src/pokemon_mosaic/ui/run_step.py" line="698"/>
+        <location filename="../src/pokemon_mosaic/ui/run_step.py" line="705"/>
         <source>le calcul</source>
         <translation>the run</translation>
     </message>
     <message>
-        <location filename="../src/pokemon_mosaic/ui/run_step.py" line="697"/>
+        <location filename="../src/pokemon_mosaic/ui/run_step.py" line="704"/>
         <source>Arrêt en cours : %1 ne répond pas encore.</source>
         <translation>Stopping: %1 is not responding yet.</translation>
     </message>
@@ -1921,67 +1921,67 @@
         <translation>Multi-run</translation>
     </message>
     <message>
-        <location filename="../src/pokemon_mosaic/ui/run_step.py" line="571"/>
+        <location filename="../src/pokemon_mosaic/ui/run_step.py" line="578"/>
         <source>Les quatre cases sont prises : retirez-en une.</source>
         <translation>All four slots are taken: remove one.</translation>
     </message>
     <message>
-        <location filename="../src/pokemon_mosaic/ui/run_step.py" line="763"/>
+        <location filename="../src/pokemon_mosaic/ui/run_step.py" line="770"/>
         <source>itérations épuisées</source>
         <translation>iterations exhausted</translation>
     </message>
     <message>
-        <location filename="../src/pokemon_mosaic/ui/run_step.py" line="764"/>
+        <location filename="../src/pokemon_mosaic/ui/run_step.py" line="771"/>
         <source>score atteint</source>
         <translation>target score reached</translation>
     </message>
     <message>
-        <location filename="../src/pokemon_mosaic/ui/run_step.py" line="765"/>
+        <location filename="../src/pokemon_mosaic/ui/run_step.py" line="772"/>
         <source>stagnation</source>
         <translation>stagnation</translation>
     </message>
     <message>
-        <location filename="../src/pokemon_mosaic/ui/run_step.py" line="766"/>
+        <location filename="../src/pokemon_mosaic/ui/run_step.py" line="773"/>
         <source>budget de temps</source>
         <translation>time budget</translation>
     </message>
     <message>
-        <location filename="../src/pokemon_mosaic/ui/run_step.py" line="767"/>
+        <location filename="../src/pokemon_mosaic/ui/run_step.py" line="774"/>
         <source>arrêt demandé</source>
         <translation>stopped by user</translation>
     </message>
     <message>
-        <location filename="../src/pokemon_mosaic/ui/run_step.py" line="774"/>
+        <location filename="../src/pokemon_mosaic/ui/run_step.py" line="781"/>
         <source>Score %1 → %2 (%3 % de gain), arrêt : %4</source>
         <translation>Score %1 → %2 (%3% gain), stopped: %4</translation>
     </message>
     <message>
-        <location filename="../src/pokemon_mosaic/ui/run_step.py" line="780"/>
+        <location filename="../src/pokemon_mosaic/ui/run_step.py" line="787"/>
         <source>Calcul terminé.</source>
         <translation>Run finished.</translation>
     </message>
     <message>
-        <location filename="../src/pokemon_mosaic/ui/run_step.py" line="786"/>
+        <location filename="../src/pokemon_mosaic/ui/run_step.py" line="793"/>
         <source>Échec du calcul : %1</source>
         <translation>Run failed: %1</translation>
     </message>
     <message>
-        <location filename="../src/pokemon_mosaic/ui/run_step.py" line="1028"/>
+        <location filename="../src/pokemon_mosaic/ui/run_step.py" line="1035"/>
         <source>Reprendre</source>
         <translation>Resume</translation>
     </message>
     <message>
-        <location filename="../src/pokemon_mosaic/ui/run_step.py" line="1028"/>
+        <location filename="../src/pokemon_mosaic/ui/run_step.py" line="1035"/>
         <source>Pause</source>
         <translation>Pause</translation>
     </message>
     <message>
-        <location filename="../src/pokemon_mosaic/ui/run_step.py" line="1034"/>
+        <location filename="../src/pokemon_mosaic/ui/run_step.py" line="1041"/>
         <source>aucun cliché</source>
         <translation>no snapshot</translation>
     </message>
     <message>
-        <location filename="../src/pokemon_mosaic/ui/run_step.py" line="1037"/>
+        <location filename="../src/pokemon_mosaic/ui/run_step.py" line="1044"/>
         <source>cliché %1 / %2</source>
         <translation>snapshot %1 of %2</translation>
     </message>
@@ -2260,11 +2260,6 @@
         <translation>You can keep the default values and move on.</translation>
     </message>
     <message>
-        <location filename="../src/pokemon_mosaic/ui/tutorial_texts.py" line="161"/>
-        <source>Réglez l&apos;épaisseur des bandes comparées, et si chacune se mesure en dix parties.</source>
-        <translation>Set the thickness of the strips compared, and whether each is measured in ten parts.</translation>
-    </message>
-    <message>
         <location filename="../src/pokemon_mosaic/ui/tutorial_texts.py" line="165"/>
         <source>Choisissez tous les combien d&apos;échanges un agencement est enregistré.</source>
         <translation>Choose how many swaps pass between two saved arrangements.</translation>
@@ -2338,6 +2333,11 @@
         <location filename="../src/pokemon_mosaic/ui/tutorial_texts.py" line="210"/>
         <source>Enregistrez le cliché affiché dans une case, pour l&apos;export.</source>
         <translation>Save the snapshot shown in a slot, for the export.</translation>
+    </message>
+    <message>
+        <location filename="../src/pokemon_mosaic/ui/tutorial_texts.py" line="161"/>
+        <source>Réglez l&apos;épaisseur des bandes comparées, et si chacune se mesure en cinq parties.</source>
+        <translation>Set the thickness of the strips compared, and whether each is measured in five parts.</translation>
     </message>
     <message>
         <location filename="../src/pokemon_mosaic/ui/tutorial_texts.py" line="220"/>

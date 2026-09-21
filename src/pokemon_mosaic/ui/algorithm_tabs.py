@@ -362,7 +362,7 @@ class AdvancedTab(LayoutTab):
             "est ensuite de déplacer les cartes pour obtenir le meilleur score "
             "d'ensemble."))
         self._fine_metric.setText(self.tr(
-            "Métrique améliorée : mesurer chaque bande en dix parties"))
+            "Métrique améliorée : mesurer chaque bande en cinq parties"))
         self._metric_status.setText(self.tr(
             "À gauche, deux cartes voisines : la flèche relie les deux bandes "
             "que le score compare. À droite, une petite grille d'essai "
@@ -371,7 +371,7 @@ class AdvancedTab(LayoutTab):
             "Une bande entière réduite à sa couleur moyenne ne dit rien de sa "
             "répartition : un bord rouge en haut et bleu en bas a la même "
             "moyenne que son inverse, et le score les déclare identiques. "
-            "Cochée, chaque bande est découpée en <b>dix parties</b> qui se "
+            "Cochée, chaque bande est découpée en <b>cinq parties</b> qui se "
             "recouvrent de moitié, et chaque partie est comparée à celle d'en "
             "face. ⚠️ Les deux métriques ne rendent pas les mêmes scores : "
             "ceux d'avant ne se comparent plus à ceux d'après."))

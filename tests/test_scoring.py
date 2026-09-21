@@ -171,7 +171,7 @@ def test_a_homogeneous_collection_reports_nothing(tmp_path):
     assert not cards.has_warnings
 
 
-# --- La métrique améliorée : dix parties recouvrantes par bord --------------
+# --- La métrique améliorée : cinq parties recouvrantes par bord -------------
 
 
 def carte_en_deux(index, un, deux, sens="hauteur", taille=(40, 20)):
@@ -195,15 +195,15 @@ def test_the_parts_overlap_by_half_and_cover_the_whole_edge():
     """Chaque partie commence au milieu de la précédente.
 
     Celles du bout ne sont donc recouvertes que d'un côté, les autres des deux,
-    et les dix parties couvrent le bord entier sans trou.
+    et les cinq parties couvrent le bord entier sans trou.
     """
-    from pokemon_mosaic.cards import edge_windows
+    from pokemon_mosaic.cards import EDGE_PARTS, edge_windows
 
-    bornes = edge_windows(100, 10)
+    bornes = edge_windows(1000, EDGE_PARTS)
 
-    assert len(bornes) == 10
-    assert bornes[0][0] == 0 and bornes[-1][1] == 100
-    pas = 100 / 11
+    assert len(bornes) == EDGE_PARTS
+    assert bornes[0][0] == 0 and bornes[-1][1] == 1000
+    pas = 1000 / (EDGE_PARTS + 1)
     for rang, (debut, fin) in enumerate(bornes):
         assert fin - debut == pytest.approx(2 * pas, abs=1.0), rang
         if rang:
@@ -212,7 +212,8 @@ def test_the_parts_overlap_by_half_and_cover_the_whole_edge():
             assert avant_fin - debut == pytest.approx(pas, abs=1.0), rang
             assert debut - avant_debut == pytest.approx(pas, abs=1.0), rang
     # Aucun trou : la fin de chaque partie dépasse le début de la suivante.
-    assert all(bornes[i][1] >= bornes[i + 1][0] for i in range(9))
+    assert all(bornes[i][1] >= bornes[i + 1][0]
+               for i in range(EDGE_PARTS - 1))
 
 
 def test_two_opposite_edges_stop_passing_for_a_perfect_match():
@@ -268,8 +269,8 @@ def test_an_edge_still_matches_itself_part_by_part():
 def test_a_uniform_edge_keeps_the_score_on_the_same_scale():
     """⚠️ **Moyenne des parties, pas somme.** Un score reste comparable.
 
-    Sur des bords unis, les dix parties disent toutes la même chose : le score
-    doit alors valoir celui de la métrique d'origine, et non dix fois plus.
+    Sur des bords unis, les cinq parties disent toutes la même chose : le score
+    doit alors valoir celui de la métrique d'origine, et non cinq fois plus.
     """
     from pokemon_mosaic.cards import EDGE_PARTS
 
@@ -297,7 +298,7 @@ def test_one_part_measures_exactly_what_it_always_did():
 
 
 def test_mixing_two_cuttings_is_refused():
-    """Des signatures d'une partie et de dix donneraient des distances muettes."""
+    """Des signatures d'une partie et de cinq donneraient des distances muettes."""
     from pokemon_mosaic.cards import EDGE_PARTS
 
     cartes = [carte_en_deux(i, (10, 10, 10), (90, 90, 90)) for i in range(2)]

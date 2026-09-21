@@ -240,11 +240,13 @@ class StripPreview(QWidget):
     def band_parts(self, bande: QRectF, horizontale: bool) -> list[QRectF]:
         """Les rectangles d'une bande : elle-même, ou une par partie mesurée.
 
-        ⚠️ **Les parties se recouvrent de moitié**, donc deux rectangles posés
-        l'un sur l'autre ne se distingueraient pas. Une partie sur deux se pose
-        dans la moitié haute de la bande, l'autre dans la moitié basse : le
-        recouvrement se lit alors comme un appareillage de briques, chaque
-        partie chevauchant la moitié de ses deux voisines.
+        ⚠️ **Chaque partie prend toute l'épaisseur de la bande**, et toutes se
+        posent au même niveau : une partie est une tranche du rectangle mesuré,
+        pas la moitié de son épaisseur. Les avoir posées en deux niveaux, pour
+        que le recouvrement saute aux yeux, montrait un découpage que le score
+        ne fait pas (corrigé le 2026-09-21, demandé par l'utilisateur). Le
+        recouvrement se lit à la teinte : le fond des bandes est translucide,
+        donc deux parties superposées le foncent.
 
         Le découpage vient d'`edge_windows`, celui-là même que le score
         mesure : l'écran ne désigne pas des parties inventées pour lui.
@@ -253,19 +255,14 @@ class StripPreview(QWidget):
         if parts <= 1:
             return [bande]
         longueur = bande.width() if horizontale else bande.height()
-        epaisseur = (bande.height() if horizontale else bande.width()) / 2
         morceaux = []
-        for rang, (debut, fin) in enumerate(
-                edge_windows(round(longueur), parts)):
-            decale = epaisseur * (rang % 2)
+        for debut, fin in edge_windows(round(longueur), parts):
             if horizontale:
-                morceaux.append(QRectF(bande.left() + debut,
-                                       bande.top() + decale,
-                                       fin - debut, epaisseur))
+                morceaux.append(QRectF(bande.left() + debut, bande.top(),
+                                       fin - debut, bande.height()))
             else:
-                morceaux.append(QRectF(bande.left() + decale,
-                                       bande.top() + debut,
-                                       epaisseur, fin - debut))
+                morceaux.append(QRectF(bande.left(), bande.top() + debut,
+                                       bande.width(), fin - debut))
         return morceaux
 
     def _draw_sandbox(self, painter, x, y, height) -> None:

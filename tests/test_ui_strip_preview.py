@@ -259,11 +259,13 @@ def test_a_band_stays_whole_with_the_plain_metric(preview):
     assert widget.band_parts(bande, horizontale=True) == [bande]
 
 
-def test_the_band_shows_the_ten_parts_the_score_measures(preview):
-    """Le découpage montré est celui qui est mesuré, et son recouvrement se voit.
+def test_the_band_shows_the_parts_the_score_measures(preview):
+    """Le découpage montré est celui qui est mesuré.
 
-    Les parties se recouvrent de moitié : posées l'une sur l'autre elles ne se
-    distingueraient pas, donc une sur deux occupe la moitié basse de la bande.
+    ⚠️ **Chaque partie prend toute l'épaisseur de la bande**, et toutes se
+    posent au même niveau : une partie est une tranche du rectangle mesuré, pas
+    la moitié de son épaisseur. Les avoir posées en deux niveaux, pour que le
+    recouvrement saute aux yeux, montrait un découpage que le score ne fait pas.
     """
     from PySide6.QtCore import QRectF
 
@@ -281,11 +283,8 @@ def test_the_band_shows_the_ten_parts_the_score_measures(preview):
             zip(morceaux, attendu, strict=True)):
         assert morceau.left() == pytest.approx(bande.left() + debut), rang
         assert morceau.width() == pytest.approx(fin - debut), rang
-        # Une partie sur deux dans la moitié basse : c'est ce qui rend le
-        # recouvrement visible.
-        voulu = bande.top() + (rang % 2) * bande.height() / 2
-        assert morceau.top() == pytest.approx(voulu), rang
-        assert morceau.height() == pytest.approx(bande.height() / 2), rang
+        assert morceau.top() == pytest.approx(bande.top()), rang
+        assert morceau.height() == pytest.approx(bande.height()), rang
     assert morceaux[0].left() == pytest.approx(bande.left())
     assert morceaux[-1].right() == pytest.approx(bande.right())
 
@@ -307,8 +306,8 @@ def test_a_vertical_band_is_cut_along_its_height(preview):
             zip(morceaux, attendu, strict=True)):
         assert morceau.top() == pytest.approx(bande.top() + debut), rang
         assert morceau.height() == pytest.approx(fin - debut), rang
-        assert morceau.left() == pytest.approx(
-            bande.left() + (rang % 2) * bande.width() / 2), rang
+        assert morceau.left() == pytest.approx(bande.left()), rang
+        assert morceau.width() == pytest.approx(bande.width()), rang
 
 
 def test_toggling_the_fine_metric_rebuilds_the_sandbox(preview):

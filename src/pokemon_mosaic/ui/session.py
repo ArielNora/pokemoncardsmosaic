@@ -280,7 +280,7 @@ class Session(QObject):
         self.use_annealing = True
         self.acceptance = 0.5
         self.strip_size = DEFAULT_STRIP_SIZE
-        # ⚠️ **Décochée par défaut.** La métrique en dix parties est plus
+        # ⚠️ **Décochée par défaut.** La métrique en cinq parties est plus
         # exigeante : elle ne rend pas les mêmes scores, et les agencements
         # déjà gardés ont été jugés avec l'autre. C'est un choix, pas un
         # progrès qu'on impose.
@@ -1171,7 +1171,7 @@ class Session(QObject):
         self.algorithm_changed.emit()
 
     def edge_parts(self) -> int:
-        """En combien de parties chaque bord se mesure : une, ou dix.
+        """En combien de parties chaque bord se mesure : une, ou cinq.
 
         Un seul endroit traduit la case en nombre de parties : le calcul des
         signatures, l'aperçu qui les montre et le chargement doivent découper

@@ -36,7 +36,7 @@ def _pairwise_distances(a: np.ndarray, b: np.ndarray) -> np.ndarray:
     if a.ndim == 2:                       # (N, 3) : une partie, la métrique d'origine
         return np.sqrt(((a[:, None, :] - b[None, :, :]) ** 2).sum(axis=-1))
     # ⚠️ **Partie par partie, et non d'un bloc.** Le tableau des écarts de
-    # toutes les parties pèserait 47 Mo pour 441 cartes ; en dix passes il en
+    # toutes les parties pèserait 23 Mo pour 441 cartes ; en cinq passes il en
     # pèse 4,7, et le total qu'on accumule, 1,6.
     total = np.zeros((a.shape[0], b.shape[0]), dtype=np.float64)
     for partie in range(a.shape[1]):
@@ -49,7 +49,7 @@ def _signatures(cards: Sequence[Card], name: str) -> np.ndarray:
     """Les signatures d'un même bord, empilées, telles que les cartes les portent.
 
     ⚠️ **Toutes les cartes doivent porter le même découpage.** Mélanger des
-    signatures d'une partie et de dix donnerait un tableau d'objets, et des
+    signatures d'une partie et de cinq donnerait un tableau d'objets, et des
     distances qui ne veulent rien dire : on le refuse ici, avec le nom du bord.
     """
     signatures = [getattr(card, name) for card in cards]
@@ -68,7 +68,7 @@ class EdgeDistances:
     - `lr[i, j]` : bord droit de la carte `i` contre bord gauche de la carte `j`
     - `tb[i, j]` : bord bas de la carte `i` contre bord haut de la carte `j`
 
-    Le découpage des bords, d'une partie ou de dix, est celui que les cartes
+    Le découpage des bords, d'une partie ou de cinq, est celui que les cartes
     portent : la table se construit après le calcul des signatures, et change
     donc avec lui.
     """
