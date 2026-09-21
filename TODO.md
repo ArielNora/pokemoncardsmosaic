@@ -118,9 +118,10 @@ Gardé en trace pour ne pas rouvrir ces sujets sans raison.
   10 min par lot, voir `CLAUDE.md`.
 - **La fenêtre s'élargissait après un multi-lancement** (2026-09-20) : elle
   s'ouvre à 1440 pixels de large, rognés à l'écran, au lieu de 1100.
-- **Revoir la métrique de bord** (2026-09-20) : faite, et débrayable. La case
-  « Métrique améliorée » des paramètres avancés mesure chaque bande en dix
-  parties recouvertes de moitié, comparées une à une. Décochée par défaut.
+- **Revoir la métrique de bord** (2026-09-20, corrigée le 2026-09-21) : faite,
+  et débrayable. La case « Métrique améliorée » des paramètres avancés mesure
+  chaque bande en cinq parties recouvertes de moitié, chacune prise sur toute
+  l'épaisseur du bord, comparées une à une. Décochée par défaut.
 - **Les déplacements de feuilles entre deux formes** (2026-09-20) : tranché,
   ils valent pour la forme courante et une autre forme les borne à sa place
   libre, comme l'export. Pour une autre forme, on redéplace.
