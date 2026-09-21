@@ -121,7 +121,7 @@ Gardé en trace pour ne pas rouvrir ces sujets sans raison.
 - **Revoir la métrique de bord** (2026-09-20, corrigée le 2026-09-21) : faite,
   et débrayable. La case « Métrique améliorée » des paramètres avancés mesure
   chaque bande en cinq à dix parties recouvertes de moitié, chacune prise sur
-  toute l'épaisseur du bord, comparées une à une. Décochée par défaut, cinq
+  toute l'épaisseur du bord, comparées une à une. Décochée par défaut, dix
   parties par défaut.
 - **Les déplacements de feuilles entre deux formes** (2026-09-20) : tranché,
   ils valent pour la forme courante et une autre forme les borne à sa place
