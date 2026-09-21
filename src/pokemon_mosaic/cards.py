@@ -22,13 +22,14 @@ Image.MAX_IMAGE_PIXELS = None
 DEFAULT_SCALE = 0.25
 DEFAULT_STRIP_SIZE = 0.1
 # Le nombre de parties de la métrique améliorée. Chaque partie prend toute
-# l'épaisseur du bord et recouvre la moitié de la suivante. Cinq par défaut,
-# choisi par l'utilisateur le 2026-09-21 : au-delà, sur une bande entière, on
-# ne les distingue plus sur l'aperçu. Le surcoût reste sans effet sensible,
-# mesuré sur 441 cartes : signatures 92 -> 156 ms à cinq parties et 175 ms à
-# dix, table des distances 12 -> 39 puis 71 ms, pic de mémoire 7,9 -> 14,3 Mo,
-# et les deux tables gardent leur taille, 3,1 Mo.
-EDGE_PARTS = 5
+# l'épaisseur du bord et recouvre la moitié de la suivante. **Dix par défaut**,
+# choisi par l'utilisateur le 2026-09-21 sur mesure : plus il y a de parties,
+# plus le classement des raccords ressemble au vrai, corrélation de rangs avec
+# l'écart de pixels à la couture 0,799 à une partie, 0,852 à cinq, 0,875 à dix.
+# Le surcoût ne se sent pas, mesuré sur 441 cartes : signatures 92 -> 175 ms,
+# table des distances 12 -> 71 ms, pic de mémoire 7,9 -> 14,5 Mo, et les deux
+# tables gardent leur taille, 3,1 Mo.
+EDGE_PARTS = 10
 # Ce que le champ laisse choisir, bornes comprises. En deçà de cinq, la
 # métrique n'a plus grand-chose d'amélioré ; au-delà de dix, chaque partie
 # devient trop étroite pour qu'on la voie sur l'aperçu.

@@ -992,7 +992,8 @@ def test_changing_the_inputs_disables_resuming(step, change):
     elif change == "metric_parts":
         session.set_algorithm(fine_metric=True)
         widget._run_signature = widget._signature()
-        session.set_algorithm(metric_parts=session.metric_parts + 1)
+        # Un nombre que le champ accepte : le défaut est le haut des bornes.
+        session.set_algorithm(metric_parts=session.metric_parts - 1)
     else:
         session.set_layout(cols=4, rows=5)
 
