@@ -28,9 +28,11 @@ ayants droit sera suivie de leur retrait.
 2. **Signature** : chaque carte est résumée à 4 vecteurs RGB : la couleur moyenne
    d'une bande de 10 % en haut, en bas, à gauche et à droite. 12 nombres par carte.
    La **métrique améliorée**, une case à cocher des paramètres avancés, mesure
-   chaque bande en **cinq parties qui se recouvrent de moitié** au lieu d'une
-   seule moyenne, soit 60 nombres par carte : deux bords de même moyenne mais de
-   répartitions opposées cessent alors de passer pour compatibles.
+   chaque bande en **parties qui se recouvrent de moitié** au lieu d'une seule
+   moyenne, chacune prise sur toute l'épaisseur du bord. Le nombre se choisit
+   à côté de la case, **de cinq à dix**, cinq par défaut : deux bords de même
+   moyenne mais de répartitions opposées cessent alors de passer pour
+   compatibles.
 3. **Distances précalculées** : deux matrices N×N contiennent toutes les distances
    possibles entre bords (droite↔gauche et bas↔haut). Évaluer une couture devient une
    lecture de tableau.

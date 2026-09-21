@@ -30,6 +30,7 @@ from PySide6.QtWidgets import (
     QWidget,
 )
 
+from ..cards import EDGE_PARTS_RANGE
 from . import theme
 from .big_spin import BigFloatSpin
 from .estimates import (
@@ -175,6 +176,14 @@ class AdvancedTab(LayoutTab):
         # change ce que l'aperçu montre, et l'aperçu la suit aussitôt.
         self._fine_metric = QCheckBox()
         self._fine_metric.toggled.connect(self._on_form_changed)
+        # Le nombre de parties vit **dans la phrase de la case**, comme les
+        # seuils d'arrêt vivent dans la leur : « mesurer chaque bande en N
+        # parties » se lit d'un trait, là où un champ intitulé « Parties »
+        # posé à côté demanderait de deviner à quoi il se rapporte.
+        self._parts = QSpinBox()
+        self._parts.setRange(*EDGE_PARTS_RANGE)
+        self._parts.setFixedWidth(SMALL_FIELD_WIDTH)
+        self._parts.valueChanged.connect(self._on_form_changed)
         # Ce que la case change, sous elle et dans le corps du paragraphe qui
         # la précède : c'est la suite de son explication, pas un verdict de
         # l'écran comme la ligne d'état, qui est écrite plus gros.
@@ -210,7 +219,8 @@ class AdvancedTab(LayoutTab):
         colonne.setSpacing(8)
         colonne.addWidget(self._notice)
         colonne.addWidget(self._section(
-            self._metric_title, self._metric_note, self._fine_metric,
+            self._metric_title, self._metric_note,
+            self._sentence("fine_metric", self._parts, self._fine_metric),
             self._fine_note, self._metric_box, self._metric_status))
         colonne.addWidget(self._section(
             self._saving_title,
@@ -361,19 +371,19 @@ class AdvancedTab(LayoutTab):
             "point ces bandes se ressemblent. Tout le travail de l'algorithme "
             "est ensuite de déplacer les cartes pour obtenir le meilleur score "
             "d'ensemble."))
-        self._fine_metric.setText(self.tr(
-            "Métrique améliorée : mesurer chaque bande en cinq parties"))
         self._metric_status.setText(self.tr(
             "À gauche, deux cartes voisines : la flèche relie les deux bandes "
             "que le score compare. À droite, une petite grille d'essai "
             "réoptimisée à cette épaisseur."))
+        self._say("fine_metric", self.tr(
+            "Métrique améliorée : mesurer chaque bande en %1 parties"))
         self._fine_note.setText(self.tr(
             "Une bande entière réduite à sa couleur moyenne ne dit rien de sa "
             "répartition : un bord rouge en haut et bleu en bas a la même "
             "moyenne que son inverse, et le score les déclare identiques. "
-            "Cochée, chaque bande est découpée en <b>cinq parties</b> qui se "
-            "recouvrent de moitié, et chaque partie est comparée à celle d'en "
-            "face. ⚠️ Les deux métriques ne rendent pas les mêmes scores : "
+            "Cochée, chaque bande est découpée en <b>parties qui se "
+            "recouvrent de moitié</b>, et chaque partie est comparée à celle "
+            "d'en face. ⚠️ Les deux métriques ne rendent pas les mêmes scores : "
             "ceux d'avant ne se comparent plus à ceux d'après."))
         self._saving_title.setText(self.tr("<b>Fréquence de sauvegarde :</b>"))
         self._settings_title.setText(self.tr("<b>Paramètres de l'algorithme :</b>"))
@@ -416,6 +426,7 @@ class AdvancedTab(LayoutTab):
         self._session.set_algorithm(
             strip_size=self._strip.value(),
             fine_metric=self._fine_metric.isChecked(),
+            metric_parts=self._parts.value(),
             iterations=self._iterations.value(),
             snapshot_every=self._snapshot_every.value(),
             stop_on_stagnation=self._stop_on_stagnation.isChecked(),
@@ -440,6 +451,7 @@ class AdvancedTab(LayoutTab):
         session = self._session
         self._strip.setValue(session.strip_size)
         self._fine_metric.setChecked(session.fine_metric)
+        self._parts.setValue(session.metric_parts)
         self._iterations.setValue(session.iterations)
         self._snapshot_every.setValue(session.snapshot_every)
         self._stop_on_stagnation.setChecked(session.stop_on_stagnation)
@@ -465,6 +477,7 @@ class AdvancedTab(LayoutTab):
         session = self._session
         accepted = {
             "strip_size": self._strip.value(),
+            "metric_parts": self._parts.value(),
             "iterations": self._iterations.value(),
             "snapshot_every": self._snapshot_every.value(),
             "stagnation_iterations": self._stagnation.value(),
@@ -486,6 +499,10 @@ class AdvancedTab(LayoutTab):
         # jamais un coup dégradant. La phrase se grise avec son champ, sinon
         # elle promettrait un comportement que le calcul n'aura pas.
         self._acceptance.setEnabled(self._session.use_annealing)
+        # Le nombre de parties ne veut rien dire avec la métrique d'origine :
+        # son champ se grise avec la case, sinon il promettrait un découpage
+        # qui n'aura pas lieu.
+        self._parts.setEnabled(self._session.fine_metric)
         for morceau in self._sentences["acceptance"]:
             morceau.setEnabled(self._session.use_annealing)
         self._update_glows()
@@ -493,6 +510,7 @@ class AdvancedTab(LayoutTab):
     def _update_glows(self) -> None:
         """Verte sur une ligne d'arrêt qui compte, rouge sur une ligne éteinte."""
         actifs = {
+            "fine_metric": self._session.fine_metric,
             "iterations": True,      # jamais débrayable
             "stagnation": self._session.stop_on_stagnation,
             "time": self._session.stop_on_time,

@@ -962,7 +962,8 @@ def test_restarting_from_the_last_snapshot_is_left_to_extend(step, capture_runs)
 
 @pytest.mark.parametrize(
     "change",
-    ["selection", "links", "grid", "strip_size", "fine_metric"])
+    ["selection", "links", "grid", "strip_size", "fine_metric",
+     "metric_parts"])
 def test_changing_the_inputs_disables_resuming(step, change):
     """Les cartes retenues sont renumérotées de 0 à n-1 : repartir d'un cliché
     après un changement ferait désigner d'autres cartes par les mêmes indices.
@@ -988,6 +989,10 @@ def test_changing_the_inputs_disables_resuming(step, change):
         session.set_algorithm(strip_size=session.strip_size + 0.2)
     elif change == "fine_metric":
         session.set_algorithm(fine_metric=True)
+    elif change == "metric_parts":
+        session.set_algorithm(fine_metric=True)
+        widget._run_signature = widget._signature()
+        session.set_algorithm(metric_parts=session.metric_parts + 1)
     else:
         session.set_layout(cols=4, rows=5)
 

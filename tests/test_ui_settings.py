@@ -288,8 +288,8 @@ def test_every_advanced_setting_sits_inside_a_sentence(step):
     Chaque champ est donc précédé des mots qui disent ce qu'il complète."""
     widget, _ = step
     assert set(widget._sentences) == {
-        "algorithm", "acceptance", "iterations", "stagnation", "time",
-        "score", "snapshot_every"}
+        "fine_metric", "algorithm", "acceptance", "iterations", "stagnation",
+        "time", "score", "snapshot_every"}
     for cle, (avant, _apres) in widget._sentences.items():
         assert avant.text(), f"la phrase de {cle} ne dit rien avant son champ"
 
@@ -351,12 +351,17 @@ def test_clicking_the_words_of_a_stop_line_ticks_it(step):
 
 def test_a_stop_line_wears_the_aura_of_its_state(step):
     """Comme « Suivant » : verte quand la ligne compte, rouge, plus discrète,
-    quand elle est éteinte. Le rouge dit « pas actif », pas « cassé »."""
+    quand elle est éteinte. Le rouge dit « pas actif », pas « cassé ».
+
+    La ligne de la métrique améliorée en porte une aussi : elle se coche de la
+    même façon, et son champ compte ou ne compte pas de la même façon.
+    """
     from pokemon_mosaic.ui import theme
 
     widget, session = step
     couleurs = theme.colours(widget.palette())
-    assert set(widget._glows) == {"iterations", "stagnation", "time", "score"}
+    assert set(widget._glows) == {"fine_metric", "iterations", "stagnation",
+                                  "time", "score"}
 
     # Les itérations comptent toujours, la stagnation est décochée au départ.
     assert widget._glows["iterations"].color().name() == couleurs["ok"]
@@ -578,12 +583,23 @@ def test_a_value_within_bounds_is_left_alone(session):
 # --- La case de la métrique améliorée --------------------------------------
 
 
+def dans(widget, ancetre) -> bool:
+    """Vrai si `widget` est posé quelque part sous `ancetre`."""
+    parent = widget.parentWidget()
+    while parent is not None:
+        if parent is ancetre:
+            return True
+        parent = parent.parentWidget()
+    return False
+
+
 def test_the_fine_metric_checkbox_sits_in_the_metric_section(step):
     """Elle change ce que l'aperçu montre : sa place est à côté de lui."""
     widget, _ = step
     section = widget._metric_title.parentWidget()
 
-    assert widget._fine_metric.parentWidget() is section
+    assert dans(widget._fine_metric, section)
+    assert dans(widget._parts, section), "le nombre de parties va avec elle"
     assert widget._fine_metric.text(), "la case ne dit pas ce qu'elle fait"
     assert widget._fine_note.text(), "rien n'explique ce qu'elle change"
     assert not widget._fine_metric.isChecked(), "décochée par défaut"
@@ -622,3 +638,68 @@ def test_the_fine_metric_travels_in_a_preset(session, tmp_path):
     session.apply_preset(preset)
 
     assert session.fine_metric
+
+
+def test_the_number_of_parts_is_kept_between_five_and_ten(step):
+    """En deçà de cinq la métrique n'a plus grand-chose d'amélioré ; au-delà de
+    dix, chaque partie devient trop étroite pour se voir sur l'aperçu."""
+    from pokemon_mosaic.cards import EDGE_PARTS_RANGE
+
+    widget, _ = step
+
+    assert (widget._parts.minimum(), widget._parts.maximum()) == EDGE_PARTS_RANGE
+    widget._parts.setValue(99)
+    assert widget._parts.value() == EDGE_PARTS_RANGE[1]
+    widget._parts.setValue(1)
+    assert widget._parts.value() == EDGE_PARTS_RANGE[0]
+
+
+def test_choosing_a_number_of_parts_changes_the_cutting(step):
+    widget, session = step
+    widget._fine_metric.setChecked(True)
+
+    widget._parts.setValue(8)
+
+    assert session.metric_parts == 8
+    assert session.edge_parts() == 8
+
+
+def test_the_number_of_parts_only_counts_when_the_box_is_ticked(step):
+    """Décochée, le champ se grise : sinon il promettrait un découpage qui
+    n'aura pas lieu."""
+    widget, session = step
+
+    assert not widget._parts.isEnabled()
+    widget._fine_metric.setChecked(True)
+    assert widget._parts.isEnabled()
+
+    widget._parts.setValue(7)
+    widget._fine_metric.setChecked(False)
+    assert session.metric_parts == 7, "le champ garde sa valeur"
+    assert session.edge_parts() == 1, "mais le bord se mesure d'un bloc"
+
+
+def test_a_hand_written_preset_gets_its_parts_clamped(session):
+    """Un préréglage est du JSON qu'on retouche : la valeur hors bornes est
+    ramenée par le champ, et renvoyée à la session."""
+    from pokemon_mosaic.cards import EDGE_PARTS_RANGE
+    from pokemon_mosaic.ui.algorithm_tabs import AdvancedTab
+
+    session.set_algorithm(metric_parts=42)
+
+    step = AdvancedTab(session)
+
+    assert step._parts.value() == EDGE_PARTS_RANGE[1]
+    assert session.metric_parts == EDGE_PARTS_RANGE[1]
+
+
+def test_changing_the_parts_recomputes_the_signatures(session):
+    """Le découpage change les signatures autant que la case elle-même."""
+    session.set_algorithm(fine_metric=True)
+    calls = []
+    session.card_set.recalculate_features = lambda ss, parts=1: calls.append(
+        (ss, parts))
+
+    session.set_algorithm(metric_parts=9)
+
+    assert calls == [(session.strip_size, 9)]

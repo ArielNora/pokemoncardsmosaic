@@ -172,6 +172,7 @@ class Session(QObject):
         "stop_on_stagnation", "stagnation_iterations",
         "stop_on_time", "time_budget",
         "use_annealing", "acceptance", "strip_size", "fine_metric",
+        "metric_parts",
         "stop_on_score", "target_score",
     })
 
@@ -280,11 +281,15 @@ class Session(QObject):
         self.use_annealing = True
         self.acceptance = 0.5
         self.strip_size = DEFAULT_STRIP_SIZE
-        # ⚠️ **Décochée par défaut.** La métrique en cinq parties est plus
+        # ⚠️ **Décochée par défaut.** La métrique en plusieurs parties est plus
         # exigeante : elle ne rend pas les mêmes scores, et les agencements
         # déjà gardés ont été jugés avec l'autre. C'est un choix, pas un
         # progrès qu'on impose.
         self.fine_metric = False
+        # En combien de parties, quand elle est cochée. Le champ borne le
+        # choix ; un préréglage écrit à la main peut porter autre chose, et
+        # c'est l'écran qui le ramène dans les bornes, comme les autres champs.
+        self.metric_parts = EDGE_PARTS
         self.stop_on_score = False
         self.target_score = 0.0
 
@@ -1152,8 +1157,10 @@ class Session(QObject):
         # Le découpage des bords change les signatures tout autant que
         # l'épaisseur : cocher la case sans recalculer laisserait le score sur
         # des mesures qui ne sont plus celles qu'on annonce.
-        metric_changed = (changes.get("fine_metric", self.fine_metric)
-                          != self.fine_metric)
+        metric_changed = (
+            changes.get("fine_metric", self.fine_metric) != self.fine_metric
+            or (changes.get("metric_parts", self.metric_parts)
+                != self.metric_parts))
 
         touched = False
         for name, value in changes.items():
@@ -1171,14 +1178,14 @@ class Session(QObject):
         self.algorithm_changed.emit()
 
     def edge_parts(self) -> int:
-        """En combien de parties chaque bord se mesure : une, ou cinq.
+        """En combien de parties chaque bord se mesure : une, ou le nombre choisi.
 
-        Un seul endroit traduit la case en nombre de parties : le calcul des
-        signatures, l'aperçu qui les montre et le chargement doivent découper
-        pareil, sans quoi l'écran désignerait des parties que le score ne
-        mesure pas.
+        Un seul endroit traduit la case et son champ en nombre de parties : le
+        calcul des signatures, l'aperçu qui les montre et le chargement doivent
+        découper pareil, sans quoi l'écran désignerait des parties que le score
+        ne mesure pas.
         """
-        return EDGE_PARTS if self.fine_metric else 1
+        return self.metric_parts if self.fine_metric else 1
 
     def annealing(self) -> Annealing | None:
         """Le recuit configuré, ou None pour une descente stricte."""

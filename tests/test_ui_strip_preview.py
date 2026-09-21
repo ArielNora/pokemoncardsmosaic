@@ -329,3 +329,19 @@ def test_toggling_the_fine_metric_rebuilds_the_sandbox(preview):
     widget.refresh()
     assert widget._sandbox is not None
     assert EDGE_PARTS in widget._built_key
+
+
+def test_the_preview_follows_the_chosen_number_of_parts(preview):
+    """Le nombre choisi change le découpage montré, et refait la grille d'essai."""
+    from PySide6.QtCore import QRectF
+
+    widget, session = preview
+    session.set_algorithm(fine_metric=True)
+    widget.refresh()
+    bande = QRectF(0, 0, 200, 20)
+    assert len(widget.band_parts(bande, horizontale=True)) == session.metric_parts
+
+    session.set_algorithm(metric_parts=9)
+
+    assert len(widget.band_parts(bande, horizontale=True)) == 9
+    assert widget._dirty, "la grille d'essai n'a pas été invalidée"

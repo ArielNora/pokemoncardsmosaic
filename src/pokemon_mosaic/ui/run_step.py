@@ -499,8 +499,9 @@ class RunStep(QWidget):
             session.strip_size,
             # Le découpage des bords change l'échelle du score pour la même
             # raison : mesuré sur 60 cartes, la même grille vaut 5 033 d'un
-            # côté et 8 097 de l'autre.
-            session.fine_metric,
+            # côté et 8 097 de l'autre. `edge_parts` porte la case **et** le
+            # nombre de parties : changer l'un ou l'autre refait les mesures.
+            session.edge_parts(),
         )
 
     def can_resume(self) -> bool:
