@@ -5794,6 +5794,188 @@
    "sha256": "51998a4d2cc9848004f902e632ac3c4f0f6a23c390a1a64ffff00563f38bbd0e"
   },
   {
+   "bytes": 160552,
+   "id": "B4a-073",
+   "language": "fr",
+   "names": {
+    "en": "Delphox",
+    "fr": "Goupelin"
+   },
+   "number": 73,
+   "path": "b4a-l-ambition-de-la-team-rocket/b4a-073-goupelin.webp",
+   "rarity": "AR",
+   "set": "B4a",
+   "sha256": "620af3b2cf75d3e5876ae663555a3f2777c11312a0cf68b50bc9fdff88a1ecbe"
+  },
+  {
+   "bytes": 202988,
+   "id": "B4a-074",
+   "language": "fr",
+   "names": {
+    "en": "Team Rocket's Hypno",
+    "fr": "Hypnomade de la Team Rocket"
+   },
+   "number": 74,
+   "path": "b4a-l-ambition-de-la-team-rocket/b4a-074-hypnomade-de-la-team-rocket.webp",
+   "rarity": "AR",
+   "set": "B4a",
+   "sha256": "e7f5eeeb916a8014673873cf792e50fa67795309f337f1e1850d5faffb05aa67"
+  },
+  {
+   "bytes": 122794,
+   "id": "B4a-075",
+   "language": "fr",
+   "names": {
+    "en": "Team Rocket's Tinkaton",
+    "fr": "Forgelina de la Team Rocket"
+   },
+   "number": 75,
+   "path": "b4a-l-ambition-de-la-team-rocket/b4a-075-forgelina-de-la-team-rocket.webp",
+   "rarity": "AR",
+   "set": "B4a",
+   "sha256": "187ca2cd1953b6bb765090ead665aca29c7a07068246154c1b8882127a4b0101"
+  },
+  {
+   "bytes": 89156,
+   "id": "B4a-076",
+   "language": "fr",
+   "names": {
+    "en": "Team Rocket's Kecleon",
+    "fr": "Kecleon de la Team Rocket"
+   },
+   "number": 76,
+   "path": "b4a-l-ambition-de-la-team-rocket/b4a-076-kecleon-de-la-team-rocket.webp",
+   "rarity": "AR",
+   "set": "B4a",
+   "sha256": "eba1c4e11686109f6ef575222b331bce5956ce2f0295a09e31345a96cf457b37"
+  },
+  {
+   "bytes": 157560,
+   "id": "B4a-077",
+   "language": "fr",
+   "names": {
+    "en": "Happiny",
+    "fr": "Ptiravi"
+   },
+   "number": 77,
+   "path": "b4a-l-ambition-de-la-team-rocket/b4a-077-ptiravi.webp",
+   "rarity": "AR",
+   "set": "B4a",
+   "sha256": "15b8c0c6f1b4b2da62f75afa568feb7675b9a3c594a4283a56b04983b470ba62"
+  },
+  {
+   "bytes": 170970,
+   "id": "B4a-078",
+   "language": "fr",
+   "names": {
+    "en": "Lechonk",
+    "fr": "Gourmelet"
+   },
+   "number": 78,
+   "path": "b4a-l-ambition-de-la-team-rocket/b4a-078-gourmelet.webp",
+   "rarity": "AR",
+   "set": "B4a",
+   "sha256": "c94188f2be54d8b37de3e03a7c6918259645c9339be6de032f8a1a905c498b30"
+  },
+  {
+   "bytes": 78314,
+   "id": "B4a-088",
+   "language": "fr",
+   "names": {
+    "en": "Team Rocket's Moltres ex",
+    "fr": "Sulfura-ex de la Team Rocket"
+   },
+   "number": 88,
+   "path": "b4a-l-ambition-de-la-team-rocket/b4a-088-sulfura-ex-de-la-team-rocket.webp",
+   "rarity": "SAR",
+   "set": "B4a",
+   "sha256": "1500de1cb1c684ad70fea8ea28ba05282744c4862545d7faf37f284db4f310f8"
+  },
+  {
+   "bytes": 92542,
+   "id": "B4a-089",
+   "language": "fr",
+   "names": {
+    "en": "Team Rocket's Articuno ex",
+    "fr": "Artikodin-ex de la Team Rocket"
+   },
+   "number": 89,
+   "path": "b4a-l-ambition-de-la-team-rocket/b4a-089-artikodin-ex-de-la-team-rocket.webp",
+   "rarity": "SAR",
+   "set": "B4a",
+   "sha256": "175539dd40cdff4e359664b8c1c10dfb2e0709815acbe553a1235ddf2ca354ed"
+  },
+  {
+   "bytes": 89152,
+   "id": "B4a-090",
+   "language": "fr",
+   "names": {
+    "en": "Team Rocket's Zapdos ex",
+    "fr": "Électhor-ex de la Team Rocket"
+   },
+   "number": 90,
+   "path": "b4a-l-ambition-de-la-team-rocket/b4a-090-electhor-ex-de-la-team-rocket.webp",
+   "rarity": "SAR",
+   "set": "B4a",
+   "sha256": "5136670c35910b6980dc7cba66a7feecb7aa5bf42b6edbd6f0aea5de062df651"
+  },
+  {
+   "bytes": 48158,
+   "id": "B4a-091",
+   "language": "fr",
+   "names": {
+    "en": "Team Rocket's Slowking ex",
+    "fr": "Roigada-ex de la Team Rocket"
+   },
+   "number": 91,
+   "path": "b4a-l-ambition-de-la-team-rocket/b4a-091-roigada-ex-de-la-team-rocket.webp",
+   "rarity": "SAR",
+   "set": "B4a",
+   "sha256": "e59b6847cab908a5a3709c43c38aad06fb967e85fa769171d24bafc17e930708"
+  },
+  {
+   "bytes": 128016,
+   "id": "B4a-092",
+   "language": "fr",
+   "names": {
+    "en": "Team Rocket's Weezing ex",
+    "fr": "Smogogo-ex de la Team Rocket"
+   },
+   "number": 92,
+   "path": "b4a-l-ambition-de-la-team-rocket/b4a-092-smogogo-ex-de-la-team-rocket.webp",
+   "rarity": "SAR",
+   "set": "B4a",
+   "sha256": "46a35d69fe2215048b8f94ad061bd3e7c2c8fdc00941ce97073043f2787a52f3"
+  },
+  {
+   "bytes": 139362,
+   "id": "B4a-093",
+   "language": "fr",
+   "names": {
+    "en": "Team Rocket's Raticate ex",
+    "fr": "Rattatac-ex de la Team Rocket"
+   },
+   "number": 93,
+   "path": "b4a-l-ambition-de-la-team-rocket/b4a-093-rattatac-ex-de-la-team-rocket.webp",
+   "rarity": "SAR",
+   "set": "B4a",
+   "sha256": "df9c85f03b7b25becb1d451ac26154ab5deaa9d6b0425a5d863d18f7f1c1b8d5"
+  },
+  {
+   "bytes": 82292,
+   "id": "B4a-094",
+   "language": "fr",
+   "names": {
+    "en": "Team Rocket's Master Plan",
+    "fr": "Plan Machiavélique de la Team Rocket"
+   },
+   "number": 94,
+   "path": "b4a-l-ambition-de-la-team-rocket/b4a-094-plan-machiavelique-de-la-team-rocket.webp",
+   "rarity": "IM",
+   "set": "B4a",
+   "sha256": "c172909769896c88963a9ebdb8d4051770e437e6d4a3d25f648838c2ab18614b"
+  },
+  {
    "bytes": 98736,
    "id": "PROMO-A-009",
    "language": "fr",
@@ -6187,7 +6369,7 @@
    "sha256": "f37b3e07c3d3f0b6c1084a868107a3355ac48dd5c1306055c11b62b82ebf789e"
   }
  ],
- "generated_at": "2026-08-24T11:48:04Z",
+ "generated_at": "2026-09-26T23:39:39Z",
  "mirror": {
   "repo": "ArielNora/pokemoncardsmosaic-images",
   "sets": {
@@ -6353,6 +6535,7 @@
   "B3a": "b3a-propulsion-paradoxe",
   "B3b": "b3b-jours-heureux",
   "B4": "b4-domination-celeste",
+  "B4a": "b4a-l-ambition-de-la-team-rocket",
   "PROMO-A": "promo-a-promo-a",
   "PROMO-B": "promo-b-promo-b"
  },

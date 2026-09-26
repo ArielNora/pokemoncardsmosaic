@@ -392,6 +392,39 @@ def test_a_set_code_containing_a_dash_is_recognised(tmp_path):
     assert carte["number"] == 9
 
 
+def test_a_new_set_keeps_the_letter_after_its_number_in_lowercase(tmp_path):
+    """⚠️ Trouvé en rangeant la première extension nouvelle, le 2026-09-27.
+
+    Le dossier connu fait foi, mais une extension qui arrive n'est décrite
+    nulle part : son code se déduit du nom de dossier, et tout mettre en
+    capitales donnait `B4A` là où les vingt-deux autres écrivent `A1a`, `A2b`,
+    `B3b`. Le catalogue aurait porté deux écritures d'une même famille.
+    """
+    depose(tmp_path, "b4a-l-ambition-de-la-team-rocket/b4a-093-rattatac-ex.webp")
+    produit, _, _ = build.build(catalogue([]), str(tmp_path))
+
+    (carte,) = produit["cards"]
+    assert carte["set"] == "B4a"
+    assert carte["id"] == "B4a-093"
+
+
+@pytest.mark.parametrize("code, attendu", [
+    ("a1", "A1"),
+    ("a1a", "A1a"),
+    ("a2b", "A2b"),
+    ("b4a", "B4a"),
+    ("promo-a", "PROMO-A"),
+    ("promo-b", "PROMO-B"),
+])
+def test_every_shape_of_set_code_is_written_as_the_catalogue_does(code, attendu):
+    """Les deux familles ne suivent pas la même règle : la lettre qui suit un
+    numéro reste minuscule, un code sans chiffre passe tout en capitales.
+
+    Le code arrive du **nom de fichier**, `b4a-093-...`, et non du dossier.
+    """
+    assert build.code_du_jeu(code) == attendu
+
+
 def test_the_identifier_keeps_the_digits_as_written(tmp_path):
     """`PROMO-A-009` et non `PROMO-A-9` : passer le numéro par `int()` casserait
     la moitié des identifiants. Le nom de fichier ayant été engendré depuis

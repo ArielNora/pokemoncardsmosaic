@@ -87,6 +87,25 @@ def scan(images: str) -> list[tuple[str, str]]:
     return sorted(trouvees)
 
 
+def code_du_jeu(code: str) -> str:
+    """Le code d'extension tel que le catalogue l'écrit, depuis le nom de fichier.
+
+    ⚠️ **La lettre qui suit le numéro reste en minuscule** : `A1a`, `B4a`,
+    `A2b`, et non `A1A`. Tout mettre en capitales donnait `B4A` à la première
+    extension nouvelle, un code que rien d'autre ne porte : le catalogue se
+    retrouvait avec deux écritures pour une même famille, invisibles jusqu'au
+    moment de republier.
+
+    Un code sans chiffre passe tout entier en capitales, `PROMO-A`, `PROMO-B`.
+    Ce n'est pas la même règle et les deux ont leurs cartes.
+    """
+    chiffres = [rang for rang, caractere in enumerate(code) if caractere.isdigit()]
+    if not chiffres:
+        return code.upper()
+    dernier = chiffres[-1]
+    return code[:dernier + 1].upper() + code[dernier + 1:].lower()
+
+
 def derive(relative: str, dossiers: dict) -> dict:
     """Ce qu'un chemin dit d'une carte encore inconnue.
 
@@ -102,7 +121,7 @@ def derive(relative: str, dossiers: dict) -> dict:
     code, numero = correspondance.groups()
     # Le dossier fait foi sur l'extension : c'est lui que `sets` indexe, et un
     # fichier mal préfixé rangé au bon endroit reste rattachable.
-    jeu = dossiers.get(dossier) or code.upper()
+    jeu = dossiers.get(dossier) or code_du_jeu(code)
     # ⚠️ L'identifiant garde les chiffres **tels qu'écrits**, zéros de tête
     # compris : `A1-227` mais `PROMO-A-009`. Passer par `int()` produirait
     # `PROMO-A-9`, qui ne correspond à rien. Le nom de fichier ayant été
