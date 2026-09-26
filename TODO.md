@@ -75,6 +75,24 @@ seule provenance. Voir `docs/IMAGES.md`.
   Gatekeeper la refusera ailleurs. Une distribution propre suppose un
   **Developer ID** Apple, compte payant, et une notarisation qui imposent de
   reprendre la signature entièrement. Voir `paquet/README.md`.
+- **Finir le dépôt proprement.** Un passage de mise en forme, sur tout, à faire
+  d'un seul tenant plutôt que par petits bouts :
+
+  - **les textes** : relire `README.md`, `SPEC.md` et `docs/` d'un bout à
+    l'autre. Trois mois de décisions s'y sont empilées, certaines lignes
+    décrivent une application qui n'existe plus, d'autres se répètent d'un
+    fichier à l'autre.
+  - **le code** : homogénéiser docstrings et commentaires, retirer ce qui est
+    mort. Exemple connu : `data/local/` ne contient que douze illustrations
+    déjà au catalogue, copiées là en août et jamais rangées.
+  - **les descriptions pour les IA, en markdown.** `CLAUDE.md` dit la méthode
+    de travail, pas ce qu'est le projet : il manque une carte du dépôt, qui
+    dise où est quoi, ce que fait chaque module, les invariants à ne pas
+    casser et par où commencer. C'est ce qu'une IA lit en arrivant, et ce
+    qu'un humain neuf lirait aussi.
+  - **la présentation** : licence, mention des ayants droit, ce qu'il faut
+    pour que le dépôt se tienne debout tout seul.
+
 - **Pas de skill de mise à jour.** À chaque nouvelle extension, il faut déposer
   les illustrations, lancer `build_manifest.py`, compléter à la main la rareté
   et les noms des cartes nouvelles, puis lancer `publish_release.py`. Seule la
