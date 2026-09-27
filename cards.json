@@ -6493,6 +6493,12 @@
     "cards": 34,
     "sha256": "c522686a4f28fa8cb47a84013014f4f992c8561480bffa35db630c78f18b4064"
    },
+   "B4a": {
+    "archive": "b4a-l-ambition-de-la-team-rocket.zip",
+    "bytes": 1564684,
+    "cards": 13,
+    "sha256": "d87a20a01ca0d8c42fddb3fb3e9d35cfd9e7e1cedfa866f249f393505985943d"
+   },
    "PROMO-A": {
     "archive": "promo-a-promo-a.zip",
     "bytes": 2152266,
