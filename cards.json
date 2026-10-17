@@ -6639,6 +6639,12 @@
     "cards": 13,
     "sha256": "d87a20a01ca0d8c42fddb3fb3e9d35cfd9e7e1cedfa866f249f393505985943d"
    },
+   "B4b": {
+    "archive": "b4b-booster-de-luxe-mega.zip",
+    "bytes": 1160822,
+    "cards": 7,
+    "sha256": "eb091f3a16444d4a19a191e39d4d384437a6db5eb880f652e1d260db1c4a610e"
+   },
    "PROMO-A": {
     "archive": "promo-a-promo-a.zip",
     "bytes": 2152266,
@@ -6647,9 +6653,9 @@
    },
    "PROMO-B": {
     "archive": "promo-b-promo-b.zip",
-    "bytes": 1031880,
-    "cards": 11,
-    "sha256": "a6f0b3c691132cad15f251421319df95b8d576052825abb2095741e180597fa5"
+    "bytes": 1354008,
+    "cards": 14,
+    "sha256": "7d3d9a0ee242e44251b5fe2c6e956e88b496413ea27f306a40ee1585fa608cbb"
    }
   },
   "tag": "cards-v4",
