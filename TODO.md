@@ -7,7 +7,8 @@ Revu le 2026-09-18 : trois entrées faites depuis leur écriture ont été retir
 (marges et espacement, liens en rectangles, marge automatique), voir « Fait,
 retiré de cette liste » en bas. Revu le 2026-09-20 : les trois restes récents
 sont faits (la fenêtre qui s'élargit, les déplacements de feuilles entre deux
-formes, le retrait du fil de fer).
+formes, le retrait du fil de fer). Revu le 2026-10-18 : le skill de mise à jour
+existe, et les chiffres du catalogue suivent la publication du 2026-09-27.
 
 ## Restes récents, petits
 
@@ -29,8 +30,8 @@ Aucun : les trois derniers ont été faits le 2026-09-20.
 Les 281 anciens PNG encadrés, gardés le temps de valider le nouveau jeu, ont
 été supprimés le 2026-08-24.
 
-Les images **ne sont pas versionnées** : `cards.json` décrit les 441 cartes
-(56,3 Mo) et le miroir les sert. Illustrations nues 734×1024 en WebP qualité 80,
+Les images **ne sont pas versionnées** : `cards.json` décrit les 454 cartes
+(57,9 Mo) et le miroir les sert. Illustrations nues 734×1024 en WebP qualité 80,
 déposées à la main dans `data/pokemoncards/`.
 
 Le projet ne va chercher aucune image sur un site tiers : ni catalogue distant,
@@ -39,9 +40,10 @@ seule provenance. Voir `docs/IMAGES.md`.
 
 ## Dettes ouvertes
 
-- **Aucun poster n'a encore été fabriqué avec les 441 cartes.** `output/` date
+- **Aucun poster n'a encore été fabriqué avec les 454 cartes.** `output/` date
   du 19 août et porte les 281 anciennes cartes encadrées. Ce n'est pas une dette
-  technique mais une vérification manquante, et c'est le but du projet.
+  technique mais une vérification manquante, et c'est le but du projet. La
+  métrique améliorée n'a jamais tourné non plus sur un jeu complet.
 
 - **Empaqueter pour Linux et Windows.** Tranché le 2026-08-29 : l'application
   vise les trois systèmes. Le plus gros obstacle est levé : Fusion et nos deux
@@ -93,12 +95,6 @@ seule provenance. Voir `docs/IMAGES.md`.
   - **la présentation** : licence, mention des ayants droit, ce qu'il faut
     pour que le dépôt se tienne debout tout seul.
 
-- **Pas de skill de mise à jour.** À chaque nouvelle extension, il faut déposer
-  les illustrations, lancer `build_manifest.py`, compléter à la main la rareté
-  et les noms des cartes nouvelles, puis lancer `publish_release.py`. Seule la
-  troisième étape demande un jugement : un skill pourrait enchaîner les autres
-  et ne s'arrêter que sur les champs à remplir, que `build_manifest.py` nomme
-  déjà.
 
 ## Limitations connues à corriger
 
@@ -111,7 +107,7 @@ seule provenance. Voir `docs/IMAGES.md`.
 
 - **Vectoriser le recalcul des signatures.** `CardSet.recalculate_features` boucle
   sur les cartes une par une : mesuré à 71 à 148 ms sur 280 cartes selon
-  l'épaisseur, davantage sur les 441 d'aujourd'hui, ce qui se sent quand on fait
+  l'épaisseur, davantage sur les 454 d'aujourd'hui, ce qui se sent quand on fait
   glisser le réglage d'épaisseur des bandes. Empiler les vignettes en un seul
   tableau permettrait de calculer toutes les moyennes d'un coup. Différer le
   calcul serait au contraire dangereux : les signatures doivent rester
@@ -134,6 +130,11 @@ Gardé en trace pour ne pas rouvrir ces sujets sans raison.
 - **Noms de fichiers non normalisés**, réglé le 2026-08-24 par `artwork.slug()`.
 - **Aucun test ne tourne sans fin** (2026-09-18) : délai de 60 s par test et de
   10 min par lot, voir `CLAUDE.md`.
+- **Le skill de mise à jour des cartes** (2026-09-27) : fait, et il vit dans un
+  dépôt **privé** à part, parce qu'il décrit ce que ce dépôt-ci ne doit pas
+  contenir. Il trouve les extensions et les cartes qui manquent, récupère les
+  illustrations au bon format, complète le catalogue, et ne publie que sur
+  demande. Éprouvé sur B4a : treize cartes ajoutées et publiées au miroir.
 - **La fenêtre s'élargissait après un multi-lancement** (2026-09-20) : elle
   s'ouvre à 1440 pixels de large, rognés à l'écran, au lieu de 1100.
 - **Revoir la métrique de bord** (2026-09-20, corrigée le 2026-09-21) : faite,
