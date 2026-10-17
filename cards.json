@@ -5976,6 +5976,104 @@
    "sha256": "c172909769896c88963a9ebdb8d4051770e437e6d4a3d25f648838c2ab18614b"
   },
   {
+   "bytes": 178362,
+   "id": "B4b-403",
+   "language": "fr",
+   "names": {
+    "en": "Charmeleon",
+    "fr": "Reptincel"
+   },
+   "number": 403,
+   "path": "b4b-booster-de-luxe-mega/b4b-403-reptincel.webp",
+   "rarity": "AR",
+   "set": "B4b",
+   "sha256": "f8720fc232ef7267a1750f671361e14b1115ff0ae89555835b20fc451aa8bc69"
+  },
+  {
+   "bytes": 180392,
+   "id": "B4b-404",
+   "language": "fr",
+   "names": {
+    "en": "Baxcalibur",
+    "fr": "Glaivodo"
+   },
+   "number": 404,
+   "path": "b4b-booster-de-luxe-mega/b4b-404-glaivodo.webp",
+   "rarity": "AR",
+   "set": "B4b",
+   "sha256": "69267449acff159b033b55830a7be726fd970d36c613f237b12993aba0a300e7"
+  },
+  {
+   "bytes": 180072,
+   "id": "B4b-405",
+   "language": "fr",
+   "names": {
+    "en": "Meloetta",
+    "fr": "Meloetta"
+   },
+   "number": 405,
+   "path": "b4b-booster-de-luxe-mega/b4b-405-meloetta.webp",
+   "rarity": "AR",
+   "set": "B4b",
+   "sha256": "84d4029125868202d6c6badf575ae1aff96113625d09de52a5ae1d755d8fd11d"
+  },
+  {
+   "bytes": 295918,
+   "id": "B4b-406",
+   "language": "fr",
+   "names": {
+    "en": "Fidough",
+    "fr": "Pâtachiot"
+   },
+   "number": 406,
+   "path": "b4b-booster-de-luxe-mega/b4b-406-patachiot.webp",
+   "rarity": "AR",
+   "set": "B4b",
+   "sha256": "a3022c5c0b3400b5fe3f66d2f0727ee40ed7da0b03d4d0a3acacb485410458eb"
+  },
+  {
+   "bytes": 92516,
+   "id": "B4b-407",
+   "language": "fr",
+   "names": {
+    "en": "Dratini",
+    "fr": "Minidraco"
+   },
+   "number": 407,
+   "path": "b4b-booster-de-luxe-mega/b4b-407-minidraco.webp",
+   "rarity": "AR",
+   "set": "B4b",
+   "sha256": "054541c53a0274a8260fbcaecfe3342496676bf2eeef337c3f5c1394bde5a8fa"
+  },
+  {
+   "bytes": 151060,
+   "id": "B4b-408",
+   "language": "fr",
+   "names": {
+    "en": "Eevee",
+    "fr": "Évoli"
+   },
+   "number": 408,
+   "path": "b4b-booster-de-luxe-mega/b4b-408-evoli.webp",
+   "rarity": "AR",
+   "set": "B4b",
+   "sha256": "4cdcf0acf41cff0b0fca5dc9a345ac3e8af323c071639ced8dadf2b06ee992a3"
+  },
+  {
+   "bytes": 81282,
+   "id": "B4b-425",
+   "language": "fr",
+   "names": {
+    "en": "Mega Charizard X ex",
+    "fr": "Méga-Dracaufeu X-ex"
+   },
+   "number": 425,
+   "path": "b4b-booster-de-luxe-mega/b4b-425-mega-dracaufeu-x-ex.webp",
+   "rarity": "IM",
+   "set": "B4b",
+   "sha256": "89ac5abecbbafb5c6578b46e2c427152b557d053d0bb10cf0df2e3f3c8f09f3c"
+  },
+  {
    "bytes": 98736,
    "id": "PROMO-A-009",
    "language": "fr",
@@ -6367,9 +6465,51 @@
    "rarity": "AR",
    "set": "PROMO-B",
    "sha256": "f37b3e07c3d3f0b6c1084a868107a3355ac48dd5c1306055c11b62b82ebf789e"
+  },
+  {
+   "bytes": 78462,
+   "id": "PROMO-B-089",
+   "language": "fr",
+   "names": {
+    "en": "Team Rocket's Lapras",
+    "fr": "Lokhlass de la Team Rocket"
+   },
+   "number": 89,
+   "path": "promo-b-promo-b/promo-b-089-lokhlass-de-la-team-rocket.webp",
+   "rarity": "AR",
+   "set": "PROMO-B",
+   "sha256": "c288f98e20bdb8cb8c8b54c16d538e086f4e88b05cf5eb314ea7ac79d2a2af27"
+  },
+  {
+   "bytes": 187598,
+   "id": "PROMO-B-095",
+   "language": "fr",
+   "names": {
+    "en": "Darkrai",
+    "fr": "Darkrai"
+   },
+   "number": 95,
+   "path": "promo-b-promo-b/promo-b-095-darkrai.webp",
+   "rarity": "AR",
+   "set": "PROMO-B",
+   "sha256": "505ef34a691fe2cfc8f13d30721fae6e5921acc7b7b27aba488df82b2cd4e2bb"
+  },
+  {
+   "bytes": 55556,
+   "id": "PROMO-B-103",
+   "language": "fr",
+   "names": {
+    "en": "Pikachu ex",
+    "fr": "Pikachu-ex"
+   },
+   "number": 103,
+   "path": "promo-b-promo-b/promo-b-103-pikachu-ex.webp",
+   "rarity": "IM",
+   "set": "PROMO-B",
+   "sha256": "6fa47c9c2a4fea92103f6537df75dd5a03cb016880b840168344cb4fccca6e6b"
   }
  ],
- "generated_at": "2026-09-26T23:39:39Z",
+ "generated_at": "2026-10-17T23:34:43Z",
  "mirror": {
   "repo": "ArielNora/pokemoncardsmosaic-images",
   "sets": {
@@ -6542,6 +6682,7 @@
   "B3b": "b3b-jours-heureux",
   "B4": "b4-domination-celeste",
   "B4a": "b4a-l-ambition-de-la-team-rocket",
+  "B4b": "b4b-booster-de-luxe-mega",
   "PROMO-A": "promo-a-promo-a",
   "PROMO-B": "promo-b-promo-b"
  },
