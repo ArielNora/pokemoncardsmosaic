@@ -14,24 +14,13 @@ existe, et les chiffres du catalogue suivent la publication du 2026-09-27.
 
 Aucun : les trois derniers ont été faits le 2026-09-20.
 
-## Reporté après la v1 de l'application
-
-- **Fixer une carte à des coordonnées précises.** Imposer qu'une carte occupe
-  une case donnée de la grille. À rapprocher des cases vides, qui sont déjà un
-  verrouillage de position. Le verrouillage se fait **carte par carte**, jamais
-  par groupe, et une carte appartenant à un lien ne peut pas être figée.
-
-## Idées d'origine
-
-- **Forcer un placement directionnel** (imposer un sens droite-à-gauche, par exemple).
-
 ## Stockage des cartes : tranché le 2026-08-22, provenance refondue le 2026-08-27
 
 Les 281 anciens PNG encadrés, gardés le temps de valider le nouveau jeu, ont
 été supprimés le 2026-08-24.
 
-Les images **ne sont pas versionnées** : `cards.json` décrit les 454 cartes
-(57,9 Mo) et le miroir les sert. Illustrations nues 734×1024 en WebP qualité 80,
+Les images **ne sont pas versionnées** : `cards.json` décrit les 464 cartes
+(59,4 Mo) et le miroir les sert. Illustrations nues 734×1024 en WebP qualité 80,
 déposées à la main dans `data/pokemoncards/`.
 
 Le projet ne va chercher aucune image sur un site tiers : ni catalogue distant,
@@ -40,7 +29,7 @@ seule provenance. Voir `docs/IMAGES.md`.
 
 ## Dettes ouvertes
 
-- **Aucun poster n'a encore été fabriqué avec les 454 cartes.** `output/` date
+- **Aucun poster n'a encore été fabriqué avec les 464 cartes.** `output/` date
   du 19 août et porte les 281 anciennes cartes encadrées. Ce n'est pas une dette
   technique mais une vérification manquante, et c'est le but du projet. La
   métrique améliorée n'a jamais tourné non plus sur un jeu complet.
@@ -107,12 +96,24 @@ seule provenance. Voir `docs/IMAGES.md`.
 
 - **Vectoriser le recalcul des signatures.** `CardSet.recalculate_features` boucle
   sur les cartes une par une : mesuré à 71 à 148 ms sur 280 cartes selon
-  l'épaisseur, davantage sur les 454 d'aujourd'hui, ce qui se sent quand on fait
+  l'épaisseur, davantage sur les 464 d'aujourd'hui, ce qui se sent quand on fait
   glisser le réglage d'épaisseur des bandes. Empiler les vignettes en un seul
   tableau permettrait de calculer toutes les moyennes d'un coup. Différer le
   calcul serait au contraire dangereux : les signatures doivent rester
   cohérentes avec le réglage affiché, sous peine de retrouver le défaut des
   signatures hétérogènes.
+
+## Écarté, et retiré de cette liste
+
+Abandonné le 2026-10-19 par l'utilisateur. Gardé en trace : c'est ce qu'il
+faudra rouvrir si le besoin revient.
+
+- **Fixer une carte à des coordonnées précises**, qui imposait qu'une carte
+  occupe une case donnée. Les cases vides restent le seul verrouillage de
+  position.
+- **Forcer un placement directionnel**, par exemple un sens droite à gauche.
+  C'était la dernière des deux idées d'origine, l'autre, la métrique de bord,
+  ayant été faite le 2026-09-20.
 
 ## Fait, retiré de cette liste
 
