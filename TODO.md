@@ -66,6 +66,37 @@ seule provenance. Voir `docs/IMAGES.md`.
   Gatekeeper la refusera ailleurs. Une distribution propre suppose un
   **Developer ID** Apple, compte payant, et une notarisation qui imposent de
   reprendre la signature entièrement. Voir `paquet/README.md`.
+- **Soigner l'anglais, et en faire la langue par défaut.** ⚠️ **À faire avant
+  de revoir le dépôt** : les textes relus ici sont ceux que la relecture du
+  dépôt commenterait ensuite.
+
+  Deux chantiers, tranchés avec l'utilisateur le 2026-10-19 :
+
+  - **L'interface s'ouvre en anglais**, quelle que soit la langue du système,
+    et le français reste au menu. Le code garde ses textes français, traduits
+    vers l'anglais : tout l'effort porte sur la **qualité des 475
+    traductions**, à relire une par une. La langue choisie est désormais
+    **retenue d'une session à l'autre**, dans les réglages, comme le dossier de
+    cartes.
+  - **Les noms de cartes et d'extensions suivent la langue.** Aujourd'hui
+    l'application ne lit jamais le catalogue pour nommer : elle affiche le nom
+    de fichier, un slug français, et le nom de dossier pour l'extension. Elle
+    lira `cards.json`, qui porte déjà les noms de cartes en deux langues.
+
+  ⚠️ **Le manifeste passe en version 5** : il ne porte aucun nom d'extension,
+  il faut les y ajouter. La balise du miroir devient donc `cards-v5`, et il
+  faut republier. Pas de compatibilité avec la v4 : il n'y a qu'un utilisateur
+  aujourd'hui, et la porter coûterait plus qu'elle ne sert.
+
+  Le reste des décisions : les noms restent **en infobulle**, pas sous les
+  vignettes, pour ne pas changer la densité de la galerie ; la **recherche
+  porte sur les deux langues et sur le nom de fichier**, pour qu'on trouve une
+  carte sans savoir dans quelle langue la chercher ; et **sans catalogue**, un
+  dossier d'images quelconque continue d'afficher le nom de fichier.
+
+  Conséquence hors de ce dépôt : le skill de mise à jour devra relever le nom
+  d'extension **dans les deux langues** et l'écrire au catalogue.
+
 - **Finir le dépôt proprement.** Un passage de mise en forme, sur tout, à faire
   d'un seul tenant plutôt que par petits bouts :
 
